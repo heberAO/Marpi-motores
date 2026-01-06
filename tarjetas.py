@@ -18,12 +18,8 @@ st.title("SISTEMA MARPI ELECTRICIDAD")
 # --- FUNCIÓN PARA GUARDAR ---
 def guardar_datos(fecha, responsable, tag, descripcion):
     try:
-        # Limpiamos la llave privada para evitar el error de "Incorrect padding"
-        raw_key = st.secrets["connections"]["gsheets"]["private_key"]
-        pk = raw_key.replace("\\n", "\n")
-        
-        # Conectamos usando la llave limpia
-        conn = st.connection("gsheets", type=GSheetsConnection, private_key=pk)
+        # Conexión estándar (toma los datos solo de Secrets)
+        conn = st.connection("gsheets", type=GSheetsConnection)
         
         df_existente = conn.read(ttl=0)
         
@@ -51,11 +47,10 @@ if st.button("GUARDAR REGISTRO Y GENERAR PDF"):
     if not tag or not responsable:
         st.warning("⚠️ Completa Tag y Responsable")
     else:
-        # Intentar guardar
         if guardar_datos(fecha, responsable, tag, descripcion):
             st.success("✅ REGISTRO GUARDADO EN EXCEL")
             
-            # Si se guarda bien, generar el PDF
+            # Generar QR y PDF
             info_qr = f"TAG: {tag}\nRESP: {responsable}\nFECHA: {fecha}"
             img_qr = qrcode.make(info_qr)
             buf_qr = BytesIO()
@@ -74,6 +69,7 @@ if st.button("GUARDAR REGISTRO Y GENERAR PDF"):
             pdf_bytes = pdf.output(dest='S').encode('latin-1')
             st.download_button("📥 DESCARGAR PDF", pdf_bytes, f"Informe_{tag}.pdf")
             st.image(buf_qr.getvalue(), width=150)
+
 
 
 
