@@ -73,3 +73,4 @@ if st.button("GUARDAR REGISTRO Y GENERAR PDF"):
         except Exception as e_pdf:
             st.error(f"Error al crear PDF: {e_pdf}")
 
+
