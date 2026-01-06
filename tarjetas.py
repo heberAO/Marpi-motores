@@ -41,7 +41,7 @@ if st.button("GUARDAR REGISTRO Y GENERAR PDF"):
                 
                 df_final = pd.concat([df_existente, nuevo_dato], ignore_index=True)
                 conn.update(data=df_final)
-                st.success("✅ REGISTRO GUARDADO EN EXCEL")
+                st.success(f"✅ GUARDADO EN: {st.secrets['connections']['gsheets']['spreadsheet']}")
         except Exception as e:
             st.error(f"❌ ERROR AL GUARDAR EN EXCEL: {e}")
 
@@ -72,3 +72,4 @@ if st.button("GUARDAR REGISTRO Y GENERAR PDF"):
             
         except Exception as e_pdf:
             st.error(f"Error al crear PDF: {e_pdf}")
+
