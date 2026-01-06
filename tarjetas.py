@@ -52,11 +52,18 @@ if st.button("GUARDAR REGISTRO Y GENERAR PDF"):
             st.error(f"Error al guardar: {e}")
 
         # 2. GENERAR QR
-        qr_data = f"MARPI ELECTRICIDAD\nTAG: {tag}\nRESP: {responsable}\nFECHA: {fecha}"
+       qr_data = (
+            f"⚡ MARPI ELECTRICIDAD ⚡\n"
+            f"--------------------------\n"
+            f"FECHA: {fecha}\n"
+            f"MOTOR (TAG): {tag}\n"
+            f"RESPONSABLE: {responsable}\n"
+            f"REPARACIÓN: {descripcion}"
+        )
+        
         img_qr = qrcode.make(qr_data)
         buf_qr = BytesIO()
         img_qr.save(buf_qr, format="PNG")
-
         # 3. GENERAR PDF
         try:
             pdf = FPDF()
@@ -116,3 +123,4 @@ if st.button("GUARDAR REGISTRO Y GENERAR PDF"):
 
         except Exception as e_pdf:
             st.error(f"Error al generar PDF: {e_pdf}")
+
