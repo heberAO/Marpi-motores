@@ -7,28 +7,48 @@ from io import BytesIO
 from fpdf import FPDF
 import os
 
-# 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="Marpi Motores", page_icon="⚡")
+st.set_page_config(page_title="Marpi Motores - Técnico", page_icon="⚡", layout="wide")
 
-# --- MOSTRAR LOGO ---
 if os.path.exists("logo.png"):
     st.image("logo.png", width=150)
 
-st.title("SISTEMA MARPI ELECTRICIDAD")
+st.title("SISTEMA TÉCNICO MARPI ELECTRICIDAD")
 st.markdown("---")
 
-# 2. CAMPOS DE ENTRADA
-col1, col2 = st.columns(2)
-with col1:
-    fecha = st.date_input("Fecha de Reparación", date.today())
-    responsable = st.text_input("Responsable del Trabajo")
-with col2:
-    tag = st.text_input("Tag / Número de Motor")
+# --- SECCIÓN 1: DATOS BÁSICOS ---
+st.subheader("📋 Datos del Servicio")
+col_a, col_b, col_c = st.columns(3)
+with col_a:
+    fecha = st.date_input("Fecha", date.today())
+with col_b:
+    tag = st.text_input("Tag / ID Motor")
+with col_c:
+    responsable = st.text_input("Técnico Responsable")
 
-descripcion = st.text_area("Descripción de la Reparación / Repuestos")
+# --- SECCIÓN 2: DATOS DE PLACA ---
+st.subheader("🏷️ Datos de Placa")
+col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+with col_p1:
+    potencia = st.text_input("Potencia (HP/kW)")
+with col_p2:
+    tension = st.text_input("Tensión (V)")
+with col_p3:
+    corriente = st.text_input("Corriente (A)")
+with col_p4:
+    rpm = st.text_input("RPM")
 
-# 3. FUNCIÓN PARA GUARDAR (Con limpieza de llave para evitar errores)
-def guardar_datos(f, r, t, d):
+# --- SECCIÓN 3: MEDICIONES ELÉCTRICAS ---
+st.subheader("🧪 Mediciones de Control")
+col_m1, col_m2 = st.columns(2)
+with col_m1:
+    res_tierra = st.text_input("Resistencia a Tierra (MΩ o GΩ)", help="Medición con Megóhmetro")
+with col_m2:
+    res_bobinas = st.text_input("Resistencia entre Bobinas (Ω)", help="U-V, V-W, W-U")
+
+descripcion = st.text_area("Detalles de Reparación y Repuestos")
+
+# --- FUNCIÓN GUARDAR ---
+def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d):
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_existente = conn.read(ttl=0)
@@ -37,6 +57,12 @@ def guardar_datos(f, r, t, d):
             "Fecha": str(f),
             "Responsable": r,
             "Tag": t,
+            "Potencia": pot,
+            "Tension": ten,
+            "Corriente": corr,
+            "RPM": vel,
+            "Res_Tierra": rt,
+            "Res_Bobinas": rb,
             "Descripcion": d
         }])
         
@@ -46,87 +72,63 @@ def guardar_datos(f, r, t, d):
     except Exception as e:
         return False, str(e)
 
-# 4. BOTÓN PRINCIPAL
-if st.button("GUARDAR REGISTRO Y GENERAR PDF"):
+# --- BOTÓN Y GENERACIÓN ---
+if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
     if not tag or not responsable:
-        st.error("⚠️ El Tag y el Responsable son obligatorios.")
+        st.error("⚠️ Tag y Responsable son obligatorios.")
     else:
-        # --- PASO A: GUARDAR EN EXCEL ---
-        exito, msj = guardar_datos(fecha, responsable, tag, descripcion)
+        exito, msj = guardar_datos(fecha, responsable, tag, potencia, tension, corriente, rpm, res_tierra, res_bobinas, descripcion)
         
         if exito:
-            st.success("✅ Datos guardados en Google Sheets")
+            st.success("✅ Datos registrados correctamente")
 
-            # --- PASO B: GENERAR QR (CON DESCRIPCIÓN) ---
-            qr_data = (
-                f"⚡ MARPI ELECTRICIDAD ⚡\n"
-                f"FECHA: {fecha}\n"
-                f"TAG: {tag}\n"
-                f"RESPONSABLE: {responsable}\n"
-                f"REPARACION: {descripcion}"
-            )
-            
-            qr = qrcode.QRCode(version=1, box_size=10, border=5)
-            qr.add_data(qr_data)
-            qr.make(fit=True)
-            img_qr = qr.make_image(fill_color="black", back_color="white")
-            
+            # Generar QR
+            qr_text = (f"MARPI: {tag}\nFECHA: {fecha}\nPOT: {potencia}\n"
+                       f"R.TIERRA: {res_tierra}\nR.BOBINAS: {res_bobinas}")
+            qr = qrcode.make(qr_text)
             buf_qr = BytesIO()
-            img_qr.save(buf_qr, format="PNG")
+            qr.save(buf_qr, format="PNG")
 
-            # --- PASO C: GENERAR PDF ---
-            try:
-                pdf = FPDF()
-                pdf.add_page()
-                
-                if os.path.exists("logo.png"):
-                    pdf.image("logo.png", x=10, y=8, w=30)
-                
-                pdf.set_font("Arial", 'B', 16)
-                pdf.cell(0, 10, "INFORME TECNICO DE REPARACION", ln=True, align='C')
-                pdf.ln(15)
-                
-                # Tabla de datos
-                pdf.set_font("Arial", 'B', 12)
-                pdf.cell(40, 10, "Fecha:", 1)
-                pdf.set_font("Arial", '', 12)
-                pdf.cell(0, 10, f" {fecha}", 1, ln=True)
-                
-                pdf.cell(40, 10, "Motor (Tag):", 1)
-                pdf.cell(0, 10, f" {tag}", 1, ln=True)
-                
-                pdf.cell(40, 10, "Responsable:", 1)
-                pdf.cell(0, 10, f" {responsable}", 1, ln=True)
-                
-                pdf.ln(5)
-                pdf.set_font("Arial", 'B', 12)
-                pdf.cell(0, 10, "Detalles de la reparacion:", ln=True)
-                pdf.set_font("Arial", '', 11)
-                pdf.multi_cell(0, 8, descripcion, border=1)
-                
-                # QR en el PDF
-                with open("temp_qr.png", "wb") as f_temp:
-                    f_temp.write(buf_qr.getvalue())
-                
-                pdf.ln(10)
-                pdf.image("temp_qr.png", x=85, y=pdf.get_y(), w=40)
-                
-                pdf_output = pdf.output(dest='S').encode('latin-1')
-                
-                # Descarga y Visualización
-                st.download_button(
-                    label="📥 DESCARGAR INFORME PDF",
-                    data=pdf_output,
-                    file_name=f"Reparacion_{tag}.pdf",
-                    mime="application/pdf"
-                )
-                
-                st.image(buf_qr.getvalue(), width=200, caption="QR para el motor (Escanealo para probar)")
-                
-            except Exception as e_pdf:
-                st.error(f"Error al crear PDF: {e_pdf}")
+            # Generar PDF
+            pdf = FPDF()
+            pdf.add_page()
+            if os.path.exists("logo.png"):
+                pdf.image("logo.png", 10, 8, 33)
+            
+            pdf.set_font("Arial", 'B', 16)
+            pdf.cell(0, 10, "PROTOCOLO DE PRUEBAS Y REPARACIÓN", ln=True, align='C')
+            pdf.ln(15)
+
+            # Bloque Datos de Placa
+            pdf.set_fill_color(230, 230, 230)
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, " 1. DATOS DE PLACA", 0, 1, 'L', True)
+            pdf.set_font("Arial", '', 11)
+            pdf.cell(0, 8, f"Tag: {tag} | Potencia: {potencia} | Tension: {tension} | RPM: {rpm}", 1, 1)
+            
+            pdf.ln(5)
+            # Bloque Mediciones
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, " 2. MEDICIONES ELÉCTRICAS", 0, 1, 'L', True)
+            pdf.set_font("Arial", '', 11)
+            pdf.cell(0, 8, f"Resistencia a Tierra: {res_tierra}", 1, 1)
+            pdf.cell(0, 8, f"Resistencia entre Bobinas (U-V-W): {res_bobinas}", 1, 1)
+
+            pdf.ln(5)
+            # Bloque Descripción
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, " 3. DETALLE DE TRABAJOS", 0, 1, 'L', True)
+            pdf.set_font("Arial", '', 11)
+            pdf.multi_cell(0, 8, descripcion, 1)
+
+            with open("temp_qr.png", "wb") as f_q:
+                f_q.write(buf_qr.getvalue())
+            pdf.image("temp_qr.png", 85, pdf.get_y() + 10, 40)
+
+            pdf_out = pdf.output(dest='S').encode('latin-1')
+            st.download_button("📥 DESCARGAR PROTOCOLO PDF", pdf_out, f"Protocolo_{tag}.pdf")
+            st.image(buf_qr.getvalue(), width=200)
         else:
-            st.error(f"❌ Error al guardar en Excel: {msj}")
-            st.error(f"Error al generar PDF: {e_pdf}")
+            st.error(f"Error: {msj}")
 
 
