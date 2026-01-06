@@ -74,3 +74,4 @@ if st.button("GUARDAR REGISTRO Y GENERAR PDF"):
             st.error(f"Error al crear PDF: {e_pdf}")
 
 
+
