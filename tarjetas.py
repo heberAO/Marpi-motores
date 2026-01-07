@@ -48,16 +48,17 @@ with col_m3:
     res_bobinas = st.text_input("Resistencia Interna (Ω)", help="V-V, U-U, W-W")
 
 descripcion = st.text_area("Detalles de Reparación y Repuestos")
-tabajos_taller_externo = st.text_area("Detalles de Reparacion")
+tabajos_taller_externo = st.text_area("Reparacion Taller Externo")
 
 # --- FUNCIÓN GUARDAR ---
 def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d):
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_existente = conn.read(ttl=0)
+        fecha_espanol = f.strftime("%d/%m/%Y")
         
         nuevo_registro = pd.DataFrame([{
-            "Fecha": str(f),
+            "Fecha": fecha_spanol,
             "Responsable": r,
             "Tag": t,
             "Potencia": pot,
@@ -86,6 +87,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.success("✅ Datos registrados correctamente")
 
             # Generar QR
+            fecha_qr = fehca.strftime("%d/%m/%Y")
             qr_text = (f"MARPI: {tag}\nFECHA: {fecha}\nPOT: {potencia}\n"
                        f"R.TIERRA: {res_tierra}\nR.BOBINAS: {res_bobinas}")
             qr = qrcode.make(qr_text)
@@ -135,6 +137,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.error(f"Error: {msj}")
             st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
