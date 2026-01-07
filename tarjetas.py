@@ -19,7 +19,7 @@ st.markdown("---")
 st.subheader("📋 Datos del Servicio")
 col_a, col_b, col_c = st.columns(3)
 with col_a:
-    Fecha = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
+    fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY")
 with col_b:
     tag = st.text_input("Tag / ID Motor")
 with col_c:
@@ -137,6 +137,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.error(f"Error: {msj}")
             st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
