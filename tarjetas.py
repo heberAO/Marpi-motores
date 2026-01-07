@@ -58,7 +58,7 @@ def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d):
         fecha_espanol = f.strftime("%d/%m/%Y")
         
         nuevo_registro = pd.DataFrame([{
-            "Fecha": fecha_spanol,
+            "Fecha": fecha_espanol,
             "Responsable": r,
             "Tag": t,
             "Potencia": pot,
@@ -137,6 +137,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.error(f"Error: {msj}")
             st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
