@@ -12,7 +12,7 @@ st.set_page_config(page_title="Marpi Motores - Técnico", page_icon="⚡", layou
 if os.path.exists("logo.png"):
     st.image("logo.png", width=150)
 
-st.title("SISTEMA TÉCNICO MARPI ELECTRICIDAD")
+st.title("SISTEMA REGISTRO MARPI ELECTRICIDAD")
 st.markdown("---")
 
 # --- SECCIÓN 1: DATOS BÁSICOS ---
@@ -44,6 +44,8 @@ with col_m1:
     res_tierra = st.text_input("Resistencia a Tierra (MΩ o GΩ)", help="Medición con Megóhmetro")
 with col_m2:
     res_bobinas = st.text_input("Resistencia entre Bobinas (Ω)", help="U-V, V-W, W-U")
+with col_m3:
+    res_bobinas = st.text_input("Resistencia Interna (Ω)", help="V-V, U-U, W-W")
 
 descripcion = st.text_area("Detalles de Reparación y Repuestos")
 
@@ -130,5 +132,6 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.image(buf_qr.getvalue(), width=200)
         else:
             st.error(f"Error: {msj}")
+
 
 
