@@ -39,7 +39,7 @@ with col_p4:
 
 # --- SECCIÓN 3: MEDICIONES ELÉCTRICAS ---
 st.subheader("🧪 Mediciones de Control")
-col_m1, col_m2 = st.columns(2)
+col_m1, col_m2 col_m3 = st.columns(3)
 with col_m1:
     res_tierra = st.text_input("Resistencia a Tierra (MΩ o GΩ)", help="Medición con Megóhmetro")
 with col_m2:
@@ -132,6 +132,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.image(buf_qr.getvalue(), width=200)
         else:
             st.error(f"Error: {msj}")
+
 
 
 
