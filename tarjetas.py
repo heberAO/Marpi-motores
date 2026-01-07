@@ -133,6 +133,8 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.image(buf_qr.getvalue(), width=200)
         else:
             st.error(f"Error: {msj}")
+            st.markdown("---")
+st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
 
 
 
