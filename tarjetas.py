@@ -48,6 +48,7 @@ with col_m3:
     res_bobinas = st.text_input("Resistencia Interna (Ω)", help="V-V, U-U, W-W")
 
 descripcion = st.text_area("Detalles de Reparación y Repuestos")
+tabajos_taller_externo = st.text_area("Detalles de Reparacion")
 
 # --- FUNCIÓN GUARDAR ---
 def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d):
@@ -132,6 +133,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.image(buf_qr.getvalue(), width=200)
         else:
             st.error(f"Error: {msj}")
+
 
 
 
