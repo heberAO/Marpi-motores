@@ -12,7 +12,7 @@ st.set_page_config(page_title="Marpi Motores - Técnico", page_icon="⚡", layou
 if os.path.exists("logo.png"):
     st.image("logo.png", width=150)
 
-st.title("SISTEMA REGISTRO MARPI ELECTRICIDAD")
+st.title("SISTEMA DE REGISTRO MARPI ELEC.")
 st.markdown("---")
 
 # --- SECCIÓN 1: DATOS BÁSICOS ---
@@ -133,6 +133,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.image(buf_qr.getvalue(), width=200)
         else:
             st.error(f"Error: {msj}")
+
 
 
 
