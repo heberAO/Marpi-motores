@@ -51,7 +51,7 @@ descripcion = st.text_area("Detalles de Reparación y Repuestos", key="ins_d")
 externos_tabajos = st.text_area("Reparacion Taller Externo", key="ins_externo")
 
 # --- FUNCIÓN GUARDAR ---
-def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d):
+def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d, externo):
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_existente = conn.read(ttl=0)
@@ -150,6 +150,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.error(f"Error: {msj}")
             st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
