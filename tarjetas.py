@@ -83,15 +83,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
         st.error("⚠️ Tag y Responsable son obligatorios.")
     else:
         exito, msj = guardar_datos(fecha, responsable, tag, potencia, tension, corriente, rpm, res_tierra, res_bobinas, descripcion)
-        if exito:
-           st.success(msj)
-           st.divider()
-           st.subheader("¿Terminaste con este motor?")
-           if st.button("🧹 LIMPIAR FORMULARIO PARA NUEVA CARGA"):
-              for key in list(st.session_state.keys()):
-                  if key.startswith("ins_"):
-                      st.session_state[key] = ""
-              st.rerun()
+        if exito
             # Generar QR
             fecha_qr = fecha.strftime("%d/%m/%Y")
             qr_text = (
@@ -105,7 +97,14 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             qr = qrcode.make(qr_text)
             buf_qr = BytesIO()
             qr.save(buf_qr, format="PNG")
-
+            st.image(buf_qr, caption="✅ Código QR generado para el motor", width=250)
+            st.divider()
+            st.subheader("¿Deseas cargar otro motor?")
+            if st.button("🧹 LIMPIAR FORMULARIO PARA NUEVA CARGA"):
+                for key in list(st.session_state.keys()):
+                    if key.startswith("ins_"):
+                         st.session_state[key] = ""
+                st.rerun()
             # Generar PDF
             pdf = FPDF()
             pdf.add_page()
@@ -150,6 +149,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.error(f"Error: {msj}")
             st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
