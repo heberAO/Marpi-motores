@@ -91,17 +91,16 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
               for key in list(st.session_state.keys()):
                   if key.startswith("ins_"):
                       st.session_state[key] = ""
-              st.rerun() 
-        
+              st.rerun()
             # Generar QR
             fecha_qr = fecha.strftime("%d/%m/%Y")
             qr_text = (
-                f"MARPI: {tag}\n"
-                f"FECHA: {fecha_qr}\n"
-                f"POTENCIA: {potencia}\n"
-                f"R.TIERRA: {res_tierra}\n"
-                f"R.BOBINAS: {res_bobinas}\n"
-                f"DESC: {descripcion}"
+               f"MARPI: {tag}\n"
+               f"FECHA: {fecha_qr}\n"
+               f"POTENCIA: {potencia}\n"
+               f"R.TIERRA: {res_tierra}\n"
+               f"R.BOBINAS: {res_bobinas}\n"
+               f"DESC: {descripcion}"
             )
             qr = qrcode.make(qr_text)
             buf_qr = BytesIO()
@@ -151,6 +150,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.error(f"Error: {msj}")
             st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
