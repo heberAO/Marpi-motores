@@ -67,7 +67,8 @@ def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d):
             "RPM": vel,
             "Res_Tierra": rt,
             "Res_Bobinas": rb,
-            "Descripcion": d
+            "Descripcion": d,
+            "Trabajos_taller_externo": te,
         }])
         
         df_final = pd.concat([df_existente, nuevo_registro], ignore_index=True)
@@ -89,7 +90,8 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             # Generar QR
             fecha_qr = fecha.strftime("%d/%m/%Y")
             qr_text = (f"MARPI: {tag}\nFECHA: {fecha}\nPOT: {potencia}\n"
-                       f"R.TIERRA: {res_tierra}\nR.BOBINAS: {res_bobinas}")
+                       f"R.TIERRA: {res_tierra}\nR.BOBINAS: {res_bobinas}
+                      f"descripcion: {descripcion}")
             qr = qrcode.make(qr_text)
             buf_qr = BytesIO()
             qr.save(buf_qr, format="PNG")
@@ -118,6 +120,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             pdf.set_font("Arial", '', 11)
             pdf.cell(0, 8, f"Resistencia a Tierra: {res_tierra}", 1, 1)
             pdf.cell(0, 8, f"Resistencia entre Bobinas (U-V-W): {res_bobinas}", 1, 1)
+            pdf.cell(0, 8, f"Resistencia interna: {res_bobinas}", 1, 1)
 
             pdf.ln(5)
             # Bloque Descripción
@@ -137,6 +140,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.error(f"Error: {msj}")
             st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
