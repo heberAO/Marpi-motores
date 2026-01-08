@@ -48,7 +48,7 @@ with col_m3:
     res_bineterna = st.text_input("Resistencia Interna (Ω)", help="V-V, U-U, W-W", key="ins_i")
 
 descripcion = st.text_area("Detalles de Reparación y Repuestos", key="ins_d")
-tabajos_taller_externo = st.text_area("Reparacion Taller Externo", key="ins_t")
+externos_tabajos = st.text_area("Reparacion Taller Externo", key="ins_e")
 
 # --- FUNCIÓN GUARDAR ---
 def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d):
@@ -69,7 +69,7 @@ def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d):
             "Res_Bobinas": rb,
             "Res_interna": i,
             "Descripcion": d,
-            "Trabajos_taller_externo": t,
+            "Trabajos_taller_externo": e,
         }])
         
         df_final = pd.concat([df_existente, nuevo_registro], ignore_index=True)
@@ -150,6 +150,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.error(f"Error: {msj}")
             st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
