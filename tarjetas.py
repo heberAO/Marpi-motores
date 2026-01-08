@@ -21,9 +21,9 @@ col_a, col_b, col_c = st.columns(3)
 with col_a:
     fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY")
 with col_b:
-    tag = st.text_input("Tag / ID Motor", key="ins_tag")
+    tag = st.text_input("Tag / ID Motor", key="ins_t")
 with col_c:
-    responsable = st.text_input("Técnico Responsable", key="ins_resp")
+    responsable = st.text_input("Técnico Responsable", key="ins_r")
 
 # --- SECCIÓN 2: DATOS DE PLACA ---
 st.subheader("🏷️ Datos de Placa")
@@ -149,6 +149,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.error(f"Error: {msj}")
             st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
