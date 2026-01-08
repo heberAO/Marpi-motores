@@ -68,7 +68,7 @@ def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d):
             "Res_Tierra": rt,
             "Res_Bobinas": rb,
             "Descripcion": d,
-            "Trabajos_taller_externo": te,
+            "Trabajos_taller_externo": t,
         }])
         
         df_final = pd.concat([df_existente, nuevo_registro], ignore_index=True)
@@ -145,6 +145,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.error(f"Error: {msj}")
             st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
