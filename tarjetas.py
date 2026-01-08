@@ -21,34 +21,34 @@ col_a, col_b, col_c = st.columns(3)
 with col_a:
     fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY")
 with col_b:
-    tag = st.text_input("Tag / ID Motor")
+    tag = st.text_input("Tag / ID Motor", key="ins_tag")
 with col_c:
-    responsable = st.text_input("Técnico Responsable")
+    responsable = st.text_input("Técnico Responsable", key="ins_resp")
 
 # --- SECCIÓN 2: DATOS DE PLACA ---
 st.subheader("🏷️ Datos de Placa")
 col_p1, col_p2, col_p3, col_p4 = st.columns(4)
 with col_p1:
-    potencia = st.text_input("Potencia (HP/kW)")
+    potencia = st.text_input("Potencia (HP/kW)", key="ins_pot")
 with col_p2:
-    tension = st.text_input("Tensión (V)")
+    tension = st.text_input("Tensión (V)", key="ins_ten")
 with col_p3:
-    corriente = st.text_input("Corriente (A)")
+    corriente = st.text_input("Corriente (A)", key="ins_corr")
 with col_p4:
-    rpm = st.text_input("RPM")
+    rpm = st.text_input("RPM", key="ins_vel", key]="ins_vel")
 
 # --- SECCIÓN 3: MEDICIONES ELÉCTRICAS ---
 st.subheader("🧪 Mediciones de Control")
 col_m1, col_m2, col_m3 = st.columns(3)
 with col_m1:
-    res_tierra = st.text_input("Resistencia a Tierra (MΩ o GΩ)", help="Medición con Megóhmetro")
+    res_tierra = st.text_input("Resistencia a Tierra (MΩ o GΩ)", help="Medición con Megóhmetro", key="ins_rt")
 with col_m2:
-    res_bobinas = st.text_input("Resistencia entre Bobinas (Ω)", help="U-V, V-W, W-U")
+    res_bobinas = st.text_input("Resistencia entre Bobinas (Ω)", help="U-V, V-W, W-U", key="ins_rb")
 with col_m3:
-    res_bobinas = st.text_input("Resistencia Interna (Ω)", help="V-V, U-U, W-W")
+    res_bobinas = st.text_input("Resistencia Interna (Ω)", help="V-V, U-U, W-W", key="ins_rb")
 
-descripcion = st.text_area("Detalles de Reparación y Repuestos")
-tabajos_taller_externo = st.text_area("Reparacion Taller Externo")
+descripcion = st.text_area("Detalles de Reparación y Repuestos", key="ins_d")
+tabajos_taller_externo = st.text_area("Reparacion Taller Externo", key="ins_t")
 
 # --- FUNCIÓN GUARDAR ---
 def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d):
@@ -83,10 +83,16 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
         st.error("⚠️ Tag y Responsable son obligatorios.")
     else:
         exito, msj = guardar_datos(fecha, responsable, tag, potencia, tension, corriente, rpm, res_tierra, res_bobinas, descripcion)
+    if exito:
+            st.success(msj)
+        st.divider()
+        st.subheader("¿Terminaste con este motor?")
+        if st.button("🧹 LIMPIAR FORMULARIO PARA NUEVA CARGA"):
+           for key in list(st.session_state.keys()):
+                        if key.startswith("ins_"):
+                            st.session_state[key] = ""
+                    st.rerun() 
         
-        if exito:
-            st.success("✅ Datos registrados correctamente")
-
             # Generar QR
             fecha_qr = fecha.strftime("%d/%m/%Y")
             qr_text = (
@@ -145,6 +151,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.error(f"Error: {msj}")
             st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
