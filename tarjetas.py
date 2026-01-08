@@ -38,6 +38,14 @@ with col_p4:
     rpm = st.text_input("RPM", key="ins_vel")
 
 # --- MEDICIONES ELÉCTRICAS --- (Igual que antes)
+st.subheader("MEDICIONES ELECTRICAS")
+col_m1, col_m2, col_m3 = st.columns (3)
+with col_m1:
+    res_bobinas = st.text_input("Resistencia entre tierra (Ω)", help="U-V, V-W, W-U", key="ins_rt")
+with col_m2:
+    res_bobinas = st.text_input("Resistencia entre Bobinas (Ω)", help="U-V, V-W, W-U", key="ins_rb")
+with col_m3:
+    res_interna = st.text_input("Resistencia Interna (Ω)", help="V-V, U-U, W-W", key="ins_int")
 descripcion = st.text_area("Detalles de Reparación y Repuestos", key="ins_d")
 externo = st.text_area("Reparacion Taller Externo", key="ins_externo")
 
@@ -135,6 +143,7 @@ if st.session_state.guardado:
 
 st.markdown("---")
 st.caption("Sistema diseñado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
