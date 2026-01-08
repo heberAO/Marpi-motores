@@ -1,4 +1,3 @@
-st.session_state.contador_limpieza = 0
 import streamlit as st
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
@@ -7,6 +6,7 @@ import qrcode
 from io import BytesIO
 from fpdf import FPDF
 import os
+st.session_state.contador_limpieza = 0
 
 st.set_page_config(page_title="Marpi Motores - Técnico", page_icon="⚡", layout="wide")
 if 'form_id' not in st.session_state:
@@ -152,6 +152,7 @@ if st.session_state.get('guardado', False):
 
 st.markdown("---")
 st.caption("Sistema diseñado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
