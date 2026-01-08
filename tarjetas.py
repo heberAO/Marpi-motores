@@ -99,8 +99,8 @@ with col_btn1:
 with col_btn2:
     if st.button("🧹 NUEVA CARGA (LIMPIAR)"):
         for key in list(st.session_state.keys()):
-            if key.startswith("ins_"):
-                st.session_state[key] = ""
+            for key in list(st.session_state.keys()):
+            del st.session_state[key]
         st.session_state.clear()
         st.rerun()
 
@@ -146,6 +146,7 @@ if st.session_state.get('guardado', False):
 
 st.markdown("---")
 st.caption("Sistema diseñado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
