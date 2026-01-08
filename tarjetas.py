@@ -21,9 +21,9 @@ col_a, col_b, col_c = st.columns(3)
 with col_a:
     fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY")
 with col_b:
-    tag = st.text_input("Tag / ID Motor", key="ins_t")
+    tag = st.text_input("Tag / ID Motor", key="ins_tag")
 with col_c:
-    responsable = st.text_input("Técnico Responsable", key="ins_r")
+    responsable = st.text_input("Técnico Responsable", key="ins_resp")
 
 # --- SECCIÓN 2: DATOS DE PLACA ---
 st.subheader("🏷️ Datos de Placa")
@@ -101,12 +101,11 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             qr.save(buf_qr, format="PNG")
             st.image(buf_qr, caption="✅ Código QR generado para el motor", width=250)
             st.divider()
+            # Borra absolutamente todo
             st.subheader("¿Deseas cargar otro motor?")
             if st.button("🧹 LIMPIAR FORMULARIO PARA NUEVA CARGA"):
-                for key in list(st.session_state.keys()):
-                    if key.startswith("ins_"):
-                         st.session_state[key] = ""
-                st.rerun()
+                    st.session_state.clear() # Borra absolutamente todo
+                    st.rerun()
             # Generar PDF
             pdf = FPDF()
             pdf.add_page()
@@ -151,6 +150,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.error(f"Error: {msj}")
             st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
