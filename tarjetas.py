@@ -8,6 +8,11 @@ from fpdf import FPDF
 import os
 
 st.set_page_config(page_title="Marpi Motores - Técnico", page_icon="⚡", layout="wide")
+if 'form_id' not in st.session_state:
+    st.session_state.form_id = 0
+
+if 'guardado' not in st.session_state:
+    st.session_state.guardado = False
 
 if os.path.exists("logo.png"):
     st.image("logo.png", width=150)
@@ -17,13 +22,15 @@ st.markdown("---")
 
 # --- SECCIÓN 1: DATOS BÁSICOS ---
 st.subheader("📋 Datos del Servicio")
-col_a, col_b, col_c = st.columns(3)
-with col_a:
-    fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY")
-with col_b:
-    tag = st.text_input("Tag / ID Motor", key="ins_tag")
-with col_c:
-    responsable = st.text_input("Técnico Responsable", key="ins_resp")
+with st.container(key=f"marco_{st.session_state.form_id}"):
+    st.subheader("📋 Datos del Servicio")
+    col_a, col_b, col_c = st.columns(3)
+    with col_a:
+        fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY")
+    with col_b:
+        tag = st.text_input("Tag / ID Motor", key="ins_tag")
+    with col_c:
+        responsable = st.text_input("Técnico Responsable", key="ins_resp")
 
 # --- SECCIÓN 2: DATOS DE PLACA ---
 st.subheader("🏷️ Datos de Placa")
@@ -97,10 +104,8 @@ with col_btn1:
                 st.error(f"Error al guardar: {msj}")
 
 with col_btn2:
-    if st.button("🧹 NUEVA CARGA (LIMPIAR)"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.session_state.clear()
+   if st.button("🧹 LIMPIAR"):
+        st.session_state.form_id += 1
         st.rerun()
 
 # --- SI YA SE GUARDÓ, MOSTRAR QR Y PDF ---
@@ -145,6 +150,7 @@ if st.session_state.get('guardado', False):
 
 st.markdown("---")
 st.caption("Sistema diseñado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
