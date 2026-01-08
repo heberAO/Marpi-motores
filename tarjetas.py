@@ -45,7 +45,7 @@ with col_m1:
 with col_m2:
     res_bobinas = st.text_input("Resistencia entre Bobinas (Ω)", help="U-V, V-W, W-U", key="ins_rb")
 with col_m3:
-    res_interna = st.text_input("Resistencia Interna (Ω)", help="V-V, U-U, W-W", key="ins_int")
+    res_interna = st.text_input("Resistencia Interna (Ω)", help="V-V, U-U, W-W", key="ins_ri")
 descripcion = st.text_area("Detalles de Reparación y Repuestos", key="ins_d")
 externo = st.text_area("Reparacion Taller Externo", key="ins_externo")
 
@@ -54,7 +54,7 @@ if 'guardado' not in st.session_state:
     st.session_state.guardado = False
 
 # --- FUNCIÓN GUARDAR ---
-def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d, ext):
+def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, ri, d, ext):
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_existente = conn.read(ttl=0)
@@ -70,9 +70,9 @@ def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d, ext):
             "RPM": vel,
             "Res_Tierra": rt, 
             "Res_Bobinas": rb, 
-            "Res_interna": res_ineterna, 
+            "Res_interna": ri, 
             "Descripcion": d, 
-            "Externo": ext,
+            "Externo": externo,
         }])
         
         df_final = pd.concat([df_existente, nuevo_registro], ignore_index=True)
@@ -89,7 +89,7 @@ with col_btn1:
         if not tag or not responsable:
             st.error("⚠️ Tag y Responsable son obligatorios.")
         else:
-            exito, msj = guardar_datos(fecha, responsable, tag, potencia, tension, corriente, rpm, res_tierra, res_bobinas, descripcion, externo)
+            exito, msj = guardar_datos(fecha, responsable, tag, potencia, tension, corriente, rpm, res_tierra, res_bobinas, res_interna, descripcion, externo)
             if exito:
                 st.session_state.guardado = True
                 st.success("✅ Datos guardados correctamente.")
@@ -143,6 +143,7 @@ if st.session_state.guardado:
 
 st.markdown("---")
 st.caption("Sistema diseñado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
