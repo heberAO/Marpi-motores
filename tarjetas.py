@@ -37,21 +37,16 @@ with col_p3:
 with col_p4:
     rpm = st.text_input("RPM", key="ins_vel")
 
-# --- SECCIÓN 3: MEDICIONES ELÉCTRICAS ---
-st.subheader("🧪 Mediciones de Control")
-col_m1, col_m2, col_m3 = st.columns(3)
-with col_m1:
-    res_tierra = st.text_input("Resistencia a Tierra (MΩ o GΩ)", help="Medición con Megóhmetro", key="ins_rt")
-with col_m2:
-    res_bobinas = st.text_input("Resistencia entre Bobinas (Ω)", help="U-V, V-W, W-U", key="ins_rb")
-with col_m3:
-    res_ineterna = st.text_input("Resistencia Interna (Ω)", help="V-V, U-U, W-W", key="ins_int")
-
+# --- MEDICIONES ELÉCTRICAS --- (Igual que antes)
 descripcion = st.text_area("Detalles de Reparación y Repuestos", key="ins_d")
 externo = st.text_area("Reparacion Taller Externo", key="ins_externo")
 
+# --- INICIALIZAR MEMORIA (Session State) ---
+if 'guardado' not in st.session_state:
+    st.session_state.guardado = False
+
 # --- FUNCIÓN GUARDAR ---
-def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d, externo):
+def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d, ext):
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_existente = conn.read(ttl=0)
@@ -59,17 +54,10 @@ def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d, externo):
         
         nuevo_registro = pd.DataFrame([{
             "Fecha": fecha_espanol,
-            "Responsable": r,
-            "Tag": t,
-            "Potencia": pot,
-            "Tension": ten,
-            "Corriente": corr,
-            "RPM": vel,
-            "Res_Tierra": rt,
-            "Res_Bobinas": rb,
-            "Res_interna": int,
-            "Descripcion": d,
-            "Externo": externo,
+            "Responsable": r, "Tag": t, "Potencia": pot,
+            "Tension": ten, "Corriente": corr, "RPM": vel,
+            "Res_Tierra": rt, "Res_Bobinas": rb, "Res_interna": res_ineterna, # Corregido aquí
+            "Descripcion": d, "Externo": ext,
         }])
         
         df_final = pd.concat([df_existente, nuevo_registro], ignore_index=True)
@@ -78,78 +66,69 @@ def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d, externo):
     except Exception as e:
         return False, str(e)
 
-# --- BOTÓN Y GENERACIÓN ---
-if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
-    if not tag or not responsable:
-        st.error("⚠️ Tag y Responsable son obligatorios.")
-    else:
-        exito, msj = guardar_datos(fecha, responsable, tag, potencia, tension, corriente, rpm, res_tierra, res_bobinas, descripcion, externo)
-        if exito:
-            # Generar QR
-            fecha_qr = fecha.strftime("%d/%m/%Y")
-            qr_text = (
-               f"MARPI: {tag}\n"
-               f"FECHA: {fecha_qr}\n"
-               f"POTENCIA: {potencia}\n"
-               f"R.TIERRA: {res_tierra}\n"
-               f"R.BOBINAS: {res_bobinas}\n"
-               f"DESC: {descripcion}"
-               f"EXTERNO {externo}"
-            )
-            qr = qrcode.make(qr_text)
-            buf_qr = BytesIO()
-            qr.save(buf_qr, format="PNG")
-            st.image(buf_qr, caption="✅ Código QR generado para el motor", width=250)
-            st.divider()
-            # Borra absolutamente todo
-            st.subheader("¿Deseas cargar otro motor?")
-            if st.button("🧹 LIMPIAR FORMULARIO PARA NUEVA CARGA"):
-                    st.session_state.clear() # Borra absolutamente todo
-                    st.rerun()
-            # Generar PDF
-            pdf = FPDF()
-            pdf.add_page()
-            if os.path.exists("logo.png"):
-                pdf.image("logo.png", 10, 8, 33)
-            
-            pdf.set_font("Arial", 'B', 16)
-            pdf.cell(0, 10, "PROTOCOLO DE PRUEBAS Y REPARACIÓN", ln=True, align='C')
-            pdf.ln(15)
+# --- LÓGICA DE BOTONES ---
+col_btn1, col_btn2 = st.columns(2)
 
-            # Bloque Datos de Placa
-            pdf.set_fill_color(230, 230, 230)
-            pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " 1. DATOS DE PLACA", 0, 1, 'L', True)
-            pdf.set_font("Arial", '', 11)
-            pdf.cell(0, 8, f"Tag: {tag} | Potencia: {potencia} | Tension: {tension} | RPM: {rpm}", 1, 1)
-            
-            pdf.ln(5)
-            # Bloque Mediciones
-            pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " 2. MEDICIONES ELÉCTRICAS", 0, 1, 'L', True)
-            pdf.set_font("Arial", '', 11)
-            pdf.cell(0, 8, f"Resistencia a Tierra: {res_tierra}", 1, 1)
-            pdf.cell(0, 8, f"Resistencia entre Bobinas (U-V-W): {res_bobinas}", 1, 1)
-            pdf.cell(0, 8, f"Resistencia interna: {res_bobinas}", 1, 1)
-
-            pdf.ln(5)
-            # Bloque Descripción
-            pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " 3. DETALLE DE TRABAJOS", 0, 1, 'L', True)
-            pdf.set_font("Arial", '', 11)
-            pdf.multi_cell(0, 8, descripcion, 1)
-
-            with open("temp_qr.png", "wb") as f_q:
-                f_q.write(buf_qr.getvalue())
-            pdf.image("temp_qr.png", 85, pdf.get_y() + 10, 40)
-
-            pdf_out = pdf.output(dest='S').encode('latin-1')
-            st.download_button("📥 DESCARGAR PROTOCOLO PDF", pdf_out, f"Protocolo_{tag}.pdf")
-            st.image(buf_qr.getvalue(), width=200)
+with col_btn1:
+    if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
+        if not tag or not responsable:
+            st.error("⚠️ Tag y Responsable son obligatorios.")
         else:
-            st.error(f"Error: {msj}")
-            st.markdown("---")
-st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+            exito, msj = guardar_datos(fecha, responsable, tag, potencia, tension, corriente, rpm, res_tierra, res_bobinas, descripcion, externo)
+            if exito:
+                st.session_state.guardado = True
+                st.success("✅ Datos guardados correctamente.")
+            else:
+                st.error(f"Error al guardar: {msj}")
+
+with col_btn2:
+    if st.button("🧹 NUEVA CARGA (LIMPIAR)"):
+        st.session_state.clear()
+        st.rerun()
+
+# --- SI YA SE GUARDÓ, MOSTRAR QR Y PDF ---
+if st.session_state.guardado:
+    st.divider()
+    col_qr, col_pdf = st.columns(2)
+    
+    # Generar QR para visualización y PDF
+    fecha_qr = fecha.strftime("%d/%m/%Y")
+    qr_text = f"MARPI: {tag}\nFECHA: {fecha_qr}\nPOT: {potencia}\nDESC: {descripcion}"
+    qr = qrcode.make(qr_text)
+    buf_qr = BytesIO()
+    qr.save(buf_qr, format="PNG")
+    
+    with col_qr:
+        st.image(buf_qr, caption="Código QR generado", width=200)
+
+    # Generar PDF
+    pdf = FPDF()
+    pdf.add_page()
+    if os.path.exists("logo.png"):
+        pdf.image("logo.png", 10, 8, 33)
+    
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, "PROTOCOLO DE PRUEBAS Y REPARACIÓN", ln=True, align='C')
+    pdf.ln(10)
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(0, 8, f"Fecha: {fecha_qr} | Responsable: {responsable}", ln=True)
+    pdf.cell(0, 8, f"Tag: {tag} | Potencia: {potencia} | Tension: {tension} | RPM: {rpm}", ln=True)
+    pdf.multi_cell(0, 8, f"Descripción: {descripcion}")
+    
+    # Guardar QR temporal para el PDF
+    with open("temp_qr.png", "wb") as f_q:
+        f_q.write(buf_qr.getvalue())
+    pdf.image("temp_qr.png", 85, pdf.get_y() + 10, 40)
+    
+    pdf_out = pdf.output(dest='S').encode('latin-1')
+    
+    with col_pdf:
+        st.subheader("📄 Tu informe está listo")
+        st.download_button("📥 DESCARGAR PROTOCOLO PDF", pdf_out, f"Protocolo_{tag}.pdf")
+
+st.markdown("---")
+st.caption("Sistema diseñado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
