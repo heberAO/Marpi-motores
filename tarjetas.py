@@ -98,11 +98,14 @@ with col_btn1:
 
 with col_btn2:
     if st.button("🧹 NUEVA CARGA (LIMPIAR)"):
+        for key in list(st.session_state.keys()):
+            if key.startswith("ins_"):
+                st.session_state[key] = ""
         st.session_state.clear()
         st.rerun()
 
 # --- SI YA SE GUARDÓ, MOSTRAR QR Y PDF ---
-if st.session_state.guardado:
+if st.session_state.get.('guardado', False):
     st.divider()
     col_qr, col_pdf = st.columns(2)
     
@@ -143,6 +146,7 @@ if st.session_state.guardado:
 
 st.markdown("---")
 st.caption("Sistema diseñado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
