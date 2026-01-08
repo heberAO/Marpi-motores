@@ -105,11 +105,9 @@ with col_btn1:
 
 with col_btn2:
    if st.button("🧹 LIMPIAR"):
-       st.session_state.guardado = False
-       for key in st.session_state.keys():
-           if key.startswith("ins_"):
-               st.session_state[key] = ""
-       st.rerun()
+      for key in list(st.session_state.keys()):
+            del st.session_state[key] 
+      st.rerun()
 
 # --- SI YA SE GUARDÓ, MOSTRAR QR Y PDF ---
 if st.session_state.get('guardado', False):
@@ -153,6 +151,7 @@ if st.session_state.get('guardado', False):
 
 st.markdown("---")
 st.caption("Sistema diseñado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
