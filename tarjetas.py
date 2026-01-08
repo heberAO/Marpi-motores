@@ -98,7 +98,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             qr_text = (
                 f"MARPI: {tag}\n"
                 f"FECHA: {fecha_qr}\n"
-                f"POT: {potencia}\n"
+                f"POTENCIA: {potencia}\n"
                 f"R.TIERRA: {res_tierra}\n"
                 f"R.BOBINAS: {res_bobinas}\n"
                 f"DESC: {descripcion}"
@@ -151,6 +151,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.error(f"Error: {msj}")
             st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
