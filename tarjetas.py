@@ -83,7 +83,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
         st.error("⚠️ Tag y Responsable son obligatorios.")
     else:
         exito, msj = guardar_datos(fecha, responsable, tag, potencia, tension, corriente, rpm, res_tierra, res_bobinas, descripcion)
-        if exito
+        if exito:
             # Generar QR
             fecha_qr = fecha.strftime("%d/%m/%Y")
             qr_text = (
@@ -149,6 +149,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.error(f"Error: {msj}")
             st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
