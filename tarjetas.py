@@ -1,3 +1,4 @@
+st.session_state.contador_limpieza = 0
 import streamlit as st
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
@@ -151,6 +152,7 @@ if st.session_state.get('guardado', False):
 
 st.markdown("---")
 st.caption("Sistema diseñado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
