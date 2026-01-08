@@ -105,7 +105,7 @@ with col_btn2:
         st.rerun()
 
 # --- SI YA SE GUARDÓ, MOSTRAR QR Y PDF ---
-if st.session_state.get.('guardado', False):
+if st.session_state.get('guardado', False):
     st.divider()
     col_qr, col_pdf = st.columns(2)
     
@@ -146,6 +146,7 @@ if st.session_state.get.('guardado', False):
 
 st.markdown("---")
 st.caption("Sistema diseñado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
