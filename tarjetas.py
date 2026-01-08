@@ -54,10 +54,17 @@ def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, d, ext):
         
         nuevo_registro = pd.DataFrame([{
             "Fecha": fecha_espanol,
-            "Responsable": r, "Tag": t, "Potencia": pot,
-            "Tension": ten, "Corriente": corr, "RPM": vel,
-            "Res_Tierra": rt, "Res_Bobinas": rb, "Res_interna": res_ineterna, # Corregido aquí
-            "Descripcion": d, "Externo": ext,
+            "Responsable": r, 
+            "Tag": t, 
+            "Potencia": pot,
+            "Tension": ten, 
+            "Corriente": corr, 
+            "RPM": vel,
+            "Res_Tierra": rt, 
+            "Res_Bobinas": rb, 
+            "Res_interna": res_ineterna, 
+            "Descripcion": d, 
+            "Externo": ext,
         }])
         
         df_final = pd.concat([df_existente, nuevo_registro], ignore_index=True)
@@ -128,6 +135,7 @@ if st.session_state.guardado:
 
 st.markdown("---")
 st.caption("Sistema diseñado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
