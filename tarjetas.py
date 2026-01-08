@@ -35,7 +35,7 @@ with col_p2:
 with col_p3:
     corriente = st.text_input("Corriente (A)", key="ins_corr")
 with col_p4:
-    rpm = st.text_input("RPM", key="ins_vel", key="ins_vel")
+    rpm = st.text_input("RPM", key="ins_vel")
 
 # --- SECCIÓN 3: MEDICIONES ELÉCTRICAS ---
 st.subheader("🧪 Mediciones de Control")
@@ -149,6 +149,7 @@ if st.button("💾 GUARDAR REGISTRO Y GENERAR INFORME"):
             st.error(f"Error: {msj}")
             st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
