@@ -144,7 +144,7 @@ with col_btn2:
             del st.session_state[key]
         
         # 3. Volvemos a crear las variables (MIRA LOS ESPACIOS AQUÍ)
-        st.session_state.form_id = nuevo_id
+        st.session_state.form_id += 1
         st.session_state.guardado = False
         
         # 4. Reiniciamos
@@ -218,6 +218,7 @@ elif modo == "🔍 Historial y Buscador":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
