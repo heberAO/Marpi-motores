@@ -70,25 +70,20 @@ if modo == "📝 Nueva Carga":
     with col_p4:
         st.text_input("RPM", key=f"rpm_{st.session_state.form_id}")
 
-    st.subheader("🏷️ Datos de Placa")
-    col_p1, col_p2, col_p3, col_p4 = st.columns(4)
-
+    # --- SECCIÓN 2: DATOS DE PLACA ---
+st.subheader("🏷️ Datos de Placa")
+col_p1, col_p2, col_p3, col_p4 = st.columns(4)
 with col_p1:
-    # Ahora el valor por defecto viene de la memoria si existe
-    val_pot = st.session_state.get(f"pot_{st.session_state.form_id}", "")
-    potencia = st.text_input("Potencia (HP/kW)", value=val_pot, key=f"pot_{st.session_state.form_id}")
+    st.text_input("Potencia (HP/kW)", key=f"pot_{st.session_state.form_id}")
 
 with col_p2:
-    val_ten = st.session_state.get(f"ten_{st.session_state.form_id}", "")
-    tension = st.text_input("Tensión (V)", value=val_ten, key=f"ten_{st.session_state.form_id}")
+    st.text_input("Tensión (V)", key=f"ten_{st.session_state.form_id}")
 
 with col_p3:
-    val_corr = st.session_state.get(f"corr_{st.session_state.form_id}", "")
-    corriente = st.text_input("Corriente (A)", value=val_corr, key=f"corr_{st.session_state.form_id}")
+    st.text_input("Corriente (A)", key=f"corr_{st.session_state.form_id}")
 
 with col_p4:
-    val_rpm = st.session_state.get(f"rpm_{st.session_state.form_id}", "")
-    rpm = st.text_input("RPM", value=val_rpm, key=f"rpm_{st.session_state.form_id}")
+    st.text_input("RPM", key=f"rpm_{st.session_state.form_id}")
 # --- MEDICIONES ELÉCTRICAS ---
     st.subheader("MEDICIONES ELECTRICAS")
     col_m1, col_m2, col_m3 = st.columns(3)
