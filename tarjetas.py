@@ -27,17 +27,17 @@ if modo == "📝 Nueva Carga":
         st.subheader("📋 Datos del Servicio")
         col_a, col_b, col_c = st.columns(3)
         
-       with col_a:
-        fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY", key=f"f_nueva_{st.session_state.form_id}")
+        with col_a:
+            fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY", key=f"f_nueva_{st.session_state.form_id}")
     
-       with col_b:
+        with col_b:
         # Agregamos 'ins_' al principio para que sea diferente a cualquier otro
-        tag = st.text_input("Tag / ID Motor", key=f"ins_tag_{st.session_state.form_id}").strip().upper()
-            
+            tag = st.text_input("Tag / ID Motor", key=f"ins_tag_{st.session_state.form_id}").strip().upper()
+                
             if st.button("🔎 Buscar Datos de Placa", key=f"btn_search_{st.session_state.form_id}"):
             # ... (tu lógica de búsqueda igual que antes) ...
-            st.success("Buscando...")
-            st.rerun()
+                st.success("Buscando...")
+                st.rerun()
                     
                     # Buscamos si el motor existe
                     motor_existente = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
@@ -241,6 +241,7 @@ elif modo == "🔍 Historial y Buscador":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
