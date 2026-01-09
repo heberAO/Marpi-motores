@@ -112,13 +112,19 @@ with col_btn1:
 
 with col_btn2:
     if st.button("🧹 LIMPIAR"):
-       nuevo_id = st.session_state.get('form_id', 0) + 1
-       for key in list(st.session_state.keys()):
+        # 1. Guardamos el número actual para que no se pierda
+        nuevo_id = st.session_state.get('form_id', 0) + 1
+        
+        # 2. Borramos la memoria
+        for key in list(st.session_state.keys()):
             del st.session_state[key]
+        
+        # 3. Volvemos a crear las variables (MIRA LOS ESPACIOS AQUÍ)
         st.session_state.form_id = nuevo_id
         st.session_state.guardado = False
+        
+        # 4. Reiniciamos
         st.rerun()
-
 # --- SI YA SE GUARDÓ, MOSTRAR QR Y PDF ---
 if st.session_state.get('guardado', False):
     st.divider()
@@ -161,6 +167,7 @@ if st.session_state.get('guardado', False):
 
 st.markdown("---")
 st.caption("Sistema diseñado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
