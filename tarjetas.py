@@ -6,67 +6,73 @@ import qrcode
 from io import BytesIO
 from fpdf import FPDF
 import os
-st.session_state.contador_limpieza = 0
 
-st.set_page_config(page_title="Marpi Motores - Técnico", page_icon="⚡", layout="wide")
+# 1. INICIALIZACIÓN (Debe estar arriba de todo)
 if 'form_id' not in st.session_state:
     st.session_state.form_id = 0
-
 if 'guardado' not in st.session_state:
     st.session_state.guardado = False
+
+st.set_page_config(page_title="Marpi Motores - Técnico", page_icon="⚡", layout="wide")
 
 if os.path.exists("logo.png"):
     st.image("logo.png", width=150)
 
 st.title("SISTEMA DE REGISTRO MARPI ELEC.")
 st.markdown("---")
-
-# --- SECCIÓN 1: DATOS BÁSICOS ---
-st.subheader("📋 Datos del Servicio")
-with st.container(key=f"marco_{st.session_state.form_id}"):
+with st.container(key=f"marco_maestro_{st.session_state.form_id}"):
+    
+    # --- SECCIÓN 1: DATOS BÁSICOS ---
     st.subheader("📋 Datos del Servicio")
     col_a, col_b, col_c = st.columns(3)
     with col_a:
         fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY")
     with col_b:
-        tag = st.text_input("Tag / ID Motor", key="ins_tag")
+        tag = st.text_input("Tag / ID Motor", key=f"tag_{st.session_state.form_id}")
     with col_c:
-        responsable = st.text_input("Técnico Responsable", key="ins_resp")
+        responsable = st.text_input("Técnico Responsable", key=f"resp_{st.session_state.form_id}")
 
-# --- SECCIÓN 2: DATOS DE PLACA ---
-st.subheader("🏷️ Datos de Placa")
-col_p1, col_p2, col_p3, col_p4 = st.columns(4)
-with col_p1:
-    potencia = st.text_input("Potencia (HP/kW)", key="ins_pot")
-with col_p2:
-    tension = st.text_input("Tensión (V)", key="ins_ten")
-with col_p3:
-    corriente = st.text_input("Corriente (A)", key="ins_corr")
-with col_p4:
-    rpm = st.text_input("RPM", key="ins_vel")
+    # --- SECCIÓN 2: DATOS DE PLACA ---
+    st.subheader("🏷️ Datos de Placa")
+    col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+    with col_p1:
+        potencia = st.text_input("Potencia (HP/kW)", key=f"pot_{st.session_state.form_id}")
+    with col_p2:
+        tension = st.text_input("Tensión (V)", key=f"ten_{st.session_state.form_id}")
+    with col_p3:
+        corriente = st.text_input("Corriente (A)", key=f"corr_{st.session_state.form_id}")
+    with col_p4:
+        rpm = st.text_input("RPM", key=f"rpm_{st.session_state.form_id}")
 
-# --- MEDICIONES ELÉCTRICAS --- (Igual que antes)
-st.subheader("MEDICIONES ELECTRICAS")
-col_m1, col_m2, col_m3 = st.columns (3)
-with col_m1:
-    res_tierra = st.text_input("Resistencia entre tierra (Ω)", help="U-V, V-W, W-U", key="ins_rt")
-with col_m2:
-    res_bobinas = st.text_input("Resistencia entre Bobinas (Ω)", help="U-V, V-W, W-U", key="ins_rb")
-with col_m3:
-    res_interna = st.text_input("Resistencia Interna (Ω)", help="V-V, U-U, W-W", key="ins_ri")
-descripcion = st.text_area("Detalles de Reparación y Repuestos", key="ins_d")
-externo = st.text_area("Reparacion Taller Externo", key="ins_externo")
+# --- MEDICIONES ELÉCTRICAS ---
+    st.subheader("MEDICIONES ELECTRICAS")
+    col_m1, col_m2, col_m3 = st.columns(3)
+    with col_m1:
+        res_tierra = st.text_input("Resistencia entre tierra (Ω)", key=f"rt_{st.session_state.form_id}")
+    with col_m2:
+        res_bobinas = st.text_input("Resistencia entre Bobinas (Ω)", key=f"rb_{st.session_state.form_id}")
+    with col_m3:
+        res_interna = st.text_input("Resistencia Interna (Ω)", key=f"ri_{st.session_state.form_id}")
+    
+    descripcion = st.text_area("Detalles de Reparación y Repuestos", key=f"desc_{st.session_state.form_id}")
+    externo = st.text_area("Reparacion Taller Externo", key=f"ext_{st.session_state.form_id}")
 
-# --- INICIALIZAR MEMORIA (Session State) ---
-if 'guardado' not in st.session_state:
-    st.session_state.guardado = False
-
-# --- FUNCIÓN GUARDAR ---
+# --- FUNCIÓN GUARDAR (Fuera del container para evitar errores) ---
 def guardar_datos(f, r, t, pot, ten, corr, vel, rt, rb, ri, d, ext):
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_existente = conn.read(ttl=0)
         fecha_espanol = f.strftime("%d/%m/%Y")
+        nuevo_registro = pd.DataFrame([{
+            "Fecha": fecha_espanol, "Responsable": r, "Tag": t, "Potencia": pot,
+            "Tension": ten, "Corriente": corr, "RPM": vel, "Res_Tierra": rt,
+            "Res_Bobinas": rb, "Res_interna": ri, "Descripcion": d, "Externo": ext,
+        }])
+        df_final = pd.concat([df_existente, nuevo_registro], ignore_index=True)
+        conn.update(data=df_final)
+        return True, "Ok"
+    except Exception as e:
+        return False, str(e)
         
         nuevo_registro = pd.DataFrame([{
             "Fecha": fecha_espanol,
@@ -105,10 +111,13 @@ with col_btn1:
                 st.error(f"Error al guardar: {msj}")
 
 with col_btn2:
-   if st.button("🧹 LIMPIAR"):
-      for key in list(st.session_state.keys()):
-            del st.session_state[key] 
-      st.rerun()
+    if st.button("🧹 LIMPIAR"):
+        # EL SECRETO: Borramos la memoria y cambiamos el ID del formulario
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.session_state.form_id += 1 # Al cambiar el número, el "key" del container cambia
+        st.session_state.guardado = False
+        st.rerun()
 
 # --- SI YA SE GUARDÓ, MOSTRAR QR Y PDF ---
 if st.session_state.get('guardado', False):
@@ -152,6 +161,7 @@ if st.session_state.get('guardado', False):
 
 st.markdown("---")
 st.caption("Sistema diseñado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
