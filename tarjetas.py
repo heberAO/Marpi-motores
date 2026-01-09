@@ -23,44 +23,37 @@ if os.path.exists("logo.png"):
 if modo == "📝 Nueva Carga":
     st.title("SISTEMA DE REGISTRO MARPI ELEC.")
     
-    with st.container(key=f"marco_maestro_{st.session_state.form_id}"):
+    # --- SECCIÓN 1: DATOS BÁSICOS ---
         st.subheader("📋 Datos del Servicio")
         col_a, col_b, col_c = st.columns(3)
         
         with col_a:
             fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY", key=f"f_nueva_{st.session_state.form_id}")
-    
+        
         with col_b:
-        # Agregamos 'ins_' al principio para que sea diferente a cualquier otro
             tag = st.text_input("Tag / ID Motor", key=f"ins_tag_{st.session_state.form_id}").strip().upper()
-                
             if st.button("🔎 Buscar Datos de Placa", key=f"btn_search_{st.session_state.form_id}"):
-            # ... (tu lógica de búsqueda igual que antes) ...
-                st.success("Buscando...")
-                st.rerun()
-                    
-                    # Buscamos si el motor existe
+                if tag:
+                    conn = st.connection("gsheets", type=GSheetsConnection)
+                    df_completo = conn.read(ttl=0)
+                    # AQUÍ ESTABA EL ERROR: Ahora está bien alineado
                     motor_existente = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
                     
                     if not motor_existente.empty:
-                        # Tomamos el registro más reciente
                         datos = motor_existente.iloc[-1]
-                        
-                        # GUARDAMOS EN MEMORIA PARA AUTOCOMPLETAR
                         st.session_state[f"pot_{st.session_state.form_id}"] = str(datos.get('Potencia', ''))
                         st.session_state[f"ten_{st.session_state.form_id}"] = str(datos.get('Tension', ''))
                         st.session_state[f"corr_{st.session_state.form_id}"] = str(datos.get('Corriente', ''))
                         st.session_state[f"rpm_{st.session_state.form_id}"] = str(datos.get('RPM', ''))
-                        
-                        st.success("✅ Datos de placa encontrados y cargados.")
+                        st.success("✅ Datos de placa cargados.")
                         st.rerun()
                     else:
                         st.warning("⚠️ Motor nuevo (no hay datos previos).")
                 else:
                     st.error("Escribe un Tag primero.")
 
-    with col_c:
-        responsable = st.text_input("Técnico Responsable", key=f"ins_resp_{st.session_state.form_id}")
+        with col_c:
+            responsable = st.text_input("Técnico Responsable", key=f"ins_resp_{st.session_state.form_id}")
     
     # --- SECCIÓN 1: DATOS BÁSICOS ---
     st.subheader("📋 Datos del Servicio")
@@ -241,6 +234,7 @@ elif modo == "🔍 Historial y Buscador":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
