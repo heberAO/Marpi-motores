@@ -14,10 +14,14 @@ if 'guardado' not in st.session_state:
     st.session_state.guardado = False
 
 st.set_page_config(page_title="Marpi Motores - Técnico", page_icon="⚡", layout="wide")
+with st.sidebar:
+    st.header("⚙️ Menú Marpi")
+    modo = st.radio("Seleccione una opción:", ["📝 Nueva Carga", "🔍 Historial y Buscador"])
 
 if os.path.exists("logo.png"):
     st.image("logo.png", width=150)
-
+if modo == "📝 Nueva Carga":
+    st.title("SISTEMA DE REGISTRO MARPI ELEC.")
 st.title("SISTEMA DE REGISTRO MARPI ELEC.")
 st.markdown("---")
 with st.container(key=f"marco_maestro_{st.session_state.form_id}"):
@@ -164,9 +168,38 @@ if st.session_state.get('guardado', False):
     with col_pdf:
         st.subheader("📄 Tu informe está listo")
         st.download_button("📥 DESCARGAR PROTOCOLO PDF", pdf_out, f"Protocolo_{tag}.pdf")
+elif modo == "🔍 Historial y Buscador":
+    st.title("🔍 Buscador e Historial")
+    
+    try:
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        df = conn.read(ttl=0)
+
+        # Buscador por Tag
+        busqueda = st.text_input("Ingrese el Tag / ID del Motor:").strip().upper()
+
+        if busqueda:
+            # Filtramos los datos (convertimos a string para evitar errores)
+            resultado = df[df['Tag'].astype(str).str.upper().str.contains(busqueda, na=False)]
+            
+            if not resultado.empty:
+                st.success(f"Se encontraron {len(resultado)} registros.")
+                # Mostramos la tabla de forma linda
+                st.dataframe(resultado, use_container_width=True)
+                
+                # Opcional: Mostrar una ficha detallada del último servicio
+                st.subheader("📋 Detalle del último servicio")
+                ultimo = resultado.iloc[-1] # Toma el más reciente
+                st.write(f"**Fecha:** {ultimo['Fecha']} | **Responsable:** {ultimo['Responsable']}")
+                st.info(f"**Descripción:** {ultimo['Descripcion']}")
+            else:
+                st.warning("No se encontró ningún motor con ese Tag.")
+    except Exception as e:
+        st.error(f"Error al conectar con la base de datos: {e}")        
 
 st.markdown("---")
-st.caption("Sistema diseñado por **Heber Ortiz** | Marpi Electricidad ⚡")
+st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
