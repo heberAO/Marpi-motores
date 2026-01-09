@@ -72,7 +72,7 @@ if modo == "📝 Nueva Carga":
         responsable = st.text_input("Técnico Responsable", key=f"resp_{st.session_state.form_id}")
 
    st.subheader("🏷️ Datos de Placa")
-col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+   col_p1, col_p2, col_p3, col_p4 = st.columns(4)
 
 with col_p1:
     # Ahora el valor por defecto viene de la memoria si existe
@@ -241,6 +241,7 @@ elif modo == "🔍 Historial y Buscador":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
