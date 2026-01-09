@@ -58,8 +58,8 @@ if modo == "📝 Nueva Carga":
                 else:
                     st.error("Escribe un Tag primero.")
 
-        with col_c:
-            responsable = st.text_input("Técnico Responsable", key=f"resp_{st.session_state.form_id}")
+    with col_c:
+        responsable = st.text_input("Técnico Responsable", key=f"resp_{st.session_state.form_id}")
     
     # --- SECCIÓN 1: DATOS BÁSICOS ---
     st.subheader("📋 Datos del Servicio")
@@ -241,6 +241,7 @@ elif modo == "🔍 Historial y Buscador":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
