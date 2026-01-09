@@ -28,7 +28,7 @@ if modo == "📝 Nueva Carga":
         col_a, col_b, col_c = st.columns(3)
         
         with col_a:
-            fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY")
+            fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY", key=f"fecha_{st.session_state.form_id}")
         with col_b:
             # El tag ahora tiene un botón al lado para buscar
             tag = st.text_input("Tag / ID Motor", key=f"tag_{st.session_state.form_id}").strip().upper()
@@ -241,6 +241,7 @@ elif modo == "🔍 Historial y Buscador":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
