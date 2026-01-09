@@ -23,20 +23,21 @@ if os.path.exists("logo.png"):
 if modo == "📝 Nueva Carga":
     st.title("SISTEMA DE REGISTRO MARPI ELEC.")
     
-    with st.container(key=f"marco_maestro_{st.session_state.form_id}"):
+        with st.container(key=f"marco_maestro_{st.session_state.form_id}"):
         st.subheader("📋 Datos del Servicio")
         col_a, col_b, col_c = st.columns(3)
         
-        with col_a:
-            fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY", key=f"fecha_{st.session_state.form_id}")
-        with col_b:
-            # El tag ahora tiene un botón al lado para buscar
-            tag = st.text_input("Tag / ID Motor", key=f"tag_{st.session_state.form_id}").strip().upper()
+       with col_a:
+        fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY", key=f"f_nueva_{st.session_state.form_id}")
+    
+       with col_b:
+        # Agregamos 'ins_' al principio para que sea diferente a cualquier otro
+        tag = st.text_input("Tag / ID Motor", key=f"ins_tag_{st.session_state.form_id}").strip().upper()
             
-            if st.button("🔎 Buscar Datos de Placa"):
-                if tag:
-                    conn = st.connection("gsheets", type=GSheetsConnection)
-                    df_completo = conn.read(ttl=0)
+            if st.button("🔎 Buscar Datos de Placa", key=f"btn_search_{st.session_state.form_id}"):
+            # ... (tu lógica de búsqueda igual que antes) ...
+            st.success("Buscando...")
+            st.rerun()
                     
                     # Buscamos si el motor existe
                     motor_existente = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
@@ -59,7 +60,7 @@ if modo == "📝 Nueva Carga":
                     st.error("Escribe un Tag primero.")
 
     with col_c:
-        responsable = st.text_input("Técnico Responsable", key=f"resp_{st.session_state.form_id}")
+        responsable = st.text_input("Técnico Responsable", key=f"ins_resp_{st.session_state.form_id}")
     
     # --- SECCIÓN 1: DATOS BÁSICOS ---
     st.subheader("📋 Datos del Servicio")
@@ -218,8 +219,7 @@ elif modo == "🔍 Historial y Buscador":
         df = conn.read(ttl=0)
 
         # Buscador por Tag
-        busqueda = st.text_input("Ingrese el Tag / ID del Motor:").strip().upper()
-
+        busqueda = st.text_input("Ingrese el Tag / ID del Motor:", key="buscador_historial")
         if busqueda:
             # Filtramos los datos (convertimos a string para evitar errores)
             resultado = df[df['Tag'].astype(str).str.upper().str.contains(busqueda, na=False)]
@@ -241,6 +241,7 @@ elif modo == "🔍 Historial y Buscador":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
