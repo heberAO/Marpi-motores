@@ -56,14 +56,19 @@ if modo == "📝 Nueva Carga":
             responsable = st.text_input("Técnico Responsable", key=f"ins_resp_{st.session_state.form_id}")
     
     # --- SECCIÓN 1: DATOS BÁSICOS ---
-    st.subheader("📋 Datos del Servicio")
-    col_a, col_b, col_c = st.columns(3)
-    with col_a:
-        fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY")
-    with col_b:
-        tag = st.text_input("Tag / ID Motor", key=f"tag_{st.session_state.form_id}")
-    with col_c:
-        responsable = st.text_input("Técnico Responsable", key=f"resp_{st.session_state.form_id}")
+    st.subheader("🏷️ Datos de Placa")
+    col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+    with col_p1:
+        st.text_input("Potencia (HP/kW)", key=f"pot_{st.session_state.form_id}")
+
+    with col_p2:
+        st.text_input("Tensión (V)", key=f"ten_{st.session_state.form_id}")
+
+    with col_p3:
+        st.text_input("Corriente (A)", key=f"corr_{st.session_state.form_id}")
+
+    with col_p4:
+        st.text_input("RPM", key=f"rpm_{st.session_state.form_id}")
 
     st.subheader("🏷️ Datos de Placa")
     col_p1, col_p2, col_p3, col_p4 = st.columns(4)
@@ -234,6 +239,7 @@ elif modo == "🔍 Historial y Buscador":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
