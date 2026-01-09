@@ -22,9 +22,44 @@ if os.path.exists("logo.png"):
     st.image("logo.png", width=150)
 if modo == "📝 Nueva Carga":
     st.title("SISTEMA DE REGISTRO MARPI ELEC.")
-st.title("SISTEMA DE REGISTRO MARPI ELEC.")
-st.markdown("---")
-with st.container(key=f"marco_maestro_{st.session_state.form_id}"):
+    
+    with st.container(key=f"marco_maestro_{st.session_state.form_id}"):
+        st.subheader("📋 Datos del Servicio")
+        col_a, col_b, col_c = st.columns(3)
+        
+        with col_a:
+            fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY")
+        with col_b:
+            # El tag ahora tiene un botón al lado para buscar
+            tag = st.text_input("Tag / ID Motor", key=f"tag_{st.session_state.form_id}").strip().upper()
+            
+            if st.button("🔎 Buscar Datos de Placa"):
+                if tag:
+                    conn = st.connection("gsheets", type=GSheetsConnection)
+                    df_completo = conn.read(ttl=0)
+                    
+                    # Buscamos si el motor existe
+                    motor_existente = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
+                    
+                    if not motor_existente.empty:
+                        # Tomamos el registro más reciente
+                        datos = motor_existente.iloc[-1]
+                        
+                        # GUARDAMOS EN MEMORIA PARA AUTOCOMPLETAR
+                        st.session_state[f"pot_{st.session_state.form_id}"] = str(datos.get('Potencia', ''))
+                        st.session_state[f"ten_{st.session_state.form_id}"] = str(datos.get('Tension', ''))
+                        st.session_state[f"corr_{st.session_state.form_id}"] = str(datos.get('Corriente', ''))
+                        st.session_state[f"rpm_{st.session_state.form_id}"] = str(datos.get('RPM', ''))
+                        
+                        st.success("✅ Datos de placa encontrados y cargados.")
+                        st.rerun()
+                    else:
+                        st.warning("⚠️ Motor nuevo (no hay datos previos).")
+                else:
+                    st.error("Escribe un Tag primero.")
+
+        with col_c:
+            responsable = st.text_input("Técnico Responsable", key=f"resp_{st.session_state.form_id}")
     
     # --- SECCIÓN 1: DATOS BÁSICOS ---
     st.subheader("📋 Datos del Servicio")
@@ -36,18 +71,25 @@ with st.container(key=f"marco_maestro_{st.session_state.form_id}"):
     with col_c:
         responsable = st.text_input("Técnico Responsable", key=f"resp_{st.session_state.form_id}")
 
-    # --- SECCIÓN 2: DATOS DE PLACA ---
-    st.subheader("🏷️ Datos de Placa")
-    col_p1, col_p2, col_p3, col_p4 = st.columns(4)
-    with col_p1:
-        potencia = st.text_input("Potencia (HP/kW)", key=f"pot_{st.session_state.form_id}")
-    with col_p2:
-        tension = st.text_input("Tensión (V)", key=f"ten_{st.session_state.form_id}")
-    with col_p3:
-        corriente = st.text_input("Corriente (A)", key=f"corr_{st.session_state.form_id}")
-    with col_p4:
-        rpm = st.text_input("RPM", key=f"rpm_{st.session_state.form_id}")
+   st.subheader("🏷️ Datos de Placa")
+col_p1, col_p2, col_p3, col_p4 = st.columns(4)
 
+with col_p1:
+    # Ahora el valor por defecto viene de la memoria si existe
+    val_pot = st.session_state.get(f"pot_{st.session_state.form_id}", "")
+    potencia = st.text_input("Potencia (HP/kW)", value=val_pot, key=f"pot_{st.session_state.form_id}")
+
+with col_p2:
+    val_ten = st.session_state.get(f"ten_{st.session_state.form_id}", "")
+    tension = st.text_input("Tensión (V)", value=val_ten, key=f"ten_{st.session_state.form_id}")
+
+with col_p3:
+    val_corr = st.session_state.get(f"corr_{st.session_state.form_id}", "")
+    corriente = st.text_input("Corriente (A)", value=val_corr, key=f"corr_{st.session_state.form_id}")
+
+with col_p4:
+    val_rpm = st.session_state.get(f"rpm_{st.session_state.form_id}", "")
+    rpm = st.text_input("RPM", value=val_rpm, key=f"rpm_{st.session_state.form_id}")
 # --- MEDICIONES ELÉCTRICAS ---
     st.subheader("MEDICIONES ELECTRICAS")
     col_m1, col_m2, col_m3 = st.columns(3)
@@ -199,6 +241,7 @@ elif modo == "🔍 Historial y Buscador":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
