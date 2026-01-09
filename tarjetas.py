@@ -23,7 +23,7 @@ if os.path.exists("logo.png"):
 if modo == "📝 Nueva Carga":
     st.title("SISTEMA DE REGISTRO MARPI ELEC.")
     
-        with st.container(key=f"marco_maestro_{st.session_state.form_id}"):
+    with st.container(key=f"marco_maestro_{st.session_state.form_id}"):
         st.subheader("📋 Datos del Servicio")
         col_a, col_b, col_c = st.columns(3)
         
@@ -241,6 +241,7 @@ elif modo == "🔍 Historial y Buscador":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
