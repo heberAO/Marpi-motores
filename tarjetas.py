@@ -113,9 +113,9 @@ with col_btn1:
 with col_btn2:
     if st.button("🧹 LIMPIAR"):
        nuevo_id = st.session_state.get('form_id', 0) + 1
-        for key in list(st.session_state.keys()):
+       for key in list(st.session_state.keys()):
             del st.session_state[key]
-        st.session_state.form_id += nuevo_id
+        st.session_state.form_id = nuevo_id
         st.session_state.guardado = False
         st.rerun()
 
@@ -161,6 +161,7 @@ if st.session_state.get('guardado', False):
 
 st.markdown("---")
 st.caption("Sistema diseñado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
