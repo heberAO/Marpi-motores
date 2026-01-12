@@ -29,9 +29,11 @@ def cargar_datos_motor(datos):
     st.session_state[f"rpm_{st.session_state.form_id}"] = str(datos.get('RPM', ''))
 
 with st.sidebar:
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=150)
     st.header("⚙️ Menú Marpi")
-    modo = st.radio("Seleccione una opción:", ["📝 Nueva Carga / Continuar", "🔍 Historial Completo"])
-
+    modo = st.radio("Seleccione una opción:", ["📝 Nueva Carga", "🔍 Historial y Buscador"])
+    
 if modo == "📝 Nueva Carga / Continuar":
     st.title("SISTEMA DE REGISTRO MARPI ELEC.")
     
@@ -134,6 +136,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
