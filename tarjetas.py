@@ -50,8 +50,6 @@ with col_b:
             else:
                 st.warning("⚠️ Este motor no tiene registros previos. Se creará como nuevo.")
           
-            else:
-                st.error("Escribe un Tag primero.")
 
         with col_c:
             responsable = st.text_input("Técnico Responsable", key=f"ins_resp_{st.session_state.form_id}")
@@ -231,6 +229,7 @@ with col_b:
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
