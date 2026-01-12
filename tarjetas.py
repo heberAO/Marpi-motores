@@ -110,21 +110,25 @@ if modo == "📝 Nueva Carga / Continuar":
 
 elif modo == "🔍 Historial Completo":
     st.title("🔍 Hoja de Vida del Motor")
-    conn = st.connection("gsheets", type=GSheetsConnection)
-    df = conn.read(ttl=0)
-    tag_buscar = st.text_input("Tag a consultar:").strip().upper()
+    tag_buscar = st.text_input("Ingrese el Tag para ver todo su historial:").strip().upper()
+    
     if tag_buscar:
-        historia = df[df['Tag'].astype(str).str.upper() == tag_buscar]
-        if not historia.empty:
-            st.write(f"### Cronología de {tag_buscar}")
-            st.table(historia[['Fecha', 'Responsable', 'Descripcion', 'Res_Tierra']].sort_index(ascending=False))
-        else:
-            st.warning("Sin registros.")
-    except Exception as e:
-        st.error(f"Error de conexión: {e}")
-
+        try:
+            conn = st.connection("gsheets", type=GSheetsConnection)
+            df = conn.read(ttl=0)
+            historia = df[df['Tag'].astype(str).str.upper() == tag_buscar]
+            
+            if not historia.empty:
+                st.subheader(f"Lista de reparaciones para: {tag_buscar}")
+                # Mostramos la tabla invertida para ver lo más nuevo arriba
+                st.dataframe(historia.sort_index(ascending=False), use_container_width=True)
+            else:
+                st.warning("No se encontraron registros previos para ese ID.")
+        except Exception as e:
+            st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema Marpi Electricidad ⚡")
+
 
 
 
