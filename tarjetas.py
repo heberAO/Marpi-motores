@@ -24,6 +24,8 @@ if modo == "📝 Nueva Carga":
     st.title("SISTEMA DE REGISTRO MARPI ELEC.")
     # --- DENTRO DE: if modo == "📝 Nueva Carga": ---
 
+# --- DENTRO DE: if modo == "📝 Nueva Carga": ---
+
 with col_b:
     tag = st.text_input("Tag / ID Motor", key=f"ins_tag_{st.session_state.form_id}").strip().upper()
     if st.button("🔎 Verificar Historial", key=f"btn_search_{st.session_state.form_id}"):
@@ -219,6 +221,7 @@ elif modo == "🔍 Historial y Buscador":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
