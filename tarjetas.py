@@ -22,9 +22,6 @@ if os.path.exists("logo.png"):
     st.image("logo.png", width=150)
 if modo == "📝 Nueva Carga":
     st.title("SISTEMA DE REGISTRO MARPI ELEC.")
-    # --- DENTRO DE: if modo == "📝 Nueva Carga": ---
-
-# --- DENTRO DE: if modo == "📝 Nueva Carga": ---
 
 with col_b:
     tag = st.text_input("Tag / ID Motor", key=f"ins_tag_{st.session_state.form_id}").strip().upper()
@@ -198,29 +195,42 @@ elif modo == "🔍 Historial y Buscador":
         conn = st.connection("gsheets", type=GSheetsConnection)
         df = conn.read(ttl=0)
 
-        # Buscador por Tag
-        busqueda = st.text_input("Ingrese el Tag / ID del Motor:", key="buscador_historial")
-        if busqueda:
-            # Filtramos los datos (convertimos a string para evitar errores)
-            resultado = df[df['Tag'].astype(str).str.upper().str.contains(busqueda, na=False)]
+        # 1. BUSCADOR Y CARGA DE HISTORIAL
+with col_b:
+    tag = st.text_input("Tag / ID Motor", key=f"ins_tag_{st.session_state.form_id}").strip().upper()
+    
+    if st.button("🔎 Buscar / Verificar Motor", key=f"btn_search_{st.session_state.form_id}"):
+        if tag:
+            conn = st.connection("gsheets", type=GSheetsConnection)
+            df_completo = conn.read(ttl=0)
             
-            if not resultado.empty:
-                st.success(f"Se encontraron {len(resultado)} registros.")
-                # Mostramos la tabla de forma linda
-                st.dataframe(resultado, use_container_width=True)
+            # Buscamos todos los registros de este Tag
+            historial = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
+            
+            if not historial.empty:
+                # Si existe, cargamos los datos técnicos del último registro
+                ultimo_registro = historial.iloc[-1]
+                st.session_state[f"pot_{st.session_state.form_id}"] = str(ultimo_registro.get('Potencia', ''))
+                st.session_state[f"ten_{st.session_state.form_id}"] = str(ultimo_registro.get('Tension', ''))
+                st.session_state[f"corr_{st.session_state.form_id}"] = str(ultimo_registro.get('Corriente', ''))
+                st.session_state[f"rpm_{st.session_state.form_id}"] = str(ultimo_registro.get('RPM', ''))
                 
-                # Opcional: Mostrar una ficha detallada del último servicio
-                st.subheader("📋 Detalle del último servicio")
-                ultimo = resultado.iloc[-1] # Toma el más reciente
-                st.write(f"**Fecha:** {ultimo['Fecha']} | **Responsable:** {ultimo['Responsable']}")
-                st.info(f"**Descripción:** {ultimo['Descripcion']}")
+                st.success(f"✅ Historial encontrado: {len(historial)} reparaciones anteriores.")
+                # Mostramos una tabla pequeña con lo que se le hizo antes
+                st.write("---")
+                st.write("**Últimas intervenciones:**")
+                st.dataframe(historial[['Fecha', 'Responsable', 'Descripcion']].tail(3), use_container_width=True)
+                st.rerun()
             else:
-                st.warning("No se encontró ningún motor con ese Tag.")
+                st.info("🆕 Motor nuevo. No se encontraron registros previos.")
+        else:
+            st.error("⚠️ Ingrese un Tag para buscar.")
     except Exception as e:
         st.error(f"Error al conectar con la base de datos: {e}")        
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
