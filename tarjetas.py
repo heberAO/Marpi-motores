@@ -13,6 +13,12 @@ if 'guardado' not in st.session_state:
     st.session_state.guardado = False
 
 st.set_page_config(page_title="Marpi Motores - Registro Continuo", page_icon="⚡", layout="wide")
+st.markdown("""
+    <style>
+    .main { background-color: #f5f5f5; }
+    .stButton>button { width: 100%; border-radius: 5px; height: 3em; background-color: #ff4b4b; color: white; }
+    </style>
+    """, unsafe_allow_html=True)
 
 # --- LÓGICA DE PERSISTENCIA ---
 # Función para cargar datos al session_state
@@ -128,6 +134,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
