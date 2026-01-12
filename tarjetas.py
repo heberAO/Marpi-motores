@@ -127,7 +127,8 @@ elif modo == "🔍 Historial Completo":
         except Exception as e:
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
-st.caption("Sistema Marpi Electricidad ⚡")
+st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
