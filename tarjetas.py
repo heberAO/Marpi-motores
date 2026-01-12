@@ -191,6 +191,7 @@ elif modo == "🔍 Historial y Buscador":
     st.title("🔍 Buscador e Historial de Motores")
     
     try:
+        # Intentamos la conexión
         conn = st.connection("gsheets", type=GSheetsConnection)
         df = conn.read(ttl=0)
 
@@ -198,77 +199,43 @@ elif modo == "🔍 Historial y Buscador":
         busqueda = st.text_input("Ingrese el Tag / ID del Motor para ver su historial:", key="buscador_historial").strip().upper()
         
         if busqueda:
-            # Filtramos todos los registros que coincidan con ese Tag
+            # Filtramos todos los registros que coincidan con ese Tag exacto
+            # Esto es lo que enlaza el ID a todas sus reparaciones
             resultado = df[df['Tag'].astype(str).str.upper() == busqueda]
             
             if not resultado.empty:
                 st.success(f"📋 Se encontraron {len(resultado)} registros para el motor {busqueda}")
                 
-                # --- MOSTRAR DATOS TÉCNICOS ACTUALES ---
-                # Tomamos el último registro para ver los datos de placa más recientes
+                # --- VISTA DE FICHA TÉCNICA (Últimos datos conocidos) ---
                 ultimo = resultado.iloc[-1]
-                st.subheader("🏷️ Datos Técnicos Actuales")
+                st.subheader("🏷️ Datos Técnicos de Placa (Último registro)")
                 c1, c2, c3, c4 = st.columns(4)
-                c1.metric("Potencia", ultimo['Potencia'])
-                c2.metric("Tensión", ultimo['Tension'])
-                c3.metric("RPM", ultimo['RPM'])
-                c4.metric("Corriente", ultimo['Corriente'])
+                c1.metric("Potencia", ultimo.get('Potencia', 'N/A'))
+                c2.metric("Tensión", ultimo.get('Tension', 'N/A'))
+                c3.metric("RPM", ultimo.get('RPM', 'N/A'))
+                c4.metric("Corriente", ultimo.get('Corriente', 'N/A'))
 
                 st.divider()
 
-                # --- CRONOLOGÍA DE REPARACIONES ---
-                st.subheader("⏳ Historial de Intervenciones")
-                # Mostramos la tabla ordenada de la más reciente a la más antigua
+                # --- TABLA CRONOLÓGICA ---
+                st.subheader("⏳ Historial de Reparaciones")
+                # Mostramos la tabla con las reparaciones, la más nueva arriba
                 st.dataframe(
-                    resultado[['Fecha', 'Responsable', 'Descripcion', 'Externo']].sort_index(ascending=False), 
+                    resultado[['Fecha', 'Responsable', 'Descripcion', 'Res_Tierra', 'Externo']].sort_index(ascending=False), 
                     use_container_width=True
                 )
                 
             else:
                 st.warning(f"No hay registros previos para el motor: {busqueda}")
-                
+        
+        # Este bloque 'except' es OBLIGATORIO para cerrar el 'try'
     except Exception as e:
         st.error(f"Hubo un problema al conectar con el historial: {e}")
-    
-    try:
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        df = conn.read(ttl=0)
 
-        # 1. BUSCADOR Y CARGA DE HISTORIAL
-    with col_b:
-        tag = st.text_input("Tag / ID Motor", key=f"ins_tag_{st.session_state.form_id}").strip().upper()
-    
-        if st.button("🔎 Buscar / Verificar Motor", key=f"btn_search_{st.session_state.form_id}"):
-            if tag:
-                conn = st.connection("gsheets", type=GSheetsConnection)
-                df_completo = conn.read(ttl=0)
-            
-            # Buscamos todos los registros de este Tag
-            historial = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
-            
-            if not historial.empty:
-                # Si existe, cargamos los datos técnicos del último registro
-                ultimo_registro = historial.iloc[-1]
-                st.session_state[f"pot_{st.session_state.form_id}"] = str(ultimo_registro.get('Potencia', ''))
-                st.session_state[f"ten_{st.session_state.form_id}"] = str(ultimo_registro.get('Tension', ''))
-                st.session_state[f"corr_{st.session_state.form_id}"] = str(ultimo_registro.get('Corriente', ''))
-                st.session_state[f"rpm_{st.session_state.form_id}"] = str(ultimo_registro.get('RPM', ''))
-                
-                st.success(f"✅ Historial encontrado: {len(historial)} reparaciones anteriores.")
-                # Mostramos una tabla pequeña con lo que se le hizo antes
-                st.write("---")
-                st.write("**Últimas intervenciones:**")
-                st.dataframe(historial[['Fecha', 'Responsable', 'Descripcion']].tail(3), use_container_width=True)
-                st.rerun()
-            else:
-                st.info("🆕 Motor nuevo. No se encontraron registros previos.")
-        else:
-            st.error("⚠️ Ingrese un Tag para buscar.")
-    except Exception as e:
-        st.error(f"Error al conectar con la base de datos: {e}")        
-
+# --- PIE DE PÁGINA (Fuera de cualquier bloque if/elif) ---
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
