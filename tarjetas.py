@@ -188,7 +188,47 @@ if st.session_state.get('guardado', False):
         st.subheader("📄 Tu informe está listo")
         st.download_button("📥 DESCARGAR PROTOCOLO PDF", pdf_out, f"Protocolo_{tag}.pdf")
 elif modo == "🔍 Historial y Buscador":
-    st.title("🔍 Buscador e Historial")
+    st.title("🔍 Buscador e Historial de Motores")
+    
+    try:
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        df = conn.read(ttl=0)
+
+        # Buscador por Tag
+        busqueda = st.text_input("Ingrese el Tag / ID del Motor para ver su historial:", key="buscador_historial").strip().upper()
+        
+        if busqueda:
+            # Filtramos todos los registros que coincidan con ese Tag
+            resultado = df[df['Tag'].astype(str).str.upper() == busqueda]
+            
+            if not resultado.empty:
+                st.success(f"📋 Se encontraron {len(resultado)} registros para el motor {busqueda}")
+                
+                # --- MOSTRAR DATOS TÉCNICOS ACTUALES ---
+                # Tomamos el último registro para ver los datos de placa más recientes
+                ultimo = resultado.iloc[-1]
+                st.subheader("🏷️ Datos Técnicos Actuales")
+                c1, c2, c3, c4 = st.columns(4)
+                c1.metric("Potencia", ultimo['Potencia'])
+                c2.metric("Tensión", ultimo['Tension'])
+                c3.metric("RPM", ultimo['RPM'])
+                c4.metric("Corriente", ultimo['Corriente'])
+
+                st.divider()
+
+                # --- CRONOLOGÍA DE REPARACIONES ---
+                st.subheader("⏳ Historial de Intervenciones")
+                # Mostramos la tabla ordenada de la más reciente a la más antigua
+                st.dataframe(
+                    resultado[['Fecha', 'Responsable', 'Descripcion', 'Externo']].sort_index(ascending=False), 
+                    use_container_width=True
+                )
+                
+            else:
+                st.warning(f"No hay registros previos para el motor: {busqueda}")
+                
+    except Exception as e:
+        st.error(f"Hubo un problema al conectar con el historial: {e}")
     
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
@@ -229,6 +269,7 @@ elif modo == "🔍 Historial y Buscador":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
