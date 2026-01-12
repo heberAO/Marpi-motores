@@ -49,6 +49,7 @@ with col_b:
                 st.rerun()
             else:
                 st.warning("⚠️ Este motor no tiene registros previos. Se creará como nuevo.")
+          
             else:
                 st.error("Escribe un Tag primero.")
 
@@ -230,6 +231,7 @@ with col_b:
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
