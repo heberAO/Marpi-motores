@@ -22,33 +22,34 @@ if os.path.exists("logo.png"):
     st.image("logo.png", width=150)
 if modo == "📝 Nueva Carga":
     st.title("SISTEMA DE REGISTRO MARPI ELEC.")
-    with st.container(key=f"marco_maestro_{st.session_state.form_id}"):
-    # --- SECCIÓN 1: DATOS BÁSICOS ---
-        st.subheader("📋 Datos del Servicio")
-        col_a, col_b, col_c = st.columns(3)
-        
-        with col_a:
-            fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY", key=f"f_nueva_{st.session_state.form_id}")
-        
-        with col_b:
-            tag = st.text_input("Tag / ID Motor", key=f"ins_tag_{st.session_state.form_id}").strip().upper()
-            if st.button("🔎 Buscar Datos de Placa", key=f"btn_search_{st.session_state.form_id}"):
-                if tag:
-                    conn = st.connection("gsheets", type=GSheetsConnection)
-                    df_completo = conn.read(ttl=0)
-                    # AQUÍ ESTABA EL ERROR: Ahora está bien alineado
-                    motor_existente = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
-                    
-                    if not motor_existente.empty:
-                        datos = motor_existente.iloc[-1]
-                        st.session_state[f"pot_{st.session_state.form_id}"] = str(datos.get('Potencia', ''))
-                        st.session_state[f"ten_{st.session_state.form_id}"] = str(datos.get('Tension', ''))
-                        st.session_state[f"corr_{st.session_state.form_id}"] = str(datos.get('Corriente', ''))
-                        st.session_state[f"rpm_{st.session_state.form_id}"] = str(datos.get('RPM', ''))
-                        st.success("✅ Datos de placa cargados.")
-                        st.rerun()
-                    else:
-                        st.warning("⚠️ Motor nuevo (no hay datos previos).")
+    # --- DENTRO DE: if modo == "📝 Nueva Carga": ---
+
+with col_b:
+    tag = st.text_input("Tag / ID Motor", key=f"ins_tag_{st.session_state.form_id}").strip().upper()
+    if st.button("🔎 Verificar Historial", key=f"btn_search_{st.session_state.form_id}"):
+        if tag:
+            conn = st.connection("gsheets", type=GSheetsConnection)
+            df_completo = conn.read(ttl=0)
+            # Filtramos todas las reparaciones de ese motor
+            historial_motor = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
+            
+            if not historial_motor.empty:
+                st.success(f"✅ Motor encontrado. Tiene {len(historial_motor)} reparaciones previas.")
+                
+                # Guardamos los datos técnicos fijos en el session_state
+                ultima_reparacion = historial_motor.iloc[-1]
+                st.session_state[f"pot_{st.session_state.form_id}"] = str(ultima_reparacion.get('Potencia', ''))
+                st.session_state[f"ten_{st.session_state.form_id}"] = str(ultima_reparacion.get('Tension', ''))
+                st.session_state[f"corr_{st.session_state.form_id}"] = str(ultima_reparacion.get('Corriente', ''))
+                st.session_state[f"rpm_{st.session_state.form_id}"] = str(ultima_reparacion.get('RPM', ''))
+                
+                # MOSTRAMOS EL HISTORIAL BREVE
+                with st.expander("Ver historial de reparaciones anteriores"):
+                    st.table(historial_motor[['Fecha', 'Responsable', 'Descripcion']].tail(5))
+                
+                st.rerun()
+            else:
+                st.warning("⚠️ Este motor no tiene registros previos. Se creará como nuevo.")
                 else:
                     st.error("Escribe un Tag primero.")
 
@@ -218,6 +219,7 @@ elif modo == "🔍 Historial y Buscador":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
