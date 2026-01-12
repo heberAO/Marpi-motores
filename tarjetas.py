@@ -195,13 +195,13 @@ elif modo == "🔍 Historial y Buscador":
         df = conn.read(ttl=0)
 
         # 1. BUSCADOR Y CARGA DE HISTORIAL
-with col_b:
-    tag = st.text_input("Tag / ID Motor", key=f"ins_tag_{st.session_state.form_id}").strip().upper()
+    with col_b:
+        tag = st.text_input("Tag / ID Motor", key=f"ins_tag_{st.session_state.form_id}").strip().upper()
     
-    if st.button("🔎 Buscar / Verificar Motor", key=f"btn_search_{st.session_state.form_id}"):
-        if tag:
-            conn = st.connection("gsheets", type=GSheetsConnection)
-            df_completo = conn.read(ttl=0)
+        if st.button("🔎 Buscar / Verificar Motor", key=f"btn_search_{st.session_state.form_id}"):
+            if tag:
+                conn = st.connection("gsheets", type=GSheetsConnection)
+                df_completo = conn.read(ttl=0)
             
             # Buscamos todos los registros de este Tag
             historial = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
@@ -229,6 +229,7 @@ with col_b:
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
