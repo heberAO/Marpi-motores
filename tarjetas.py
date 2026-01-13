@@ -38,7 +38,12 @@ def generar_pdf(df_historial, tag_motor):
         else: pdf.set_text_color(200, 0, 0)
         pdf.cell(150, 8, estado, 1, 1, 'L')
         pdf.set_text_color(0, 0, 0)
-
+        # --- DATOS DE PLACA (Antes de las mediciones) ---
+        pdf.set_font("Arial", 'B', 10)
+        pdf.cell(95, 8, f"POTENCIA: {row.get('Potencia', '-')} HP/kW", 1, 0, 'L')
+        pdf.cell(95, 8, f"VELOCIDAD: {row.get('RPM', '-')} RPM", 1, 1, 'L')
+        pdf.ln(2)
+    
         # --- TABLA DE MEDICIONES TÉCNICAS POR FASE ---
         pdf.ln(2)
         pdf.set_fill_color(230, 240, 255)
@@ -193,6 +198,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
