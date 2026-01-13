@@ -126,13 +126,14 @@ if modo == "📝 Registro":
             ri_w = st.text_input("W1 - W2")
         
         st.divider()
-        c_inf1, c_inf2, c_inf3 = st.columns(3)
+        c_inf1, c_inf2, c_inf3, c_inf4 = st.columns(4)
         responsable = c_inf1.text_input("Técnico Responsable")
         potencia = c_inf2.text_input("Potencia Motor")
-        estado = c_inf3.selectbox("Estado Final", ["OPERATIVO", "EN OBSERVACIÓN", "REEMPLAZO"])
+        rpm = c_inf3.text_inpit("rpm")
+        estado = c_inf4.selectbox("Estado Final", ["OPERATIVO", "EN OBSERVACIÓN", "REEMPLAZO"])
         
         descripcion = st.text_area("Descripción de trabajos realizados")
-        taller_ext = st.text_input("Trabajos de terceros (Taller externo)")
+        taller_ext = st.text_area("Trabajos de terceros (Taller externo)")
         
         enviar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
@@ -189,6 +190,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
