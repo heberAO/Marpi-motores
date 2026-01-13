@@ -6,31 +6,29 @@ import qrcode
 from io import BytesIO
 import os
 
-# --- 1. CONFIGURACIÓN E INICIALIZACIÓN CRÍTICA ---
+# 1. CONFIGURACIÓN E INICIALIZACIÓN
 st.set_page_config(page_title="Marpi Motores", page_icon="⚡", layout="wide")
 
-# Inicializamos las variables de estado para que NUNCA den AttributeError
-if 'form_id' not in st.session_state:
-    st.session_state.form_id = 0
+# Inicializar variables de estado para evitar errores de "AttributeError"
 if 'guardado' not in st.session_state:
     st.session_state.guardado = False
 
-# --- 2. DETECTAR QR ---
-# Leemos el ?tag= de la URL
+# 2. DETECTAR QR (Parámetros de URL)
 query_tag = st.query_params.get("tag", "")
 
-# --- 3. MOSTRAR LOGO ---
+# 3. MOSTRAR LOGO
 if os.path.exists("logo.png"):
     st.image("logo.png", width=150)
 
-# --- 4. CONEXIÓN A BASE DE DATOS ---
+# 4. CONEXIÓN A GOOGLE SHEETS
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
     df_completo = conn.read(ttl=0)
 except Exception:
+    st.error("Error de conexión con la base de datos.")
     df_completo = pd.DataFrame()
 
-# --- 5. MENÚ LATERAL ---
+# 5. MENÚ LATERAL
 with st.sidebar:
     st.header("⚙️ Menú Marpi")
     # Si detecta tag de QR, selecciona "Historial" (index 1), sino "Registro" (index 0)
@@ -47,6 +45,7 @@ if modo == "📝 Registro":
     # Buscar datos previos para autocompletar
     datos_previa = {"Pot": "", "Ten": "", "RPM": ""}
     if tag_input and not df_completo.empty:
+        # Buscamos en la columna 'Tag' (asegúrate que en tu Excel se llame exactamente 'Tag')
         historia = df_completo[df_completo['Tag'].astype(str).str.upper() == tag_input]
         if not historia.empty:
             ultimo = historia.iloc[-1]
@@ -66,7 +65,6 @@ if modo == "📝 Registro":
         
         with c2:
             st.markdown("**Datos Técnicos**")
-            # IMPORTANTE: Eliminamos los 'key=' con session_state para evitar el error
             pot = st.text_input("Potencia (HP/kW)", value=datos_previa["Pot"])
             ten = st.text_input("Tensión (V)", value=datos_previa["Ten"])
             rpm = st.text_input("RPM", value=datos_previa["RPM"])
@@ -78,25 +76,32 @@ if modo == "📝 Registro":
         enviar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
     if enviar:
+        # CORRECCIÓN NameError: aquí usamos 'tag_input' que es la variable definida arriba
         if tag_input and responsable:
             nuevo_log = pd.DataFrame([{
-                "Fecha": fecha.strftime("%d/%m/%Y"), "Responsable": responsable, "Tag": tag_input,
-                "Potencia": pot, "Tension": ten, "RPM": rpm,
-                "Res_Tierra": rt, "Res_Bobinas": rb, "Res_Interna": ri,
+                "Fecha": fecha.strftime("%d/%m/%Y"), 
+                "Responsable": responsable, 
+                "Tag": tag_input,
+                "Potencia": pot, 
+                "Tension": ten, 
+                "RPM": rpm,
+                "Res_Tierra": rt, 
+                "Res_Bobinas": rb, 
+                "Res_Interna": ri,
                 "Descripcion": descripcion
             }])
             df_final = pd.concat([df_completo, nuevo_log], ignore_index=True)
             conn.update(data=df_final)
             st.session_state.guardado = True
             st.balloons()
-            st.success("✅ Guardado exitosamente.")
+            st.success(f"✅ Guardado exitosamente para el motor {tag_input}")
         else:
-            st.error("⚠️ Tag y Responsable son obligatorios.")
+            st.error("⚠️ El Tag y el Responsable son obligatorios.")
 
-    # Generador de QR dinámico
+    # Generador de QR
     if tag_input:
         st.divider()
-        # USA TU URL REAL AQUÍ
+        # REEMPLAZA CON TU URL REAL SI CAMBIA
         mi_url = "https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/"
         link_final = f"{mi_url}?tag={tag_input}"
         
@@ -118,7 +123,9 @@ elif modo == "🔍 Historial / QR":
                 st.subheader(f"Historial de {id_ver}")
                 st.dataframe(res.sort_index(ascending=False), use_container_width=True)
             else:
-                st.warning("No hay registros para este motor.")
+                st.warning(f"No hay registros para el motor: {id_ver}")
+        else:
+            st.error("La base de datos está vacía.")
     
     # --- DATOS TÉCNICOS (Se autocompletan si el motor ya existe) ---
     st.subheader("🏷️ Datos de Placa")
@@ -191,6 +198,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
