@@ -57,7 +57,9 @@ if modo == "📝 Nueva Carga / Continuar":
             pot = st.text_input("Potencia", value=datos_previa["Potencia"])
             ten = st.text_input("Tensión", value=datos_previa["Tension"])
             rpm = st.text_input("RPM", value=datos_previa["RPM"])
-            rt = st.text_input("Res. Tierra (MΩ)")
+            rt = st.text_input("Res. Tierra (Ω)")
+            rb = st.texr_iumput("Res. entre Bobina (Ω)")
+            ri = st.text_imput("Res. Interna (Ω)")                   
 
         guardar = st.form_submit_button("💾 GUARDAR EN HISTORIAL")
 
@@ -164,6 +166,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
