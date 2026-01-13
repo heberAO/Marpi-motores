@@ -111,6 +111,7 @@ with st.sidebar:
 if modo == "📝 Registro":
     st.title("📝 Registro de Reparación")
     
+    fecha = st.date_input("Fecha Hoy", date.today(), format="DD/MM/YYYY")
     # 1. El TAG debe estar FUERA del formulario para que Streamlit pueda "reaccionar" al escribirlo
     tag = st.text_input("TAG DEL MOTOR", value=query_tag).strip().upper()
     
