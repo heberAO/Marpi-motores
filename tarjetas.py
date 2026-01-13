@@ -126,7 +126,7 @@ if modo == "📝 Registro":
             ri_w = st.text_input("W1 - W2")
         
         st.divider()
-        c_inf1, c_inf2, c_inf3, c_inf4 = st.columns(5)
+        c_inf1, c_inf2, c_inf3, c_inf4, c,inf5 = st.columns(5)
         responsable = c_inf1.text_input("Técnico Responsable")
         potencia = c_inf2.text_input("Potencia Motor")
         rpm = c_inf3.selectbox("RPM", ["750", "1500", "3000"])
@@ -191,6 +191,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
