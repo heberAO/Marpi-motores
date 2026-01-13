@@ -163,11 +163,11 @@ if modo == "📝 Registro":
         # Aquí usamos los datos precargados
         potencia = c_inf2.text_input("Potencia Motor", value=datos_placa["pot"])
         rpm = c_inf3.selectbox("RPM", ["750", "1500", "3000"], index=datos_placa["rpm_idx"])
-        frame = c_inf4.text_input("Frame")
+        frame = c_inf4.text_input("Frame", value=datos_placa["ext"])
         
         estado = st.selectbox("Estado Final", ["OPERATIVO", "EN OBSERVACIÓN", "REEMPLAZO"])
         descripcion = st.text_area("Descripción de trabajos realizados")
-        taller_ext = st.text_area("Trabajos de terceros", value=datos_placa["ext"])
+        taller_ext = st.text_area("Trabajos de terceros")
         
         enviar = st.form_submit_button("💾 GUARDAR REGISTRO")
     if enviar and tag and responsable:
@@ -223,6 +223,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
