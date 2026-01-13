@@ -95,7 +95,7 @@ if modo == "📝 Registro":
             fecha = st.date_input("Fecha", date.today())
             estado_motor = st.selectbox("Estado Final del Motor", ["OPERATIVO", "REEMPLAZO"])
             descripcion = st.text_area("Descripción de la Reparación (Acciones Realizadas)")
-            externo = st.text_area("Reparacion Taller Externo")
+            externo = st.text_area("Reparacion de Terceros")
         with c2:
             st.markdown("**Datos de Placa y Mediciones**")
             pot = st.text_input("Potencia")
@@ -154,6 +154,7 @@ elif modo == "🔍 Historial / QR":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
