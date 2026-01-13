@@ -105,7 +105,7 @@ with st.sidebar:
 # --- MODO 1: REGISTRO ---
 if modo == "📝 Registro":
     st.title("📝 Nuevo Registro de Motor")
-    tag = st.text_input("TAG DEL MOTOR", value=query_tag).strip().upper()
+    tag = st.text_input("TAG DEL MOTOR / N°", value=query_tag).strip().upper()
     
     with st.form("form_tecnico"):
         col1, col2, col3 = st.columns(3)
@@ -126,11 +126,12 @@ if modo == "📝 Registro":
             ri_w = st.text_input("W1 - W2")
         
         st.divider()
-        c_inf1, c_inf2, c_inf3, c_inf4 = st.columns(4)
+        c_inf1, c_inf2, c_inf3, c_inf4 = st.columns(5)
         responsable = c_inf1.text_input("Técnico Responsable")
         potencia = c_inf2.text_input("Potencia Motor")
-        rpm = c_inf3.text_input("rpm")
-        estado = c_inf4.selectbox("Estado Final", ["OPERATIVO", "EN OBSERVACIÓN", "REEMPLAZO"])
+        rpm = c_inf3.selectbox("RPM", ["750", "1500", "3000"])
+        frame = c_inf4.text_input("Frame")
+        estado = c_inf5.selectbox("Estado Final", ["OPERATIVO", "EN OBSERVACIÓN", "REEMPLAZO"])
         
         descripcion = st.text_area("Descripción de trabajos realizados")
         taller_ext = st.text_area("Trabajos de terceros (Taller externo)")
@@ -190,6 +191,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
