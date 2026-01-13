@@ -1,4 +1,4 @@
-import streamlit st
+import streamlit as st
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 from datetime import date
@@ -123,6 +123,7 @@ elif modo == "🔍 Historial / QR":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
