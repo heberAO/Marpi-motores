@@ -95,7 +95,7 @@ if modo == "📝 Registro y Continuidad":
     if tag_input:
         st.divider()
         # REEMPLAZA ESTO CON TU URL REAL DE STREAMLIT CLOUD:
-        url_base = "https://marpi-motores.streamlit.app/" 
+        url_base = "https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/" 
         qr_link = f"{url_base}?tag={tag_input}"
         
         qr = qrcode.make(qr_link)
@@ -187,6 +187,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
