@@ -85,17 +85,26 @@ if modo == "📝 Registro":
         else:
             st.error("Faltan campos (Tag o Técnico)")
 
-    # Generar QR para el motor actual
+  # Generar QR para el motor actual
     if tag:
         st.divider()
-        # REEMPLAZA CON TU URL REAL
+        # 1. PEGA AQUÍ TU URL REAL (la que ves en el navegador)
         mi_url = "https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/"
+        
+        # 2. LIMPIAMOS LA URL (por si acaso hay espacios)
+        mi_url = mi_url.strip()
+        if not mi_url.endswith("/"):
+            mi_url += "/"
+            
+        # 3. CREAMOS EL ENLACE FINAL
         link_qr = f"{mi_url}?tag={tag}"
         
+        # 4. GENERAMOS LA IMAGEN
         qr_img = qrcode.make(link_qr)
         buf = BytesIO()
         qr_img.save(buf, format="PNG")
         st.image(buf, width=150, caption=f"QR Motor {tag}")
+        st.info(f"Enlace del QR: {link_qr}") # Esto te servirá para verificar si el link está bien
 
 # --- MODO 2: HISTORIAL (Lo que abre el QR) ---
 elif modo == "🔍 Historial / QR":
@@ -186,6 +195,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
