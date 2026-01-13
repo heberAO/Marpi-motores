@@ -148,7 +148,7 @@ if modo == "📝 Registro":
     if enviar and tag and responsable:
         nuevo_data = {
             "Fecha": date.today().strftime("%d/%m/%Y"),
-            "Responsable": responsable, "Tag": tag, "Estado": estado, "Potencia": potencia,
+            "Responsable": responsable, "Tag": tag, "Estado": estado, "Potencia": potencia, "RPM" rpm,
             "RT_TU": rt_tu, "RT_TV": rt_tv, "RT_TW": rt_tw,
             "RB_UV": rb_uv, "RB_VW": rb_vw, "RB_UW": rb_uw,
             "RI_U": ri_u, "RI_V": ri_v, "RI_W": ri_w,
@@ -198,6 +198,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
