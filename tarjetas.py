@@ -4,66 +4,94 @@ from streamlit_gsheets import GSheetsConnection
 from datetime import date
 import qrcode
 from io import BytesIO
-import os
 
-# 1. INICIALIZACIÓN
+# 1. INICIALIZACIÓN Y LECTURA DE QR
+st.set_page_config(page_title="Marpi Motores", page_icon="⚡", layout="wide")
+
+# Detectar si venimos de un QR (?tag=XXXX)
+query_params = st.query_params
+tag_qr = query_params.get("tag", "")
+
 if 'form_id' not in st.session_state:
     st.session_state.form_id = 0
-if 'guardado' not in st.session_state:
-    st.session_state.guardado = False
 
-st.set_page_config(page_title="Marpi Motores - Registro Continuo", page_icon="⚡", layout="wide")
-st.markdown("""
-    <style>
-    .main { background-color: #f5f5f5; }
-    .stButton>button { width: 100%; border-radius: 5px; height: 3em; background-color: #ff4b4b; color: white; }
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- LÓGICA DE PERSISTENCIA ---
-# Función para cargar datos al session_state
-def cargar_datos_motor(datos):
-    st.session_state[f"pot_{st.session_state.form_id}"] = str(datos.get('Potencia', ''))
-    st.session_state[f"ten_{st.session_state.form_id}"] = str(datos.get('Tension', ''))
-    st.session_state[f"corr_{st.session_state.form_id}"] = str(datos.get('Corriente', ''))
-    st.session_state[f"rpm_{st.session_state.form_id}"] = str(datos.get('RPM', ''))
+# 2. CONEXIÓN A GOOGLE SHEETS
+try:
+    conn = st.connection("gsheets", type=GSheetsConnection)
+    df_completo = conn.read(ttl=0)
+except Exception:
+    df_completo = pd.DataFrame()
 
 with st.sidebar:
-    if os.path.exists("logo.png"):
-        st.image("logo.png", width=150)
     st.header("⚙️ Menú Marpi")
-    modo = st.radio("Seleccione una opción:", ["📝 Nueva Carga", "🔍 Historial y Buscador"])
-    
+    modo = st.radio("Seleccione:", ["📝 Nueva Carga / Continuar", "🔍 Ver Historial"])
+
+# --- MODO 1: CARGA DE REPARACIONES ---
 if modo == "📝 Nueva Carga / Continuar":
     st.title("SISTEMA DE REGISTRO MARPI ELEC.")
     
-    with st.container():
-        st.subheader("📋 Identificación del Motor")
-        col_tag, col_fecha, col_resp = st.columns([2, 1, 1])
+    # Identificación
+    tag = st.text_input("Tag / ID Motor", value=tag_qr).strip().upper()
+    
+    # Lógica de "Seguir cargando en ese Tag"
+    datos_previa = {"Potencia": "", "Tension": "", "RPM": ""}
+    if tag and not df_completo.empty:
+        historial = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
+        if not historial.empty:
+            ultimo = historial.iloc[-1]
+            datos_previa = {
+                "Potencia": str(ultimo.get('Potencia', '')),
+                "Tension": str(ultimo.get('Tension', '')),
+                "RPM": str(ultimo.get('RPM', ''))
+            }
+            st.success(f"✅ Motor {tag} reconocido. Cargando datos técnicos...")
+
+    with st.form("form_registro"):
+        col1, col2 = st.columns(2)
+        with col1:
+            responsable = st.text_input("Técnico Responsable")
+            fecha = st.date_input("Fecha", date.today())
+            descripcion = st.text_area("¿Qué reparación se hizo hoy?")
         
-        with col_tag:
-            tag = st.text_input("Tag / ID Motor", key=f"ins_tag_{st.session_state.form_id}").strip().upper()
-            if st.button("🔎 Buscar y Cargar Datos Previos"):
-                if tag:
-                    conn = st.connection("gsheets", type=GSheetsConnection)
-                    df_completo = conn.read(ttl=0)
-                    motor_existente = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
-                    
-                    if not motor_existente.empty:
-                        cargar_datos_motor(motor_existente.iloc[-1])
-                        st.success(f"✅ Datos cargados del motor {tag}. Listo para nueva reparación.")
-                        st.rerun()
-                    else:
-                        st.warning("⚠️ Motor nuevo. Complete los datos por primera vez.")
-                else:
-                    st.error("Ingrese un Tag.")
+        with col2:
+            pot = st.text_input("Potencia", value=datos_previa["Potencia"])
+            ten = st.text_input("Tensión", value=datos_previa["Tension"])
+            rpm = st.text_input("RPM", value=datos_previa["RPM"])
+            rt = st.text_input("Res. Tierra (MΩ)")
 
-        with col_fecha:
-            fecha = st.date_input("Fecha Hoy", date.today(), format="DD/MM/YYYY")
-        with col_resp:
-            responsable = st.text_input("Técnico", key=f"ins_resp_{st.session_state.form_id}")
+        guardar = st.form_submit_button("💾 GUARDAR EN HISTORIAL")
 
-    st.divider()
+    if guardar:
+        if tag and responsable:
+            nuevo = pd.DataFrame([{
+                "Fecha": fecha.strftime("%d/%m/%Y"), "Responsable": responsable, "Tag": tag,
+                "Potencia": pot, "Tension": ten, "RPM": rpm, "Res_Tierra": rt,
+                "Descripcion": descripcion
+            }])
+            df_final = pd.concat([df_completo, nuevo], ignore_index=True)
+            conn.update(data=df_final)
+            st.success(f"✅ Reparación añadida al historial de {tag}")
+            
+            # Generar el QR para el motor
+            url_app = "https://marpi-motores.streamlit.app/" # Cambiar por tu URL real
+            qr_link = f"{url_app}?tag={tag}"
+            qr_img = qrcode.make(qr_link)
+            buf = BytesIO()
+            qr_img.save(buf, format="PNG")
+            st.image(buf, caption=f"QR Único Motor {tag}", width=200)
+        else:
+            st.error("Faltan campos obligatorios.")
+
+# --- MODO 2: CONSULTA DE HISTORIAL ---
+elif modo == "🔍 Ver Historial":
+    st.title("🔍 Historial por Motor")
+    busqueda = st.text_input("Ingrese Tag:", value=tag_qr).strip().upper()
+    if busqueda and not df_completo.empty:
+        resultado = df_completo[df_completo['Tag'].astype(str).str.upper() == busqueda]
+        if not resultado.empty:
+            st.dataframe(resultado.sort_index(ascending=False), use_container_width=True)
+        else:
+            st.warning("No hay registros.")
     
     # --- DATOS TÉCNICOS (Se autocompletan si el motor ya existe) ---
     st.subheader("🏷️ Datos de Placa")
@@ -136,6 +164,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
