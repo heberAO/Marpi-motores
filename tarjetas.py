@@ -50,7 +50,7 @@ if modo == "📝 Nueva Carga / Continuar":
         col1, col2 = st.columns(2)
         with col1:
             responsable = st.text_input("Técnico Responsable")
-            fecha = st.date_input("Fecha", date.today())
+            fecha = st.date_input("Fecha Hoy", date.today(), format="DD/MM/YYYY")
             descripcion = st.text_area("¿Qué reparación se hizo hoy?")
         
         with col2:
@@ -164,6 +164,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
