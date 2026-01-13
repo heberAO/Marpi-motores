@@ -176,7 +176,7 @@ if modo == "📝 Registro":
             "RB_UV": rb_uv, "RB_VW": rb_vw, "RB_UW": rb_uw,
             "RI_U": ri_u, "RI_V": ri_v, "RI_W": ri_w,
             "Descripcion": descripcion, 
-            "Taller_Externo": taller_ext,
+            "Taller_Externo": taller_ext_val,
         }
         df_nuevo = pd.DataFrame([nuevo_data])
         df_final = pd.concat([df_completo, df_nuevo], ignore_index=True)
@@ -222,6 +222,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
