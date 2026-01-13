@@ -119,23 +119,20 @@ if modo == "📝 Registro":
     datos_placa = {"pot": "", "rpm_idx": 1, "frame": ""} # Valores por defecto
     
     if tag and not df_completo.empty:
-        # Buscamos el último registro de ese motor
         historial_previo = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
         
         if not historial_previo.empty:
-            ultimo_registro = historial_previo.iloc[-1] # Tomamos el más reciente
-            st.info(f"✅ Motor encontrado. Cargando datos técnicos previos...")
+            ultimo = historial_previo.iloc[-1]
+            st.info(f"✅ Cargando datos del motor {tag}")
             
-            # Extraemos los valores (con seguridad por si la columna no existe)
-            datos_placa["pot"] = str(ultimo_registro.get('Potencia', ''))
+            # 2. EXTRAER DATOS (Usa nombres exactos de tus columnas en Excel)
+            datos_placa["pot"] = str(ultimo.get('Potencia', ''))
+            datos_placa["frame"] = str(ultimo.get('Frame', '')) # <--- Lee el Frame del Excel
             
-            # Para el selectbox de RPM, buscamos su posición en la lista
-            rpm_viejo = str(ultimo_registro.get('RPM', '1500'))
+            rpm_viejo = str(ultimo.get('RPM', '1500'))
             lista_rpm = ["750", "1500", "3000"]
             if rpm_viejo in lista_rpm:
                 datos_placa["rpm_idx"] = lista_rpm.index(rpm_viejo)
-            
-            datos_placa["ext"] = str(ultimo_registro.get('Taller_Externo', ''))
 
     # 3. EL FORMULARIO (Ahora con los valores precargados)
     with st.form("form_tecnico"):
@@ -146,7 +143,7 @@ if modo == "📝 Registro":
             rt_tv = st.text_input("T - V")
             rt_tw = st.text_input("T - W")
         with col2:
-            st.markdown("**Res. Bobinas (Ω)**")
+            st.markdown("**Res. Bobinas (MΩ)**")
             rb_uv = st.text_input("U - V")
             rb_vw = st.text_input("V - W")
             rb_uw = st.text_input("U - W")
@@ -157,17 +154,18 @@ if modo == "📝 Registro":
             ri_w = st.text_input("W1 - W2")
         
         st.divider()
-        c_inf1, c_inf2, c_inf3, c_inf4 = st.columns(4)
-        responsable = c_inf1.text_input("Técnico Responsable")
+        c_inf1, c_inf2, c_inf3, c_inf4 = st.columns(4) # Añadí una 4ta columna
         
-        # Aquí usamos los datos precargados
+        responsable = c_inf1.text_input("Técnico Responsable")
         potencia = c_inf2.text_input("Potencia Motor", value=datos_placa["pot"])
         rpm = c_inf3.selectbox("RPM", ["750", "1500", "3000"], index=datos_placa["rpm_idx"])
-        frame = c_inf4.text_input("Frame", value=datos_placa["ext"])
+        
+        # CORRECCIÓN DEL ERROR: Ahora usamos datos_placa["frame"]
+        frame_val = c_inf4.text_input("Frame", value=datos_placa["frame"])
         
         estado = st.selectbox("Estado Final", ["OPERATIVO", "EN OBSERVACIÓN", "REEMPLAZO"])
         descripcion = st.text_area("Descripción de trabajos realizados")
-        taller_ext = st.text_area("Trabajos de terceros")
+        taller_ext_val = st.text_input("Trabajos de terceros")
         
         enviar = st.form_submit_button("💾 GUARDAR REGISTRO")
     if enviar and tag and responsable:
@@ -223,6 +221,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
