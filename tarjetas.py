@@ -4,10 +4,12 @@ from streamlit_gsheets import GSheetsConnection
 from datetime import date
 import qrcode
 from io import BytesIO
-
+    
 # 1. INICIALIZACIÓN Y LECTURA DE QR
 st.set_page_config(page_title="Marpi Motores", page_icon="⚡", layout="wide")
-
+    if os.path.exists("logo.png"):
+    st.image("logo.png", width=150) 
+    
 # Detectar si venimos de un QR (?tag=XXXX)
 query_params = st.query_params
 tag_qr = query_params.get("tag", "")
@@ -29,8 +31,7 @@ with st.sidebar:
 # --- MODO 1: CARGA DE REPARACIONES ---
 if modo == "📝 Nueva Carga / Continuar":
     st.title("SISTEMA DE REGISTRO MARPI ELEC.")
-if os.path.exists("logo.png"):
-    st.image("logo.png", width=150)    
+   
     # Identificación
     tag = st.text_input("Tag / ID Motor", value=tag_qr).strip().upper()
     
@@ -167,6 +168,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
