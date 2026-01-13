@@ -110,7 +110,7 @@ if modo == "📝 Registro":
         c1, c2 = st.columns(2)
         with c1:
             responsable = st.text_input("Técnico Responsable")
-            fecha = st.date_input("Fecha", date.today())
+            fecha = st.date_input("Fecha Hoy", date.today(), format="DD/MM/YYYY")
             descripcion = st.text_area("Detalles del trabajo")
         with c2:
             pot = st.text_input("Potencia", value=datos_previa["Pot"])
@@ -163,6 +163,7 @@ elif modo == "🔍 Historial / QR":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
