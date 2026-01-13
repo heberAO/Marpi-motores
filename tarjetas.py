@@ -93,8 +93,9 @@ if modo == "📝 Registro":
         with c1:
             responsable = st.text_input("Técnico Responsable")
             fecha = st.date_input("Fecha", date.today())
-            estado_motor = st.selectbox("Estado Final del Motor", ["OPERATIVO", "EN OBSERVACIÓN", "FUERA DE SERVICIO / RECHAZADO"])
+            estado_motor = st.selectbox("Estado Final del Motor", ["OPERATIVO", "REEMPLAZO"])
             descripcion = st.text_area("Descripción de la Reparación (Acciones Realizadas)")
+            externo = st.text_area("Reparacion Taller Externo")
         with c2:
             st.markdown("**Datos de Placa y Mediciones**")
             pot = st.text_input("Potencia")
@@ -152,6 +153,7 @@ elif modo == "🔍 Historial / QR":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
