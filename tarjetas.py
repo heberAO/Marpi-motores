@@ -23,8 +23,7 @@ except Exception:
     df_completo = pd.DataFrame()
 
 with st.sidebar:
-    if os.path.exists("logo.png"):
-    st.image("logo.png", width=150) 
+    if os.path.exists("logo.png"): 
     st.header("⚙️ Menú Marpi")
     modo = st.radio("Seleccione:", ["📝 Nueva Carga / Continuar", "🔍 Ver Historial"])
 
@@ -168,6 +167,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
