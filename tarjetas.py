@@ -6,8 +6,6 @@ import qrcode
 from io import BytesIO
     
 # 1. INICIALIZACIÓN Y LECTURA DE QR
-if os.path.exists("logo.png"):
-    st.image("logo.png", width=150) 
 st.set_page_config(page_title="Marpi Motores", page_icon="⚡", layout="wide")
 
 # Detectar si venimos de un QR (?tag=XXXX)
@@ -168,6 +166,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
