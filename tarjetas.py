@@ -93,32 +93,35 @@ if modo == "📝 Registro":
         with c1:
             responsable = st.text_input("Técnico Responsable")
             fecha = st.date_input("Fecha", date.today())
-            estado_motor = st.selectbox("Estado Final del Motor", ["OPERATIVO", "REEMPLAZO"])
+            estado_motor = st.selectbox("Estado Final del Motor", ["OPERATIVO", "REEMPLAZO", "EN OBSERVACIÓN"])
             descripcion = st.text_area("Descripción de la Reparación (Acciones Realizadas)")
-            externo = st.text_area("Reparacion de Terceros")
+            
         with c2:
             st.markdown("**Datos de Placa y Mediciones**")
             pot = st.text_input("Potencia")
-            ten = st.text_input("Tensión")
             rt = st.text_input("Res. Tierra (MΩ)")
             rb = st.text_input("Res. Bobinas (Ω)")
             ri = st.text_input("Res. Interna (Ω)")
+            # CORREGIDO: era st. no sx.
+            taller_externo = st.text_input("Trabajo de Terceros / Taller Externo")
             
         enviar = st.form_submit_button("💾 GUARDAR")
 
     if enviar and tag and responsable:
+        # CORREGIDO: Agregadas comas faltantes y nombres de variables limpios
         nuevo = pd.DataFrame([{
             "Fecha": fecha.strftime("%d/%m/%Y"), 
             "Responsable": responsable, 
             "Tag": tag, 
-            "Estado": estado_motor, # <--- Nueva columna
+            "Estado": estado_motor,
             "Potencia": pot, 
             "Res_Tierra": rt, 
             "Res_Bobinas": rb, 
             "Res_Interna": ri, 
-            "Descripcion": descripcion
+            "Descripcion": descripcion, # <--- Aquí faltaba la coma
             "Taller_Externo": taller_externo
         }])
+        
         try:
             df_final = pd.concat([df_completo, nuevo], ignore_index=True)
             conn.update(data=df_final)
@@ -158,6 +161,7 @@ elif modo == "🔍 Historial / QR":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
