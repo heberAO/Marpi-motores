@@ -6,123 +6,119 @@ import qrcode
 from io import BytesIO
 import os
 
-# 1. CONFIGURACIÓN INICIAL
+# --- 1. CONFIGURACIÓN E INICIALIZACIÓN CRÍTICA ---
 st.set_page_config(page_title="Marpi Motores", page_icon="⚡", layout="wide")
 
-# Importante: Inicializar variables para que no den el error de la foto
+# Inicializamos las variables de estado para que NUNCA den AttributeError
+if 'form_id' not in st.session_state:
+    st.session_state.form_id = 0
 if 'guardado' not in st.session_state:
     st.session_state.guardado = False
 
-# 2. DETECTAR QR (Parámetros de URL)
-# Esto lee el ?tag=XXXX del QR
-query_params = st.query_params
-tag_qr = query_params.get("tag", "")
+# --- 2. DETECTAR QR ---
+# Leemos el ?tag= de la URL
+query_tag = st.query_params.get("tag", "")
 
-# 3. MOSTRAR LOGO
+# --- 3. MOSTRAR LOGO ---
 if os.path.exists("logo.png"):
     st.image("logo.png", width=150)
 
-# 4. CONEXIÓN A GOOGLE SHEETS
+# --- 4. CONEXIÓN A BASE DE DATOS ---
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
     df_completo = conn.read(ttl=0)
 except Exception:
     df_completo = pd.DataFrame()
 
-# 5. MENÚ LATERAL (Si hay tag de QR, salta a Historial automáticamente)
+# --- 5. MENÚ LATERAL ---
 with st.sidebar:
     st.header("⚙️ Menú Marpi")
-    default_index = 1 if tag_qr else 0
+    # Si detecta tag de QR, selecciona "Historial" (index 1), sino "Registro" (index 0)
+    default_index = 1 if query_tag else 0
     modo = st.radio("Seleccione:", ["📝 Registro", "🔍 Historial / QR"], index=default_index)
 
 # --- MODO 1: REGISTRO ---
 if modo == "📝 Registro":
-    st.title("📝 Nueva Reparación")
+    st.title("📝 Nueva Reparación / Continuar")
     
-    tag = st.text_input("Tag / ID Motor", value=tag_qr).strip().upper()
+    # Usamos el tag del QR o dejamos vacío para escribir
+    tag_input = st.text_input("Tag / ID Motor", value=query_tag).strip().upper()
     
-    # Cargar datos automáticos si el motor ya existe
-    datos_previa = {"Potencia": "", "Tension": "", "RPM": ""}
-    if tag and not df_completo.empty:
-        historia = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
+    # Buscar datos previos para autocompletar
+    datos_previa = {"Pot": "", "Ten": "", "RPM": ""}
+    if tag_input and not df_completo.empty:
+        historia = df_completo[df_completo['Tag'].astype(str).str.upper() == tag_input]
         if not historia.empty:
             ultimo = historia.iloc[-1]
             datos_previa = {
-                "Potencia": str(ultimo.get('Potencia', '')),
-                "Tension": str(ultimo.get('Tension', '')),
+                "Pot": str(ultimo.get('Potencia', '')),
+                "Ten": str(ultimo.get('Tension', '')),
                 "RPM": str(ultimo.get('RPM', ''))
             }
+            st.success(f"✅ Motor {tag_input} encontrado. Datos cargados.")
 
-    with st.form("form_registro"):
-        col1, col2 = st.columns(2)
-        with col1:
+    with st.form("form_reparacion"):
+        c1, c2 = st.columns(2)
+        with c1:
             responsable = st.text_input("Técnico Responsable")
-            fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY")
-            descripcion = st.text_area("Descripción del trabajo")
+            fecha = st.date_input("Fecha", date.today())
+            descripcion = st.text_area("Detalles de la reparación")
         
-        with col2:
-            pot = st.text_input("Potencia (HP/kW)", value=datos_previa["Potencia"])
-            ten = st.text_input("Tensión (V)", value=datos_previa["Tension"])
+        with c2:
+            st.markdown("**Datos Técnicos**")
+            # IMPORTANTE: Eliminamos los 'key=' con session_state para evitar el error
+            pot = st.text_input("Potencia (HP/kW)", value=datos_previa["Pot"])
+            ten = st.text_input("Tensión (V)", value=datos_previa["Ten"])
             rpm = st.text_input("RPM", value=datos_previa["RPM"])
+            st.markdown("**Mediciones**")
             rt = st.text_input("Res. Tierra (Ω)")
             rb = st.text_input("Res. E.Bobina (Ω)")
             ri = st.text_input("Res. Interna (Ω)")
-            
-        btn_guardar = st.form_submit_button("💾 GUARDAR")
 
-    if btn_guardar:
-        if tag and responsable:
-            nuevo = pd.DataFrame([{
-                "Fecha": fecha.strftime("%d/%m/%Y"), "Responsable": responsable, "Tag": tag,
-                "Potencia": pot, "Tension": ten, "RPM": rpm, 
+        enviar = st.form_submit_button("💾 GUARDAR REGISTRO")
+
+    if enviar:
+        if tag_input and responsable:
+            nuevo_log = pd.DataFrame([{
+                "Fecha": fecha.strftime("%d/%m/%Y"), "Responsable": responsable, "Tag": tag_input,
+                "Potencia": pot, "Tension": ten, "RPM": rpm,
                 "Res_Tierra": rt, "Res_Bobinas": rb, "Res_Interna": ri,
                 "Descripcion": descripcion
             }])
-            df_final = pd.concat([df_completo, nuevo], ignore_index=True)
+            df_final = pd.concat([df_completo, nuevo_log], ignore_index=True)
             conn.update(data=df_final)
-            st.success(f"✅ Guardado en el historial de {tag}")
             st.session_state.guardado = True
+            st.balloons()
+            st.success("✅ Guardado exitosamente.")
         else:
-            st.error("Faltan campos (Tag o Técnico)")
+            st.error("⚠️ Tag y Responsable son obligatorios.")
 
-  # Generar QR para el motor actual
-    if tag:
+    # Generador de QR dinámico
+    if tag_input:
         st.divider()
-        # 1. PEGA AQUÍ TU URL REAL (la que ves en el navegador)
+        # USA TU URL REAL AQUÍ
         mi_url = "https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/"
+        link_final = f"{mi_url}?tag={tag_input}"
         
-        # 2. LIMPIAMOS LA URL (por si acaso hay espacios)
-        mi_url = mi_url.strip()
-        if not mi_url.endswith("/"):
-            mi_url += "/"
-            
-        # 3. CREAMOS EL ENLACE FINAL
-        link_qr = f"{mi_url}?tag={tag}"
-        
-        # 4. GENERAMOS LA IMAGEN
-        qr_img = qrcode.make(link_qr)
+        qr_gen = qrcode.make(link_final)
         buf = BytesIO()
-        qr_img.save(buf, format="PNG")
-        st.image(buf, width=150, caption=f"QR Motor {tag}")
-        st.info(f"Enlace del QR: {link_qr}") # Esto te servirá para verificar si el link está bien
+        qr_gen.save(buf, format="PNG")
+        st.image(buf, width=150, caption=f"QR de acceso: {tag_input}")
 
-# --- MODO 2: HISTORIAL (Lo que abre el QR) ---
+# --- MODO 2: HISTORIAL ---
 elif modo == "🔍 Historial / QR":
     st.title("🔍 Hoja de Vida del Motor")
     
-    id_buscar = st.text_input("ID del Motor:", value=tag_qr).strip().upper()
+    id_ver = st.text_input("Ingrese ID a consultar:", value=query_tag).strip().upper()
     
-    if id_buscar:
+    if id_ver:
         if not df_completo.empty:
-            res = df_completo[df_completo['Tag'].astype(str).str.upper() == id_buscar]
+            res = df_completo[df_completo['Tag'].astype(str).str.upper() == id_ver]
             if not res.empty:
-                st.subheader(f"Reparaciones de {id_buscar}")
-                # Mostramos la tabla. Sort por índice descendente para ver lo nuevo arriba
+                st.subheader(f"Historial de {id_ver}")
                 st.dataframe(res.sort_index(ascending=False), use_container_width=True)
             else:
-                st.warning(f"No hay registros para {id_buscar}")
-        else:
-            st.error("No hay datos en la base de datos.")
+                st.warning("No hay registros para este motor.")
     
     # --- DATOS TÉCNICOS (Se autocompletan si el motor ya existe) ---
     st.subheader("🏷️ Datos de Placa")
@@ -195,6 +191,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
