@@ -109,11 +109,34 @@ with st.sidebar:
 
 # --- MODO 1: REGISTRO ---
 if modo == "📝 Registro":
-    st.title("📝 Nuevo Registro de Motor")
-    tag = st.text_input("TAG DEL MOTOR / N°", value=query_tag).strip().upper()
-    fecha = st.date_input("Fecha Hoy", date.today(), format="DD/MM/YYYY")
+    st.title("📝 Registro de Reparación")
     
+    # 1. El TAG debe estar FUERA del formulario para que Streamlit pueda "reaccionar" al escribirlo
+    tag = st.text_input("TAG DEL MOTOR", value=query_tag).strip().upper()
     
+    # 2. BUSCAR DATOS PREVIOS
+    datos_placa = {"pot": "", "rpm_idx": 1, "ext": ""} # Valores por defecto
+    
+    if tag and not df_completo.empty:
+        # Buscamos el último registro de ese motor
+        historial_previo = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
+        
+        if not historial_previo.empty:
+            ultimo_registro = historial_previo.iloc[-1] # Tomamos el más reciente
+            st.info(f"✅ Motor encontrado. Cargando datos técnicos previos...")
+            
+            # Extraemos los valores (con seguridad por si la columna no existe)
+            datos_placa["pot"] = str(ultimo_registro.get('Potencia', ''))
+            
+            # Para el selectbox de RPM, buscamos su posición en la lista
+            rpm_viejo = str(ultimo_registro.get('RPM', '1500'))
+            lista_rpm = ["750", "1500", "3000"]
+            if rpm_viejo in lista_rpm:
+                datos_placa["rpm_idx"] = lista_rpm.index(rpm_viejo)
+            
+            datos_placa["ext"] = str(ultimo_registro.get('Taller_Externo', ''))
+
+    # 3. EL FORMULARIO (Ahora con los valores precargados)
     with st.form("form_tecnico"):
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -133,18 +156,18 @@ if modo == "📝 Registro":
             ri_w = st.text_input("W1 - W2")
         
         st.divider()
-        c_inf1, c_inf2, c_inf3, c_inf4, c_inf5 = st.columns(5)
+        c_inf1, c_inf2, c_inf3 = st.columns(3)
         responsable = c_inf1.text_input("Técnico Responsable")
-        potencia = c_inf2.text_input("Potencia Motor")
-        rpm = c_inf3.selectbox("RPM", ["750", "1500", "3000"])
-        frame = c_inf4.text_input("Frame")
-        estado = c_inf5.selectbox("Estado Final", ["OPERATIVO", "EN OBSERVACIÓN", "REEMPLAZO"])
         
+        # Aquí usamos los datos precargados
+        potencia = c_inf2.text_input("Potencia Motor", value=datos_placa["pot"])
+        rpm = c_inf3.selectbox("RPM", ["750", "1500", "3000"], index=datos_placa["rpm_idx"])
+        
+        estado = st.selectbox("Estado Final", ["OPERATIVO", "EN OBSERVACIÓN", "REEMPLAZO"])
         descripcion = st.text_area("Descripción de trabajos realizados")
-        taller_ext = st.text_area("Trabajos de terceros (Taller externo)")
+        taller_ext = st.text_input("Trabajos de terceros", value=datos_placa["ext"])
         
         enviar = st.form_submit_button("💾 GUARDAR REGISTRO")
-
     if enviar and tag and responsable:
         nuevo_data = {
             "Fecha": date.today().strftime("%d/%m/%Y"),
@@ -198,6 +221,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
