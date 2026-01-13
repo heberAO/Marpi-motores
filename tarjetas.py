@@ -4,101 +4,117 @@ from streamlit_gsheets import GSheetsConnection
 from datetime import date
 import qrcode
 from io import BytesIO
-    
-# 1. INICIALIZACIÓN Y LECTURA DE QR
-st.set_page_config(page_title="Marpi Motores", page_icon="⚡", layout="wide")
-# --- LOGO Y ENCABEZADO ---
+import os  # <--- ESTO ES LO QUE FALTABA PARA EL LOGO
+
+# 1. CONFIGURACIÓN DE PÁGINA
+st.set_page_config(page_title="Marpi Motores - Historial QR", page_icon="⚡", layout="wide")
+
+# --- MOSTRAR LOGO ---
 if os.path.exists("logo.png"):
     st.image("logo.png", width=150)
-else:
-    st.warning("⚠️ No se encontró el archivo logo.png")
 
-# Detectar si venimos de un QR (?tag=XXXX)
-query_params = st.query_params
-tag_qr = query_params.get("tag", "")
+# Inicializar sesión para limpiar formulario o detectar QR
+query_tag = st.query_params.get("tag", "")
+if 'guardado' not in st.session_state:
+    st.session_state.guardado = False
 
-if 'form_id' not in st.session_state:
-    st.session_state.form_id = 0
-
-# 2. CONEXIÓN A GOOGLE SHEETS
+# 2. CONEXIÓN A BASE DE DATOS
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
     df_completo = conn.read(ttl=0)
 except Exception:
+    st.error("Error de conexión con Google Sheets")
     df_completo = pd.DataFrame()
- 
+
+# 3. MENÚ LATERAL
 with st.sidebar:
     st.header("⚙️ Menú Marpi")
-    modo = st.radio("Seleccione:", ["📝 Nueva Carga / Continuar", "🔍 Ver Historial"])
+    modo = st.radio("Seleccione:", ["📝 Registro y Continuidad", "🔍 Consulta de Historial"])
 
-# --- MODO 1: CARGA DE REPARACIONES ---
-if modo == "📝 Nueva Carga / Continuar":
+# --- MODO 1: REGISTRO ---
+if modo == "📝 Registro y Continuidad":
     st.title("SISTEMA DE REGISTRO MARPI ELEC.")
-   
-    # Identificación
-    tag = st.text_input("Tag / ID Motor", value=tag_qr).strip().upper()
     
-    # Lógica de "Seguir cargando en ese Tag"
+    # Si viene de un QR, usamos ese Tag por defecto
+    tag_input = st.text_input("Tag / ID Motor", value=query_tag).strip().upper()
+    
+    # Lógica de carga automática de datos previos
     datos_previa = {"Potencia": "", "Tension": "", "RPM": ""}
-    if tag and not df_completo.empty:
-        historial = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
-        if not historial.empty:
-            ultimo = historial.iloc[-1]
+    if tag_input and not df_completo.empty:
+        historia_motor = df_completo[df_completo['Tag'].astype(str).str.upper() == tag_input]
+        if not historia_motor.empty:
+            ultimo = historia_motor.iloc[-1]
             datos_previa = {
                 "Potencia": str(ultimo.get('Potencia', '')),
                 "Tension": str(ultimo.get('Tension', '')),
                 "RPM": str(ultimo.get('RPM', ''))
             }
-            st.success(f"✅ Motor {tag} reconocido. Cargando datos técnicos...")
+            st.info(f"✅ Motor conocido. {len(historia_motor)} reparaciones previas.")
 
-    with st.form("form_registro"):
+    with st.form("registro_form"):
         col1, col2 = st.columns(2)
         with col1:
             responsable = st.text_input("Técnico Responsable")
-            fecha = st.date_input("Fecha Hoy", date.today(), format="DD/MM/YYYY")
-            descripcion = st.text_area("¿Qué reparación se hizo hoy?")
+            fecha = st.date_input("Fecha", date.today())
+            descripcion = st.text_area("Detalles de la Reparación de Hoy")
         
         with col2:
-            pot = st.text_input("Potencia", value=datos_previa["Potencia"])
-            ten = st.text_input("Tensión", value=datos_previa["Tension"])
+            st.markdown("**Datos Técnicos y Mediciones**")
+            potencia = st.text_input("Potencia", value=datos_previa["Potencia"])
+            tension = st.text_input("Tensión", value=datos_previa["Tension"])
             rpm = st.text_input("RPM", value=datos_previa["RPM"])
             rt = st.text_input("Res. Tierra (Ω)")
             rb = st.text_input("Res. E.Bobina (Ω)")
-            ri = st.text_input("Res. Interna (Ω)")                   
+            ri = st.text_input("Res. Interna (Ω)")
 
-        guardar = st.form_submit_button("💾 GUARDAR EN HISTORIAL")
+        enviar = st.form_submit_button("💾 GUARDAR NUEVA REPARACIÓN")
 
-    if guardar:
-        if tag and responsable:
+    if enviar:
+        if tag_input and responsable:
             nuevo = pd.DataFrame([{
-                "Fecha": fecha.strftime("%d/%m/%Y"), "Responsable": responsable, "Tag": tag,
-                "Potencia": pot, "Tension": ten, "RPM": rpm, "Res_Tierra": rt, "Res_E.Bobina": rb, "Res_Interna": ir, 
+                "Fecha": fecha.strftime("%d/%m/%Y"), 
+                "Responsable": responsable, 
+                "Tag": tag_input,
+                "Potencia": potencia, 
+                "Tension": tension, 
+                "RPM": rpm, 
+                "Res_Tierra": rt,
+                "Res_Bobinas": rb,
+                "Res_Interna": ri,
                 "Descripcion": descripcion
             }])
             df_final = pd.concat([df_completo, nuevo], ignore_index=True)
             conn.update(data=df_final)
-            st.success(f"✅ Reparación añadida al historial de {tag}")
-            
-            # Generar el QR para el motor
-            url_app = "https://marpi-motores.streamlit.app/" # Cambiar por tu URL real
-            qr_link = f"{url_app}?tag={tag}"
-            qr_img = qrcode.make(qr_link)
-            buf = BytesIO()
-            qr_img.save(buf, format="PNG")
-            st.image(buf, caption=f"QR Único Motor {tag}", width=200)
+            st.session_state.guardado = True
+            st.success(f"Reparación guardada para el motor {tag_input}")
+            st.rerun()
         else:
-            st.error("Faltan campos obligatorios.")
+            st.error("Faltan datos obligatorios (Tag o Responsable).")
 
-# --- MODO 2: CONSULTA DE HISTORIAL ---
-elif modo == "🔍 Ver Historial":
-    st.title("🔍 Historial por Motor")
-    busqueda = st.text_input("Ingrese Tag:", value=tag_qr).strip().upper()
-    if busqueda and not df_completo.empty:
-        resultado = df_completo[df_completo['Tag'].astype(str).str.upper() == busqueda]
-        if not resultado.empty:
-            st.dataframe(resultado.sort_index(ascending=False), use_container_width=True)
+    # Mostrar QR si se guardó o si el Tag está presente
+    if tag_input:
+        st.divider()
+        # REEMPLAZA ESTO CON TU URL REAL DE STREAMLIT CLOUD:
+        url_base = "https://marpi-motores.streamlit.app/" 
+        qr_link = f"{url_base}?tag={tag_input}"
+        
+        qr = qrcode.make(qr_link)
+        buf = BytesIO()
+        qr.save(buf, format="PNG")
+        st.image(buf, width=150, caption=f"QR de acceso al motor {tag_input}")
+
+# --- MODO 2: CONSULTA ---
+elif modo == "🔍 Consulta de Historial":
+    st.title("🔍 Hoja de Vida del Motor")
+    tag_buscar = st.text_input("Tag a consultar:", value=query_tag).strip().upper()
+    
+    if tag_buscar:
+        historia = df_completo[df_completo['Tag'].astype(str).str.upper() == tag_buscar]
+        if not historia.empty:
+            st.subheader(f"Cronología de Intervenciones: {tag_buscar}")
+            st.dataframe(historia.sort_index(ascending=False), use_container_width=True)
         else:
-            st.warning("No hay registros.")
+            st.error("No se encontraron registros para este motor.")
     
     # --- DATOS TÉCNICOS (Se autocompletan si el motor ya existe) ---
     st.subheader("🏷️ Datos de Placa")
@@ -171,6 +187,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
