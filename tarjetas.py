@@ -9,7 +9,7 @@ import os
 # 1. CONFIGURACIÓN E INICIALIZACIÓN
 st.set_page_config(page_title="Marpi Motores", page_icon="⚡", layout="wide")
 
-# Inicializar variables de estado para evitar errores de "AttributeError"
+# Inicializar variables de estado para evitar errores de sesión
 if 'guardado' not in st.session_state:
     st.session_state.guardado = False
 
@@ -31,7 +31,7 @@ except Exception:
 # 5. MENÚ LATERAL
 with st.sidebar:
     st.header("⚙️ Menú Marpi")
-    # Si detecta tag de QR, selecciona "Historial" (index 1), sino "Registro" (index 0)
+    # Si detecta tag de QR (viene de un escaneo), selecciona "Historial" (index 1)
     default_index = 1 if query_tag else 0
     modo = st.radio("Seleccione:", ["📝 Registro", "🔍 Historial / QR"], index=default_index)
 
@@ -39,14 +39,14 @@ with st.sidebar:
 if modo == "📝 Registro":
     st.title("📝 Nueva Reparación / Continuar")
     
-    # Usamos el tag del QR o dejamos vacío para escribir
-    tag_input = st.text_input("Tag / ID Motor", value=query_tag).strip().upper()
+    # IMPORTANTE: Definimos la variable 'tag' (sin _input) para que coincida en todo el código
+    tag = st.text_input("Tag / ID Motor", value=query_tag).strip().upper()
     
     # Buscar datos previos para autocompletar
     datos_previa = {"Pot": "", "Ten": "", "RPM": ""}
-    if tag_input and not df_completo.empty:
-        # Buscamos en la columna 'Tag' (asegúrate que en tu Excel se llame exactamente 'Tag')
-        historia = df_completo[df_completo['Tag'].astype(str).str.upper() == tag_input]
+    if tag and not df_completo.empty:
+        # Buscamos en la columna 'Tag'
+        historia = df_completo[df_completo['Tag'].astype(str).str.upper() == tag]
         if not historia.empty:
             ultimo = historia.iloc[-1]
             datos_previa = {
@@ -54,7 +54,7 @@ if modo == "📝 Registro":
                 "Ten": str(ultimo.get('Tension', '')),
                 "RPM": str(ultimo.get('RPM', ''))
             }
-            st.success(f"✅ Motor {tag_input} encontrado. Datos cargados.")
+            st.success(f"✅ Motor {tag} encontrado. Datos cargados.")
 
     with st.form("form_reparacion"):
         c1, c2 = st.columns(2)
@@ -76,12 +76,12 @@ if modo == "📝 Registro":
         enviar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
     if enviar:
-        # CORRECCIÓN NameError: aquí usamos 'tag_input' que es la variable definida arriba
-        if tag_input and responsable:
+        # Aquí ya no habrá NameError porque 'tag' existe arriba
+        if tag and responsable:
             nuevo_log = pd.DataFrame([{
                 "Fecha": fecha.strftime("%d/%m/%Y"), 
                 "Responsable": responsable, 
-                "Tag": tag_input,
+                "Tag": tag,
                 "Potencia": pot, 
                 "Tension": ten, 
                 "RPM": rpm,
@@ -94,21 +94,21 @@ if modo == "📝 Registro":
             conn.update(data=df_final)
             st.session_state.guardado = True
             st.balloons()
-            st.success(f"✅ Guardado exitosamente para el motor {tag_input}")
+            st.success(f"✅ Guardado exitosamente para el motor {tag}")
         else:
             st.error("⚠️ El Tag y el Responsable son obligatorios.")
 
     # Generador de QR
-    if tag_input:
+    if tag:
         st.divider()
-        # REEMPLAZA CON TU URL REAL SI CAMBIA
+        # Asegúrate de que esta URL sea la de tu app publicada
         mi_url = "https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/"
-        link_final = f"{mi_url}?tag={tag_input}"
+        link_final = f"{mi_url}?tag={tag}"
         
         qr_gen = qrcode.make(link_final)
         buf = BytesIO()
         qr_gen.save(buf, format="PNG")
-        st.image(buf, width=150, caption=f"QR de acceso: {tag_input}")
+        st.image(buf, width=150, caption=f"QR de acceso: {tag}")
 
 # --- MODO 2: HISTORIAL ---
 elif modo == "🔍 Historial / QR":
@@ -198,6 +198,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
