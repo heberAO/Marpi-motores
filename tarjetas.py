@@ -4,8 +4,15 @@ from streamlit_gsheets import GSheetsConnection
 from datetime import date
 import qrcode
 from io import BytesIO
-import os  # <--- ESTO ES LO QUE FALTABA PARA EL LOGO
+import os  
+# Detectar si alguien escaneó un QR (?tag=MOTOR-01)
+query_tag = st.query_params.get("tag", "")
 
+# Si hay un tag en la URL, forzamos que el menú inicie en "Consulta de Historial"
+if query_tag:
+    indice_menu = 1 # Esto selecciona el segundo botón del menú lateral
+else:
+    indice_menu = 0
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Marpi Motores - Historial QR", page_icon="⚡", layout="wide")
 
@@ -29,8 +36,8 @@ except Exception:
 # 3. MENÚ LATERAL
 with st.sidebar:
     st.header("⚙️ Menú Marpi")
-    modo = st.radio("Seleccione:", ["📝 Registro y Continuidad", "🔍 Consulta de Historial"])
-
+    # Usamos el 'index' para que se mueva solo si escaneamos un QR
+    modo = st.radio("Seleccione:", ["📝 Registro y Continuidad", "🔍 Consulta de Historial"], index=indice_menu)
 # --- MODO 1: REGISTRO ---
 if modo == "📝 Registro y Continuidad":
     st.title("SISTEMA DE REGISTRO MARPI ELEC.")
@@ -187,6 +194,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
