@@ -58,7 +58,7 @@ if modo == "📝 Nueva Carga / Continuar":
             ten = st.text_input("Tensión", value=datos_previa["Tension"])
             rpm = st.text_input("RPM", value=datos_previa["RPM"])
             rt = st.text_input("Res. Tierra (Ω)")
-            rb = st.texr_input("Res. entre Bobina (Ω)")
+            rb = st.texr_input("Res. E.Bobina (Ω)")
             ri = st.text_input("Res. Interna (Ω)")                   
 
         guardar = st.form_submit_button("💾 GUARDAR EN HISTORIAL")
@@ -67,7 +67,7 @@ if modo == "📝 Nueva Carga / Continuar":
         if tag and responsable:
             nuevo = pd.DataFrame([{
                 "Fecha": fecha.strftime("%d/%m/%Y"), "Responsable": responsable, "Tag": tag,
-                "Potencia": pot, "Tension": ten, "RPM": rpm, "Res_Tierra": rt,
+                "Potencia": pot, "Tension": ten, "RPM": rpm, "Res_Tierra": rt, "Res_E.Bobina": rb, "R_Interna": ir, 
                 "Descripcion": descripcion
             }])
             df_final = pd.concat([df_completo, nuevo], ignore_index=True)
@@ -166,6 +166,7 @@ elif modo == "🔍 Historial Completo":
             st.error(f"Error al consultar: {e}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
