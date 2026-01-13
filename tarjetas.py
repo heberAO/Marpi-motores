@@ -117,6 +117,7 @@ if modo == "📝 Registro":
             "Res_Bobinas": rb, 
             "Res_Interna": ri, 
             "Descripcion": descripcion
+            "Taller_Externo": taller externo
         }])
         df_final = pd.concat([df_completo, nuevo], ignore_index=True)
         conn.update(data=df_final)
@@ -153,6 +154,7 @@ elif modo == "🔍 Historial / QR":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
