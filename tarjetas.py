@@ -157,7 +157,7 @@ if modo == "📝 Registro":
             ri_w = st.text_input("W1 - W2")
         
         st.divider()
-        c_inf1, c_inf2, c_inf3 = st.columns(4)
+        c_inf1, c_inf2, c_inf3, c_inf4 = st.columns(4)
         responsable = c_inf1.text_input("Técnico Responsable")
         
         # Aquí usamos los datos precargados
@@ -223,6 +223,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
