@@ -119,10 +119,14 @@ if modo == "📝 Registro":
             "Descripcion": descripcion
             "Taller_Externo": taller_externo
         }])
-        df_final = pd.concat([df_completo, nuevo], ignore_index=True)
-        conn.update(data=df_final)
-        st.success("✅ Registro Guardado.")
-        st.rerun()
+        try:
+            df_final = pd.concat([df_completo, nuevo], ignore_index=True)
+            conn.update(data=df_final)
+            st.success("✅ Registro Guardado con éxito.")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Error al guardar en Google Sheets: {e}")
+        
 
 # --- MODO 2: HISTORIAL ---
 elif modo == "🔍 Historial / QR":
@@ -154,6 +158,7 @@ elif modo == "🔍 Historial / QR":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
