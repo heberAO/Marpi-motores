@@ -12,38 +12,63 @@ def generar_pdf(df_historial, tag_motor):
     pdf = FPDF()
     pdf.add_page()
     
-    # Logo si existe
+    # 1. ENCABEZADO Y LOGO
     if os.path.exists("logo.png"):
-        pdf.image("logo.png", 10, 8, 30)
+        pdf.image("logo.png", 10, 8, 33)
     
-    # Título
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(0, 10, 'INFORME TÉCNICO DE MANTENIMIENTO', 0, 1, 'C')
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, f"Motor Tag: {tag_motor}", 0, 1, 'C')
+    pdf.cell(0, 10, f"ID MOTOR / TAG: {tag_motor}", 0, 1, 'C')
     pdf.ln(10)
     
-    # Tabla de datos
-    pdf.set_fill_color(200, 220, 255)
+    # 2. ENCABEZADOS DE TABLA (Colores de Marpi)
+    pdf.set_fill_color(40, 40, 40) # Fondo oscuro
+    pdf.set_text_color(255, 255, 255) # Texto blanco
     pdf.set_font("Arial", 'B', 10)
-    pdf.cell(25, 10, "Fecha", 1, 0, 'C', True)
-    pdf.cell(35, 10, "Técnico", 1, 0, 'C', True)
-    pdf.cell(20, 10, "Pot.", 1, 0, 'C', True)
-    pdf.cell(110, 10, "Descripción del Trabajo", 1, 1, 'C', True)
     
+    # Definimos anchos de columnas
+    w_resp = 40
+    w_desc = 110
+    w_fecha = 35
+    
+    pdf.cell(w_resp, 10, "Responsable", 1, 0, 'C', True)
+    pdf.cell(w_desc, 10, "Reparación / Descripción", 1, 0, 'C', True)
+    pdf.cell(w_fecha, 10, "Fecha", 1, 1, 'C', True)
+    
+    # 3. CONTENIDO DE LA TABLA
+    pdf.set_text_color(0, 0, 0) # Volver a texto negro
     pdf.set_font("Arial", '', 9)
-    for _, row in df_historial.iterrows():
-        # Limpiamos los datos para evitar errores de caracteres
-        fecha = str(row.get('Fecha', ''))
-        tec = str(row.get('Responsable', ''))[:15]
-        pot = str(row.get('Potencia', ''))
-        desc = str(row.get('Descripcion', '')).replace('\n', ' ')[:70]
+    
+    # Ordenamos por fecha (lo más nuevo primero) antes de imprimir
+    df_ordenado = df_historial.sort_index(ascending=False)
+    
+    for _, row in df_ordenado.iterrows():
+        resp = str(row.get('Responsable', ''))
+        desc = str(row.get('Descripcion', ''))
+        fec = str(row.get('Fecha', ''))
         
-        pdf.cell(25, 10, fecha, 1)
-        pdf.cell(35, 10, tec, 1)
-        pdf.cell(20, 10, pot, 1)
-        pdf.cell(110, 10, desc, 1)
-        pdf.ln()
+        # Guardamos la posición actual para la descripción multilínea
+        x = pdf.get_x()
+        y = pdf.get_y()
+        
+        # Columna Responsable
+        pdf.multi_cell(w_resp, 10, resp, 1, 'C')
+        
+        # Columna Descripción (Ajusta el alto automáticamente)
+        pdf.set_xy(x + w_resp, y)
+        pdf.multi_cell(w_desc, 10, desc, 1, 'L')
+        
+        # Columna Fecha
+        final_y = pdf.get_y() # Guardamos donde terminó la descripción
+        pdf.set_xy(x + w_resp + w_desc, y)
+        pdf.multi_cell(w_fecha, (final_y - y), fec, 1, 'C')
+        
+        pdf.set_xy(x, final_y) # Movemos el puntero al inicio de la siguiente fila
+        
+    pdf.ln(10)
+    pdf.set_font("Arial", 'I', 8)
+    pdf.cell(0, 10, f"Documento generado el {date.today().strftime('%d/%m/%Y')} - Sistema Marpi Electricidad", 0, 0, 'C')
     
     return pdf.output(dest='S').encode('latin-1', errors='replace')
 
@@ -138,6 +163,7 @@ elif modo == "🔍 Historial / QR":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
