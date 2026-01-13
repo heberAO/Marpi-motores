@@ -116,7 +116,7 @@ if modo == "📝 Registro":
     tag = st.text_input("TAG DEL MOTOR", value=query_tag).strip().upper()
     
     # 2. BUSCAR DATOS PREVIOS
-    datos_placa = {"pot": "", "rpm_idx": 1, "ext": ""} # Valores por defecto
+    datos_placa = {"pot": "", "rpm_idx": 1, "frame": ""} # Valores por defecto
     
     if tag and not df_completo.empty:
         # Buscamos el último registro de ese motor
@@ -223,6 +223,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
