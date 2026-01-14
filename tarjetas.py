@@ -71,9 +71,11 @@ if modo == "📝 Registro":
     with st.form("form_registro"):
         responsable = st.text_input("Técnico Responsable")
         potencia = st.text_input("Potencia")
-        rpm = st.selectbox("RPM", ["750", "1500", "3000"])
+        frame = st.text_input("Frame")
+        rpm = st.selectbox("RPM", ["-", "750", "1500", "3000"])
         estado = st.selectbox("Estado Final", ["OPERATIVO", "EN OBSERVACIÓN", "REEMPLAZO"])
         descripcion = st.text_area("Descripción de trabajos")
+        externo = st.text_area("Taller Externo")
         enviar = st.form_submit_button("💾 GUARDAR REGISTRO")
         
         if enviar and tag and responsable:
@@ -104,14 +106,64 @@ elif modo == "🔍 Historial":
 
             if st.session_state.mostrar_form:
                 with st.form("nueva_rep_rapida"):
-                    st.write("### Cargar nueva intervención")
-                    resp = st.text_input("Responsable")
-                    desc = st.text_area("Acciones realizadas")
-                    if st.form_submit_button("💾 Guardar"):
-                        # Lógica simple de guardado para probar
-                        st.success("Guardado. Recarga para ver cambios.")
-                        st.session_state.mostrar_form = False
-                        st.rerun()
+                    st.write("### 📝 Registrar Intervención Técnica")
+                    
+                    # Fila 1: Datos Básicos
+                    c1, c2 = st.columns(2)
+                    fecha_rep = c1.date_input("Fecha de trabajo", date.today())
+                    resp = c2.text_input("Técnico Responsable")
+                    
+                    # Fila 2: Mediciones Técnicas
+                    st.markdown("---")
+                    col_t, col_b, col_i = st.columns(3)
+                    
+                    with col_t:
+                        st.write("**Tierra (MΩ)**")
+                        rt_tu = st.text_input("T-U")
+                        rt_tv = st.text_input("T-V")
+                        rt_tw = st.text_input("T-W")
+                    with col_b:
+                        st.write("**Bobinas (MΩ)**")
+                        rb_uv = st.text_input("U-V")
+                        rb_vw = st.text_input("V-W")
+                        rb_uw = st.text_input("U-W")
+                    with col_i:
+                        st.write("**Interna (Ω)**")
+                        ri_u = st.text_input("U1-U2")
+                        ri_v = st.text_input("V1-V2")
+                        ri_w = st.text_input("W1-W2")
+                    
+                    st.markdown("---")
+                    # Fila 3: Estado y Detalles
+                    est = st.selectbox("Estado Final", ["OPERATIVO", "EN OBSERVACIÓN", "REEMPLAZO"])
+                    desc = st.text_area("Acciones realizadas (Bobinado, limpieza, etc.)")
+                    ext = st.text_area("Trabajos de taller externo (Balanceo, tornería, etc.)")
+                    
+                    if st.form_submit_button("💾 GUARDAR REPARACIÓN EN HISTORIAL"):
+                        if resp and desc:  # Validación mínima
+                            # Creamos el diccionario con TODOS los campos
+                            nueva_data = {
+                                "Fecha": fecha_rep.strftime("%d/%m/%Y"),
+                                "Responsable": resp,
+                                "Tag": id_ver,
+                                "Estado": est,
+                                "RT_TU": rt_tu, "RT_TV": rt_tv, "RT_TW": rt_tw,
+                                "RB_UV": rb_uv, "RB_VW": rb_vw, "RB_UW": rb_uw,
+                                "RI_U": ri_u, "RI_V": ri_v, "RI_W": ri_w,
+                                "Descripcion": desc,
+                                "Taller_Externo": ext
+                            }
+                            
+                            # Subir a Google Sheets
+                            df_nuevo_reg = pd.DataFrame([nueva_data])
+                            df_final = pd.concat([df_completo, df_nuevo_reg], ignore_index=True)
+                            conn.update(data=df_final)
+                            
+                            st.success(f"✅ ¡Reparación de motor {id_ver} guardada!")
+                            st.session_state.mostrar_form = False
+                            st.rerun()
+                        else:
+                            st.error("Por favor completa el nombre del técnico y la descripción.")
 
             st.dataframe(historial_motor.sort_index(ascending=False))
         else:
@@ -119,6 +171,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
