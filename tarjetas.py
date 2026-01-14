@@ -131,10 +131,16 @@ with st.sidebar:
     modo = st.radio("Menú:", ["📝 Registro Nuevo", "🔍 Historial / QR"], index=1 if query_tag else 0)
 
 # --- MODO REGISTRO NUEVO ---
+# --- MODO REGISTRO NUEVO (CON AUTO-LIMPIEZA) ---
 if modo == "📝 Registro Nuevo":
     st.title("📝 Alta y Registro Inicial de Motor")
-    fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY")
-    with st.form("alta_motor_completa"):
+    
+    # Creamos un contador en el estado de la sesión para reiniciar el formulario
+    if "form_count" not in st.session_state:
+        st.session_state.form_count = 0
+
+    # Al cambiar la 'key' del formulario, todos los campos se limpian
+    with st.form(key=f"alta_motor_{st.session_state.form_count}"):
         col_id1, col_id2, col_id3, col_id4 = st.columns(4)
         t = col_id1.text_input("TAG/ID MOTOR").upper()
         p = col_id2.text_input("Potencia (HP/kW)")
@@ -165,7 +171,9 @@ if modo == "📝 Registro Nuevo":
         desc = st.text_area("Descripción inicial / Trabajos")
         ext = st.text_area("Trabajos Externos")
         
-        if st.form_submit_button("💾 REGISTRAR MOTOR"):
+        btn_guardar = st.form_submit_button("💾 REGISTRAR MOTOR")
+        
+        if btn_guardar:
             if t and resp:
                 nueva_fila = {
                     "Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "Potencia": p, "RPM": r, "Frame": f,
@@ -174,11 +182,20 @@ if modo == "📝 Registro Nuevo":
                     "RB_UV": rb_uv, "RB_VW": rb_vw, "RB_UW": rb_uw,
                     "RI_U": ri_u, "RI_V": ri_v, "RI_W": ri_w
                 }
+                
+                # Guardar en Google Sheets
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_final)
-                st.success(f"✅ Motor {t} registrado.")
+                
+                # AVISO DE ÉXITO
+                st.success(f"✅ ¡Excelente! El motor {t} ha sido guardado correctamente.")
+                st.balloons() # Un pequeño efecto visual de celebración
+                
+                # CAMBIAMOS LA KEY PARA LIMPIAR TODO
+                st.session_state.form_count += 1
+                st.rerun() 
             else:
-                st.error("⚠️ Tag y Técnico son obligatorios.")
+                st.error("⚠️ El TAG y el Técnico son obligatorios para guardar.")
 
 # --- MODO HISTORIAL / QR ---
 elif modo == "🔍 Historial / QR":
@@ -265,6 +282,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
