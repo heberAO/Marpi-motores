@@ -101,7 +101,13 @@ except:
 # Logo
 if os.path.exists("logo.png"):
     st.image("logo.png", width=120)
+# --- INICIALIZAR ESTADO DE LA SESIÓN ---
+if 'mostrar_form' not in st.session_state:
+    st.session_state.mostrar_form = False
 
+# Función para cambiar el estado
+def abrir_formulario():
+    st.session_state.mostrar_form = True
 # Menú lateral
 with st.sidebar:
     st.header("⚙️ Menú")
@@ -193,8 +199,13 @@ if modo == "📝 Registro":
         st.image(buf, width=150, caption="QR generado para este motor")
 
 elif modo == "🔍 Historial":
-    st.title("🔍 Hoja de Vida y Nueva Reparación")
-    id_ver = st.text_input("TAG DEL MOTOR:", value=query_tag).strip().upper()
+    col_pdf, col_nuevo = st.columns(2)
+
+    # Botón PDF (Este funciona directo)
+    pdf_bytes = generar_pdf(historial_motor, id_ver)
+    col_pdf.download_button("📥 Descargar Historial", pdf_bytes, f"Historial_{id_ver}.pdf")
+    # Botón para abrir el formulario (Usando on_click para que no se cierre)
+    col_nuevo.button("➕ Registrar Nueva Reparación", on_click=abrir_formulario)
     
     if id_ver:
         # 1. Filtrar registros del motor
@@ -222,12 +233,34 @@ elif modo == "🔍 Historial":
             if col_nuevo.button("➕ Registrar Nueva Reparación"):
                 st.session_state.mostrar_form = True
 
-            # --- FORMULARIO DE REPARACIÓN (Solo aparece si se activa) ---
-            if st.session_state.get('mostrar_form', False):
-                with st.form("reparacion_rapida"):
-                    st.info("Cargando nueva intervención técnica...")
-                    # Aquí pones todos tus campos de mediciones (RT, RB, RI)
-                    # ... (el código del formulario que ya tenemos) ...
+            # --- EL FORMULARIO ---
+            if st.session_state.mostrar_form:
+                st.markdown("---")
+                st.subheader("📝 Nueva Intervención")
+    
+                with st.form("reparacion_en_historial"):
+                    # Aquí pegas tus columnas de mediciones (las que ya tenías)
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        st.write("**Tierra**")
+                        rt_tu = st.text_input("T-U")
+            # ... resto de campos ...
+        
+        # Botones de acción del formulario
+                    col_btn1, col_btn2 = st.columns(2)
+                    cancelar = col_btn1.form_submit_button("❌ Cancelar")
+                    guardar = col_btn2.form_submit_button("💾 Guardar Reparación")
+
+                    if cancelar:
+                    st.session_state.mostrar_form = False
+                    st.rerun()
+
+                    if guardar:
+                        # Aquí va tu lógica de guardado que ya funciona (nuevo_data, etc.)
+                        # ...
+                        st.success("✅ ¡Guardado con éxito!")
+                        st.session_state.mostrar_form = False # Cerramos el formulario tras guardar
+                        st.rerun()
                     
                     enviar = st.form_submit_button("💾 GUARDAR NUEVA REPARACIÓN")
                     if enviar:
@@ -249,6 +282,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
