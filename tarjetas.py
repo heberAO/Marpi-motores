@@ -73,6 +73,7 @@ with st.sidebar:
 # --- MODO REGISTRO NUEVO ---
 if modo == "📝 Registro Nuevo":
     st.title("📝 Alta y Registro Inicial de Motor")
+    fecha = st.date_input("Fecha Hoy", date.today(), format="DD/MM/YYYY")
     with st.form("alta_motor_completa"):
         col_id1, col_id2, col_id3, col_id4 = st.columns(4)
         t = col_id1.text_input("TAG/ID MOTOR").upper()
@@ -207,6 +208,7 @@ elif modo == "🔍 Historial / QR":
             st.warning("⚠️ No se encontró ningún motor con ese TAG.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
