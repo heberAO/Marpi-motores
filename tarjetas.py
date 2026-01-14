@@ -148,7 +148,7 @@ elif modo == "🔍 Historial / QR":
             
             # 2. GENERAR QR ÚNICO
             # Cambia esta URL por la de tu aplicación real en Streamlit Cloud
-            url_app = "https://marpi-motores.streamlit.app/" 
+            url_app = "https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/" 
             link_motor = f"{url_app}?tag={id_ver}"
             
             # 2. CREACIÓN DEL QR
@@ -212,6 +212,7 @@ elif modo == "🔍 Historial / QR":
             st.dataframe(historial.sort_index(ascending=False))
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
