@@ -127,12 +127,12 @@ elif modo == "🔍 Historial / QR":
     if id_ver:
         historial = df_completo[df_completo['Tag'].astype(str).str.upper() == id_ver]
         if not historial.empty:
-            orig = historial.iloc[0]
-            st.subheader(f"Motor: {id_ver} | {orig.get('Potencia','-')} | {orig.get('RPM','-')} RPM")
+            # Línea 134: (Asegúrate de que no haya una línea vacía aquí)
+            orig = historial.iloc[0] # Línea 135: 12 espacios desde el borde
             
-            if not historial.empty:
-            # ESTA LÍNEA DEBE TENER MÁS ESPACIOS (SANGRE) QUE EL IF DE ARRIBA
-            orig = historial.iloc[0] 
+            # Todas estas líneas deben empezar en la misma columna que 'orig'
+            st.subheader(f"Motor: {id_ver}")
+            col_pdf, col_qr, col_form = st.columns(3)
             
             st.subheader(f"Motor: {id_ver} | {orig.get('Potencia','-')} | {orig.get('RPM','-')} RPM")
             
@@ -209,6 +209,7 @@ elif modo == "🔍 Historial / QR":
             st.dataframe(historial.sort_index(ascending=False))
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
