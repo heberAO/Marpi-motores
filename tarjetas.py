@@ -206,32 +206,34 @@ elif modo == "🔍 Historial":
     id_ver = st.text_input("TAG DEL MOTOR:", value=query_tag).strip().upper()
     
     if id_ver:
-        # 1. PRIMERO CREAMOS LA VARIABLE filtrando el dataframe
+        # NIVEL 1: Filtrar datos
         historial_motor = df_completo[df_completo['Tag'].astype(str).str.upper() == id_ver]
         
-        # --- Dentro de Historial ---
-    if not historial_motor.empty:
-        # Todo lo que pase si SI hay datos va aquí (un paso a la derecha)
-        st.subheader(f"Registros encontrados para: {id_ver}")
-        
-        if pdf_bytes is not None:
-            col_pdf, col_nuevo = st.columns(2)
-            col_pdf.download_button("📥 Descargar PDF", pdf_bytes, f"Reporte_{id_ver}.pdf")
-            col_nuevo.button("➕ Nueva Reparación", on_click=activar_formulario)
-        else:
-            st.error("El PDF se generó vacío. Revisa la función generar_pdf.")
+        if not historial_motor.empty:
+            # NIVEL 2: El motor existe
+            st.subheader(f"Registros encontrados para: {id_ver}")
             
+            try:
+                # NIVEL 3: Intentar generar PDF
+                pdf_bytes = generar_pdf(historial_motor, id_ver)
+                
+                col_pdf, col_nuevo = st.columns(2)
+                col_pdf.download_button("📥 Descargar Historial", pdf_bytes, f"Historial_{id_ver}.pdf")
+                col_nuevo.button("➕ Nueva Reparación", on_click=activar_formulario)
+                
             except Exception as e:
+                # NIVEL 3: Este 'except' debe estar alineado con su 'try'
                 st.error(f"Error al preparar el PDF: {e}")
 
-            # ... resto del código (formulario y tabla) ...
+            # NIVEL 2: La tabla de datos (alineada con el 'try' y 'st.subheader')
             st.dataframe(historial_motor.sort_index(ascending=False))
             
         else:
+            # NIVEL 2: El motor no existe (alineado con el 'if not historial_motor.empty')
             st.warning(f"No hay registros para el motor {id_ver}")
-
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
