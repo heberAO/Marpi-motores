@@ -212,7 +212,8 @@ elif modo == "🔍 Historial":
         historial_motor = df_completo[df_completo['Tag'].astype(str).str.upper() == id_ver]
         
         if not historial_motor.empty:
-            ultimo = historial_motor.iloc[-1]
+            # 2. SOLO AQUÍ DENTRO PODEMOS USAR historial_motor
+            st.subheader(f"Registros encontrados para: {id_ver}")
             
             # --- VISTA RÁPIDA (Datos de Placa) ---
             st.subheader(f"Datos Técnicos: {id_ver}")
@@ -221,9 +222,13 @@ elif modo == "🔍 Historial":
             c2.metric("RPM", ultimo.get('RPM', '-'))
             c3.metric("Frame", ultimo.get('Frame', '-'))
             
-            # --- ACCIONES ---
-            st.divider()
-            col_pdf, col_nuevo = st.columns(2)
+            # Preparamos el PDF (dentro del if, cuando estamos seguros de que existe)
+            try:
+                pdf_bytes = generar_pdf(historial_motor, id_ver)
+                
+                col_pdf, col_nuevo = st.columns(2)
+                col_pdf.download_button("📥 Descargar Historial", pdf_bytes, f"Historial_{id_ver}.pdf")
+                col_nuevo.button("➕ Nueva Reparación", on_click=abrir_formulario)
             
             # Botón para descargar historial actual
             pdf_bytes = generar_pdf(historial_motor, id_ver)
@@ -244,7 +249,6 @@ elif modo == "🔍 Historial":
                     with c1:
                         st.write("**Tierra**")
                         rt_tu = st.text_input("T-U")
-            # ... resto de campos ...
         
         # Botones de acción del formulario
                     col_btn1, col_btn2 = st.columns(2)
@@ -282,6 +286,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
