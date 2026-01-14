@@ -8,9 +8,20 @@ import os
 from fpdf import FPDF
 
 # --- 1. FUNCIÓN GENERAR PDF PROFESIONAL ---
-def generar_pdf(df_historial, tag_motor):
-    pdf = FPDF()
-    pdf.add_page()
+def generar_pdf(historial, tag):
+    try:
+        pdf = FPDF()
+        pdf.add_page()
+        # ... (aquí va todo tu diseño de celdas y textos) ...
+        
+        # EL PUNTO CRÍTICO:
+        # Generamos los bytes del PDF
+        datos_binarios = pdf.output(dest='S').encode('latin-1')
+        return datos_binarios # <--- ESTO ES LO QUE ESTABA FALTANDO
+        
+    except Exception as e:
+        print(f"Error interno en PDF: {e}")
+        return None
     # --- INICIALIZAR MEMORIA (Cerca de tus importaciones) ---
 if 'mostrar_form' not in st.session_state:
     st.session_state.mostrar_form = False
@@ -233,6 +244,7 @@ elif modo == "🔍 Historial":
             st.warning(f"No hay registros para el motor {id_ver}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
