@@ -149,7 +149,7 @@ elif modo == "🔍 Historial / QR":
                 col_pdf.download_button("📥 Informe PDF", pdf_b, f"Informe_{id_ver}.pdf")
             
             # 2. GENERAR QR ÚNICO
-            url_base = "https://marpi-motores.streamlit.app/" 
+            url_base = "https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/" 
             link_directo = f"{url_base}?tag={id_ver}"
             
             qr = qrcode.QRCode(version=1, box_size=10, border=5)
@@ -212,6 +212,7 @@ elif modo == "🔍 Historial / QR":
             st.dataframe(historial.sort_index(ascending=False))
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
