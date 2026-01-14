@@ -210,10 +210,9 @@ elif modo == "🔍 Historial":
         historial_motor = df_completo[df_completo['Tag'].astype(str).str.upper() == id_ver]
         
         # --- Dentro de Historial ---
-if not historial_motor.empty:
-    try:
-        # Generamos el PDF solo si el historial tiene filas
-        pdf_bytes = generar_pdf(historial_motor, id_ver)
+    if not historial_motor.empty:
+        # Todo lo que pase si SI hay datos va aquí (un paso a la derecha)
+        st.subheader(f"Registros encontrados para: {id_ver}")
         
         if pdf_bytes is not None:
             col_pdf, col_nuevo = st.columns(2)
@@ -223,16 +222,17 @@ if not historial_motor.empty:
             st.error("El PDF se generó vacío. Revisa la función generar_pdf.")
             
     except Exception as e:
-        st.error(f"Error al preparar el PDF: {e}")
+            st.error(f"Error al preparar el PDF: {e}")
 
             # ... resto del código (formulario y tabla) ...
-        st.dataframe(historial_motor.sort_index(ascending=False))
+            st.dataframe(historial_motor.sort_index(ascending=False))
             
         else:
             st.warning(f"No hay registros para el motor {id_ver}")
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
