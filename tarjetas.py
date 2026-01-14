@@ -46,8 +46,8 @@ def generar_pdf(df_historial, tag_motor):
             
             pdf.set_font("Arial", '', 9)
             # Mediciones
-            res_t = f"Res. Tierra (Mohm): {row.get('RT_TU','-')} / {row.get('RT_TV','-')} / {row.get('RT_TW','-')}"
-            res_b = f"Res. Bobinas (ohm): {row.get('RB_UV','-')} / {row.get('RB_VW','-')} / {row.get('RB_UW','-')}"
+            res_t = f"Res. Tierra (Gohm): {row.get('RT_TU','-')} / {row.get('RT_TV','-')} / {row.get('RT_TW','-')}"
+            res_b = f"Res. Bobinas (Gohm): {row.get('RB_UV','-')} / {row.get('RB_VW','-')} / {row.get('RB_UW','-')}"
             res_i = f"Res. Interna (ohm): {row.get('RI_U','-')} / {row.get('RI_V','-')} / {row.get('RI_W','-')}"
             
             pdf.cell(0, 6, res_t.encode('latin-1', 'replace').decode('latin-1'), 0, 1)
@@ -87,6 +87,7 @@ with st.sidebar:
 # --- MODO REGISTRO NUEVO ---
 if modo == "📝 Registro Nuevo":
     st.title("📝 Alta y Registro Inicial de Motor")
+    fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY")
     with st.form("alta_motor_completa"):
         col_id1, col_id2, col_id3, col_id4 = st.columns(4)
         t = col_id1.text_input("TAG/ID MOTOR").upper()
@@ -218,6 +219,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
