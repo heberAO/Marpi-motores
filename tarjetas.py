@@ -1,4 +1,4 @@
- import streamlit as st
+import streamlit as st
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 from datetime import date
@@ -260,6 +260,7 @@ elif modo == "🔍 Historial":
             st.warning(f"No hay registros para el motor {id_ver}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
