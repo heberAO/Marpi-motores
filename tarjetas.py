@@ -221,7 +221,7 @@ elif modo == "🔍 Historial":
         else:
             st.error("El PDF se generó vacío. Revisa la función generar_pdf.")
             
-    except Exception as e:
+        except Exception as e:
             st.error(f"Error al preparar el PDF: {e}")
 
             # ... resto del código (formulario y tabla) ...
@@ -232,6 +232,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
