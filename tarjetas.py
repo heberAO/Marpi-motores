@@ -62,6 +62,7 @@ except:
     st.error("Error de conexión.")
     df_completo = pd.DataFrame()
 
+# Capturamos el tag si viene desde un QR
 query_tag = st.query_params.get("tag", "")
 
 # --- 4. INTERFAZ ---
@@ -69,16 +70,15 @@ with st.sidebar:
     st.header("⚡ Marpi Electricidad")
     modo = st.radio("Menú:", ["📝 Registro Nuevo", "🔍 Historial / QR"])
 
-# --- MODO REGISTRO (CON TODOS LOS CAMPOS RECUPERADOS) ---
+# --- MODO REGISTRO NUEVO ---
 if modo == "📝 Registro Nuevo":
     st.title("📝 Alta y Registro Inicial de Motor")
-    fecha = st.date_input("Fecha Hoy", date.today(), format="DD/MM/YYYY")
     with st.form("alta_motor_completa"):
         col_id1, col_id2, col_id3, col_id4 = st.columns(4)
         t = col_id1.text_input("TAG/ID MOTOR").upper()
         p = col_id2.text_input("Potencia (HP/kW)")
         r = col_id3.selectbox("RPM", ["-", "750", "1500", "3000"])
-        f = col_id4.text_input("frame")
+        f = col_id4.text_input("Frame / Carcasa")
         
         st.markdown("---")
         st.subheader("🔍 Mediciones Iniciales")
@@ -101,13 +101,13 @@ if modo == "📝 Registro Nuevo":
             
         st.markdown("---")
         resp = st.text_input("Técnico Responsable")
-        desc = st.text_area("Descripción del estado inicial / Trabajos realizados")
-        ext = st.text_area("Trabajos Externos (si aplica)")
+        desc = st.text_area("Descripción inicial / Trabajos")
+        ext = st.text_area("Trabajos Externos")
         
         if st.form_submit_button("💾 REGISTRAR MOTOR"):
             if t and resp:
                 nueva_fila = {
-                    "Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "Potencia": p, "RPM": r, 
+                    "Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "Potencia": p, "RPM": r, "Frame": f,
                     "Responsable": resp, "Descripcion": desc, "Taller_Externo": ext,
                     "RT_TU": rt_tu, "RT_TV": rt_tv, "RT_TW": rt_tw,
                     "RB_UV": rb_uv, "RB_VW": rb_vw, "RB_UW": rb_uw,
@@ -115,40 +115,34 @@ if modo == "📝 Registro Nuevo":
                 }
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_final)
-                st.success(f"Motor {t} registrado exitosamente.")
+                st.success(f"✅ Motor {t} registrado.")
             else:
-                st.error("El TAG y el Técnico son obligatorios.")
+                st.error("⚠️ Tag y Técnico son obligatorios.")
 
-# --- MODO HISTORIAL ---
+# --- MODO HISTORIAL / QR ---
 elif modo == "🔍 Historial / QR":
     st.title("🔍 Hoja de Vida del Motor")
+    
+    # El buscador toma el valor del QR automáticamente
     id_ver = st.text_input("ESCRIBIR TAG:", value=query_tag).strip().upper()
     
     if id_ver:
         historial = df_completo[df_completo['Tag'].astype(str).str.upper() == id_ver]
-        if not historial.empty:
-            orig = historial.iloc[0]
-            st.subheader(f"Motor: {id_ver} | {orig.get('Potencia','-')}")
-            col_pdf, col_qr, col_form = st.columns(3)
-            
-            st.subheader(f"Motor: {id_ver} | {orig.get('Potencia','-')} | {orig.get('RPM','-')} RPM")
-            
-            col_pdf, col_qr, col_form = st.columns(3)
-            
+        
         if not historial.empty:
             orig = historial.iloc[0]
             st.subheader(f"Motor: {id_ver} | {orig.get('Potencia','-')} | {orig.get('RPM','-')} RPM")
             
-            # --- SECCIÓN DE BOTONES Y QR ---
+            # --- SECCIÓN DE BOTONES ---
             col_pdf, col_qr, col_form = st.columns(3)
             
-            # 1. GENERAR PDF
+            # 1. PDF
             pdf_b = generar_pdf(historial, id_ver)
             if pdf_b:
                 col_pdf.download_button("📥 Informe PDF", pdf_b, f"Informe_{id_ver}.pdf")
             
-            # 2. GENERAR QR ÚNICO
-            url_base = "https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/" 
+            # 2. QR ÚNICO (Link dinámico)
+            url_base = "https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/"
             link_directo = f"{url_base}?tag={id_ver}"
             
             qr = qrcode.QRCode(version=1, box_size=10, border=5)
@@ -156,48 +150,46 @@ elif modo == "🔍 Historial / QR":
             qr.make(fit=True)
             img_qr = qr.make_image(fill_color="black", back_color="white")
             
-            # --- PROCESO DE CONVERSIÓN (Aquí se crea byte_im) ---
             buf = BytesIO()
             img_qr.save(buf, format="PNG")
-            byte_im = buf.getvalue() # <-- Esta es la variable que faltaba definir
+            byte_im = buf.getvalue()
             
-            # --- MOSTRAR EN PANTALLA ---
-            col_qr.image(byte_im, width=150, caption=f"QR de {id_ver}")
+            col_qr.image(byte_im, width=120, caption="Código QR Único")
+            col_qr.download_button("💾 Guardar imagen QR", byte_im, f"QR_{id_ver}.png", "image/png")
             
-            # --- BOTÓN DE DESCARGA (Ahora sí tiene los datos) ---
-            col_qr.download_button("💾 Guardar QR", byte_im, f"QR_{id_ver}.png", "image/png")
-            
-            # 3. BOTÓN NUEVA REPARACIÓN
+            # 3. NUEVA REPARACIÓN
             col_form.button("➕ Cargar Nueva Reparación", on_click=activar_formulario)
+            
             if st.session_state.mostrar_form:
                 with st.form("nueva_rep"):
-                    st.write("### Registrar Intervención")
-                    # (Aquí repetimos la misma tabla de 3x3 para las mediciones)
+                    st.write("### 🛠️ Registrar Intervención")
                     f_rep = st.date_input("Fecha", date.today())
                     t_resp = st.text_input("Técnico")
                     
                     st.markdown("**Mediciones Actuales**")
                     col_t, col_b, col_i = st.columns(3)
                     with col_t:
-                        rt1 = st.text_input("T-U ")
-                        rt2 = st.text_input("T-V ")
-                        rt3 = st.text_input("T-W ")
+                        rt1 = st.text_input("T-U (Tierra)")
+                        rt2 = st.text_input("T-V (Tierra)")
+                        rt3 = st.text_input("T-W (Tierra)")
                     with col_b:
-                        rb1 = st.text_input("U-V ")
-                        rb2 = st.text_input("V-W ")
-                        rb3 = st.text_input("U-W ")
+                        rb1 = st.text_input("U-V (Bobina)")
+                        rb2 = st.text_input("V-W (Bobina)")
+                        rb3 = st.text_input("U-W (Bobina)")
                     with col_i:
-                        ri1 = st.text_input("U1-U2 ")
-                        ri2 = st.text_input("V1-V2 ")
-                        ri3 = st.text_input("W1-W2 ")
+                        ri1 = st.text_input("U1-U2 (Interna)")
+                        ri2 = st.text_input("V1-V2 (Interna)")
+                        ri3 = st.text_input("W1-W2 (Interna)")
                     
                     d_rep = st.text_area("Trabajos realizados")
                     e_rep = st.text_area("Taller externo")
                     
-                    if st.form_submit_button("💾 GUARDAR"):
+                    if st.form_submit_button("💾 GUARDAR EN HISTORIAL"):
+                        # Rescatamos datos de placa originales para no perderlos
                         nueva_data = {
                             "Fecha": f_rep.strftime("%d/%m/%Y"), "Tag": id_ver, "Responsable": t_resp,
-                            "Potencia": orig.get('Potencia','-'), "RPM": orig.get('RPM','-'),
+                            "Potencia": orig.get('Potencia','-'), "RPM": orig.get('RPM', '-'),
+                            "Frame": orig.get('Frame', '-'),
                             "RT_TU": rt1, "RT_TV": rt2, "RT_TW": rt3,
                             "RB_UV": rb1, "RB_VW": rb2, "RB_UW": rb3,
                             "RI_U": ri1, "RI_V": ri2, "RI_W": ri3,
@@ -208,9 +200,14 @@ elif modo == "🔍 Historial / QR":
                         st.session_state.mostrar_form = False
                         st.rerun()
 
+            st.markdown("---")
+            st.write("### 📜 Historial de Intervenciones")
             st.dataframe(historial.sort_index(ascending=False))
+        else:
+            st.warning("⚠️ No se encontró ningún motor con ese TAG.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
