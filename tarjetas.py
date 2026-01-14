@@ -148,24 +148,24 @@ elif modo == "🔍 Historial / QR":
             if pdf_b:
                 col_pdf.download_button("📥 Informe PDF", pdf_b, f"Informe_{id_ver}.pdf")
             
-            # 2. GENERAR QR ÚNICO (Aquí definimos link_directo)
+            # 2. GENERAR QR ÚNICO
             url_base = "https://marpi-motores.streamlit.app/" 
-            link_directo = f"{url_base}?tag={id_ver}" # <-- ESTA LÍNEA DEBE ESTAR ANTES
+            link_directo = f"{url_base}?tag={id_ver}"
             
             qr = qrcode.QRCode(version=1, box_size=10, border=5)
-            qr.add_data(link_directo) # <-- AHORA SÍ EXISTE
+            qr.add_data(link_directo)
             qr.make(fit=True)
             img_qr = qr.make_image(fill_color="black", back_color="white")
             
-            # Convertir a bytes para mostrar
+            # --- PROCESO DE CONVERSIÓN (Aquí se crea byte_im) ---
             buf = BytesIO()
             img_qr.save(buf, format="PNG")
-            col_qr.image(buf.getvalue(), width=150, caption=f"QR de {id_ver}")
+            byte_im = buf.getvalue() # <-- Esta es la variable que faltaba definir
             
-            # 3. BOTÓN NUEVA REPARACIÓN
-            col_form.button("➕ Nueva Reparación", on_click=activar_formulario)
+            # --- MOSTRAR EN PANTALLA ---
+            col_qr.image(byte_im, width=150, caption=f"QR de {id_ver}")
             
-            # 5. BOTÓN PARA GUARDAR (Opcional)
+            # --- BOTÓN DE DESCARGA (Ahora sí tiene los datos) ---
             col_qr.download_button("💾 Guardar QR", byte_im, f"QR_{id_ver}.png", "image/png")
             
             # 3. BOTÓN NUEVA REPARACIÓN
@@ -212,6 +212,7 @@ elif modo == "🔍 Historial / QR":
             st.dataframe(historial.sort_index(ascending=False))
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
