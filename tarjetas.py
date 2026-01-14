@@ -151,18 +151,21 @@ elif modo == "🔍 Historial / QR":
             url_app = "https://marpi-motores.streamlit.app/" 
             link_motor = f"{url_app}?tag={id_ver}"
             
+            # 2. CREACIÓN DEL QR
             qr = qrcode.QRCode(version=1, box_size=10, border=5)
             qr.add_data(link_motor)
             qr.make(fit=True)
             img_qr = qr.make_image(fill_color="black", back_color="white")
             
-            # Convertir QR a formato que Streamlit entienda
+            # 3. CONVERSIÓN SEGURA (Esto quita el cartel de error)
             buf = BytesIO()
             img_qr.save(buf, format="PNG")
-            byte_im = buf.getvalue()
+            byte_im = buf.getvalue() # Convertimos a datos puros
             
+            # 4. MOSTRAR EN PANTALLA
             col_qr.image(byte_im, width=150, caption=f"QR de {id_ver}")
-            # Botón para descargar solo la imagen del QR
+            
+            # 5. BOTÓN PARA GUARDAR (Opcional)
             col_qr.download_button("💾 Guardar QR", byte_im, f"QR_{id_ver}.png", "image/png")
             
             # 3. BOTÓN NUEVA REPARACIÓN
@@ -209,6 +212,7 @@ elif modo == "🔍 Historial / QR":
             st.dataframe(historial.sort_index(ascending=False))
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
