@@ -72,12 +72,13 @@ with st.sidebar:
 # --- MODO REGISTRO (CON TODOS LOS CAMPOS RECUPERADOS) ---
 if modo == "📝 Registro Nuevo":
     st.title("📝 Alta y Registro Inicial de Motor")
-    
+    fecha = st.date_input("Fecha Hoy", date.today(), format="DD/MM/YYYY")
     with st.form("alta_motor_completa"):
-        col_id1, col_id2, col_id3 = st.columns(3)
+        col_id1, col_id2, col_id3, col_id4 = st.columns(4)
         t = col_id1.text_input("TAG/ID MOTOR").upper()
         p = col_id2.text_input("Potencia (HP/kW)")
-        r = col_id3.selectbox("RPM", ["750", "1500", "3000"])
+        r = col_id3.selectbox("RPM", ["-", "750", "1500", "3000"])
+        f = col_id4.text_input("frame")
         
         st.markdown("---")
         st.subheader("🔍 Mediciones Iniciales")
@@ -176,6 +177,7 @@ elif modo == "🔍 Historial / QR":
             st.dataframe(historial.sort_index(ascending=False))
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
