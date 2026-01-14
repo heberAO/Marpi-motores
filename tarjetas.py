@@ -163,7 +163,7 @@ elif modo == "🔍 Historial / QR":
             col_qr.image(buf.getvalue(), width=150, caption=f"QR de {id_ver}")
             
             # 3. BOTÓN NUEVA REPARACIÓN
-            col_form.button("➕ Nueva Reparación", on_click=activar_formulario
+            col_form.button("➕ Nueva Reparación", on_click=activar_formulario)
             
             # 5. BOTÓN PARA GUARDAR (Opcional)
             col_qr.download_button("💾 Guardar QR", byte_im, f"QR_{id_ver}.png", "image/png")
@@ -212,6 +212,7 @@ elif modo == "🔍 Historial / QR":
             st.dataframe(historial.sort_index(ascending=False))
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
