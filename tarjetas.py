@@ -131,10 +131,12 @@ elif modo == "🔍 Historial / QR":
             st.subheader(f"Motor: {id_ver} | {orig.get('Potencia','-')} | {orig.get('RPM','-')} RPM")
             
             if not historial.empty:
-            orig = historial.iloc[0]
+            # ESTA LÍNEA DEBE TENER MÁS ESPACIOS (SANGRE) QUE EL IF DE ARRIBA
+            orig = historial.iloc[0] 
+            
             st.subheader(f"Motor: {id_ver} | {orig.get('Potencia','-')} | {orig.get('RPM','-')} RPM")
             
-            # --- SECCIÓN DE HERRAMIENTAS (PDF y QR) ---
+            # El resto de tus botones también deben estar alineados con 'orig'
             col_pdf, col_qr, col_form = st.columns(3)
             
             # 1. BOTÓN PDF
@@ -207,6 +209,7 @@ elif modo == "🔍 Historial / QR":
             st.dataframe(historial.sort_index(ascending=False))
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
