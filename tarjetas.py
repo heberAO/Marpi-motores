@@ -67,7 +67,7 @@ with st.sidebar:
 if modo == "📝 Registro":
     st.title("📝 Registro de Reparación")
     tag = st.text_input("TAG DEL MOTOR", value=query_tag).strip().upper()
-    
+    fecha = st.date_input("Fecha Hoy", date.today(), format="DD/MM/YYYY")
     with st.form("form_registro"):
         responsable = st.text_input("Técnico Responsable")
         potencia = st.text_input("Potencia")
@@ -119,6 +119,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
