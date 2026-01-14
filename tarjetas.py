@@ -22,51 +22,97 @@ def activar_formulario():
 # --- 2. FUNCIÓN GENERAR PDF ---
 def generar_pdf(df_historial, tag_motor):
     try:
-        pdf = FPDF()
+        # Orientación vertical, unidad mm, formato A4
+        pdf = FPDF(orientation='P', unit='mm', format='A4')
         pdf.add_page()
+        pdf.set_auto_page_break(auto=True, margin=15)
         
-        # Título principal
-        pdf.set_font("Arial", 'B', 16)
-        pdf.cell(0, 10, 'INFORME TECNICO DE MANTENIMIENTO', 0, 1, 'C')
-        pdf.ln(5)
+        # --- ENCABEZADO PROFESIONAL ---
+        if os.path.exists("logo.png"):
+            pdf.image("logo.png", 10, 8, 30)
         
-        # Datos fijos del motor
+        pdf.set_font("Arial", 'B', 20)
+        pdf.set_text_color(0, 51, 102) # Azul oscuro profesional
+        pdf.cell(0, 15, 'INFORME TECNICO DE MOTORES', 0, 1, 'R')
+        
+        pdf.set_draw_color(0, 51, 102)
+        pdf.set_line_width(0.8)
+        pdf.line(10, 25, 200, 25) # Línea decorativa
+        pdf.ln(10)
+        
+        # --- TABLA DE DATOS DEL MOTOR ---
         fijos = df_historial.iloc[0]
-        pdf.set_font("Arial", 'B', 11)
-        # Limpiamos tildes para evitar errores de codificación
-        linea_info = f"TAG: {tag_motor} | POTENCIA: {fijos.get('Potencia','-')} | RPM: {fijos.get('RPM','-')}"
-        pdf.cell(0, 8, linea_info.encode('latin-1', 'replace').decode('latin-1'), 1, 1, 'C')
-        pdf.ln(5)
+        pdf.set_fill_color(230, 230, 230)
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 8, f"  DATOS DEL EQUIPO: {tag_motor}", 0, 1, 'L', True)
+        
+        pdf.set_font("Arial", '', 10)
+        pdf.set_text_color(0, 0, 0)
+        # Fila de datos principales
+        pdf.cell(63, 7, f"POTENCIA: {fijos.get('Potencia','-')}", 1, 0, 'C')
+        pdf.cell(63, 7, f"RPM: {fijos.get('RPM','-')}", 1, 0, 'C')
+        pdf.cell(64, 7, f"FRAME: {fijos.get('Frame','-')}", 1, 1, 'C')
+        pdf.ln(10)
+
+        # --- HISTORIAL DE INTERVENCIONES ---
+        pdf.set_font("Arial", 'B', 12)
+        pdf.set_text_color(0, 51, 102)
+        pdf.cell(0, 8, "HISTORIAL DE MANTENIMIENTO Y MEDICIONES", 0, 1, 'L')
+        pdf.ln(2)
 
         for _, row in df_historial.sort_index(ascending=False).iterrows():
-            pdf.set_fill_color(240, 240, 240)
+            # Bloque de Fecha y Responsable
+            pdf.set_fill_color(0, 51, 102)
+            pdf.set_text_color(255, 255, 255)
             pdf.set_font("Arial", 'B', 10)
-            fecha_tecnico = f"FECHA: {row.get('Fecha', '')} | TECNICO: {row.get('Responsable', '')}"
-            pdf.cell(0, 8, fecha_tecnico.encode('latin-1', 'replace').decode('latin-1'), 1, 1, 'L', True)
+            header_text = f" FECHA: {row.get('Fecha', '')} | RESPONSABLE: {row.get('Responsable', '')}"
+            pdf.cell(0, 7, header_text.encode('latin-1', 'replace').decode('latin-1'), 0, 1, 'L', True)
+            
+            # Cuadro de Mediciones (Estilo tabla)
+            pdf.set_text_color(0, 0, 0)
+            pdf.set_font("Arial", 'B', 9)
+            pdf.set_fill_color(245, 245, 245)
+            
+            # Encabezados de mediciones
+            pdf.cell(63, 6, "Resistencia Tierra (Mohm)", 1, 0, 'C', True)
+            pdf.cell(63, 6, "Resistencia Bobinas (ohm)", 1, 0, 'C', True)
+            pdf.cell(64, 6, "Resistencia Interna (ohm)", 1, 1, 'C', True)
             
             pdf.set_font("Arial", '', 9)
-            # Mediciones
-            res_t = f"Res. Tierra (Gohm): {row.get('RT_TU','-')} / {row.get('RT_TV','-')} / {row.get('RT_TW','-')}"
-            res_b = f"Res. Bobinas (Gohm): {row.get('RB_UV','-')} / {row.get('RB_VW','-')} / {row.get('RB_UW','-')}"
-            res_i = f"Res. Interna (ohm): {row.get('RI_U','-')} / {row.get('RI_V','-')} / {row.get('RI_W','-')}"
+            # Valores
+            val_t = f"{row.get('RT_TU','-')} / {row.get('RT_TV','-')} / {row.get('RT_TW','-')}"
+            val_b = f"{row.get('RB_UV','-')} / {row.get('RB_VW','-')} / {row.get('RB_UW','-')}"
+            val_i = f"{row.get('RI_U','-')} / {row.get('RI_V','-')} / {row.get('RI_W','-')}"
             
-            pdf.cell(0, 6, res_t.encode('latin-1', 'replace').decode('latin-1'), 0, 1)
-            pdf.cell(0, 6, res_b.encode('latin-1', 'replace').decode('latin-1'), 0, 1)
-            pdf.cell(0, 6, res_i.encode('latin-1', 'replace').decode('latin-1'), 0, 1)
+            pdf.cell(63, 6, val_t, 1, 0, 'C')
+            pdf.cell(63, 6, val_b, 1, 0, 'C')
+            pdf.cell(64, 6, val_i, 1, 1, 'C')
             
-            # Descripciones (multi_cell para párrafos largos)
-            desc = f"TRABAJOS: {row.get('Descripcion', 'N/A')}"
-            pdf.multi_cell(0, 6, desc.encode('latin-1', 'replace').decode('latin-1'))
+            # Descripciones y Trabajos
+            pdf.ln(1)
+            pdf.set_font("Arial", 'B', 9)
+            pdf.cell(0, 5, "DESCRIPCION DE TRABAJOS:", 0, 1)
+            pdf.set_font("Arial", '', 9)
+            desc = str(row.get('Descripcion', 'Sin descripcion'))
+            pdf.multi_cell(0, 5, desc.encode('latin-1', 'replace').decode('latin-1'), 'LRB')
             
-            ext = f"EXTERNOS: {row.get('Taller_Externo', '')}"
-            if row.get('Taller_Externo'):
-                pdf.multi_cell(0, 6, ext.encode('latin-1', 'replace').decode('latin-1'))
-            pdf.ln(3)
+            if row.get('Taller_Externo') and str(row.get('Taller_Externo')) != 'nan':
+                pdf.set_font("Arial", 'B', 9)
+                pdf.cell(0, 5, "TRABAJOS EXTERNOS / TALLER:", 0, 1)
+                pdf.set_font("Arial", '', 9)
+                pdf.multi_cell(0, 5, str(row.get('Taller_Externo')).encode('latin-1', 'replace').decode('latin-1'), 'LRB')
             
-        # El secreto está en este 'output'
+            pdf.ln(5) # Espacio entre registros
+            
+        # Pie de página
+        pdf.set_y(-20)
+        pdf.set_font("Arial", 'I', 8)
+        pdf.set_text_color(150, 150, 150)
+        pdf.cell(0, 10, 'Marpi Electricidad - Informe generado automaticamente', 0, 0, 'C')
+            
         return pdf.output(dest='S').encode('latin-1', 'replace')
     except Exception as e:
-        st.error(f"Error generando PDF: {e}")
+        st.error(f"Error en PDF: {e}")
         return None
 
 # --- 3. CONEXIÓN ---
@@ -219,6 +265,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
