@@ -11,6 +11,12 @@ from fpdf import FPDF
 def generar_pdf(df_historial, tag_motor):
     pdf = FPDF()
     pdf.add_page()
+    # --- INICIALIZAR MEMORIA (Cerca de tus importaciones) ---
+if 'mostrar_form' not in st.session_state:
+    st.session_state.mostrar_form = False
+
+def activar_formulario():
+    st.session_state.mostrar_form = True
     
     if os.path.exists("logo.png"):
         pdf.image("logo.png", 10, 8, 33)
@@ -101,9 +107,6 @@ except:
 # Logo
 if os.path.exists("logo.png"):
     st.image("logo.png", width=120)
-# --- INICIALIZAR ESTADO DE LA SESIÓN ---
-if 'mostrar_form' not in st.session_state:
-    st.session_state.mostrar_form = False
 
 # Función para cambiar el estado
 def abrir_formulario():
@@ -229,6 +232,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
