@@ -226,13 +226,14 @@ if not historial_motor.empty:
         st.error(f"Error al preparar el PDF: {e}")
 
             # ... resto del código (formulario y tabla) ...
-            st.dataframe(historial_motor.sort_index(ascending=False))
+        st.dataframe(historial_motor.sort_index(ascending=False))
             
         else:
             st.warning(f"No hay registros para el motor {id_ver}")
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
