@@ -135,7 +135,7 @@ elif modo == "🔍 Historial / QR":
             
             col_pdf, col_qr, col_form = st.columns(3)
             
-    if not historial.empty:
+        if not historial.empty:
             orig = historial.iloc[0]
             st.subheader(f"Motor: {id_ver} | {orig.get('Potencia','-')} | {orig.get('RPM','-')} RPM")
             
@@ -211,6 +211,7 @@ elif modo == "🔍 Historial / QR":
             st.dataframe(historial.sort_index(ascending=False))
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
