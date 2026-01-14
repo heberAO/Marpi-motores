@@ -10,8 +10,6 @@ from fpdf import FPDF
 # --- 1. CONFIGURACIÓN Y ESTADO ---
 st.set_page_config(page_title="Marpi Motores", page_icon="⚡", layout="wide")
 
-# --- ¡PASO CLAVE PARA EL QR! ---
-# Leemos el parámetro de la URL justo al empezar
 parametros = st.query_params
 query_tag = parametros.get("tag", "").upper()
 
@@ -26,37 +24,49 @@ def generar_pdf(df_historial, tag_motor):
     try:
         pdf = FPDF()
         pdf.add_page()
-        if os.path.exists("logo.png"):
-            pdf.image("logo.png", 10, 8, 33)
         
+        # Título principal
         pdf.set_font("Arial", 'B', 16)
-        pdf.set_text_color(0, 51, 102)
-        pdf.cell(0, 10, 'INFORME TÉCNICO DE MANTENIMIENTO', 0, 1, 'C')
+        pdf.cell(0, 10, 'INFORME TECNICO DE MANTENIMIENTO', 0, 1, 'C')
         pdf.ln(5)
         
+        # Datos fijos del motor
         fijos = df_historial.iloc[0]
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, f"TAG: {tag_motor}  |  POTENCIA: {fijos.get('Potencia','-')}  |  RPM: {fijos.get('RPM','-')}", 1, 1, 'C')
+        # Limpiamos tildes para evitar errores de codificación
+        linea_info = f"TAG: {tag_motor} | POTENCIA: {fijos.get('Potencia','-')} | RPM: {fijos.get('RPM','-')}"
+        pdf.cell(0, 8, linea_info.encode('latin-1', 'replace').decode('latin-1'), 1, 1, 'C')
         pdf.ln(5)
 
         for _, row in df_historial.sort_index(ascending=False).iterrows():
             pdf.set_fill_color(240, 240, 240)
             pdf.set_font("Arial", 'B', 10)
-            pdf.cell(0, 8, f"FECHA: {row.get('Fecha', '')} | TÉCNICO: {row.get('Responsable', '')}", 1, 1, 'L', True)
+            fecha_tecnico = f"FECHA: {row.get('Fecha', '')} | TECNICO: {row.get('Responsable', '')}"
+            pdf.cell(0, 8, fecha_tecnico.encode('latin-1', 'replace').decode('latin-1'), 1, 1, 'L', True)
             
             pdf.set_font("Arial", '', 9)
-            pdf.cell(0, 6, f"Res. Tierra (MΩ): {row.get('RT_TU','-')} / {row.get('RT_TV','-')} / {row.get('RT_TW','-')}", 0, 1)
-            pdf.cell(0, 6, f"Res. Bobinas (Ω): {row.get('RB_UV','-')} / {row.get('RB_VW','-')} / {row.get('RB_UW','-')}", 0, 1)
-            pdf.cell(0, 6, f"Res. Interna (Ω): {row.get('RI_U','-')} / {row.get('RI_V','-')} / {row.get('RI_W','-')}", 0, 1)
+            # Mediciones
+            res_t = f"Res. Tierra (Mohm): {row.get('RT_TU','-')} / {row.get('RT_TV','-')} / {row.get('RT_TW','-')}"
+            res_b = f"Res. Bobinas (ohm): {row.get('RB_UV','-')} / {row.get('RB_VW','-')} / {row.get('RB_UW','-')}"
+            res_i = f"Res. Interna (ohm): {row.get('RI_U','-')} / {row.get('RI_V','-')} / {row.get('RI_W','-')}"
             
-            pdf.multi_cell(0, 6, f"TRABAJOS: {row.get('Descripcion', 'N/A')}")
-            ext = row.get('Taller_Externo', '')
-            if ext and str(ext) != 'nan':
-                pdf.multi_cell(0, 6, f"EXTERNOS: {ext}")
+            pdf.cell(0, 6, res_t.encode('latin-1', 'replace').decode('latin-1'), 0, 1)
+            pdf.cell(0, 6, res_b.encode('latin-1', 'replace').decode('latin-1'), 0, 1)
+            pdf.cell(0, 6, res_i.encode('latin-1', 'replace').decode('latin-1'), 0, 1)
+            
+            # Descripciones (multi_cell para párrafos largos)
+            desc = f"TRABAJOS: {row.get('Descripcion', 'N/A')}"
+            pdf.multi_cell(0, 6, desc.encode('latin-1', 'replace').decode('latin-1'))
+            
+            ext = f"EXTERNOS: {row.get('Taller_Externo', '')}"
+            if row.get('Taller_Externo'):
+                pdf.multi_cell(0, 6, ext.encode('latin-1', 'replace').decode('latin-1'))
             pdf.ln(3)
             
-        return pdf.output(dest='S').encode('latin-1')
-    except Exception:
+        # El secreto está en este 'output'
+        return pdf.output(dest='S').encode('latin-1', 'replace')
+    except Exception as e:
+        st.error(f"Error generando PDF: {e}")
         return None
 
 # --- 3. CONEXIÓN ---
@@ -208,6 +218,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
