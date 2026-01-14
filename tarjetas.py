@@ -199,28 +199,16 @@ if modo == "📝 Registro":
         st.image(buf, width=150, caption="QR generado para este motor")
 
 elif modo == "🔍 Historial":
-    col_pdf, col_nuevo = st.columns(2)
-
-    # Botón PDF (Este funciona directo)
-    pdf_bytes = generar_pdf(historial_motor, id_ver)
-    col_pdf.download_button("📥 Descargar Historial", pdf_bytes, f"Historial_{id_ver}.pdf")
-    # Botón para abrir el formulario (Usando on_click para que no se cierre)
-    col_nuevo.button("➕ Registrar Nueva Reparación", on_click=abrir_formulario)
+    st.title("🔍 Hoja de Vida y Nueva Reparación")
+    id_ver = st.text_input("TAG DEL MOTOR:", value=query_tag).strip().upper()
     
     if id_ver:
-        # 1. Filtrar registros del motor
+        # 1. PRIMERO CREAMOS LA VARIABLE filtrando el dataframe
         historial_motor = df_completo[df_completo['Tag'].astype(str).str.upper() == id_ver]
         
         if not historial_motor.empty:
             # 2. SOLO AQUÍ DENTRO PODEMOS USAR historial_motor
             st.subheader(f"Registros encontrados para: {id_ver}")
-            
-            # --- VISTA RÁPIDA (Datos de Placa) ---
-            st.subheader(f"Datos Técnicos: {id_ver}")
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Potencia", ultimo.get('Potencia', '-'))
-            c2.metric("RPM", ultimo.get('RPM', '-'))
-            c3.metric("Frame", ultimo.get('Frame', '-'))
             
             # Preparamos el PDF (dentro del if, cuando estamos seguros de que existe)
             try:
@@ -229,63 +217,19 @@ elif modo == "🔍 Historial":
                 col_pdf, col_nuevo = st.columns(2)
                 col_pdf.download_button("📥 Descargar Historial", pdf_bytes, f"Historial_{id_ver}.pdf")
                 col_nuevo.button("➕ Nueva Reparación", on_click=abrir_formulario)
-            
-            # Botón para descargar historial actual
-            pdf_bytes = generar_pdf(historial_motor, id_ver)
-            col_pdf.download_button("📥 Descargar Historial Completo", pdf_bytes, f"Historial_{id_ver}.pdf")
-            
-            # Botón para mostrar/ocultar el formulario de nueva reparación
-            if col_nuevo.button("➕ Registrar Nueva Reparación"):
-                st.session_state.mostrar_form = True
+                
+            except Exception as e:
+                st.error(f"Error al preparar el PDF: {e}")
 
-            # --- EL FORMULARIO ---
-            if st.session_state.mostrar_form:
-                st.markdown("---")
-                st.subheader("📝 Nueva Intervención")
-    
-                with st.form("reparacion_en_historial"):
-                    # Aquí pegas tus columnas de mediciones (las que ya tenías)
-                    c1, c2, c3 = st.columns(3)
-                    with c1:
-                        st.write("**Tierra**")
-                        rt_tu = st.text_input("T-U")
-        
-        # Botones de acción del formulario
-                    col_btn1, col_btn2 = st.columns(2)
-                    cancelar = col_btn1.form_submit_button("❌ Cancelar")
-                    guardar = col_btn2.form_submit_button("💾 Guardar Reparación")
-
-                    if cancelar:
-                        st.session_state.mostrar_form = False
-                        st.rerun()
-
-                    if guardar:
-                        # Aquí va tu lógica de guardado que ya funciona (nuevo_data, etc.)
-                        # ...
-                        st.success("✅ ¡Guardado con éxito!")
-                        st.session_state.mostrar_form = False # Cerramos el formulario tras guardar
-                        st.rerun()
-                    
-                    enviar = st.form_submit_button("💾 GUARDAR NUEVA REPARACIÓN")
-                    if enviar:
-                        # Lógica de guardado...
-                        st.success("¡Reparación guardada con éxito!")
-                        st.session_state.mostrar_form = False
-                        st.rerun()
-
-            # --- TABLA DE HISTORIAL (Al final) ---
-            st.subheader("Historial de Intervenciones")
+            # ... resto del código (formulario y tabla) ...
             st.dataframe(historial_motor.sort_index(ascending=False))
             
         else:
-            st.warning("No se encontraron registros. ¿Deseas dar de alta este motor?")
-            if st.button("Crear primer registro"):
-                # Redirigir a registro o abrir formulario vacío
-                pass
-
+            st.warning(f"No hay registros para el motor {id_ver}")
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
