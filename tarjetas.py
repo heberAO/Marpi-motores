@@ -136,30 +136,34 @@ elif modo == "🔍 Historial / QR":
             
             col_pdf, col_qr, col_form = st.columns(3)
             
-            # 1. BOTÓN PDF
+           if not historial.empty:
+            orig = historial.iloc[0]
+            st.subheader(f"Motor: {id_ver} | {orig.get('Potencia','-')} | {orig.get('RPM','-')} RPM")
+            
+            # --- SECCIÓN DE BOTONES Y QR ---
+            col_pdf, col_qr, col_form = st.columns(3)
+            
+            # 1. GENERAR PDF
             pdf_b = generar_pdf(historial, id_ver)
             if pdf_b:
-                col_pdf.download_button("📥 Descargar Informe PDF", pdf_b, f"Informe_{id_ver}.pdf")
-            else:
-                col_pdf.error("Error al crear PDF")
+                col_pdf.download_button("📥 Informe PDF", pdf_b, f"Informe_{id_ver}.pdf")
             
-            # 2. GENERAR QR ÚNICO
-            url_app = "https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/" 
-            link_motor = f"{url_app}?tag={id_ver}"
+            # 2. GENERAR QR ÚNICO (Aquí definimos link_directo)
+            url_base = "https://marpi-motores.streamlit.app/" 
+            link_directo = f"{url_base}?tag={id_ver}" # <-- ESTA LÍNEA DEBE ESTAR ANTES
             
-            # 3. Generamos el QR con ese link
             qr = qrcode.QRCode(version=1, box_size=10, border=5)
-            qr.add_data(link_directo) # <--- Aquí metemos el link inteligente
+            qr.add_data(link_directo) # <-- AHORA SÍ EXISTE
             qr.make(fit=True)
             img_qr = qr.make_image(fill_color="black", back_color="white")
             
-            # 3. CONVERSIÓN SEGURA (Esto quita el cartel de error)
+            # Convertir a bytes para mostrar
             buf = BytesIO()
             img_qr.save(buf, format="PNG")
-            col_qr.image(buf.getvalue(), width=150, caption=f"QR directo para {id_ver}")
+            col_qr.image(buf.getvalue(), width=150, caption=f"QR de {id_ver}")
             
-            # 4. MOSTRAR EN PANTALLA
-            col_qr.image(byte_im, width=150, caption=f"QR de {id_ver}")
+            # 3. BOTÓN NUEVA REPARACIÓN
+            col_form.button("➕ Nueva Reparación", on_click=activar_formulario
             
             # 5. BOTÓN PARA GUARDAR (Opcional)
             col_qr.download_button("💾 Guardar QR", byte_im, f"QR_{id_ver}.png", "image/png")
@@ -208,6 +212,7 @@ elif modo == "🔍 Historial / QR":
             st.dataframe(historial.sort_index(ascending=False))
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
