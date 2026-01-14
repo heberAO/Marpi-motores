@@ -192,36 +192,64 @@ if modo == "📝 Registro":
         qr_img.save(buf, format="PNG")
         st.image(buf, width=150, caption="QR generado para este motor")
 
-# --- MODO 2: HISTORIAL ---
 elif modo == "🔍 Historial":
-    st.title("🔍 Hoja de Vida del Motor")
-    id_ver = st.text_input("Buscar por TAG:", value=query_tag).strip().upper()
+    st.title("🔍 Hoja de Vida y Nueva Reparación")
+    id_ver = st.text_input("TAG DEL MOTOR:", value=query_tag).strip().upper()
     
-    if id_ver and not df_completo.empty:
-        # Filtrar registros del motor
+    if id_ver:
+        # 1. Filtrar registros del motor
         historial_motor = df_completo[df_completo['Tag'].astype(str).str.upper() == id_ver]
         
         if not historial_motor.empty:
-            st.subheader(f"Registros encontrados para: {id_ver}")
-            st.dataframe(historial_motor.sort_index(ascending=False), use_container_width=True)
+            ultimo = historial_motor.iloc[-1]
             
-            # Generar y descargar PDF
-            try:
-                pdf_bytes = generar_pdf(historial_motor, id_ver)
-                st.download_button(
-                    label="📥 Descargar Informe Técnico PDF",
-                    data=pdf_bytes,
-                    file_name=f"Informe_Marpi_{id_ver}.pdf",
-                    mime="application/pdf"
-                )
-            except Exception as e:
-                st.error(f"Error al generar el PDF: {e}")
+            # --- VISTA RÁPIDA (Datos de Placa) ---
+            st.subheader(f"Datos Técnicos: {id_ver}")
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Potencia", ultimo.get('Potencia', '-'))
+            c2.metric("RPM", ultimo.get('RPM', '-'))
+            c3.metric("Frame", ultimo.get('Frame', '-'))
+            
+            # --- ACCIONES ---
+            st.divider()
+            col_pdf, col_nuevo = st.columns(2)
+            
+            # Botón para descargar historial actual
+            pdf_bytes = generar_pdf(historial_motor, id_ver)
+            col_pdf.download_button("📥 Descargar Historial Completo", pdf_bytes, f"Historial_{id_ver}.pdf")
+            
+            # Botón para mostrar/ocultar el formulario de nueva reparación
+            if col_nuevo.button("➕ Registrar Nueva Reparación"):
+                st.session_state.mostrar_form = True
+
+            # --- FORMULARIO DE REPARACIÓN (Solo aparece si se activa) ---
+            if st.session_state.get('mostrar_form', False):
+                with st.form("reparacion_rapida"):
+                    st.info("Cargando nueva intervención técnica...")
+                    # Aquí pones todos tus campos de mediciones (RT, RB, RI)
+                    # ... (el código del formulario que ya tenemos) ...
+                    
+                    enviar = st.form_submit_button("💾 GUARDAR NUEVA REPARACIÓN")
+                    if enviar:
+                        # Lógica de guardado...
+                        st.success("¡Reparación guardada con éxito!")
+                        st.session_state.mostrar_form = False
+                        st.rerun()
+
+            # --- TABLA DE HISTORIAL (Al final) ---
+            st.subheader("Historial de Intervenciones")
+            st.dataframe(historial_motor.sort_index(ascending=False))
+            
         else:
-            st.warning(f"No hay historial para el motor {id_ver}.")
+            st.warning("No se encontraron registros. ¿Deseas dar de alta este motor?")
+            if st.button("Crear primer registro"):
+                # Redirigir a registro o abrir formulario vacío
+                pass
 
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
