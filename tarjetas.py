@@ -74,9 +74,9 @@ def generar_pdf(df_historial, tag_motor):
             pdf.set_fill_color(245, 245, 245)
             
             # Encabezados de mediciones
-            pdf.cell(63, 6, "Resistencia Tierra (Mohm)", 1, 0, 'C', True)
-            pdf.cell(63, 6, "Resistencia Bobinas (ohm)", 1, 0, 'C', True)
-            pdf.cell(64, 6, "Resistencia Interna (ohm)", 1, 1, 'C', True)
+            pdf.cell(63, 6, "Resistencia Tierra (Gohm)", 1, 0, 'C', True)
+            pdf.cell(63, 6, "Resistencia Bobinas (Gohm)", 1, 0, 'C', True)
+            pdf.cell(64, 6, "Resistencia Interna (mohm)", 1, 1, 'C', True)
             
             pdf.set_font("Arial", '', 9)
             # Valores
@@ -130,10 +130,10 @@ with st.sidebar:
     inicio_modo = "🔍 Historial / QR" if query_tag else "📝 Registro Nuevo"
     modo = st.radio("Menú:", ["📝 Registro Nuevo", "🔍 Historial / QR"], index=1 if query_tag else 0)
 
-# --- MODO REGISTRO NUEVO ---
 # --- MODO REGISTRO NUEVO (CON AUTO-LIMPIEZA) ---
 if modo == "📝 Registro Nuevo":
     st.title("📝 Alta y Registro Inicial de Motor")
+    fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY")
     
     # Creamos un contador en el estado de la sesión para reiniciar el formulario
     if "form_count" not in st.session_state:
@@ -151,17 +151,17 @@ if modo == "📝 Registro Nuevo":
         st.subheader("🔍 Mediciones Iniciales")
         m1, m2, m3 = st.columns(3)
         with m1:
-            st.write("**Tierra (MΩ)**")
+            st.write("**Tierra (GΩ)**")
             rt_tu = st.text_input("T-U")
             rt_tv = st.text_input("T-V")
             rt_tw = st.text_input("T-W")
         with m2:
-            st.write("**Bobinas (Ω)**")
+            st.write("**Bobinas (GΩ)**")
             rb_uv = st.text_input("U-V")
             rb_vw = st.text_input("V-W")
             rb_uw = st.text_input("U-W")
         with m3:
-            st.write("**Interna (Ω)**")
+            st.write("**Interna (mΩ)**")
             ri_u = st.text_input("U1-U2")
             ri_v = st.text_input("V1-V2")
             ri_w = st.text_input("W1-W2")
@@ -282,6 +282,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
