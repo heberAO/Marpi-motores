@@ -252,8 +252,8 @@ elif modo == "🔍 Historial":
                     guardar = col_btn2.form_submit_button("💾 Guardar Reparación")
 
                     if cancelar:
-                    st.session_state.mostrar_form = False
-                    st.rerun()
+                        st.session_state.mostrar_form = False
+                        st.rerun()
 
                     if guardar:
                         # Aquí va tu lógica de guardado que ya funciona (nuevo_data, etc.)
@@ -282,6 +282,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
