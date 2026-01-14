@@ -10,6 +10,11 @@ from fpdf import FPDF
 # --- 1. CONFIGURACIÓN Y ESTADO ---
 st.set_page_config(page_title="Marpi Motores", page_icon="⚡", layout="wide")
 
+# --- ¡PASO CLAVE PARA EL QR! ---
+# Leemos el parámetro de la URL justo al empezar
+parametros = st.query_params
+query_tag = parametros.get("tag", "").upper()
+
 if 'mostrar_form' not in st.session_state:
     st.session_state.mostrar_form = False
 
@@ -62,18 +67,16 @@ except:
     st.error("Error de conexión.")
     df_completo = pd.DataFrame()
 
-# Capturamos el tag si viene desde un QR
-query_tag = st.query_params.get("tag", "")
-
 # --- 4. INTERFAZ ---
 with st.sidebar:
     st.header("⚡ Marpi Electricidad")
-    modo = st.radio("Menú:", ["📝 Registro Nuevo", "🔍 Historial / QR"])
+    # Si entramos por QR, forzamos que el menú se ponga en Historial
+    inicio_modo = "🔍 Historial / QR" if query_tag else "📝 Registro Nuevo"
+    modo = st.radio("Menú:", ["📝 Registro Nuevo", "🔍 Historial / QR"], index=1 if query_tag else 0)
 
 # --- MODO REGISTRO NUEVO ---
 if modo == "📝 Registro Nuevo":
     st.title("📝 Alta y Registro Inicial de Motor")
-    fecha = st.date_input("Fecha Hoy", date.today(), format="DD/MM/YYYY")
     with st.form("alta_motor_completa"):
         col_id1, col_id2, col_id3, col_id4 = st.columns(4)
         t = col_id1.text_input("TAG/ID MOTOR").upper()
@@ -124,7 +127,7 @@ if modo == "📝 Registro Nuevo":
 elif modo == "🔍 Historial / QR":
     st.title("🔍 Hoja de Vida del Motor")
     
-    # El buscador toma el valor del QR automáticamente
+    # El valor por defecto ahora es query_tag (lo que lee del QR)
     id_ver = st.text_input("ESCRIBIR TAG:", value=query_tag).strip().upper()
     
     if id_ver:
@@ -134,7 +137,6 @@ elif modo == "🔍 Historial / QR":
             orig = historial.iloc[0]
             st.subheader(f"Motor: {id_ver} | {orig.get('Potencia','-')} | {orig.get('RPM','-')} RPM")
             
-            # --- SECCIÓN DE BOTONES ---
             col_pdf, col_qr, col_form = st.columns(3)
             
             # 1. PDF
@@ -142,7 +144,7 @@ elif modo == "🔍 Historial / QR":
             if pdf_b:
                 col_pdf.download_button("📥 Informe PDF", pdf_b, f"Informe_{id_ver}.pdf")
             
-            # 2. QR ÚNICO (Link dinámico)
+            # 2. QR ÚNICO
             url_base = "https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/"
             link_directo = f"{url_base}?tag={id_ver}"
             
@@ -155,7 +157,7 @@ elif modo == "🔍 Historial / QR":
             img_qr.save(buf, format="PNG")
             byte_im = buf.getvalue()
             
-            col_qr.image(byte_im, width=120, caption="Código QR Único")
+            col_qr.image(byte_im, width=120, caption="QR Único")
             col_qr.download_button("💾 Guardar imagen QR", byte_im, f"QR_{id_ver}.png", "image/png")
             
             # 3. NUEVA REPARACIÓN
@@ -186,7 +188,6 @@ elif modo == "🔍 Historial / QR":
                     e_rep = st.text_area("Taller externo")
                     
                     if st.form_submit_button("💾 GUARDAR EN HISTORIAL"):
-                        # Rescatamos datos de placa originales para no perderlos
                         nueva_data = {
                             "Fecha": f_rep.strftime("%d/%m/%Y"), "Tag": id_ver, "Responsable": t_resp,
                             "Potencia": orig.get('Potencia','-'), "RPM": orig.get('RPM', '-'),
@@ -202,12 +203,12 @@ elif modo == "🔍 Historial / QR":
                         st.rerun()
 
             st.markdown("---")
-            st.write("### 📜 Historial de Intervenciones")
             st.dataframe(historial.sort_index(ascending=False))
         else:
-            st.warning("⚠️ No se encontró ningún motor con ese TAG.")
+            st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
