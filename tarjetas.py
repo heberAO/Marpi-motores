@@ -130,11 +130,41 @@ elif modo == "🔍 Historial / QR":
             orig = historial.iloc[0]
             st.subheader(f"Motor: {id_ver} | {orig.get('Potencia','-')} | {orig.get('RPM','-')} RPM")
             
-            c_pdf, c_form = st.columns(2)
+            if not historial.empty:
+            orig = historial.iloc[0]
+            st.subheader(f"Motor: {id_ver} | {orig.get('Potencia','-')} | {orig.get('RPM','-')} RPM")
+            
+            # --- SECCIÓN DE HERRAMIENTAS (PDF y QR) ---
+            col_pdf, col_qr, col_form = st.columns(3)
+            
+            # 1. BOTÓN PDF
             pdf_b = generar_pdf(historial, id_ver)
-            if pdf_b: c_pdf.download_button("📥 Descargar Informe", pdf_b, f"{id_ver}.pdf")
-            c_form.button("➕ Cargar Nueva Reparación", on_click=activar_formulario)
-
+            if pdf_b:
+                col_pdf.download_button("📥 Descargar Informe PDF", pdf_b, f"Informe_{id_ver}.pdf")
+            else:
+                col_pdf.error("Error al crear PDF")
+            
+            # 2. GENERAR QR ÚNICO
+            # Cambia esta URL por la de tu aplicación real en Streamlit Cloud
+            url_app = "https://marpi-motores.streamlit.app/" 
+            link_motor = f"{url_app}?tag={id_ver}"
+            
+            qr = qrcode.QRCode(version=1, box_size=10, border=5)
+            qr.add_data(link_motor)
+            qr.make(fit=True)
+            img_qr = qr.make_image(fill_color="black", back_color="white")
+            
+            # Convertir QR a formato que Streamlit entienda
+            buf = BytesIO()
+            img_qr.save(buf, format="PNG")
+            byte_im = buf.getvalue()
+            
+            col_qr.image(byte_im, width=150, caption=f"QR de {id_ver}")
+            # Botón para descargar solo la imagen del QR
+            col_qr.download_button("💾 Guardar QR", byte_im, f"QR_{id_ver}.png", "image/png")
+            
+            # 3. BOTÓN NUEVA REPARACIÓN
+            col_form.button("➕ Cargar Nueva Reparación", on_click=activar_formulario)
             if st.session_state.mostrar_form:
                 with st.form("nueva_rep"):
                     st.write("### Registrar Intervención")
@@ -177,6 +207,7 @@ elif modo == "🔍 Historial / QR":
             st.dataframe(historial.sort_index(ascending=False))
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
