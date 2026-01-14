@@ -154,9 +154,9 @@ elif modo == "🔍 Historial / QR":
             img_qr = qr.make_image(fill_color="black", back_color="white")
             
             # 3. CONVERSIÓN SEGURA (Esto quita el cartel de error)
-           buf = BytesIO()
-           img_qr.save(buf, format="PNG")
-           col_qr.image(buf.getvalue(), width=150, caption=f"QR directo para {id_ver}")
+            buf = BytesIO()
+            img_qr.save(buf, format="PNG")
+            col_qr.image(buf.getvalue(), width=150, caption=f"QR directo para {id_ver}")
             
             # 4. MOSTRAR EN PANTALLA
             col_qr.image(byte_im, width=150, caption=f"QR de {id_ver}")
@@ -208,6 +208,7 @@ elif modo == "🔍 Historial / QR":
             st.dataframe(historial.sort_index(ascending=False))
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
