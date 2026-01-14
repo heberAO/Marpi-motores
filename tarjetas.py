@@ -127,16 +127,13 @@ elif modo == "🔍 Historial / QR":
     if id_ver:
         historial = df_completo[df_completo['Tag'].astype(str).str.upper() == id_ver]
         if not historial.empty:
-            # Línea 134: (Asegúrate de que no haya una línea vacía aquí)
-            orig = historial.iloc[0] # Línea 135: 12 espacios desde el borde
+            orig = historial.iloc[0] 
             
-            # Todas estas líneas deben empezar en la misma columna que 'orig'
             st.subheader(f"Motor: {id_ver}")
             col_pdf, col_qr, col_form = st.columns(3)
             
             st.subheader(f"Motor: {id_ver} | {orig.get('Potencia','-')} | {orig.get('RPM','-')} RPM")
             
-            # El resto de tus botones también deben estar alineados con 'orig'
             col_pdf, col_qr, col_form = st.columns(3)
             
             # 1. BOTÓN PDF
@@ -147,20 +144,19 @@ elif modo == "🔍 Historial / QR":
                 col_pdf.error("Error al crear PDF")
             
             # 2. GENERAR QR ÚNICO
-            # Cambia esta URL por la de tu aplicación real en Streamlit Cloud
             url_app = "https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/" 
             link_motor = f"{url_app}?tag={id_ver}"
             
-            # 2. CREACIÓN DEL QR
+            # 3. Generamos el QR con ese link
             qr = qrcode.QRCode(version=1, box_size=10, border=5)
-            qr.add_data(link_motor)
+            qr.add_data(link_directo) # <--- Aquí metemos el link inteligente
             qr.make(fit=True)
             img_qr = qr.make_image(fill_color="black", back_color="white")
             
             # 3. CONVERSIÓN SEGURA (Esto quita el cartel de error)
-            buf = BytesIO()
-            img_qr.save(buf, format="PNG")
-            byte_im = buf.getvalue() # Convertimos a datos puros
+           buf = BytesIO()
+           img_qr.save(buf, format="PNG")
+           col_qr.image(buf.getvalue(), width=150, caption=f"QR directo para {id_ver}")
             
             # 4. MOSTRAR EN PANTALLA
             col_qr.image(byte_im, width=150, caption=f"QR de {id_ver}")
@@ -212,6 +208,7 @@ elif modo == "🔍 Historial / QR":
             st.dataframe(historial.sort_index(ascending=False))
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
