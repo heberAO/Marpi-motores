@@ -88,7 +88,7 @@ def activar_formulario():
             pdf.multi_cell(0, 6, ext, "LRB", 'L')
         
         pdf.ln(5)
-    return pdf.output(dest='S').encode('latin-1', errors='replace')
+    return pdf.output(dest='S').encode('latin-1')
 
 # --- 2. CONFIGURACIÓN E INTERFAZ ---
 st.set_page_config(page_title="Marpi Motores", page_icon="⚡", layout="wide")
@@ -232,6 +232,7 @@ elif modo == "🔍 Historial":
 
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
