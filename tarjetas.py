@@ -121,15 +121,14 @@ if modo == "📝 Registro Nuevo":
 
 # --- MODO HISTORIAL ---
 elif modo == "🔍 Historial / QR":
-    st.title("🔍 Hoja de Vida")
+    st.title("🔍 Hoja de Vida del Motor")
     id_ver = st.text_input("ESCRIBIR TAG:", value=query_tag).strip().upper()
     
     if id_ver:
         historial = df_completo[df_completo['Tag'].astype(str).str.upper() == id_ver]
         if not historial.empty:
-            orig = historial.iloc[0] 
-            
-            st.subheader(f"Motor: {id_ver}")
+            orig = historial.iloc[0]
+            st.subheader(f"Motor: {id_ver} | {orig.get('Potencia','-')}")
             col_pdf, col_qr, col_form = st.columns(3)
             
             st.subheader(f"Motor: {id_ver} | {orig.get('Potencia','-')} | {orig.get('RPM','-')} RPM")
@@ -212,6 +211,7 @@ elif modo == "🔍 Historial / QR":
             st.dataframe(historial.sort_index(ascending=False))
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
