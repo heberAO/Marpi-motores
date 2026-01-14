@@ -7,6 +7,9 @@ from io import BytesIO
 import os
 from fpdf import FPDF
 
+def activar_formulario():
+    st.session_state.mostrar_form = True
+    # BORRA cualquier línea que diga pdf.image o pdf.cell aquí.
 # --- 1. FUNCIÓN GENERAR PDF PROFESIONAL ---
 def generar_pdf(historial, tag):
     try:
@@ -25,10 +28,7 @@ def generar_pdf(historial, tag):
     # --- INICIALIZAR MEMORIA (Cerca de tus importaciones) ---
 if 'mostrar_form' not in st.session_state:
     st.session_state.mostrar_form = False
-
-def activar_formulario():
-    st.session_state.mostrar_form = True
-    
+ 
     if os.path.exists("logo.png"):
         pdf.image("logo.png", 10, 8, 33)
     
@@ -244,6 +244,7 @@ elif modo == "🔍 Historial":
             st.warning(f"No hay registros para el motor {id_ver}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
