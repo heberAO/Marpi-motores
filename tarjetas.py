@@ -1,4 +1,4 @@
-import streamlit as st
+ import streamlit as st
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 from datetime import date
@@ -15,12 +15,28 @@ def generar_pdf(historial, tag):
     try:
         pdf = FPDF()
         pdf.add_page()
-        # ... (aquí va todo tu diseño de celdas y textos) ...
         
-        # EL PUNTO CRÍTICO:
-        # Generamos los bytes del PDF
-        datos_binarios = pdf.output(dest='S').encode('latin-1')
-        return datos_binarios # <--- ESTO ES LO QUE ESTABA FALTANDO
+        # ... (aquí van todas tus líneas de pdf.cell, pdf.image, etc.) ...
+        
+        # ESTA LÍNEA DEBE TENER 8 ESPACIOS DESDE EL BORDE IZQUIERDO
+        return pdf.output(dest='S').encode('latin-1')
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+   # ❌ INCORRECTO: El return está muy a la izquierda
+def generar_pdf(historial, tag):
+    pdf = FPDF()
+    pdf.add_page()
+# El return aquí daría error
+return pdf.output(dest='S').encode('latin-1') 
+
+# ✅ CORRECTO: El return tiene los 4 espacios de sangría
+def generar_pdf(historial, tag):
+    pdf = FPDF()
+    pdf.add_page()
+    # ... resto del diseño ...
+    return pdf.output(dest='S').encode('latin-1')     
         
     except Exception as e:
         print(f"Error interno en PDF: {e}")
@@ -244,6 +260,7 @@ elif modo == "🔍 Historial":
             st.warning(f"No hay registros para el motor {id_ver}")
 st.markdown("---")
 st.caption("Sistema diseñado y desarrollado por **Heber Ortiz** | Marpi Electricidad ⚡")
+
 
 
 
