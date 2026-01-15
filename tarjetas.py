@@ -153,12 +153,12 @@ if modo == "📝 Registro Nuevo":
         st.subheader("🔍 Mediciones Iniciales")
         m1, m2, m3 = st.columns(3)
         with m1:
-            st.write("**Tierra (GΩ)**")
+            st.write("**Tierra (MΩ)**")
             rt_tu = st.text_input("T-U")
             rt_tv = st.text_input("T-V")
             rt_tw = st.text_input("T-W")
         with m2:
-            st.write("**Bobinas (GΩ)**")
+            st.write("**Bobinas (MΩ)**")
             rb_uv = st.text_input("U-V")
             rb_vw = st.text_input("V-W")
             rb_uw = st.text_input("U-W")
@@ -284,6 +284,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
