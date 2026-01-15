@@ -28,8 +28,8 @@ def generar_pdf(df_historial, tag_motor):
         pdf.set_auto_page_break(auto=True, margin=15)
         
         # --- ENCABEZADO PROFESIONAL ---
-        if os.path.exists("logo.png"):
-            pdf.image("logo.png", 10, 8, 30)
+        if os.path.exists("logo2.png"):
+            pdf.image("logo2.png", 10, 8, 30)
         
         pdf.set_font("Arial", 'B', 20)
         pdf.set_text_color(0, 51, 102) # Azul oscuro profesional
@@ -131,8 +131,8 @@ with st.sidebar:
     modo = st.radio("Menú:", ["📝 Registro Nuevo", "🔍 Historial / QR"], index=1 if query_tag else 0)
 
 # --- MODO REGISTRO NUEVO (CON AUTO-LIMPIEZA) ---
-if os.path.exists("logo.png"):
-    st.image("logo.png", width=150)
+if os.path.exists("logo2.png"):
+    st.image("logo2.png", width=150)
 if modo == "📝 Registro Nuevo":
     st.title("📝 Alta y Registro Inicial de Motor")
     fecha = st.date_input("fecha", date.today(), format="DD/MM/YYYY")
@@ -284,6 +284,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
