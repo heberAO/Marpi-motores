@@ -48,6 +48,38 @@ if modo == "📝 Nuevo Registro":
         r = col_id3.selectbox("RPM", ["-", "750", "1500", "3000"])
         f = col_id4.text_input("Frame / Carcasa")
         sn = col_id5.text_input("N° de Serie")
+        # Al cambiar la 'key' del formulario, todos los campos se limpian
+    with st.form(key=f"alta_motor_{st.session_state.form_count}"):
+        col_id1, col_id2, col_id3, col_id4, col_id5 = st.columns(5)
+        t = col_id1.text_input("TAG/ID MOTOR").upper()
+        p = col_id2.text_input("Potencia (HP/kW)")
+        r = col_id3.selectbox("RPM", ["-", "750", "1500", "3000"])
+        f = col_id4.text_input("Frame / Carcasa")
+        sn = col_id5.text_input("N° de Serie")
+        
+        st.markdown("---")
+        st.subheader("🔍 Mediciones Iniciales")
+        m1, m2, m3 = st.columns(3)
+        with m1:
+            st.write("**Tierra (MΩ)**")
+            rt_tu = st.text_input("T-U")
+            rt_tv = st.text_input("T-V")
+            rt_tw = st.text_input("T-W")
+        with m2:
+            st.write("**Bobinas (MΩ)**")
+            rb_uv = st.text_input("U-V")
+            rb_vw = st.text_input("V-W")
+            rb_uw = st.text_input("U-W")
+        with m3:
+            st.write("**Interna (mΩ)**")
+            ri_u = st.text_input("U1-U2")
+            ri_v = st.text_input("V1-V2")
+            ri_w = st.text_input("W1-W2")
+            
+        st.markdown("---")
+        resp = st.text_input("Técnico Responsable")
+        desc = st.text_area("Descripción inicial / Trabajos")
+        ext = st.text_area("Trabajos Externos")
         
         # --- EL BOTÓN INDISPENSABLE ---
         boton_guardar = st.form_submit_button("💾 GUARDAR EN BASE DE DATOS")
@@ -193,41 +225,6 @@ if modo == "📝 Registro Nuevo":
     # Creamos un contador en el estado de la sesión para reiniciar el formulario
     if "form_count" not in st.session_state:
         st.session_state.form_count = 0
-
-    # Al cambiar la 'key' del formulario, todos los campos se limpian
-    with st.form(key=f"alta_motor_{st.session_state.form_count}"):
-        col_id1, col_id2, col_id3, col_id4, col_id5 = st.columns(5)
-        t = col_id1.text_input("TAG/ID MOTOR").upper()
-        p = col_id2.text_input("Potencia (HP/kW)")
-        r = col_id3.selectbox("RPM", ["-", "750", "1500", "3000"])
-        f = col_id4.text_input("Frame / Carcasa")
-        sn = col_id5.text_input("N° de Serie")
-        
-        st.markdown("---")
-        st.subheader("🔍 Mediciones Iniciales")
-        m1, m2, m3 = st.columns(3)
-        with m1:
-            st.write("**Tierra (MΩ)**")
-            rt_tu = st.text_input("T-U")
-            rt_tv = st.text_input("T-V")
-            rt_tw = st.text_input("T-W")
-        with m2:
-            st.write("**Bobinas (MΩ)**")
-            rb_uv = st.text_input("U-V")
-            rb_vw = st.text_input("V-W")
-            rb_uw = st.text_input("U-W")
-        with m3:
-            st.write("**Interna (mΩ)**")
-            ri_u = st.text_input("U1-U2")
-            ri_v = st.text_input("V1-V2")
-            ri_w = st.text_input("W1-W2")
-            
-        st.markdown("---")
-        resp = st.text_input("Técnico Responsable")
-        desc = st.text_area("Descripción inicial / Trabajos")
-        ext = st.text_area("Trabajos Externos")
-        
-        btn_guardar = st.form_submit_button("💾 REGISTRAR MOTOR")
         
         if btn_guardar:
             if t and resp:
@@ -360,6 +357,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
