@@ -6,18 +6,35 @@ import qrcode
 from io import BytesIO
 import os
 from fpdf import FPDF
-import streamlit as st
 
-# --- 1. LÓGICA DE ESCANEO QR (Debe ir primero) ---
+# --- 1. CONFIGURACIÓN Y ESTADO ---
+st.set_page_config(page_title="Marpi Motores", layout="wide")
+
+if "form_count" not in st.session_state:
+    st.session_state.form_count = 0
+if "mostrar_form" not in st.session_state:
+    st.session_state.mostrar_form = False
+
+def activar_formulario():
+    st.session_state.mostrar_form = True
+
+# --- 2. LÓGICA DE ESCANEO QR ---
 query_params = st.query_params
 query_tag = query_params.get("tag", "")
-
-# --- 2. DEFINIR EL MODO INICIAL ---
 default_index = 1 if query_tag else 0
-if os.path.exists("logo.png"):
-    st.image("logo.png", width=150)
-# --- 3. INTERFAZ: MENÚ LATERAL ---
+
+# --- 3. CONEXIÓN A DATOS ---
+try:
+    conn = st.connection("gsheets", type=GSheetsConnection)
+    df_completo = conn.read(ttl=0)
+except Exception as e:
+    st.error(f"Error de conexión: {e}")
+    df_completo = pd.DataFrame()
+
+# --- 4. INTERFAZ: MENÚ LATERAL ---
 with st.sidebar:
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=150)
     st.title("⚡ MARPI MOTORES")
     st.divider()
     modo = st.radio(
@@ -25,24 +42,32 @@ with st.sidebar:
         [
             "📝 Nuevo Registro", 
             "🔍 Historial y QR", 
-            "🛠️ Función Nueva 3", # Pon aquí el nombre de la 3era
-            "📊 Función Nueva 4"  # Pon aquí el nombre de la 4ta
+            "🛠️ Función Nueva 3", 
+            "📊 Función Nueva 4"
         ],
         index=default_index
     )
 
-# --- 4. CUERPO PRINCIPAL ---
+# --- 5. FUNCIONES AUXILIARES (PDF) ---
+def generar_pdf(df_historial, tag_motor):
+    try:
+        pdf = FPDF(orientation='P', unit='mm', format='A4')
+        pdf.add_page()
+        pdf.set_font("Arial", 'B', 20)
+        pdf.cell(0, 15, 'INFORME TECNICO - MARPI', 0, 1, 'C')
+        pdf.set_font("Arial", '', 10)
+        for _, row in df_historial.iterrows():
+            pdf.multi_cell(0, 10, f"Fecha: {row.get('Fecha')} - Tag: {row.get('Tag')} - Obs: {row.get('Descripcion')}")
+        return pdf.output(dest='S').encode('latin-1', 'replace')
+    except: return None
+
+# --- 6. CAJONES DE NAVEGACIÓN (CUERPO PRINCIPAL) ---
+
+if modo == "📝 Nuevo Registro":
+    st.title("📝 Alta y Registro Inicial de Motor")
+    fecha_hoy = st.date_input("Fecha de Registro", date.today(), format="DD/MM/YYYY")
     
-    # Iniciamos el formulario
-    with st.form(key=f"alta_motor_{st.session_state.form_count}"):
-        col_id1, col_id2, col_id3, col_id4, col_id5 = st.columns(5)
-        
-        t = col_id1.text_input("TAG/ID MOTOR").upper()
-        p = col_id2.text_input("Potencia (HP/kW)")
-        r = col_id3.selectbox("RPM", ["-", "750", "1500", "3000"])
-        f = col_id4.text_input("Frame / Carcasa")
-        sn = col_id5.text_input("N° de Serie")
-        # Al cambiar la 'key' del formulario, todos los campos se limpian
+    # ÚNICO Formulario de Alta
     with st.form(key=f"alta_motor_{st.session_state.form_count}"):
         col_id1, col_id2, col_id3, col_id4, col_id5 = st.columns(5)
         t = col_id1.text_input("TAG/ID MOTOR").upper()
@@ -51,59 +76,80 @@ with st.sidebar:
         f = col_id4.text_input("Frame / Carcasa")
         sn = col_id5.text_input("N° de Serie")
         
-        st.markdown("---")
         st.subheader("🔍 Mediciones Iniciales")
         m1, m2, m3 = st.columns(3)
         with m1:
-            st.write("**Tierra (MΩ)**")
-            rt_tu = st.text_input("T-U")
-            rt_tv = st.text_input("T-V")
-            rt_tw = st.text_input("T-W")
+            rt_tu, rt_tv, rt_tw = st.text_input("T-U"), st.text_input("T-V"), st.text_input("T-W")
         with m2:
-            st.write("**Bobinas (MΩ)**")
-            rb_uv = st.text_input("U-V")
-            rb_vw = st.text_input("V-W")
-            rb_uw = st.text_input("U-W")
+            rb_uv, rb_vw, rb_uw = st.text_input("U-V"), st.text_input("V-W"), st.text_input("U-W")
         with m3:
-            st.write("**Interna (mΩ)**")
-            ri_u = st.text_input("U1-U2")
-            ri_v = st.text_input("V1-V2")
-            ri_w = st.text_input("W1-W2")
+            ri_u, ri_v, ri_w = st.text_input("U1-U2"), st.text_input("V1-V2"), st.text_input("W1-W2")
             
-        st.markdown("---")
         resp = st.text_input("Técnico Responsable")
         desc = st.text_area("Descripción inicial / Trabajos")
         ext = st.text_area("Trabajos Externos")
         
-        # --- EL BOTÓN INDISPENSABLE ---
-        boton_guardar = st.form_submit_button("💾 GUARDAR EN BASE DE DATOS")
+        btn_guardar = st.form_submit_button("💾 GUARDAR EN BASE DE DATOS")
 
-    # --- LÓGICA DE GUARDADO (Ocurre después de apretar el botón) ---
-    if boton_guardar:
-        if t.strip() == "":
-            st.error("El campo TAG es obligatorio.")
-        else:
-            # Aquí va tu código que envía los datos a Google Sheets
-            # Por ejemplo: sheet.append_row([str(fecha_registro), t, p, r, f, sn])
-            st.success(f"✅ Motor {t} (Serie: {sn}) guardado correctamente.")
-            
-            # Esto sirve para limpiar el formulario después de guardar
+    if btn_guardar:
+        if t and resp:
+            nueva_fila = {
+                "Fecha": fecha_hoy.strftime("%d/%m/%Y"), "Tag": t, "Potencia": p, "RPM": r, "Frame": f,
+                "N_Serie": sn, "Responsable": resp, "Descripcion": desc, "Taller_Externo": ext,
+                "RT_TU": rt_tu, "RT_TV": rt_tv, "RT_TW": rt_tw,
+                "RB_UV": rb_uv, "RB_VW": rb_vw, "RB_UW": rb_uw,
+                "RI_U": ri_u, "RI_V": ri_v, "RI_W": ri_w
+            }
+            df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
+            conn.update(data=df_final)
+            st.success(f"✅ ¡Motor {t} guardado!")
             st.session_state.form_count += 1
             st.rerun()
-
-    st.info("💡 Consejo: Asegúrese de que el TAG sea único para evitar confusiones.")
+        else:
+            st.error("⚠️ Tag y Técnico son obligatorios.")
 
 elif modo == "🔍 Historial y QR":
-    st.header("🔍 Hoja de Vida del Motor")
-    # --- Aquí pegas el buscador inteligente que hicimos recién ---
+    st.title("🔍 Hoja de Vida del Motor")
+    id_ver = st.text_input("ESCRIBIR TAG O SERIE:", value=query_tag).strip().upper()
+
+    if id_ver:
+        busqueda = id_ver.strip().upper()
+        condicion_tag = df_completo['Tag'].astype(str).str.upper().str.contains(busqueda, na=False)
+        condicion_serie = df_completo['N_Serie'].astype(str).str.upper().str.contains(busqueda, na=False) if 'N_Serie' in df_completo.columns else False
+        
+        historial = df_completo[condicion_tag | condicion_serie]
+        
+        if not historial.empty:
+            if len(historial) > 1:
+                opciones = historial['Tag'].unique().tolist()
+                seleccion = st.selectbox("Seleccione el motor:", opciones)
+                historial = historial[historial['Tag'] == seleccion]
+            
+            fijos = historial.iloc[0]
+            st.subheader(f"Motor: {fijos['Tag']} | Serie: {fijos.get('N_Serie','-')}")
+            
+            # Botones de Acción
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                pdf_bytes = generar_pdf(historial, fijos['Tag'])
+                if pdf_bytes: st.download_button("📥 PDF", pdf_bytes, f"{fijos['Tag']}.pdf")
+            with c2:
+                qr_url = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={fijos['Tag']}"
+                st.write(f"[Link QR]({qr_url})")
+            with c3:
+                st.button("➕ Nueva Reparación", on_click=activar_formulario)
+
+            st.dataframe(historial)
+        else:
+            st.warning("No se encontró el motor.")
 
 elif modo == "🛠️ Función Nueva 3":
-    st.header("🛠️ Sección en Construcción")
-    st.write("Aquí irá la tercera función de Marpi Electricidad.")
+    st.title("🛠️ Configuración Próxima")
+    st.info("Aquí programaremos tu nueva función.")
 
 elif modo == "📊 Función Nueva 4":
-    st.header("📊 Estadísticas y Reportes")
-    st.write("Aquí irá la cuarta función de Marpi Electricidad.")
+    st.title("📊 Reportes y Gráficos")
+    st.info("Aquí irán las estadísticas.")
 # --- 2. FUNCIÓN GENERAR PDF ---
 def generar_pdf(df_historial, tag_motor):
     try:
@@ -351,6 +397,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
