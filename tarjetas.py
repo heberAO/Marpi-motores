@@ -7,15 +7,47 @@ from io import BytesIO
 import os
 from fpdf import FPDF
 
-# --- 1. CONFIGURACIÓN Y ESTADO ---
-st.set_page_config(page_title="Marpi Motores", page_icon="⚡", layout="wide")
+import streamlit as st
 
-parametros = st.query_params
-query_tag = parametros.get("tag", "").upper()
+# --- CONFIGURACIÓN DE LA PÁGINA ---
+st.set_page_config(page_title="Marpi Electricidad", layout="wide")
 
-if 'mostrar_form' not in st.session_state:
-    st.session_state.mostrar_form = False
+# --- MENÚ DE NAVEGACIÓN (Interfaz Lateral) ---
+with st.sidebar:
+    st.image("https://via.placeholder.com/150") # Aquí puedes poner tu logo
+    st.title("Marpi Electricidad")
+    st.divider()
+    
+    # Aquí definimos las 4 opciones
+    opcion = st.radio(
+        "MENÚ PRINCIPAL",
+        ["📝 Nuevo Registro", "🔍 Historial / QR", "⚙️ Función Nueva 1", "📈 Función Nueva 2"],
+        index=0
+    )
+    st.divider()
+    st.caption("Versión 2.0 - 2026")
 
+# --- LÓGICA DE LA INTERFAZ (Lo que se ve en el centro) ---
+
+if opcion == "📝 Nuevo Registro":
+    st.header("Registro de Nuevo Motor")
+    # AQUÍ VA TODO TU CÓDIGO DE CARGA DE DATOS (los inputs y el botón guardar)
+    st.info("Complete los datos de la placa y mediciones.")
+
+elif opcion == "🔍 Historial / QR":
+    st.header("Consulta de Hoja de Vida")
+    # AQUÍ VA TU NUEVO BUSCADOR INTELIGENTE (el que hicimos recién)
+    st.write("Busque por TAG o Número de Serie.")
+
+elif opcion == "⚙️ Función Nueva 1":
+    st.header("Nombre de tu Función Nueva 1")
+    # Espacio para lo que decidas sumar
+    st.warning("Sección en desarrollo...")
+
+elif opcion == "📈 Función Nueva 2":
+    st.header("Nombre de tu Función Nueva 2")
+    # Espacio para lo que decidas sumar
+    st.warning("Sección en desarrollo...")
 def activar_formulario():
     st.session_state.mostrar_form = True
 
@@ -308,6 +340,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
