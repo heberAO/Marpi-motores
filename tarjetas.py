@@ -159,7 +159,7 @@ elif modo == "Relubricacion":
                 tag_relub = st.text_input("TAG DEL MOTOR").upper()
                 resp_relub = st.text_input("Responsable")
             with c2:
-                f_relub = st.date_input("Fecha", date.today())
+                fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
                 sn_relub = st.text_input("N° de Serie")
 
             st.divider()
@@ -198,15 +198,15 @@ elif modo == "Relubricacion":
         if not df_completo.empty:
             df_lub = df_completo[df_completo['Descripcion'].str.contains("RELUBRICACIÓN", na=False)].copy()
             
-            # --- BUSCADOR RÁPIDO ---
+            # --- BUSCADOR RÁPIDO REFORZADO ---
             busqueda_lub = st.text_input("Filtrar por TAG o SERIE (Ej: KM001):").strip().upper()
             
             if busqueda_lub:
-                # Si hay texto, filtramos la tabla de lubricación
-                df_lub = df_lub[
-                    df_lub['Tag'].str.contains(busqueda_lub, na=False) | 
-                    df_lub['N_Serie'].str.contains(busqueda_lub, na=False)
-                ]
+                # Convertimos las columnas a String (.astype(str)) para evitar el error
+                condicion_tag = df_lub['Tag'].astype(str).str.upper().str.contains(busqueda_lub, na=False)
+                condicion_serie = df_lub['N_Serie'].astype(str).str.upper().str.contains(busqueda_lub, na=False)
+                
+                df_lub = df_lub[condicion_tag | condicion_serie]
 
             if not df_lub.empty:
                 # Ordenar por fecha (más reciente arriba)
@@ -231,6 +231,7 @@ elif modo == "Estadisticas":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
