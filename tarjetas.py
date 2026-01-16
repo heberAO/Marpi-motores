@@ -42,7 +42,7 @@ with st.sidebar:
         [
             "📝 Nuevo Registro", 
             "🔍 Historial y QR", 
-            "🛠️ Función Nueva 3", 
+            "🛠️ Registro de Relubricacion", 
             "📊 Función Nueva 4"
         ],
         index=default_index
@@ -143,8 +143,7 @@ elif modo == "🔍 Historial y QR":
         else:
             st.warning("No se encontró el motor.")
 
-elif modo == "🛠️ Función Nueva 3":
-    elif modo == "🛠️ Función Nueva 3":
+elif modo == "🛠️ Relubricacion":
     st.title("🛢️ Registro de Relubricación")
     st.info("Registre el mantenimiento preventivo de rodamientos.")
 
@@ -455,6 +454,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
