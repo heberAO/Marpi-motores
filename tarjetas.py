@@ -146,44 +146,70 @@ elif modo == "Historial y QR":
             st.warning("Motor no encontrado.")
 
 elif modo == "Relubricacion":
-    st.title("🛢️ Registro de Relubricación")
-    with st.form(key="form_engrase"):
-        c1, c2 = st.columns(2)
-        with c1:
-            tag_relub = st.text_input("TAG DEL MOTOR").upper()
-            resp_relub = st.text_input("Responsable del Engrase")
-        with c2:
-            fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
-            sn_relub = st.text_input("Confirmar N° de Serie")
+    st.title("🛢️ Gestión de Relubricación")
+    
+    # --- PESTAÑAS INTERNAS ---
+    tab1, tab2 = st.tabs(["➕ Registrar Nuevo Engrase", "📋 Ver Historial de Lubricación"])
+    
+    with tab1:
+        with st.form(key="form_engrase_v2"):
+            st.subheader("Datos del Trabajo")
+            c1, c2 = st.columns(2)
+            with c1:
+                tag_relub = st.text_input("TAG DEL MOTOR").upper()
+                resp_relub = st.text_input("Responsable")
+            with c2:
+                f_relub = st.date_input("Fecha", date.today())
+                sn_relub = st.text_input("N° de Serie")
 
-        st.divider()
-        col_la, col_loa = st.columns(2)
-        with col_la:
-            st.subheader("Lado Acople (LA)")
-            rod_la = st.text_input("Rodamiento LA")
-            gr_la = st.text_input("Gramos de Grasa LA")
-        with col_loa:
-            st.subheader("Lado Opuesto (LOA)")
-            rod_loa = st.text_input("Rodamiento LOA")
-            gr_loa = st.text_input("Gramos de Grasa LOA")
+            st.divider()
+            col_la, col_loa = st.columns(2)
+            with col_la:
+                st.markdown("**Lado Acople (LA)**")
+                rod_la = st.text_input("Rodamiento LA")
+                gr_la = st.text_input("Gramos LA")
+            with col_loa:
+                st.markdown("**Lado Opuesto (LOA)**")
+                rod_loa = st.text_input("Rodamiento LOA")
+                gr_loa = st.text_input("Gramos LOA")
 
-        grasa = st.selectbox("Tipo de Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Otra"])
-        obs = st.text_area("Notas")
-        
-        if st.form_submit_button("💾 GUARDAR REGISTRO DE ENGRASE"):
-            if tag_relub:
-                nueva_relub = {
-                    "Fecha": f_relub.strftime("%d/%m/%Y"), "Tag": tag_relub, "N_Serie": sn_relub,
-                    "Responsable": resp_relub,
-                    "Descripcion": f"RELUBRICACIÓN: LA: {rod_la} ({gr_la}g) - LOA: {rod_loa} ({gr_loa}g)",
-                    "Taller_Externo": f"Grasa: {grasa}. {obs}"
-                }
-                df_final = pd.concat([df_completo, pd.DataFrame([nueva_relub])], ignore_index=True)
-                conn.update(data=df_final)
-                st.success(f"✅ Engrase de {tag_relub} registrado.")
-                st.balloons()
+            grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+            obs = st.text_area("Notas")
+            
+            if st.form_submit_button("💾 GUARDAR REGISTRO"):
+                if tag_relub and resp_relub:
+                    nueva_relub = {
+                        "Fecha": f_relub.strftime("%d/%m/%Y"),
+                        "Tag": tag_relub,
+                        "N_Serie": sn_relub,
+                        "Responsable": resp_relub,
+                        "Descripcion": f"RELUBRICACIÓN: LA: {rod_la} ({gr_la}g) - LOA: {rod_loa} ({gr_loa}g)",
+                        "Taller_Externo": f"Grasa: {grasa}. {obs}"
+                    }
+                    df_final = pd.concat([df_completo, pd.DataFrame([nueva_relub])], ignore_index=True)
+                    conn.update(data=df_final)
+                    st.success("✅ Guardado.")
+                    st.rerun()
+
+    with tab2:
+        st.subheader("🔍 Últimos Registros de Engrase")
+        # Filtramos solo las filas que en la descripción dicen "RELUBRICACIÓN"
+        if not df_completo.empty:
+            df_lub = df_completo[df_completo['Descripcion'].str.contains("RELUBRICACIÓN", na=False)].copy()
+            
+            if not df_lub.empty:
+                # Ordenamos por fecha (asumiendo formato DD/MM/YYYY)
+                df_lub['Fecha_dt'] = pd.to_datetime(df_lub['Fecha'], format='%d/%m/%Y', errors='coerce')
+                df_lub = df_lub.sort_values(by='Fecha_dt', ascending=False)
+                
+                # Mostramos una tabla limpia con lo importante
+                st.dataframe(
+                    df_lub[['Fecha', 'Tag', 'Responsable', 'Descripcion']], 
+                    use_container_width=True,
+                    hide_index=True
+                )
             else:
-                st.error("Ingrese el TAG.")
+                st.info("Aún no hay registros de lubricación cargados.")
 
 elif modo == "Estadisticas":
     st.title("📊 Estadísticas y Reportes")
@@ -191,6 +217,7 @@ elif modo == "Estadisticas":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
