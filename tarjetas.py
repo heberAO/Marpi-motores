@@ -14,7 +14,8 @@ query_tag = query_params.get("tag", "")
 
 # --- 2. DEFINIR EL MODO INICIAL ---
 default_index = 1 if query_tag else 0
-
+if os.path.exists("logo.png"):
+    st.image("logo.png", width=150)
 # --- 3. INTERFAZ: MENÚ LATERAL ---
 with st.sidebar:
     st.title("⚡ MARPI MOTORES")
@@ -33,8 +34,40 @@ with st.sidebar:
 # --- 4. CUERPO PRINCIPAL ---
 
 if modo == "📝 Nuevo Registro":
-    st.header("📝 Registro de Motor Nuevo")
-    # --- Aquí pegas todo tu código de los st.text_input para guardar ---
+    st.title("📝 Alta y Registro Inicial de Motor")
+    
+    # La fecha suele ir mejor fuera o al inicio del formulario
+    fecha_registro = st.date_input("Fecha de Ingreso", date.today(), format="DD/MM/YYYY")
+    
+    # Iniciamos el formulario
+    with st.form(key=f"alta_motor_{st.session_state.form_count}"):
+        col_id1, col_id2, col_id3, col_id4, col_id5 = st.columns(5)
+        
+        t = col_id1.text_input("TAG/ID MOTOR").upper()
+        p = col_id2.text_input("Potencia (HP/kW)")
+        r = col_id3.selectbox("RPM", ["-", "750", "1500", "3000"])
+        f = col_id4.text_input("Frame / Carcasa")
+        sn = col_id5.text_input("N° de Serie")
+        
+        # --- EL BOTÓN INDISPENSABLE ---
+        boton_guardar = st.form_submit_button("💾 GUARDAR EN BASE DE DATOS")
+
+    # --- LÓGICA DE GUARDADO (Ocurre después de apretar el botón) ---
+    if boton_guardar:
+        if t.strip() == "":
+            st.error("El campo TAG es obligatorio.")
+        else:
+            # Aquí va tu código que envía los datos a Google Sheets
+            # Por ejemplo: sheet.append_row([str(fecha_registro), t, p, r, f, sn])
+            st.success(f"✅ Motor {t} (Serie: {sn}) guardado correctamente.")
+            
+            # Esto sirve para limpiar el formulario después de guardar
+            st.session_state.form_count += 1
+            st.rerun()
+
+    st.info("💡 Consejo: Asegúrese de que el TAG sea único para evitar confusiones.")
+Notas importantes para que funcione:
+
 
 elif modo == "🔍 Historial y QR":
     st.header("🔍 Hoja de Vida del Motor")
@@ -329,6 +362,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
