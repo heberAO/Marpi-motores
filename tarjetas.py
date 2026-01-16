@@ -153,7 +153,7 @@ elif modo == "Relubricacion":
             tag_relub = st.text_input("TAG DEL MOTOR").upper()
             resp_relub = st.text_input("Responsable del Engrase")
         with c2:
-            f_relub = st.date_input("Fecha", date.today())
+            fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
             sn_relub = st.text_input("Confirmar N° de Serie")
 
         st.divider()
@@ -191,6 +191,7 @@ elif modo == "Estadisticas":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
