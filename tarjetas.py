@@ -146,24 +146,24 @@ elif modo == "Historial y QR":
             st.warning("Motor no encontrado.")
 
 elif modo == "Relubricacion":
-    st.title("🛢️ Gestión de Relubricación")
+    # PASO A: El limpiador debe estar aquí, bien pegado al borde del 'elif'
     if "count_relub" not in st.session_state:
-    st.session_state.count_relub = 0
+        st.session_state.count_relub = 0
+
+    st.title("🛢️ Gestión de Relubricación")
     
-    # --- PESTAÑAS INTERNAS ---
-    tab1, tab2 = st.tabs(["➕ Registrar Nuevo Engrase", "📋 Ver Historial de Lubricación"])
+    tab1, tab2 = st.tabs(["➕ Registrar Nuevo Engrase", "📋 Ver Historial"])
     
     with tab1:
+        # PASO B: La key dinámica usando el contador
         with st.form(key=f"form_engrase_{st.session_state.count_relub}"):
             st.subheader("Datos del Trabajo")
-            with st.form(key="form_engrase_v2"):
-                st.subheader("Datos del Trabajo")
-                c1, c2 = st.columns(2)
+            c1, c2 = st.columns(2)
             with c1:
                 tag_relub = st.text_input("TAG DEL MOTOR").upper()
                 resp_relub = st.text_input("Responsable")
             with c2:
-                fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
+                f_relub = st.date_input("Fecha de Trabajo", date.today())
                 sn_relub = st.text_input("N° de Serie")
 
             st.divider()
@@ -177,13 +177,15 @@ elif modo == "Relubricacion":
                 rod_loa = st.text_input("Rodamiento LOA")
                 gr_loa = st.text_input("Gramos LOA")
 
-            grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
-            obs = st.text_area("Notas")
+            grasa = st.selectbox("Grasa Utilizada", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+            obs = st.text_area("Notas / Observaciones")
             
             btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
             if btn_guardar:
-                if tag_relub:
+                if tag_relub and resp_relub:
+                    # Armamos la fila
+                    nueva_relub = {
                         "Fecha": f_relub.strftime("%d/%m/%Y"),
                         "Tag": tag_relub,
                         "N_Serie": sn_relub,
@@ -191,28 +193,32 @@ elif modo == "Relubricacion":
                         "Descripcion": f"RELUBRICACIÓN: LA: {rod_la} ({gr_la}g) - LOA: {rod_loa} ({gr_loa}g)",
                         "Taller_Externo": f"Grasa: {grasa}. {obs}"
                     }
+                    
+                    # Guardamos
                     df_final = pd.concat([df_completo, pd.DataFrame([nueva_relub])], ignore_index=True)
                     conn.update(data=df_final)
-                    st.success("✅ Guardado.")
-                    st.rerun()
+                    
+                    # PASO C: Sumamos 1 al contador para que el próximo formulario esté vacío
+                    st.session_state.count_relub += 1
+                    st.success(f"✅ ¡Engrase de {tag_relub} guardado y formulario limpio!")
+                    st.balloons()
+                    st.rerun() # Esto hace que la limpieza sea instantánea
                 else:
-                    st.error("El TAG es obligatorio.")
+                    st.error("⚠️ El TAG y el Responsable son obligatorios.")
+
     with tab2:
+        # Aquí va el buscador que ya tenías (el que protegimos con .astype(str))
         st.subheader("🔍 Buscador de Lubricación")
-        
-        # Filtramos solo lo que sea "RELUBRICACIÓN"
         if not df_completo.empty:
             df_lub = df_completo[df_completo['Descripcion'].str.contains("RELUBRICACIÓN", na=False)].copy()
-            
-            # --- BUSCADOR RÁPIDO REFORZADO ---
-            busqueda_lub = st.text_input("Filtrar por TAG o SERIE (Ej: KM001):").strip().upper()
+            busqueda_lub = st.text_input("Filtrar por TAG o SERIE:", key="search_lub").strip().upper()
             
             if busqueda_lub:
-                # Convertimos las columnas a String (.astype(str)) para evitar el error
-                condicion_tag = df_lub['Tag'].astype(str).str.upper().str.contains(busqueda_lub, na=False)
-                condicion_serie = df_lub['N_Serie'].astype(str).str.upper().str.contains(busqueda_lub, na=False)
-                
-                df_lub = df_lub[condicion_tag | condicion_serie]
+                cond_t = df_lub['Tag'].astype(str).str.upper().str.contains(busqueda_lub, na=False)
+                cond_s = df_lub['N_Serie'].astype(str).str.upper().str.contains(busqueda_lub, na=False)
+                df_lub = df_lub[cond_t | cond_s]
+
+            st.dataframe(df_lub[['Fecha', 'Tag', 'Responsable', 'Descripcion']], use_container_width=True, hide_index=True)
 
             if not df_lub.empty:
                 # Ordenar por fecha (más reciente arriba)
@@ -237,6 +243,7 @@ elif modo == "Estadisticas":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
