@@ -1,14 +1,3 @@
-¡Qué buen trabajo de organización, Heber! El código que pasaste está mucho mejor estructurado, pero encontré un par de detalles técnicos que están bloqueando la navegación a la pestaña de Relubricación.
-
-¿Qué está pasando?
-Conflicto de Nombres: En tu menú lateral (radio) pusiste "🛢️ Relubricación" (con tilde y emoji), pero en el elif pusiste modo == "🛠️ Relubricacion" (sin tilde y con otro emoji). Python no los reconoce como iguales, por eso al hacer clic no pasa nada.
-
-Código Duplicado: Al final de tu archivo tenías funciones repetidas (como la de generar PDF), lo que puede hacer que la app sea lenta o se confunda.
-
-Aquí tienes el código definitivo, corregido y listo para usar. He sincronizado los nombres y limpiado los duplicados:
-
-Python
-
 import streamlit as st
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
@@ -202,6 +191,7 @@ elif modo == "Estadisticas":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
