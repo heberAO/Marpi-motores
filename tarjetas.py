@@ -147,14 +147,18 @@ elif modo == "Historial y QR":
 
 elif modo == "Relubricacion":
     st.title("🛢️ Gestión de Relubricación")
+    if "count_relub" not in st.session_state:
+    st.session_state.count_relub = 0
     
     # --- PESTAÑAS INTERNAS ---
     tab1, tab2 = st.tabs(["➕ Registrar Nuevo Engrase", "📋 Ver Historial de Lubricación"])
     
     with tab1:
-        with st.form(key="form_engrase_v2"):
+        with st.form(key=f"form_engrase_{st.session_state.count_relub}"):
             st.subheader("Datos del Trabajo")
-            c1, c2 = st.columns(2)
+            with st.form(key="form_engrase_v2"):
+                st.subheader("Datos del Trabajo")
+                c1, c2 = st.columns(2)
             with c1:
                 tag_relub = st.text_input("TAG DEL MOTOR").upper()
                 resp_relub = st.text_input("Responsable")
@@ -176,9 +180,10 @@ elif modo == "Relubricacion":
             grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
             obs = st.text_area("Notas")
             
-            if st.form_submit_button("💾 GUARDAR REGISTRO"):
-                if tag_relub and resp_relub:
-                    nueva_relub = {
+            btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
+
+            if btn_guardar:
+                if tag_relub:
                         "Fecha": f_relub.strftime("%d/%m/%Y"),
                         "Tag": tag_relub,
                         "N_Serie": sn_relub,
@@ -190,7 +195,8 @@ elif modo == "Relubricacion":
                     conn.update(data=df_final)
                     st.success("✅ Guardado.")
                     st.rerun()
-
+                else:
+                    st.error("El TAG es obligatorio.")
     with tab2:
         st.subheader("🔍 Buscador de Lubricación")
         
@@ -231,6 +237,7 @@ elif modo == "Estadisticas":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
