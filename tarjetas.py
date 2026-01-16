@@ -6,51 +6,47 @@ import qrcode
 from io import BytesIO
 import os
 from fpdf import FPDF
-
 import streamlit as st
 
-# --- CONFIGURACIÓN DE LA PÁGINA ---
-st.set_page_config(page_title="Marpi Electricidad", layout="wide")
+# --- 1. LÓGICA DE ESCANEO QR (Debe ir primero) ---
+query_params = st.query_params
+query_tag = query_params.get("tag", "")
 
-# --- MENÚ DE NAVEGACIÓN (Interfaz Lateral) ---
+# --- 2. DEFINIR EL MODO INICIAL ---
+default_index = 1 if query_tag else 0
+
+# --- 3. INTERFAZ: MENÚ LATERAL ---
 with st.sidebar:
-    st.image("https://via.placeholder.com/150") # Aquí puedes poner tu logo
-    st.title("Marpi Electricidad")
+    st.title("⚡ MARPI MOTORES")
     st.divider()
-    
-    # Aquí definimos las 4 opciones
-    opcion = st.radio(
-        "MENÚ PRINCIPAL",
-        ["📝 Nuevo Registro", "🔍 Historial / QR", "⚙️ Función Nueva 1", "📈 Función Nueva 2"],
-        index=0
+    modo = st.radio(
+        "SELECCIONE UNA FUNCIÓN:",
+        [
+            "📝 Nuevo Registro", 
+            "🔍 Historial y QR", 
+            "🛠️ Función Nueva 3", # Pon aquí el nombre de la 3era
+            "📊 Función Nueva 4"  # Pon aquí el nombre de la 4ta
+        ],
+        index=default_index
     )
-    st.divider()
-    st.caption("Versión 2.0 - 2026")
 
-# --- LÓGICA DE LA INTERFAZ (Lo que se ve en el centro) ---
+# --- 4. CUERPO PRINCIPAL ---
 
-if opcion == "📝 Nuevo Registro":
-    st.header("Registro de Nuevo Motor")
-    # AQUÍ VA TODO TU CÓDIGO DE CARGA DE DATOS (los inputs y el botón guardar)
-    st.info("Complete los datos de la placa y mediciones.")
+if modo == "📝 Nuevo Registro":
+    st.header("📝 Registro de Motor Nuevo")
+    # --- Aquí pegas todo tu código de los st.text_input para guardar ---
 
-elif opcion == "🔍 Historial / QR":
-    st.header("Consulta de Hoja de Vida")
-    # AQUÍ VA TU NUEVO BUSCADOR INTELIGENTE (el que hicimos recién)
-    st.write("Busque por TAG o Número de Serie.")
+elif modo == "🔍 Historial y QR":
+    st.header("🔍 Hoja de Vida del Motor")
+    # --- Aquí pegas el buscador inteligente que hicimos recién ---
 
-elif opcion == "⚙️ Función Nueva 1":
-    st.header("Nombre de tu Función Nueva 1")
-    # Espacio para lo que decidas sumar
-    st.warning("Sección en desarrollo...")
+elif modo == "🛠️ Función Nueva 3":
+    st.header("🛠️ Sección en Construcción")
+    st.write("Aquí irá la tercera función de Marpi Electricidad.")
 
-elif opcion == "📈 Función Nueva 2":
-    st.header("Nombre de tu Función Nueva 2")
-    # Espacio para lo que decidas sumar
-    st.warning("Sección en desarrollo...")
-def activar_formulario():
-    st.session_state.mostrar_form = True
-
+elif modo == "📊 Función Nueva 4":
+    st.header("📊 Estadísticas y Reportes")
+    st.write("Aquí irá la cuarta función de Marpi Electricidad.")
 # --- 2. FUNCIÓN GENERAR PDF ---
 def generar_pdf(df_historial, tag_motor):
     try:
@@ -340,6 +336,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
