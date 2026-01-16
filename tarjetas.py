@@ -208,22 +208,42 @@ elif modo == "🔍 Historial / QR":
     # El valor por defecto ahora es query_tag (lo que lee del QR)
     id_ver = st.text_input("ESCRIBIR TAG:", value=query_tag).strip().upper()
     
+    Exacto, Heber. Vamos a reemplazar ese bloque por uno que sea "más inteligente". El cambio principal es que en lugar de usar == (que obliga a escribir todo perfecto), usaremos .str.contains (que busca partes del texto).
+
+Aquí tienes el bloque listo para copiar y pegar. He mantenido tus nombres de variables para que no se rompa nada:
+
+Python
+
     if id_ver:
-        # Buscamos de forma segura. 
-        # Si 'N_Serie' no existe en el Excel, la App no se rompe.
-        col_busqueda_serie = df_completo['N_Serie'] if 'N_Serie' in df_completo.columns else df_completo['Tag']
+        # 1. Limpiamos la búsqueda (pasamos a mayúsculas y quitamos espacios extra)
+        busqueda = id_ver.strip().upper()
         
-        historial = df_completo[
-            (df_completo['Tag'].astype(str).str.upper() == id_ver) | 
-            (col_busqueda_serie.astype(str).str.upper() == id_ver)
-        ]
+        # 2. Creamos los filtros de "Búsqueda Parcial"
+        # Esto busca si la palabra está "contenida" en el Tag
+        condicion_tag = df_completo['Tag'].astype(str).str.upper().str.contains(busqueda, na=False)
+        
+        # Buscamos también en N_Serie de forma parcial
+        if 'N_Serie' in df_completo.columns:
+            condicion_serie = df_completo['N_Serie'].astype(str).str.upper().str.contains(busqueda, na=False)
+        else:
+            condicion_serie = False
+
+        # 3. Filtramos el DataFrame
+        historial = df_completo[condicion_tag | condicion_serie]
         
         if not historial.empty:
+            # SI HAY MÁS DE UN RESULTADO (Por ejemplo, buscaste "BOMBA" y hay varias)
+            if len(historial) > 1:
+                st.warning(f"Se encontraron {len(historial)} motores. Seleccioná el que buscás:")
+                opciones = historial['Tag'].tolist()
+                seleccion = st.selectbox("Motores encontrados:", opciones)
+                # Filtramos para quedarnos solo con el que elegiste en el selectbox
+                historial = historial[historial['Tag'] == seleccion]
+            
+            # --- MOSTRAR DATOS (Como ya lo tenías) ---
             tag_real = historial.iloc[0]['Tag']
-    
-            st.subheader(f"Motor: {tag_real}") # Siempre mostrará el TAG arriba
-    
-    # Si quieres, puedes mostrar la serie abajo como información extra
+            st.subheader(f"Motor: {tag_real}")
+            
             serie_real = historial.iloc[0].get('N_Serie', '-')
             st.info(f"📍 Identificado por Serie: {serie_real}")
             
@@ -298,6 +318,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
