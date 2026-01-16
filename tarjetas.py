@@ -32,12 +32,6 @@ with st.sidebar:
     )
 
 # --- 4. CUERPO PRINCIPAL ---
-
-if modo == "📝 Nuevo Registro":
-    st.title("📝 Alta y Registro Inicial de Motor")
-    
-    # La fecha suele ir mejor fuera o al inicio del formulario
-    fecha_registro = st.date_input("Fecha de Ingreso", date.today(), format="DD/MM/YYYY")
     
     # Iniciamos el formulario
     with st.form(key=f"alta_motor_{st.session_state.form_count}"):
@@ -357,6 +351,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
