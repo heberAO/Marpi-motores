@@ -192,24 +192,38 @@ elif modo == "Relubricacion":
                     st.rerun()
 
     with tab2:
-        st.subheader("🔍 Últimos Registros de Engrase")
-        # Filtramos solo las filas que en la descripción dicen "RELUBRICACIÓN"
+        st.subheader("🔍 Buscador de Lubricación")
+        
+        # Filtramos solo lo que sea "RELUBRICACIÓN"
         if not df_completo.empty:
             df_lub = df_completo[df_completo['Descripcion'].str.contains("RELUBRICACIÓN", na=False)].copy()
             
+            # --- BUSCADOR RÁPIDO ---
+            busqueda_lub = st.text_input("Filtrar por TAG o SERIE (Ej: KM001):").strip().upper()
+            
+            if busqueda_lub:
+                # Si hay texto, filtramos la tabla de lubricación
+                df_lub = df_lub[
+                    df_lub['Tag'].str.contains(busqueda_lub, na=False) | 
+                    df_lub['N_Serie'].str.contains(busqueda_lub, na=False)
+                ]
+
             if not df_lub.empty:
-                # Ordenamos por fecha (asumiendo formato DD/MM/YYYY)
+                # Ordenar por fecha (más reciente arriba)
                 df_lub['Fecha_dt'] = pd.to_datetime(df_lub['Fecha'], format='%d/%m/%Y', errors='coerce')
                 df_lub = df_lub.sort_values(by='Fecha_dt', ascending=False)
                 
-                # Mostramos una tabla limpia con lo importante
+                # Tabla limpia
+                st.write(f"Mostrando {len(df_lub)} registros encontrados:")
                 st.dataframe(
                     df_lub[['Fecha', 'Tag', 'Responsable', 'Descripcion']], 
                     use_container_width=True,
                     hide_index=True
                 )
             else:
-                st.info("Aún no hay registros de lubricación cargados.")
+                st.warning(f"No se encontraron registros de engrase para: '{busqueda_lub}'")
+        else:
+            st.info("La base de datos está vacía.")
 
 elif modo == "Estadisticas":
     st.title("📊 Estadísticas y Reportes")
@@ -217,6 +231,7 @@ elif modo == "Estadisticas":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
