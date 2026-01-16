@@ -31,19 +31,17 @@ except Exception as e:
     st.error(f"Error de conexión: {e}")
     df_completo = pd.DataFrame()
 
-# --- 4. INTERFAZ: MENÚ LATERAL ---
+# --- 3. INTERFAZ: MENÚ LATERAL ---
 with st.sidebar:
-    if os.path.exists("logo.png"):
-        st.image("logo.png", width=150)
     st.title("⚡ MARPI MOTORES")
+    st.divider()
     modo = st.radio(
         "SELECCIONE UNA FUNCIÓN:",
-        ["NUEVO REGISTRO", "HISTORIAL", "RELUBRICACION", "ESTADISTICAS"]
-    )
+        [
             "📝 Nuevo Registro", 
             "🔍 Historial y QR", 
-            "🛠️ Registro de Relubricacion", 
-            "📊 Función Nueva 4"
+            "🛢️ Relubricación",  # Cambiamos el nombre aquí
+            "📊 Estadísticas"
         ],
         index=default_index
     )
@@ -449,6 +447,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
