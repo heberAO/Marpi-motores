@@ -210,7 +210,7 @@ elif modo == "🔍 Historial / QR":
     if id_ver:
         historial = df_completo[
             (df_completo['Tag'].astype(str).str.upper() == id_ver) | 
-            (df_completo['N_serie'].astype(str).str.upper() == id_ver)
+            col_serie = df_completo.get('N_Serie', pd.Series(dtype='object'))
 ]
         
         if not historial.empty:
@@ -288,6 +288,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
