@@ -145,65 +145,60 @@ elif modo == "🔍 Historial y QR":
 
 elif modo == "🛠️ Relubricacion":
     st.title("🛢️ Registro de Relubricación")
-    st.info("Registre el mantenimiento preventivo de rodamientos.")
-
-    with st.form(key="form_relubricacion"):
-        col_r1, col_r2 = st.columns(2)
-        
-        with col_r1:
-            tag_relub = st.text_input("TAG DEL EQUIPO").upper()
-            responsable_relub = st.text_input("Responsable del Engrase")
-        
-        with col_r2:
-            fecha_relub = st.date_input("Fecha de Trabajo", date.today())
-            # Buscamos el N° de Serie en la base de datos para ahorrar tiempo
-            n_serie_sugerido = ""
-            if tag_relub and not df_completo.empty:
-                coincidencia = df_completo[df_completo['Tag'] == tag_relub]
-                if not coincidencia.empty:
-                    n_serie_sugerido = coincidencia.iloc[0].get('N_Serie', '')
-            
-            serie_relub = st.text_input("N° de Serie", value=n_serie_sugerido)
+    
+    # --- FORMULARIO DE ENGRASE ---
+    with st.form(key="form_engrase_v1"):
+        st.subheader("Datos del Equipo")
+        c1, c2 = st.columns(2)
+        with c1:
+            tag_relub = st.text_input("TAG DEL MOTOR").upper()
+            resp_relub = st.text_input("Responsable")
+        with c2:
+            f_relub = st.date_input("Fecha", date.today())
+            sn_relub = st.text_input("N° de Serie (Opcional)")
 
         st.divider()
-        st.subheader("Datos de Rodamientos")
+        st.subheader("Detalle de Rodamientos")
+        col_la, col_loa = st.columns(2)
         
-        cola, colb = st.columns(2)
-        with cola:
+        with col_la:
             st.markdown("**Lado Acople (LA)**")
-            rod_la = st.text_input("Tipo de Rodamiento LA (Ej: 6312 C3)")
-            gramos_la = st.number_input("Gramos de Grasa LA", min_value=0.0, step=1.0)
-        
-        with colb:
-            st.markdown("**Lado Opuesto (LOA)**")
-            rod_loa = st.text_input("Tipo de Rodamiento LOA (Ej: 6310 C3)")
-            gramos_loa = st.number_input("Gramos de Grasa LOA", min_value=0.0, step=1.0)
+            rod_la = st.text_input("Rodamiento LA")
+            gr_la = st.text_input("Gramos LA") # Lo ponemos como texto por si usas decimales
             
-        tipo_grasa = st.selectbox("Tipo de Grasa utilizada", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
-        obs_relub = st.text_area("Observaciones del estado")
+        with col_loa:
+            st.markdown("**Lado Opuesto (LOA)**")
+            rod_loa = st.text_input("Rodamiento LOA")
+            gr_loa = st.text_input("Gramos LOA")
 
-        btn_relub = st.form_submit_button("💾 REGISTRAR RELUBRICACIÓN")
+        st.divider()
+        grasa_tipo = st.selectbox("Grasa Utilizada", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+        obs_relub = st.text_area("Notas / Observaciones")
 
-    if btn_relub:
-        if tag_relub and responsable_relub:
-            # Creamos la fila para la base de datos
-            # Nota: Asegúrate de tener estas columnas en tu Google Sheets o se agregarán al final
-            nueva_relub = {
-                "Fecha": fecha_relub.strftime("%d/%m/%Y"),
+        # El botón que procesa todo
+        enviar_engrase = st.form_submit_button("💾 GUARDAR REGISTRO DE ENGRASE")
+
+    # --- LÓGICA DE GUARDADO ---
+    if enviar_engrase:
+        if tag_relub:
+            # Aquí armamos el paquete de datos para tu planilla
+            nueva_data_engrase = {
+                "Fecha": f_relub.strftime("%d/%m/%Y"),
                 "Tag": tag_relub,
-                "N_Serie": serie_relub,
-                "Responsable": responsable_relub,
-                "Descripcion": f"RELUBRICACIÓN: LA: {rod_la} ({gramos_la}g) - LOA: {rod_loa} ({gramos_loa}g). Grasa: {tipo_grasa}",
-                "Tipo_Tarea": "Mantenimiento Preventivo",
-                "Obs": obs_relub
+                "N_Serie": sn_relub,
+                "Responsable": resp_relub,
+                "Descripcion": f"RELUBRICACIÓN. LA: {rod_la} ({gr_la}g) - LOA: {rod_loa} ({gr_loa}g)",
+                "Taller_Externo": f"Grasa: {grasa_tipo}. Obs: {obs_relub}"
             }
             
-            df_final = pd.concat([df_completo, pd.DataFrame([nueva_relub])], ignore_index=True)
+            # Lo sumamos a la base de datos que ya tenés cargada
+            df_final = pd.concat([df_completo, pd.DataFrame([nueva_data_engrase])], ignore_index=True)
             conn.update(data=df_final)
-            st.success(f"✅ Registro de engrase para {tag_relub} guardado correctamente.")
+            
+            st.success(f"✅ ¡Engrase de {tag_relub} registrado!")
             st.balloons()
         else:
-            st.error("⚠️ Por favor, complete el TAG y el Responsable.")
+            st.error("⚠️ El TAG es necesario para identificar el motor.")
 elif modo == "📊 Función Nueva 4":
     st.title("📊 Reportes y Gráficos")
     st.info("Aquí irán las estadísticas.")
@@ -454,6 +449,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
