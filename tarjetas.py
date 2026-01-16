@@ -201,15 +201,6 @@ if modo == "📝 Registro Nuevo":
             else:
                 st.error("⚠️ El TAG y el Técnico son obligatorios para guardar.")
 
-# --- MODO HISTORIAL / QR ---
-¡Ya vi dónde está el problema! En el código que me pasaste, la línea if id_ver: tiene un espacio de menos respecto a la línea de arriba (id_ver = st.text_input...).
-
-En Python, si una línea pertenece al mismo bloque, debe estar exactamente vertical a la anterior.
-
-Aquí te lo corregí con la alineación exacta que necesita tu código. Fíjate que el if está justo debajo del id_ver:
-
-Python
-
 elif modo == "🔍 Historial / QR":
     st.title("🔍 Hoja de Vida del Motor")
     
@@ -317,6 +308,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
