@@ -152,13 +152,6 @@ except:
     st.error("Error de conexión.")
     df_completo = pd.DataFrame()
 
-# --- 4. INTERFAZ ---
-with st.sidebar:
-    st.header("⚡ Marpi Electricidad")
-    # Si entramos por QR, forzamos que el menú se ponga en Historial
-    inicio_modo = "🔍 Historial / QR" if query_tag else "📝 Registro Nuevo"
-    modo = st.radio("Menú:", ["📝 Registro Nuevo", "🔍 Historial / QR"], index=1 if query_tag else 0)
-
 # --- MODO REGISTRO NUEVO (CON AUTO-LIMPIEZA) ---
 if os.path.exists("logo.png"):
     st.image("logo.png", width=150)
@@ -336,6 +329,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
