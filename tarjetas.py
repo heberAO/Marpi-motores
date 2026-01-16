@@ -49,10 +49,10 @@ def generar_pdf(df_historial, tag_motor):
         pdf.set_font("Arial", '', 10)
         pdf.set_text_color(0, 0, 0)
         # Fila de datos principales
-        pdf.cell(63, 7, f"POTENCIA: {fijos.get('Potencia','-')}", 1, 0, 'C')
-        pdf.cell(63, 7, f"RPM: {fijos.get('RPM','-')}", 1, 0, 'C')
-        pdf.cell(64, 7, f"FRAME: {fijos.get('Frame','-')}", 1, 1, 'C')
-        pdf.ln(10)
+        pdf.cell(47, 7, f"POTENCIA: {fijos.get('Potencia','-')}", 1, 0, 'C')
+        pdf.cell(47, 7, f"RPM: {fijos.get('RPM','-')}", 1, 0, 'C')
+        pdf.cell(48, 7, f"FRAME: {fijos.get('Frame','-')}", 1, 0, 'C')
+        pdf.cell(48, 7, f"SERIE: {fijos.get('N_Serie','-')}", 1, 1, 'C')
 
         # --- HISTORIAL DE INTERVENCIONES ---
         pdf.set_font("Arial", 'B', 12)
@@ -143,11 +143,12 @@ if modo == "📝 Registro Nuevo":
 
     # Al cambiar la 'key' del formulario, todos los campos se limpian
     with st.form(key=f"alta_motor_{st.session_state.form_count}"):
-        col_id1, col_id2, col_id3, col_id4 = st.columns(4)
+        col_id1, col_id2, col_id3, col_id4, col_id5 = st.columns(5)
         t = col_id1.text_input("TAG/ID MOTOR").upper()
         p = col_id2.text_input("Potencia (HP/kW)")
         r = col_id3.selectbox("RPM", ["-", "750", "1500", "3000"])
         f = col_id4.text_input("Frame / Carcasa")
+        sn = col_id5.text_input("N° de Serie")
         
         st.markdown("---")
         st.subheader("🔍 Mediciones Iniciales")
@@ -179,7 +180,7 @@ if modo == "📝 Registro Nuevo":
             if t and resp:
                 nueva_fila = {
                     "Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "Potencia": p, "RPM": r, "Frame": f,
-                    "Responsable": resp, "Descripcion": desc, "Taller_Externo": ext,
+                    "N_Serie": sn, "Responsable": resp, "Descripcion": desc, "Taller_Externo": ext,
                     "RT_TU": rt_tu, "RT_TV": rt_tv, "RT_TW": rt_tw,
                     "RB_UV": rb_uv, "RB_VW": rb_vw, "RB_UW": rb_uw,
                     "RI_U": ri_u, "RI_V": ri_v, "RI_W": ri_w
@@ -207,7 +208,10 @@ elif modo == "🔍 Historial / QR":
     id_ver = st.text_input("ESCRIBIR TAG:", value=query_tag).strip().upper()
     
     if id_ver:
-        historial = df_completo[df_completo['Tag'].astype(str).str.upper() == id_ver]
+        historial = df_completo[
+            (df_completo['Tag'].astype(str).str.upper() == id_ver) | 
+            (df_completo['N_Motor'].astype(str).str.upper() == id_ver)
+]
         
         if not historial.empty:
             orig = historial.iloc[0]
@@ -284,6 +288,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
