@@ -128,19 +128,26 @@ elif modo == "Historial y QR":
             fijos = historial.iloc[0]
             st.subheader(f"Motor: {fijos['Tag']}")
             
-            c1, c2, c3 = st.columns(3)
+            c1, c2, c3, c4 = st.columns(4) # Agregamos C4
             with c1:
                 pdf_b = generar_pdf(historial, fijos['Tag'])
-                if pdf_b: st.download_button("📥 Descargar PDF", pdf_b, f"Informe_{fijos['Tag']}.pdf")
+                if pdf_b: st.download_button("📥 Informe", pdf_b, f"Informe_{fijos['Tag']}.pdf")
+            
             with c2:
                 qr_url = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={fijos['Tag']}"
                 qr = qrcode.make(qr_url)
                 buf = BytesIO()
                 qr.save(buf, format="PNG")
-                st.image(buf.getvalue(), width=150, caption="QR de este Motor")
+                st.image(buf.getvalue(), width=100, caption="QR")
+            
             with c3:
-                st.button("➕ Cargar Nueva Reparación", on_click=activar_formulario)
-
+                st.button("🛠️ Reparación", on_click=activar_formulario)
+            
+            with c4:
+                # Este botón cambia el menú lateral automáticamente a Relubricación
+                if st.button("🛢️ Engrase"):
+                    st.session_state.menu_option = "Relubricacion" # Cambia la selección del menú
+                    st.rerun()
             st.dataframe(historial.sort_index(ascending=False))
         else:
             st.warning("Motor no encontrado.")
@@ -207,7 +214,7 @@ elif modo == "Relubricacion":
                     st.error("⚠️ El TAG y el Responsable son obligatorios.")
 
     with tab2:
-        # Aquí va el buscador que ya tenías (el que protegimos con .astype(str))
+        
         st.subheader("🔍 Buscador de Lubricación")
         if not df_completo.empty:
             df_lub = df_completo[df_completo['Descripcion'].str.contains("RELUBRICACIÓN", na=False)].copy()
@@ -243,6 +250,7 @@ elif modo == "Estadisticas":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
