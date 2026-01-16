@@ -36,10 +36,10 @@ with st.sidebar:
     if os.path.exists("logo.png"):
         st.image("logo.png", width=150)
     st.title("⚡ MARPI MOTORES")
-    st.divider()
     modo = st.radio(
         "SELECCIONE UNA FUNCIÓN:",
-        [
+        ["REGISTRO", "HISTORIAL", "RELUBRICACION", "ESTADISTICAS"]
+    )
             "📝 Nuevo Registro", 
             "🔍 Historial y QR", 
             "🛠️ Registro de Relubricacion", 
@@ -449,6 +449,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
