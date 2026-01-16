@@ -52,7 +52,7 @@ def generar_pdf(df_historial, tag_motor):
         pdf.cell(47, 7, f"POTENCIA: {fijos.get('Potencia','-')}", 1, 0, 'C')
         pdf.cell(47, 7, f"RPM: {fijos.get('RPM','-')}", 1, 0, 'C')
         pdf.cell(48, 7, f"FRAME: {fijos.get('Frame','-')}", 1, 0, 'C')
-        pdf.cell(48, 7, f"SERIE: {fijos.get('N_Serie','-')}", 1, 1, 'C')
+        pdf.cell(48, 7, f"N° SERIE: {fijos.get('N_Serie','-')}", 1, 1, 'C')
 
         # --- HISTORIAL DE INTERVENCIONES ---
         pdf.set_font("Arial", 'B', 12)
@@ -210,7 +210,7 @@ elif modo == "🔍 Historial / QR":
     if id_ver:
         historial = df_completo[
             (df_completo['Tag'].astype(str).str.upper() == id_ver) | 
-            (df_completo['N_Motor'].astype(str).str.upper() == id_ver)
+            (df_completo['N_serie'].astype(str).str.upper() == id_ver)
 ]
         
         if not historial.empty:
@@ -288,6 +288,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
