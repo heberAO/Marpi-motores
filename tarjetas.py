@@ -207,22 +207,14 @@ elif modo == "🔍 Historial / QR":
     
     # El valor por defecto ahora es query_tag (lo que lee del QR)
     id_ver = st.text_input("ESCRIBIR TAG:", value=query_tag).strip().upper()
-    
-    Exacto, Heber. Vamos a reemplazar ese bloque por uno que sea "más inteligente". El cambio principal es que en lugar de usar == (que obliga a escribir todo perfecto), usaremos .str.contains (que busca partes del texto).
 
-Aquí tienes el bloque listo para copiar y pegar. He mantenido tus nombres de variables para que no se rompa nada:
-
-Python
-
-    if id_ver:
-        # 1. Limpiamos la búsqueda (pasamos a mayúsculas y quitamos espacios extra)
+   if id_ver:
+        # 1. Limpiamos la búsqueda
         busqueda = id_ver.strip().upper()
         
         # 2. Creamos los filtros de "Búsqueda Parcial"
-        # Esto busca si la palabra está "contenida" en el Tag
         condicion_tag = df_completo['Tag'].astype(str).str.upper().str.contains(busqueda, na=False)
         
-        # Buscamos también en N_Serie de forma parcial
         if 'N_Serie' in df_completo.columns:
             condicion_serie = df_completo['N_Serie'].astype(str).str.upper().str.contains(busqueda, na=False)
         else:
@@ -232,15 +224,14 @@ Python
         historial = df_completo[condicion_tag | condicion_serie]
         
         if not historial.empty:
-            # SI HAY MÁS DE UN RESULTADO (Por ejemplo, buscaste "BOMBA" y hay varias)
+            # SI HAY MÁS DE UN RESULTADO
             if len(historial) > 1:
                 st.warning(f"Se encontraron {len(historial)} motores. Seleccioná el que buscás:")
                 opciones = historial['Tag'].tolist()
                 seleccion = st.selectbox("Motores encontrados:", opciones)
-                # Filtramos para quedarnos solo con el que elegiste en el selectbox
                 historial = historial[historial['Tag'] == seleccion]
             
-            # --- MOSTRAR DATOS (Como ya lo tenías) ---
+            # --- MOSTRAR DATOS ---
             tag_real = historial.iloc[0]['Tag']
             st.subheader(f"Motor: {tag_real}")
             
