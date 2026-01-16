@@ -66,8 +66,6 @@ if modo == "📝 Nuevo Registro":
             st.rerun()
 
     st.info("💡 Consejo: Asegúrese de que el TAG sea único para evitar confusiones.")
-Notas importantes para que funcione:
-
 
 elif modo == "🔍 Historial y QR":
     st.header("🔍 Hoja de Vida del Motor")
@@ -362,6 +360,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
