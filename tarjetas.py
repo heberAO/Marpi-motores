@@ -208,10 +208,14 @@ elif modo == "🔍 Historial / QR":
     id_ver = st.text_input("ESCRIBIR TAG:", value=query_tag).strip().upper()
     
     if id_ver:
+        # Buscamos de forma segura. 
+        # Si 'N_Serie' no existe en el Excel, la App no se rompe.
+        col_busqueda_serie = df_completo['N_Serie'] if 'N_Serie' in df_completo.columns else df_completo['Tag']
+        
         historial = df_completo[
             (df_completo['Tag'].astype(str).str.upper() == id_ver) | 
-            col_serie = df_completo.get('N_Serie', pd.Series(dtype='object'))
-]
+            (col_busqueda_serie.astype(str).str.upper() == id_ver)
+        ]
         
         if not historial.empty:
             orig = historial.iloc[0]
@@ -288,6 +292,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
