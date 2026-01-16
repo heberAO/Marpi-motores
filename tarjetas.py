@@ -38,7 +38,7 @@ with st.sidebar:
     st.title("⚡ MARPI MOTORES")
     modo = st.radio(
         "SELECCIONE UNA FUNCIÓN:",
-        ["REGISTRO", "HISTORIAL", "RELUBRICACION", "ESTADISTICAS"]
+        ["NUEVO REGISTRO", "HISTORIAL", "RELUBRICACION", "ESTADISTICAS"]
     )
             "📝 Nuevo Registro", 
             "🔍 Historial y QR", 
@@ -449,6 +449,7 @@ elif modo == "🔍 Historial / QR":
             st.warning(f"⚠️ El motor '{id_ver}' no existe en la base de datos.")
 st.markdown("---")
 st.caption("Sistema diseñado y desarollado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
