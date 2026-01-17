@@ -328,14 +328,13 @@ elif modo == "Mediciones de Campo":
                     "Taller_Externo": f"ESTADO: {estado}. Obs: {obs_campo}"
                 }
                 
-                    
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_med])], ignore_index=True)
                 conn.update(data=df_final) 
-                    st.session_state.count_campo += 1
-                    st.success(f"✅ Medición de {tag_campo} (Serie: {sn_campo}) guardada.")
-                    st.rerun()
-                else:
-                    st.error("⚠️ Tag, Serie y Responsable son obligatorios.")
+                st.session_state.count_campo += 1
+                st.success(f"✅ Medición de {tag_campo} (Serie: {sn_campo}) guardada.")
+                st.rerun()
+            else:
+                 st.error("⚠️ Tag, Serie y Responsable son obligatorios.")
 
     with tab_hist:
         st.subheader("📋 Registro Histórico de Megado")
@@ -349,6 +348,7 @@ elif modo == "Mediciones de Campo":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
