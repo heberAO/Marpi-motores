@@ -128,7 +128,7 @@ elif modo == "Historial y QR":
             fijos = historial.iloc[0]
             st.subheader(f"Motor: {fijos['Tag']}")
             
-            c1, c2, c3, c4 = st.columns(4) # Agregamos C4
+            c1, c2, c3, c4, c5 = st.columns(5)
             with c1:
                 pdf_b = generar_pdf(historial, fijos['Tag'])
                 if pdf_b: st.download_button("📥 Informe", pdf_b, f"Informe_{fijos['Tag']}.pdf")
@@ -149,6 +149,11 @@ elif modo == "Historial y QR":
                     st.session_state.menu_option = "Relubricacion" # Cambia la selección del menú
                     st.rerun()
             st.dataframe(historial.sort_index(ascending=False))
+            with c5:
+                if st.button("⚡ Megado"):
+                     st.session_state.tag_seleccionado = fijos['Tag']
+                     st.session_state.menu_option = "Mediciones de Campo"
+                     st.rerun()
         else:
             st.warning("Motor no encontrado.")
 
@@ -244,12 +249,77 @@ elif modo == "Relubricacion":
         else:
             st.info("La base de datos está vacía.")
 
-elif modo == "Estadisticas":
-    st.title("📊 Estadísticas y Reportes")
-    st.write("Próximamente verás gráficos de reparaciones aquí.")
+elif modo == "Mediciones de Campo":
+    if "count_campo" not in st.session_state:
+        st.session_state.count_campo = 0
+
+    st.title("⚡ Mediciones de Aislamiento en Campo")
+    st.info("Registrá los valores de Megado del motor y su línea de alimentación.")
+
+    tab_reg, tab_hist = st.tabs(["📝 Registrar Medición", "📊 Historial de Megado"])
+
+    with tab_reg:
+        with st.form(key=f"form_campo_{st.session_state.count_campo}"):
+            c1, c2 = st.columns(2)
+            with c1:
+                # TAG y Serie precargados si venimos del QR
+                tag_campo = st.text_input("TAG DEL MOTOR", value=st.session_state.get('tag_seleccionado', '')).upper()
+                sn_campo = st.text_input("N° DE SERIE (DNI del Motor)", value=st.session_state.get('serie_seleccionada', ''))
+            with c2:
+                fecha_campo = st.date_input("Fecha de Medición", date.today())
+                tecnico = st.text_input("Técnico / Responsable")
+
+            st.divider()
+            c_volt, c_est = st.columns(2)
+            with c_volt:
+                voltaje = st.selectbox("Voltaje de Prueba", ["500V", "1000V", "2500V", "5000V"])
+            with c_est:
+                estado = st.selectbox("Estado de la Instalación", ["APTO PARA OPERAR", "RIESGO DE FALLA", "NO APTO"])
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("### 🟢 Aislamiento Motor")
+                mega_motor = st.number_input("Megaohmios (MΩ) - Motor", min_value=0.0, step=0.1)
+            with col2:
+                st.markdown("### 🔵 Aislamiento Línea")
+                mega_linea = st.number_input("Megaohmios (MΩ) - Cables/Tablero", min_value=0.0, step=0.1)
+
+            obs_campo = st.text_area("Observaciones (Humedad, Temperatura, etc.)")
+            
+            btn_campo = st.form_submit_button("💾 GUARDAR MEDICIÓN EN CAMPO")
+
+            if btn_campo:
+                if tag_campo and sn_campo and tecnico:
+                    nueva_med = {
+                        "Fecha": fecha_campo.strftime("%d/%m/%Y"),
+                        "Tag": tag_campo,
+                        "N_Serie": sn_campo, # <--- Agregado a la base de datos
+                        "Responsable": tecnico,
+                        "Descripcion": f"MEGADO CAMPO: Motor {mega_motor}MΩ | Línea {mega_linea}MΩ (Ref: {voltaje})",
+                        "Taller_Externo": f"ESTADO: {estado}. Obs: {obs_campo}"
+                    }
+                    df_final = pd.concat([df_completo, pd.DataFrame([nueva_med])], ignore_index=True)
+                    conn.update(data=df_final)
+                    
+                    st.session_state.count_campo += 1
+                    st.success(f"✅ Medición de {tag_campo} (Serie: {sn_campo}) guardada.")
+                    st.rerun()
+                else:
+                    st.error("⚠️ Tag, Serie y Responsable son obligatorios.")
+
+    with tab_hist:
+        st.subheader("📋 Registro Histórico de Megado")
+        if not df_completo.empty:
+            df_m = df_completo[df_completo['Descripcion'].str.contains("MEGADO CAMPO", na=False)].copy()
+            busc_m = st.text_input("Buscar por TAG:", key="busc_meg").strip().upper()
+            if busc_m:
+                df_m = df_m[df_m['Tag'].astype(str).str.contains(busc_m, na=False)]
+            
+            st.dataframe(df_m[['Fecha', 'Tag', 'Responsable', 'Descripcion', 'Taller_Externo']], use_container_width=True, hide_index=True)
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
