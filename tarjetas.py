@@ -175,7 +175,7 @@ elif modo == "Relubricacion":
                 tag_relub = st.text_input("TAG DEL MOTOR").upper()
                 resp_relub = st.text_input("Responsable")
             with c2:
-                f_relub = st.date_input("Fecha de Trabajo", date.today())
+                fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
                 sn_relub = st.text_input("N° de Serie")
 
             st.divider()
@@ -266,20 +266,27 @@ elif modo == "Mediciones de Campo":
                 tag_campo = st.text_input("TAG DEL MOTOR", value=st.session_state.get('tag_seleccionado', '')).upper()
                 sn_campo = st.text_input("N° DE SERIE (DNI del Motor)", value=st.session_state.get('serie_seleccionada', ''))
             with c2:
-                fecha_campo = st.date_input("Fecha de Medición", date.today())
+                fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
                 tecnico = st.text_input("Técnico / Responsable")
 
             st.divider()
-            c_volt, c_est = st.columns(2)
+            c_volt, c_est, c_equi = st.columns(3)
             with c_volt:
                 voltaje = st.selectbox("Voltaje de Prueba", ["500V", "1000V", "2500V", "5000V"])
             with c_est:
                 estado = st.selectbox("Estado de la Instalación", ["APTO PARA OPERAR", "RIESGO DE FALLA", "NO APTO"])
+            with c_equi = st.selecbox("Equipo de Mediciom", ["FLUKE MODELO", "KIORITSU MODELO", "FLOKE MODELO"])
 
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("### 🟢 Aislamiento Motor")
-                mega_motor = st.number_input("Megaohmios (MΩ) - Motor", min_value=0.0, step=0.1)
+                m1, m2, m3 = st.columns(3)
+            with m1:
+                rt_tu, rt_tv, rt_tw = st.text_input("T-U"), st.text_input("T-V"), st.text_input("T-W")
+            with m2:
+                rb_uv, rb_vw, rb_uw = st.text_input("U-V"), st.text_input("V-W"), st.text_input("U-W")
+            with m3:
+                ri_u, ri_v, ri_w = st.text_input("U1-U2"), st.text_input("V1-V2"), st.text_input("W1-W2")
             with col2:
                 st.markdown("### 🔵 Aislamiento Línea")
                 mega_linea = st.number_input("Megaohmios (MΩ) - Cables/Tablero", min_value=0.0, step=0.1)
@@ -319,6 +326,7 @@ elif modo == "Mediciones de Campo":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
