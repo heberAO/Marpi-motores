@@ -265,7 +265,7 @@ elif modo == "Mediciones de Campo":
                 tag_campo = st.text_input("TAG DEL MOTOR", value=st.session_state.get('tag_seleccionado', '')).upper()
                 sn_campo = st.text_input("N° DE SERIE", value=st.session_state.get('serie_seleccionada', ''))
             with c2:
-                echa_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
+                fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
                 tecnico = st.text_input("Técnico / Responsable")
 
             st.divider()
@@ -337,6 +337,7 @@ elif modo == "Mediciones de Campo":
 
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
