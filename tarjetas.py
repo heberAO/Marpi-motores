@@ -40,7 +40,7 @@ with st.sidebar:
     # Nombres simplificados para evitar errores de tildes o emojis
     modo = st.radio(
         "SELECCIONE UNA FUNCIÓN:",
-        ["Nuevo Registro", "Historial y QR", "Relubricacion", "Estadisticas"],
+        ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones en Campo"],
         index=default_index
     )
 
@@ -319,6 +319,7 @@ elif modo == "Mediciones de Campo":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
