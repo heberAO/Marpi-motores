@@ -277,62 +277,67 @@ elif modo == "Mediciones de Campo":
             with c_equi: 
                 equi = st.selectbox("Equipo de Medición", ["FLUKE 1507", "KYORITSU 3005A", "OTRO"])
 
-            # --- SECCION DE MEDICIONES ---
             col1, col2 = st.columns(2)
-            
             with col1:
                 st.markdown("### 🟢 Aislamiento Motor")
                 m1, m2, m3 = st.columns(3)
                 with m1:
-                    rt_tu = st.text_input("T-U")
-                    rt_tv = st.text_input("T-V")
-                    rt_tw = st.text_input("T-W")
+                    rt_tu, rt_tv, rt_tw = st.text_input("T-U"), st.text_input("T-V"), st.text_input("T-W")
                 with m2:
-                    rb_uv = st.text_input("U-V")
-                    rb_vw = st.text_input("V-W")
-                    rb_uw = st.text_input("U-W")
+                    rb_uv, rb_vw, rb_uw = st.text_input("U-V"), st.text_input("V-W"), st.text_input("U-W")
                 with m3:
-                    ri_u = st.text_input("U1-U2")
-                    ri_v = st.text_input("V1-V2")
-                    ri_w = st.text_input("W1-W2")
+                    ri_u, ri_v, ri_w = st.text_input("U1-U2"), st.text_input("V1-V2"), st.text_input("W1-W2")
 
             with col2:
                 st.markdown("### 🔵 Aislamiento Línea")
                 ml1, ml2 = st.columns(2)
                 with ml1:
-                    rt_tl1 = st.text_input("T-L1")
-                    rt_tl2 = st.text_input("T-L2")
-                    rt_tl3 = st.text_input("T-L3")
+                    rt_tl1, rt_tl2, rt_tl3 = st.text_input("T-L1"), st.text_input("T-L2"), st.text_input("T-L3")
                 with ml2:
-                    rl_l1l2 = st.text_input("L1-L2")
-                    rl_l1l3 = st.text_input("L1-L3")
-                    rl_l2l3 = st.text_input("L2-L3")
+                    rl_l1l2, rl_l1l3, rl_l2l3 = st.text_input("L1-L2"), st.text_input("L1-L3"), st.text_input("L2-L3")
 
             obs_campo = st.text_area("Observaciones del Entorno")
-     with tab_hist:
-         st.subheader("📋 Historial de Megado")
-         if not df_completo.empty:
-            # Filtramos solo las filas que contienen "MEGADO" en la descripción
-            df_m = df_completo[df_completo['Descripcion'].str.contains("MEGADO", na=False)].copy()
             
-            # Buscador opcional
-            busc_m = st.text_input("Filtrar historial por TAG:", key="busc_meg_final").strip().upper()
-            if busc_m:
-                df_m = df_m[df_m['Tag'].astype(str).str.contains(busc_m, na=False)]
-            
-            # ESTA ES LA LÍNEA DEL ERROR (Asegurate que termine en ) )
-            st.dataframe(df_m[['Fecha', 'Tag', 'Responsable', 'Descripcion']], use_container_width=True, hide_index=True)
-        else:
-            st.warning("No hay datos cargados aún.")
+            # --- EL BOTÓN DEBE ESTAR DENTRO DEL FORM ---
+            btn_campo = st.form_submit_button("💾 GUARDAR MEDICIÓN COMPLETA")
+
+            if btn_campo:
+                if tag_campo and tecnico:
+                    detalle = (f"MEGADO: {equi} ({voltaje}). "
+                               f"Mot:[T:{rt_tu}/{rt_tv}/{rt_tw} | F:{rb_uv}/{rb_vw}/{rb_uw} | B:{ri_u}/{ri_v}/{ri_w}] "
+                               f"Lin:[T:{rt_tl1}/{rt_tl2}/{rt_tl3} | F:{rl_l1l2}/{rl_l1l3}/{rl_l2l3}]")
+                    
+                    nueva_med = {
+                        "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
+                        "Tag": tag_campo,
+                        "N_Serie": sn_campo,
+                        "Responsable": tecnico,
+                        "Descripcion": detalle,
+                        "Taller_Externo": f"ESTADO: {estado}. Obs: {obs_campo}"
+                    }
+                    df_final = pd.concat([df_completo, pd.DataFrame([nueva_med])], ignore_index=True)
+                    conn.update(data=df_final)
+                    st.session_state.count_campo += 1
+                    st.success("✅ Medición guardada correctamente.")
+                    st.rerun()
+                else:
+                    st.error("⚠️ Tag y Responsable son obligatorios.")
 
     with tab_hist:
         st.subheader("📋 Historial de Megado")
         if not df_completo.empty:
             df_m = df_completo[df_completo['Descripcion'].str.contains("MEGADO", na=False)].copy()
-            st.dataframe(df_m[['Fecha', 'Tag', 'Responsable', 'Descripcion']], use_container_width=True, hide_index=Tru
+            busc_m = st.text_input("Filtrar por TAG:", key="busc_meg_final").strip().upper()
+            if busc_m:
+                df_m = df_m[df_m['Tag'].astype(str).str.contains(busc_m, na=False)]
+            
+            st.dataframe(df_m[['Fecha', 'Tag', 'Responsable', 'Descripcion']], use_container_width=True, hide_index=True)
+        else:
+            st.warning("No hay datos registrados.")
 
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
