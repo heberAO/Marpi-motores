@@ -262,11 +262,10 @@ elif modo == "Mediciones de Campo":
         with st.form(key=f"form_campo_{st.session_state.count_campo}"):
             c1, c2 = st.columns(2)
             with c1:
-                # TAG y Serie precargados si venimos del QR
                 tag_campo = st.text_input("TAG DEL MOTOR", value=st.session_state.get('tag_seleccionado', '')).upper()
-                sn_campo = st.text_input("N° DE SERIE (DNI del Motor)", value=st.session_state.get('serie_seleccionada', ''))
+                sn_campo = st.text_input("N° DE SERIE", value=st.session_state.get('serie_seleccionada', ''))
             with c2:
-                fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
+                fecha_hoy = st.date_input("Fecha", date.today())
                 tecnico = st.text_input("Técnico / Responsable")
 
             st.divider()
@@ -276,78 +275,73 @@ elif modo == "Mediciones de Campo":
             with c_est:
                 estado = st.selectbox("Estado de la Instalación", ["APTO PARA OPERAR", "RIESGO DE FALLA", "NO APTO"])
             with c_equi: 
-                equi  = st.selectbox("Equipo de Mediciom", ["FLUKE MODELO", "KIORITSU MODELO", "FLUKE MODELO"])
+                equi = st.selectbox("Equipo de Medición", ["FLUKE 1507", "KYORITSU 3005A", "OTRO"])
 
+            # --- SECCION DE MEDICIONES ---
+            col1, col2 = st.columns(2)
+            
             with col1:
                 st.markdown("### 🟢 Aislamiento Motor")
-            m1, m2, m3 = st.columns(3)
-            with m1:
-                rt_tu = st.text_input("T-U")
-                rt_tv = st.text_input("T-V")
-                rt_tw = st.text_input("T-W")
-            with m2:
-                rb_uv = st.text_input("U-V")
-                rb_vw = st.text_input("V-W")
-                rb_uw = st.text_input("U-W")
-            with m3:
-                ri_u = st.text_input("U1-U2")
-                ri_v = st.text_input("V1-V2")
-                ri_w = st.text_input("W1-W2")
+                m1, m2, m3 = st.columns(3)
+                with m1:
+                    rt_tu = st.text_input("T-U")
+                    rt_tv = st.text_input("T-V")
+                    rt_tw = st.text_input("T-W")
+                with m2:
+                    rb_uv = st.text_input("U-V")
+                    rb_vw = st.text_input("V-W")
+                    rb_uw = st.text_input("U-W")
+                with m3:
+                    ri_u = st.text_input("U1-U2")
+                    ri_v = st.text_input("V1-V2")
+                    ri_w = st.text_input("W1-W2")
 
             with col2:
                 st.markdown("### 🔵 Aislamiento Línea")
-            ml1, ml2 = st.columns(2)
-            with ml1:
-                rt_tl1 = st.text_input("T-L1")
-                rt_tl2 = st.text_input("T-L2")
-                rt_tl3 = st.text_input("T-L3")
-            with ml2:
-                rl_l1l2 = st.text_input("L1-L2")
-                rl_l1l3 = st.text_input("L1-L3")
-                rl_l2l3 = st.text_input("L2-L3")
+                ml1, ml2 = st.columns(2)
+                with ml1:
+                    rt_tl1 = st.text_input("T-L1")
+                    rt_tl2 = st.text_input("T-L2")
+                    rt_tl3 = st.text_input("T-L3")
+                with ml2:
+                    rl_l1l2 = st.text_input("L1-L2")
+                    rl_l1l3 = st.text_input("L1-L3")
+                    rl_l2l3 = st.text_input("L2-L3")
 
-        # --- IMPORTANTE: Cómo guardar todo este lío de datos ---
-        obs_campo = st.text_area("Observaciones del Entorno")
-        
-        btn_campo = st.form_submit_button("💾 GUARDAR MEDICIÓN COMPLETA")
+            obs_campo = st.text_area("Observaciones del Entorno")
+            btn_campo = st.form_submit_button("💾 GUARDAR MEDICIÓN COMPLETA")
 
-        if btn_campo:
-            if tag_campo and tecnico:
-                detalle_mediciones = (
-                    f"MEGADO CAMPO ({equi} - {voltaje})\n"
-                    f"MOTOR: Tierra:[{rt_tu},{rt_tv},{rt_tw}] | Fases:[{rb_uv},{rb_vw},{rb_uw}] | Bobinas:[{ri_u},{ri_v},{ri_w}]\n"
-                    f"LINEA: Tierra:[{rt_tl1},{rt_tl2},{rt_tl3}] | Fases:[{rl_l1l2},{rl_l1l3},{rl_l2l3}]"
-                )
-                
-                nueva_med = {
-                    "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
-                    "Tag": tag_campo,
-                    "N_Serie": sn_campo,
-                    "Responsable": tecnico,
-                    "Descripcion": detalle_mediciones,
-                    "Taller_Externo": f"ESTADO: {estado}. Obs: {obs_campo}"
-                }
-                
-                df_final = pd.concat([df_completo, pd.DataFrame([nueva_med])], ignore_index=True)
-                conn.update(data=df_final) 
-                st.session_state.count_campo += 1
-                st.success(f"✅ Medición de {tag_campo} (Serie: {sn_campo}) guardada.")
-                st.rerun()
-            else:
-                 st.error("⚠️ Tag, Serie y Responsable son obligatorios.")
+            if btn_campo:
+                if tag_campo and tecnico:
+                    detalle = (f"MEGADO: {equi} ({voltaje}). "
+                               f"Mot:[T:{rt_tu}/{rt_tv}/{rt_tw} | F:{rb_uv}/{rb_vw}/{rb_uw} | B:{ri_u}/{ri_v}/{ri_w}] "
+                               f"Lin:[T:{rt_tl1}/{rt_tl2}/{rt_tl3} | F:{rl_l1l2}/{rl_l1l3}/{rl_l2l3}]")
+                    
+                    nueva_med = {
+                        "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
+                        "Tag": tag_campo,
+                        "N_Serie": sn_campo,
+                        "Responsable": tecnico,
+                        "Descripcion": detalle,
+                        "Taller_Externo": f"ESTADO: {estado}. Obs: {obs_campo}"
+                    }
+                    df_final = pd.concat([df_completo, pd.DataFrame([nueva_med])], ignore_index=True)
+                    conn.update(data=df_final)
+                    st.session_state.count_campo += 1
+                    st.success("✅ Medición guardada.")
+                    st.rerun()
+                else:
+                    st.error("Completar TAG y Responsable.")
 
     with tab_hist:
-        st.subheader("📋 Registro Histórico de Megado")
+        st.subheader("📋 Historial de Megado")
         if not df_completo.empty:
-            df_m = df_completo[df_completo['Descripcion'].str.contains("MEGADO CAMPO", na=False)].copy()
-            busc_m = st.text_input("Buscar por TAG:", key="busc_meg").strip().upper()
-            if busc_m:
-                df_m = df_m[df_m['Tag'].astype(str).str.contains(busc_m, na=False)]
-            
-            st.dataframe(df_m[['Fecha', 'Tag', 'Responsable', 'Descripcion', 'Taller_Externo']], use_container_width=True, hide_index=True)
+            df_m = df_completo[df_completo['Descripcion'].str.contains("MEGADO", na=False)].copy()
+            st.dataframe(df_m[['Fecha', 'Tag', 'Responsable', 'Descripcion']], use_container_width=True, hide_index=Tru
 
 st.markdown("---")
-st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
