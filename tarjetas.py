@@ -309,29 +309,21 @@ elif modo == "Mediciones de Campo":
                     rl_l2l3 = st.text_input("L2-L3")
 
             obs_campo = st.text_area("Observaciones del Entorno")
-            btn_campo = st.form_submit_button("💾 GUARDAR MEDICIÓN COMPLETA")
-
-            if btn_campo:
-                if tag_campo and tecnico:
-                    detalle = (f"MEGADO: {equi} ({voltaje}). "
-                               f"Mot:[T:{rt_tu}/{rt_tv}/{rt_tw} | F:{rb_uv}/{rb_vw}/{rb_uw} | B:{ri_u}/{ri_v}/{ri_w}] "
-                               f"Lin:[T:{rt_tl1}/{rt_tl2}/{rt_tl3} | F:{rl_l1l2}/{rl_l1l3}/{rl_l2l3}]")
-                    
-                    nueva_med = {
-                        "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
-                        "Tag": tag_campo,
-                        "N_Serie": sn_campo,
-                        "Responsable": tecnico,
-                        "Descripcion": detalle,
-                        "Taller_Externo": f"ESTADO: {estado}. Obs: {obs_campo}"
-                    }
-                    df_final = pd.concat([df_completo, pd.DataFrame([nueva_med])], ignore_index=True)
-                    conn.update(data=df_final)
-                    st.session_state.count_campo += 1
-                    st.success("✅ Medición guardada.")
-                    st.rerun()
-                else:
-                    st.error("Completar TAG y Responsable.")
+ with tab_hist:
+        st.subheader("📋 Historial de Megado")
+        if not df_completo.empty:
+            # Filtramos solo las filas que contienen "MEGADO" en la descripción
+            df_m = df_completo[df_completo['Descripcion'].str.contains("MEGADO", na=False)].copy()
+            
+            # Buscador opcional
+            busc_m = st.text_input("Filtrar historial por TAG:", key="busc_meg_final").strip().upper()
+            if busc_m:
+                df_m = df_m[df_m['Tag'].astype(str).str.contains(busc_m, na=False)]
+            
+            # ESTA ES LA LÍNEA DEL ERROR (Asegurate que termine en ) )
+            st.dataframe(df_m[['Fecha', 'Tag', 'Responsable', 'Descripcion']], use_container_width=True, hide_index=True)
+        else:
+            st.warning("No hay datos cargados aún.")
 
     with tab_hist:
         st.subheader("📋 Historial de Megado")
@@ -341,6 +333,7 @@ elif modo == "Mediciones de Campo":
 
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
