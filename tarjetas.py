@@ -294,8 +294,8 @@ elif modo == "Mediciones de Campo":
                 ri_v = st.text_input("V1-V2")
                 ri_w = st.text_input("W1-W2")
 
-        with col2:
-            st.markdown("### 🔵 Aislamiento Línea")
+            with col2:
+                st.markdown("### 🔵 Aislamiento Línea")
             ml1, ml2 = st.columns(2)
             with ml1:
                 rt_tl1 = st.text_input("T-L1")
@@ -349,6 +349,7 @@ elif modo == "Mediciones de Campo":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
