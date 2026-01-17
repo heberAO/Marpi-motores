@@ -328,7 +328,8 @@ elif modo == "Mediciones de Campo":
                     "Taller_Externo": f"ESTADO: {estado}. Obs: {obs_campo}"
                 }
                 
-                    df_final = pd.concat([df_completo, pd.DataFrame([nueva_med])], ignore_index=True)
+                    
+                df_final = pd.concat([df_completo, pd.DataFrame([nueva_med])], ignore_index=True)
                     conn.update(data=df_final)
                     
                     st.session_state.count_campo += 1
@@ -349,6 +350,7 @@ elif modo == "Mediciones de Campo":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
