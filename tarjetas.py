@@ -278,34 +278,56 @@ elif modo == "Mediciones de Campo":
             with c_equi: 
                 equi  = st.selectbox("Equipo de Mediciom", ["FLUKE MODELO", "KIORITSU MODELO", "FLUKE MODELO"])
 
-            col1, col2 = st.columns(2)
             with col1:
-                st.markdown("### 🟢 Aislamiento Motor")
-                m1, m2, m3 = st.columns(3)
+            st.markdown("### 🟢 Aislamiento Motor")
+            m1, m2, m3 = st.columns(3)
             with m1:
-                rt_tu, rt_tv, rt_tw = st.text_input("T-U"), st.text_input("T-V"), st.text_input("T-W")
+                rt_tu = st.text_input("T-U")
+                rt_tv = st.text_input("T-V")
+                rt_tw = st.text_input("T-W")
             with m2:
-                rb_uv, rb_vw, rb_uw = st.text_input("U-V"), st.text_input("V-W"), st.text_input("U-W")
+                rb_uv = st.text_input("U-V")
+                rb_vw = st.text_input("V-W")
+                rb_uw = st.text_input("U-W")
             with m3:
-                ri_u, ri_v, ri_w = st.text_input("U1-U2"), st.text_input("V1-V2"), st.text_input("W1-W2")
-            with col2:
-                st.markdown("### 🔵 Aislamiento Línea")
-                mega_linea = st.number_input("Megaohmios (MΩ) - Cables/Tablero", min_value=0.0, step=0.1)
+                ri_u = st.text_input("U1-U2")
+                ri_v = st.text_input("V1-V2")
+                ri_w = st.text_input("W1-W2")
 
-            obs_campo = st.text_area("Observaciones (Humedad, Temperatura, etc.)")
-            
-            btn_campo = st.form_submit_button("💾 GUARDAR MEDICIÓN EN CAMPO")
+        with col2:
+            st.markdown("### 🔵 Aislamiento Línea")
+            ml1, ml2 = st.columns(2)
+            with ml1:
+                rt_tl1 = st.text_input("T-L1")
+                rt_tl2 = st.text_input("T-L2")
+                rt_tl3 = st.text_input("T-L3")
+            with ml2:
+                rl_l1l2 = st.text_input("L1-L2")
+                rl_l1l3 = st.text_input("L1-L3")
+                rl_l2l3 = st.text_input("L2-L3")
 
-            if btn_campo:
-                if tag_campo and sn_campo and tecnico:
-                    nueva_med = {
-                        "Fecha": fecha_campo.strftime("%d/%m/%Y"),
-                        "Tag": tag_campo,
-                        "N_Serie": sn_campo, # <--- Agregado a la base de datos
-                        "Responsable": tecnico,
-                        "Descripcion": f"MEGADO CAMPO: Motor {mega_motor}MΩ | Línea {mega_linea}MΩ (Ref: {voltaje})",
-                        "Taller_Externo": f"ESTADO: {estado}. Obs: {obs_campo}"
-                    }
+        # --- IMPORTANTE: Cómo guardar todo este lío de datos ---
+        obs_campo = st.text_area("Observaciones del Entorno")
+        
+        btn_campo = st.form_submit_button("💾 GUARDAR MEDICIÓN COMPLETA")
+
+        if btn_campo:
+            if tag_campo and tecnico:
+                detalle_mediciones = (
+                    f"MEGADO CAMPO ({equi} - {voltaje})\n"
+                    f"MOTOR: Tierra:[{rt_tu},{rt_tv},{rt_tw}] | Fases:[{rb_uv},{rb_vw},{rb_uw}] | Bobinas:[{ri_u},{ri_v},{ri_w}]\n"
+                    f"LINEA: Tierra:[{rt_tl1},{rt_tl2},{rt_tl3}] | Fases:[{rl_l1l2},{rl_l1l3},{rl_l2l3}]"
+                )
+                
+                nueva_med = {
+                    "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
+                    "Tag": tag_campo,
+                    "N_Serie": sn_campo,
+                    "Responsable": tecnico,
+                    "Descripcion": detalle_mediciones,
+                    "Taller_Externo": f"ESTADO: {estado}. Obs: {obs_campo}"
+                }
+                
                     df_final = pd.concat([df_completo, pd.DataFrame([nueva_med])], ignore_index=True)
                     conn.update(data=df_final)
                     
@@ -327,6 +349,7 @@ elif modo == "Mediciones de Campo":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
