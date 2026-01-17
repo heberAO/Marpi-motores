@@ -309,9 +309,9 @@ elif modo == "Mediciones de Campo":
                     rl_l2l3 = st.text_input("L2-L3")
 
             obs_campo = st.text_area("Observaciones del Entorno")
- with tab_hist:
-        st.subheader("📋 Historial de Megado")
-        if not df_completo.empty:
+     with tab_hist:
+         st.subheader("📋 Historial de Megado")
+         if not df_completo.empty:
             # Filtramos solo las filas que contienen "MEGADO" en la descripción
             df_m = df_completo[df_completo['Descripcion'].str.contains("MEGADO", na=False)].copy()
             
@@ -333,6 +333,7 @@ elif modo == "Mediciones de Campo":
 
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
