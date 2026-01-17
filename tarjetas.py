@@ -230,7 +230,17 @@ elif modo == "Relubricacion":
                 cond_s = df_lub['N_Serie'].astype(str).str.upper().str.contains(busqueda_lub, na=False)
                 df_lub = df_lub[cond_t | cond_s]
 
-            st.dataframe(df_lub[['Fecha', 'Tag', 'Responsable', 'Descripcion']], use_container_width=True, hide_index=True)
+            st.dataframe(
+                df_engrase,
+                column_config={
+                    "Fecha": st.column_config.DateColumn("📅 Fecha", format="DD/MM/YYYY"),
+                    "Tag": st.column_config.TextColumn("🏷️ TAG"),
+                    "Gramos_LA": st.column_config.TextColumn("⚖️ Gr. LA"),
+                    "Gramos_LOA": st.column_config.TextColumn("⚖️ Gr. LOA"),
+                    "Tipo_Grasa": st.column_config.TextColumn("🛢️ Grasa Usada")
+                },
+                hide_index=True
+                )
 
             if not df_lub.empty:
                 # Ordenar por fecha (más reciente arriba)
@@ -324,19 +334,47 @@ elif modo == "Mediciones de Campo":
                     st.error("⚠️ Tag y Responsable son obligatorios.")
 
     with tab_hist:
-        st.subheader("📋 Historial de Megado")
+        st.subheader("📋 Registro Técnico de Campo")
         if not df_completo.empty:
+            # Filtramos solo lo que es Megado
             df_m = df_completo[df_completo['Descripcion'].str.contains("MEGADO", na=False)].copy()
-            busc_m = st.text_input("Filtrar por TAG:", key="busc_meg_final").strip().upper()
-            if busc_m:
-                df_m = df_m[df_m['Tag'].astype(str).str.contains(busc_m, na=False)]
             
-            st.dataframe(df_m[['Fecha', 'Tag', 'Responsable', 'Descripcion']], use_container_width=True, hide_index=True)
+            # Buscador por TAG o por Responsable
+            c_busc1, c_busc2 = st.columns(2)
+            with c_busc1:
+                busc_tag = st.text_input("🔍 Buscar por TAG:", key="b_tag").strip().upper()
+            with c_busc2:
+                busc_resp = st.text_input("👤 Buscar por Técnico:", key="b_resp")
+
+            # Aplicar filtros
+            if busc_tag:
+                df_m = df_m[df_m['Tag'].astype(str).str.contains(busc_tag, na=False)]
+            if busc_resp:
+                df_m = df_m[df_m['Responsable'].astype(str).str.contains(busc_resp, case=False, na=False)]
+
+            # VISTA MEJORADA CON COLORES
+            st.dataframe(
+                df_m[['Fecha', 'Tag', 'N_Serie', 'Responsable', 'Descripcion', 'Taller_Externo']],
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Fecha": st.column_config.TextColumn("📅 Fecha"),
+                    "Tag": st.column_config.TextColumn("🏷️ Tag"),
+                    "Descripcion": st.column_config.TextColumn("📝 Detalle Técnico"),
+                    "Taller_Externo": st.column_config.TextColumn("🚩 Estado/Obs")
+                }
+            )
+            
+            # BOTÓN DE WHATSAPP (Opcional)
+            if not df_m.empty and busc_tag:
+                ultimo_estado = df_m.iloc[-1]['Taller_Externo']
+                msg = f"Hola! Informo que se realizó el megado del motor {busc_tag}. Resultado: {ultimo_estado}"
+                st.link_button(f"📲 Informar resultado de {busc_tag} por WhatsApp", f"https://wa.me/?text={msg}")
         else:
             st.warning("No hay datos registrados.")
-
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
