@@ -276,7 +276,7 @@ elif modo == "Mediciones de Campo":
             with c_est:
                 estado = st.selectbox("Estado de la Instalación", ["APTO PARA OPERAR", "RIESGO DE FALLA", "NO APTO"])
             with c_equi: 
-                equi  = st.selecbox("Equipo de Mediciom", ["FLUKE MODELO", "KIORITSU MODELO", "FLUKE MODELO"])
+                equi  = st.selectbox("Equipo de Mediciom", ["FLUKE MODELO", "KIORITSU MODELO", "FLUKE MODELO"])
 
             col1, col2 = st.columns(2)
             with col1:
@@ -327,6 +327,7 @@ elif modo == "Mediciones de Campo":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
