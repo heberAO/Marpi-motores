@@ -279,7 +279,7 @@ elif modo == "Mediciones de Campo":
                 equi  = st.selectbox("Equipo de Mediciom", ["FLUKE MODELO", "KIORITSU MODELO", "FLUKE MODELO"])
 
             with col1:
-            st.markdown("### 🟢 Aislamiento Motor")
+                st.markdown("### 🟢 Aislamiento Motor")
             m1, m2, m3 = st.columns(3)
             with m1:
                 rt_tu = st.text_input("T-U")
@@ -349,6 +349,7 @@ elif modo == "Mediciones de Campo":
 
 st.markdown("---")
 st.caption("Sistema diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
