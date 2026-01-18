@@ -11,13 +11,13 @@ def generar_pdf_reporte(datos, tag_motor):
     try:
         desc_full = str(datos.get('Descripcion', '')).upper()
         
-        # --- LÓGICA DE DETECCIÓN Y COLORES ---
-        if "RESISTENCIAS:" if "|" in desc_full:
-            partes = desc_full.split(" | ")
-            pdf.set_font("Arial", '', 9) # Fuente un poco más chica para que entre todo
-            for p in partes:
-                pdf.cell(0, 6, f"  {p}", border='LR', ln=1)
-            pdf.cell(0, 0, "", border='T', ln=1)
+        # 1. CREAR EL OBJETO PDF PRIMERO
+        pdf = FPDF(orientation='P', unit='mm', format='A4')
+        pdf.add_page()
+        
+        # 2. DEFINIR COLORES Y TÍTULO SEGÚN EL TRABAJO
+        if "|" in desc_full or "RESISTENCIAS" in desc_full:
+            color_rgb = (204, 102, 0) # Naranja para Megado
             tipo_label = "PROTOCOLO DE MEDICIONES ELÉCTRICAS"
         elif "LUBRICACIÓN" in desc_full or "LUBRICACION" in desc_full:
             color_rgb = (0, 102, 204) # Azul para Lubricación
@@ -26,10 +26,7 @@ def generar_pdf_reporte(datos, tag_motor):
             color_rgb = (60, 60, 60) # Gris para Reparación
             tipo_label = "REPORTE TÉCNICO DE REPARACIÓN"
 
-        pdf = FPDF(orientation='P', unit='mm', format='A4')
-        pdf.add_page()
-        
-        # Encabezado
+        # Encabezado con Logo
         if os.path.exists("logo.png"):
             pdf.image("logo.png", 10, 8, 35)
         
@@ -39,7 +36,7 @@ def generar_pdf_reporte(datos, tag_motor):
         pdf.set_text_color(0, 0, 0)
         pdf.ln(12)
         
-        # Tabla de Identificación
+        # Tabla de Identificación del Equipo
         pdf.set_fill_color(*color_rgb)
         pdf.set_text_color(255, 255, 255)
         pdf.set_font("Arial", 'B', 11)
@@ -47,48 +44,51 @@ def generar_pdf_reporte(datos, tag_motor):
         
         pdf.set_text_color(0, 0, 0)
         pdf.set_font("Arial", 'B', 9)
-        pdf.cell(40, 7, " FECHA:", 1, 0); pdf.set_font("Arial", '', 9)
+        pdf.cell(40, 7, " FECHA:", 1, 0)
+        pdf.set_font("Arial", '', 9)
         pdf.cell(55, 7, f" {datos.get('Fecha','-')}", 1, 0)
         pdf.set_font("Arial", 'B', 9)
-        pdf.cell(40, 7, " RESPONSABLE:", 1, 0); pdf.set_font("Arial", '', 9)
+        pdf.cell(40, 7, " RESPONSABLE:", 1, 0)
+        pdf.set_font("Arial", '', 9)
         pdf.cell(55, 7, f" {datos.get('Responsable','-')}", 1, 1)
         
         pdf.ln(5)
 
-        # --- SECCIÓN DE DETALLE / MEDICIONES ---
+        # --- SECCIÓN DE DETALLE DE MEDICIONES ---
         pdf.set_fill_color(240, 240, 240)
         pdf.set_font("Arial", 'B', 11)
         pdf.cell(0, 8, " DETALLE TÉCNICO Y VALORES REGISTRADOS:", 1, 1, 'L', True)
         
-        pdf.set_font("Arial", '', 10)
         pdf.ln(2)
         
-        # Si es un megado, separamos las mediciones por líneas para que sea legible
+        # Aquí separamos las 15 mediciones para que salgan una debajo de otra
         if "|" in desc_full:
             partes = desc_full.split(" | ")
+            pdf.set_font("Arial", '', 9) 
             for p in partes:
-                pdf.multi_cell(0, 6, f" > {p}", border='LR')
-            pdf.cell(0, 0, "", border='T', ln=1) # Cierre de tabla
+                # Usamos cell para cada línea para que quede como una lista prolija
+                pdf.cell(0, 6, f" > {p.strip()}", border='LR', ln=1)
+            pdf.cell(0, 0, "", border='T', ln=1) # Línea de cierre inferior
         else:
+            pdf.set_font("Arial", '', 10)
             pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
-        
+
+        # --- SECCIÓN DE OBSERVACIONES ---
         pdf.ln(5)
-        
-        # --- OBSERVACIONES ---
-        pdf.set_fill_color(240, 240, 240)
         pdf.set_font("Arial", 'B', 11)
+        pdf.set_fill_color(240, 240, 240)
         pdf.cell(0, 8, " OBSERVACIONES FINALIZADAS:", 1, 1, 'L', True)
         pdf.set_font("Arial", '', 10)
         pdf.multi_cell(0, 7, f"\n{datos.get('Taller_Externo','-')}\n", border=1)
-        
+
         # Pie de página
         pdf.set_y(-25)
         pdf.set_font("Arial", 'I', 8)
         pdf.cell(0, 10, f"Informe generado por Sistema Marpi - Equipo: {tag_motor}", 0, 0, 'C')
         
         return pdf.output(dest='S').encode('latin-1', 'replace')
+        
     except Exception as e:
-        st.error(f"Error generando PDF: {e}")
         return None
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
@@ -361,6 +361,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
