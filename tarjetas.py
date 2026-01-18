@@ -83,25 +83,24 @@ def generar_pdf_reporte(datos, tag_motor):
 with st.sidebar:
     st.image("logo.png", width=150) if os.path.exists("logo.png") else None
     st.title("⚙️ Menú MARPI")
-    # Si viene de un QR, forzamos que abra en Historial
-    def_index = 0 if not qr_tag else 0
-    modo = st.radio("Seleccione:", ["Historial y QR", "Nuevo Registro", "Relubricacion", "Mediciones de Campo"], index=def_index)
+    modo = st.radio("Seleccione:", ["Historial y QR", "Nuevo Registro", "Relubricacion", "Mediciones de Campo"], index=0)
 
 # --- 5. CANDADO DE SEGURIDAD ---
 if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
     if not st.session_state.get("autorizado", False):
         st.title("🔒 Acceso Restringido")
-        clave = st.text_input("Contraseña de Personal:", type="password")
+        st.info("Para cargar datos, ingrese la clave de personal de MARPI MOTORES.")
+        clave = st.text_input("Contraseña:", type="password")
         if st.button("Ingresar"):
             if clave == PASSWORD_MARPI:
                 st.session_state.autorizado = True
                 st.rerun()
             else: st.error("Clave Incorrecta")
         st.stop()
-# --- 5. SECCIONES (CON TUS CAMPOS ORIGINALES) ---
+
+# --- 6. SECCIONES ---
 if modo == "Nuevo Registro":
     st.title("📝 Alta y Registro Inicial")
-    fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
     with st.form("alta"):
         col1, col2, col3, col4, col5 = st.columns(5)
         t = col1.text_input("TAG/ID MOTOR").upper()
@@ -121,189 +120,101 @@ if modo == "Nuevo Registro":
         ext = st.text_area("Observaciones Finales")
         
         if st.form_submit_button("💾 GUARDAR"):
-            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "N_Serie": sn, "Responsable": resp, "Descripcion": desc, "Taller_Externo": obs}
-            conn.update(data=pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True))
-            
-            # LIMPIEZA DE CAMPOS
-            st.session_state.tag_fijo = "" 
-            st.success("✅ Registro guardado con éxito")
-            st.rerun() # Esto limpia el formulario automáticamente
-  
+            if t and resp:
+                nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "N_Serie": sn, "Responsable": resp, "Descripcion": desc, "Taller_Externo": ext}
+                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+                conn.update(data=df_final)
+                st.success("✅ Registro guardado")
+                st.rerun()
+
 elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
-    
     if not df_completo.empty:
-        # 1. Lista para el buscador (TAG + Serie)
-        df_completo['Busqueda_Combo'] = (
-            df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
-        )
+        df_completo['Busqueda_Combo'] = df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
         opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
         
-        # 2. Detección de QR
-        query_tag = st.query_params.get("tag", "").upper()
         idx_q = 0
-        if query_tag:
+        if qr_tag:
             for i, op in enumerate(opciones):
-                if op.startswith(query_tag + " |"):
+                if op.startswith(qr_tag + " |"):
                     idx_q = i
                     break
         
         seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
-        
         if seleccion:
-            # Extraemos el TAG puro
             buscado = seleccion.split(" | ")[0].strip()
             st.session_state.tag_fijo = buscado
             
-           # --- BOTONES DE ACCIÓN RÁPIDA ---
-            st.subheader("➕ ¿Qué deseas cargar para este motor?")
-            c1, c2, c3 = st.columns(3)
-            
-            with c1:
-                if st.button("🛠️ Nueva Reparación"):
-                    st.session_state.seleccion_manual = "Nuevo Registro"
-                    st.rerun()
-            with c2:
-                if st.button("🛢️ Nueva Lubricación"):
-                    st.session_state.seleccion_manual = "Relubricacion"
-                    st.rerun()
-            with c3:
-                if st.button("⚡ Nuevo Megado"):
-                    st.session_state.seleccion_manual = "Mediciones de Campo"
-                    st.rerun()
-            # --- QR Y DATOS ---
             col_qr, col_info = st.columns([1, 2])
-            url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
+            url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}"
             qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(url_app)}"
             
-            with col_qr:
-                st.image(qr_api, caption=f"QR de {buscado}")
+            with col_qr: st.image(qr_api, caption=f"QR de {buscado}")
             with col_info:
-                st.subheader(f"🚜 Equipo seleccionado: {buscado}")
-                st.write(f"**Link directo:** {url_app}")
-            
+                st.subheader(f"🚜 Equipo: {buscado}")
+                st.write(f"**URL:** {url_app}")
+
             st.divider()
-
-# --- HISTORIAL Y PDF ---
             st.subheader("📜 Historial de Intervenciones")
-            hist_m = df_completo[df_completo['Tag'] == buscado].copy()
-            
-            # Corregido: le agregamos el ] al final
-            hist_m = hist_m.iloc[::-1] 
-
+            hist_m = df_completo[df_completo['Tag'] == buscado].iloc[::-1]
             for idx, fila in hist_m.iterrows():
-                intervencion = str(fila.get('Descripcion', '-'))[:40]
-                with st.expander(f"📅 {fila.get('Fecha','-')} - {intervencion}..."):
-                    st.write(f"**Responsable:** {fila.get('Responsable','-')}")
-                    st.write(f"**Detalle completo:** {fila.get('Descripcion','-')}")
-                    
-                    # Generar PDF
+                with st.expander(f"📅 {fila['Fecha']} - {str(fila['Descripcion'])[:40]}..."):
+                    st.write(f"**Responsable:** {fila['Responsable']}")
+                    st.write(f"**Detalle:** {fila['Descripcion']}")
                     pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado)
-                    
                     if pdf_archivo:
-                        st.download_button(
-                            label="📄 Descargar Informe PDF",
-                            data=pdf_archivo,
-                            file_name=f"Reporte_{buscado}_{idx}.pdf",
-                            key=f"btn_pdf_{idx}"
-                        )
+                        st.download_button("📄 Descargar PDF", data=pdf_archivo, file_name=f"Reporte_{buscado}.pdf", key=f"pdf_{idx}")
+
 elif modo == "Relubricacion":
-    st.title("🛢️ Gestión de Relubricación Detallada")
+    st.title("🛢️ Gestión de Relubricación")
     with st.form("relub"):
-        t_r = st.text_input("TAG DEL MOTOR", value=st.session_state.tag_fijo).upper()
-        sn_r = st.text_input("N° de Serie")
-        resp_r = st.text_input("Responsable de Tarea")
-        
-        st.subheader("🔧 Datos de Rodamientos")
-        c1, c2 = st.columns(2)
-        with c1:
-            rod_la = st.text_input("Rodamiento LA")
-            gr_la = st.text_input("Gramos LA")
-        with c2:
-            rod_loa = st.text_input("Rodamiento LOA")
-            gr_loa = st.text_input("Gramos LOA")
-            
-        grasa = st.selectbox("Tipo de Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
-        obs = st.text_area("Observaciones")
+        t_r = st.text_input("TAG DEL MOTOR", value=st.session_state.get('tag_fijo', '')).upper()
+        resp_r = st.text_input("Responsable")
+        rod_la = st.text_input("Rodamiento LA")
+        gr_la = st.text_input("Gramos LA")
+        rod_loa = st.text_input("Rodamiento LOA")
+        gr_loa = st.text_input("Gramos LOA")
+        grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+        obs_r = st.text_area("Observaciones")
         
         if st.form_submit_button("💾 GUARDAR"):
-            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "Responsable": resp, "Descripcion": f"LUBRICACIÓN: {det}"}
+            det_l = f"LUBRICACIÓN: LA:{rod_la}({gr_la}g), LOA:{rod_loa}({gr_loa}g). Grasa: {grasa}"
+            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t_r, "Responsable": resp_r, "Descripcion": det_l, "Taller_Externo": obs_r}
             conn.update(data=pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True))
-            
-            # LIMPIEZA DE CAMPOS
-            st.session_state.tag_fijo = ""
             st.success("✅ Lubricación registrada")
             st.rerun()
-elif modo == "Mediciones de Campo":
-    st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
-    
-    if "cnt_meg" not in st.session_state:
-        st.session_state.cnt_meg = 0
-        
-    tag_inicial = st.session_state.get('tag_fijo', '')
-    
-    with st.form(key=f"form_completo_{st.session_state.cnt_meg}"):
-        col_t, col_r = st.columns(2)
-        t = col_t.text_input("TAG MOTOR", value=tag_inicial).upper()
-        sn = st.text_input("N° de Serie")
-        resp = col_r.text_input("Técnico Responsable")
-        
-        # --- BLOQUE 1 ---
-        st.subheader("📊 Megado a tierra (Resistencia)")
-        c1, c2, c3 = st.columns(3)
-        tv1, tu1, tw1 = c1.text_input("T - V1 (Ω)"), c2.text_input("T - U1 (Ω)"), c3.text_input("T - W1 (Ω)")
-        
-        # --- BLOQUE 2 ---
-        st.subheader("📊 Megado ente Bobinas (Resistencia)")
-        c4, c5, c6 = st.columns(3)
-        wv1, wu1, vu1 = c4.text_input("W1 - V1 (Ω)"), c5.text_input("W1 - U1 (Ω)"), c6.text_input("V1 - U1 (Ω)")
 
-        # --- BLOQUE 3 ---
+elif modo == "Mediciones de Campo":
+    st.title("⚡ Mediciones de Campo")
+    if "cnt_meg" not in st.session_state: st.session_state.cnt_meg = 0
+    
+    with st.form(key=f"form_meg_{st.session_state.cnt_meg}"):
+        c1, c2 = st.columns(2)
+        t = c1.text_input("TAG MOTOR", value=st.session_state.get('tag_fijo', '')).upper()
+        resp = c2.text_input("Técnico Responsable")
+        sn = st.text_input("N° de Serie")
+        
+        st.subheader("📊 Megado a tierra")
+        c1, c2, c3 = st.columns(3)
+        tv1, tu1, tw1 = c1.text_input("T-V1 (Ω)"), c2.text_input("T-U1 (Ω)"), c3.text_input("T-W1 (Ω)")
+        
+        st.subheader("📊 Megado ente Bobinas")
+        c4, c5, c6 = st.columns(3)
+        wv1, wu1, vu1 = c4.text_input("W1-V1 (Ω)"), c5.text_input("W1-U1 (Ω)"), c6.text_input("V1-U1 (Ω)")
+
         st.subheader("📏 Resistencia internas")
         c7, c8, c9 = st.columns(3)
-        u1u2, v1v2, w1w2 = c7.text_input("U1 - U2 (Ω)"), c8.text_input("V1 - V2 (Ω)"), c9.text_input("W1 - W2 (Ω)")
+        u1u2, v1v2, w1w2 = c7.text_input("U1-U2 (Ω)"), c8.text_input("V1-V2 (Ω)"), c9.text_input("W1-W2 (Ω)")
 
-        # --- BLOQUE 4 ---
         st.subheader("🔌 Megado de Línea")
         c10, c11, c12 = st.columns(3)
-        tl1, tl2, tl3 = c10.text_input("T - L1 (MΩ)"), c11.text_input("T - L2 (MΩ)"), c12.text_input("T - L3 (MΩ)")
+        tl1, tl2, tl3 = c10.text_input("T-L1 (MΩ)"), c11.text_input("T-L2 (MΩ)"), c12.text_input("T-L3 (MΩ)")
         
-        # --- BLOQUE 5 ---
-        c13, c14, c15 = st.columns(3)
-        l1l2, l1l3, l2l3 = c13.text_input("L1 - L2 (MΩ)"), c14.text_input("L1 - L3 (MΩ)"), c15.text_input("L2 - L3 (MΩ)")
-
-        if btn_guardar:
-            if t and resp:
-                detalle = (
-                    f"MEGADO A TIERRA: T-V1:{tv1}, T-U1:{tu1}, T-W1:{tw1} | "
-                    f"MEGADO ENTRE BOBINAS: W1-V1:{wv1}, W1-U1:{wu1}, V1-U1:{vu1} | "
-                    f"RESISTENCIAS INTERNAS: U1-U2:{u1u2}, V1-V2:{v1v2}, W1-W2:{w1w2} | "
-                    f"MEGADO DE LÍNEA (TIERRA): T-L1:{tl1}, T-L2:{tl2}, T-L3:{tl3} | "
-                    f"MEGADO DE LÍNEA (FASES): L1-L2:{l1l2}, L1-L3:{l1l3}, L2-L3:{l2l3}"
-                )
-                
-                nueva = {
-                    "Fecha": date.today().strftime("%d/%m/%Y"),
-                    "Tag": t,
-                    "Responsable": resp,
-                    "Descripcion": detalle,
-                    "Taller_Externo": f"N/S: {sn}. Mediciones completas registradas."
-                }
-                
-                # Guardar en la base de datos
-                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-                conn.update(data=df_final)
-                
-                # Limpiar y reiniciar
-                st.session_state.tag_fijo = ""
-                st.session_state.cnt_meg += 1 
-                st.success(f"✅ Informe de {t} generado correctamente")
-                st.rerun()
-            else:
-                st.error("⚠️ Falta completar TAG o Técnico")
+        c13, c1
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
