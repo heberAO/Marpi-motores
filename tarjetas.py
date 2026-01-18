@@ -316,10 +316,8 @@ elif modo == "Mediciones de Campo":
         c13, c14, c15 = st.columns(3)
         l1l2, l1l3, l2l3 = c13.text_input("L1 - L2 (MΩ)"), c14.text_input("L1 - L3 (MΩ)"), c15.text_input("L2 - L3 (MΩ)")
 
-       if btn_guardar:
+        if btn_guardar:
             if t and resp:
-                # ESTA ES LA CLAVE: Juntamos las 15 variables con el separador "|"
-                # Si no usamos el "|", el PDF no sabe que tiene que bajar de renglón
                 detalle = (
                     f"MEGADO A TIERRA: T-V1:{tv1}, T-U1:{tu1}, T-W1:{tw1} | "
                     f"MEGADO ENTRE BOBINAS: W1-V1:{wv1}, W1-U1:{wu1}, V1-U1:{vu1} | "
@@ -350,6 +348,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
