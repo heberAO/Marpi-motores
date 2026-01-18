@@ -160,7 +160,7 @@ elif modo == "Historial y QR":
             
             # --- FICHA Y QR ---
             c1, c2 = st.columns([1,2])
-            url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}"
+            url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
             qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(url_app)}"
             
             with c1:
@@ -272,6 +272,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
