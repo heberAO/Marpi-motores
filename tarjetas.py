@@ -100,6 +100,78 @@ if modo == "Nuevo Registro":
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_final)
                 st.success(f"✅ Guardado {t}"); st.session_state.form_count += 1; st.rerun()
+elif modo == "Historial y QR":
+    st.title("🔍 Consulta de Motor y QR")
+    
+    if not df_completo.empty:
+        # 1. Buscador Principal
+        lista_tags = [""] + sorted(list(df_completo['Tag'].unique()))
+        motor_buscado = st.selectbox("Seleccioná un Motor:", lista_tags)
+        
+        if motor_buscado:
+            # Guardamos datos en memoria para que aparezcan en las otras pestañas
+            fijos = df_completo[df_completo['Tag'] == motor_buscado].iloc[-1] # Tomamos el último registro
+            st.session_state['tag_seleccionado'] = motor_buscado
+            st.session_state['serie_seleccionada'] = fijos.get('N_Serie', '')
+            
+            st.header(f"🚜 Motor: {motor_buscado}")
+            st.info(f"**N° Serie:** {st.session_state['serie_seleccionada']} | **Potencia:** {fijos.get('Potencia','-')}")
+
+            # --- BOTONES DE ACCIÓN RÁPIDA ---
+            st.subheader("➕ Nueva Intervención")
+            st.write("Seleccioná qué vas a registrar para este motor:")
+            c1, c2 = st.columns(2)
+            with c1:
+                if st.button("⚡ Registrar Megado"):
+                    st.info("Cambiá a 'Mediciones de Campo' en el menú lateral. El TAG ya estará cargado.")
+            with c2:
+                if st.button("🛢️ Registrar Lubricación"):
+                    st.info("Cambiá a 'Relubricacion' en el menú lateral. El TAG ya estará cargado.")
+
+            st.divider()
+
+            # --- HISTORIAL ---
+            st.subheader("📜 Historial de Intervenciones")
+            hist_m = df_completo[df_completo['Tag'] == motor_buscado].copy()
+            hist_m['Fecha_dt'] = pd.to_datetime(hist_m['Fecha'], dayfirst=True, errors='coerce')
+            hist_m = hist_m.sort_values(by='Fecha_dt', ascending=False)
+
+            for idx, fila in hist_m.iterrows():
+                with st.expander(f"📅 {fila['Fecha']} - {fila['Responsable']}"):
+                    c_txt, c_pdf = st.columns([3, 1])
+                    with c_txt:
+                        st.write(f"**Detalle:** {fila['Descripcion']}")
+                        st.write(f"**Obs:** {fila.get('Taller_Externo', '-')}")
+                    with c_pdf:
+                        pdf_b = generar_pdf_reporte(fila.to_dict(), motor_buscado)
+                        st.download_button("📄 PDF", pdf_b, f"Reporte_{motor_buscado}_{idx}.pdf", "application/pdf", key=f"h_{idx}")
+
+            # --- GENERADOR DE QR ---
+            st.divider()
+            st.subheader("🖼️ Código QR para el Equipo")
+            
+            # Ajustamos la URL para que al escanear abra el historial directo
+            # Reemplaza la URL por la de tu app real
+            url_qr = f"https://marpi-motores.streamlit.app/?tag={motor_buscado}"
+            
+            try:
+                # Usamos qrcode directamente si está importado
+                import qrcode
+                from io import BytesIO
+                
+                qr_img = qrcode.make(url_qr)
+                buf = BytesIO()
+                qr_img.save(buf, format="PNG")
+                
+                col_qr, col_desc = st.columns([1, 2])
+                col_qr.image(buf.getvalue(), width=150)
+                col_desc.write("Escaneá o descargá este código para pegar en el motor. Al hacerlo, abrirá este historial directamente.")
+                col_desc.download_button("📥 Descargar imagen QR", buf.getvalue(), f"QR_{motor_buscado}.png", "image/png")
+            except Exception as e:
+                st.warning("No se pudo generar el QR. Verifica que 'qrcode' esté en requirements.txt")
+
+    else:
+        st.warning("La base de datos está vacía.")                
 
 
 elif modo == "Relubricacion":
@@ -163,6 +235,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
