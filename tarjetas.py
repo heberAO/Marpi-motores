@@ -231,17 +231,16 @@ elif modo == "Relubricacion":
                 df_lub = df_lub[cond_t | cond_s]
 
             st.dataframe(
-                df_engrase,
+                df_que_corresponda, 
+                use_container_width=True, 
+                hide_index=True,
                 column_config={
-                    "Fecha": st.column_config.DateColumn("📅 Fecha", format="DD/MM/YYYY"),
                     "Tag": st.column_config.TextColumn("🏷️ TAG"),
-                    "Gramos_LA": st.column_config.TextColumn("⚖️ Gr. LA"),
-                    "Gramos_LOA": st.column_config.TextColumn("⚖️ Gr. LOA"),
-                    "Tipo_Grasa": st.column_config.TextColumn("🛢️ Grasa Usada")
-                },
-                hide_index=True
-                )
-
+                    "Fecha": st.column_config.TextColumn("📅 FECHA"),
+                    "Descripcion": st.column_config.TextColumn("📝 DETALLE"),
+                    "Responsable": st.column_config.TextColumn("👤 TÉCNICO")
+                }
+            )
             if not df_lub.empty:
                 # Ordenar por fecha (más reciente arriba)
                 df_lub['Fecha_dt'] = pd.to_datetime(df_lub['Fecha'], format='%d/%m/%Y', errors='coerce')
@@ -374,6 +373,7 @@ elif modo == "Mediciones de Campo":
             st.warning("No hay datos registrados.")
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
