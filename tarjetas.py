@@ -239,22 +239,23 @@ elif modo == "Mediciones de Campo":
     with st.form("form_megado_completo"):
         col_t, col_r = st.columns(2)
         t = col_t.text_input("TAG MOTOR", value=tag_inicial).upper()
+        sn = st.text_input("N° de Serie")
         resp = col_r.text_input("Técnico Responsable")
         
-        st.subheader("📊 Continuidad de Bobinados (Resistencia)")
+        st.subheader("📊 Megado a tierra (Resistencia)")
         # Primera fila de campos chicos
         c1, c2, c3 = st.columns(3)
         tv1 = c1.text_input("T - V1 (Ω)")
         tu1 = c2.text_input("T - U1 (Ω)")
         tw1 = c3.text_input("T - W1 (Ω)")
-        
+        st.subheader("📊 Megado ente Boninas (Resistencia)")
         # Segunda fila de campos chicos
         c4, c5, c6 = st.columns(3)
         wv1 = c4.text_input("W1 - V1 (Ω)")
         wu1 = c5.text_input("W1 - U1 (Ω)")
         vu1 = c6.text_input("V1 - U1 (Ω)")
 
-        st.subheader("📏 Resistencia entre Bornes")
+        st.subheader("📏 Resistencia internas")
         c7, c8, c9 = st.columns(3)
         u1u2 = c7.text_input("U1 - U2 (Ω)")
         v1v2 = c8.text_input("V1 - V2 (Ω)")
@@ -299,6 +300,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
