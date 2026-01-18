@@ -168,17 +168,20 @@ if modo == "Nuevo Registro":
 elif modo == "Historial y QR":
     st.title("🔍 Consulta de Motor y QR")
     
-    # 1. Buscador por TAG para activar la vista
-    motor_buscado = st.selectbox("Seleccioná un Motor:", [""] + list(df_motores['Tag'].unique()))
+    # IMPORTANTE: Aquí cambié df_motores por df. Si tu base de datos de motores tiene otro nombre, usalo aquí.
+    # Usamos df que es el nombre estándar que venías usando para la tabla principal.
+    lista_tags = [""] + list(df['Tag'].unique()) if not df.empty else [""]
+    
+    motor_buscado = st.selectbox("Seleccioná un Motor:", lista_tags)
     
     id_ver = None
     if motor_buscado != "":
-        id_ver = df_motores[df_motores['Tag'] == motor_buscado]['ID'].values[0]
+        # Buscamos el ID correspondiente al Tag seleccionado
+        id_ver = df[df['Tag'] == motor_buscado]['ID'].values[0]
 
     if id_ver:
-        # Buscamos la fila del motor en la base de datos de 'Alta'
-        # IMPORTANTE: Asegurate que tu dataframe de motores se llame 'df_motores'
-        fijos = df_motores[df_motores['ID'] == id_ver].iloc[0]
+        # Aquí también cambiamos df_motores por df
+        fijos = df[df['ID'] == id_ver].iloc[0]
         tag_seleccionado = fijos['Tag']
         
         st.header(f"🚜 Motor: {tag_seleccionado}")
@@ -191,49 +194,51 @@ elif modo == "Historial y QR":
 
         st.divider()
 
-        # 2. BUSCAMOS EL HISTORIAL (En el archivo de movimientos)
+        # 2. BUSCAMOS EL HISTORIAL (En df_completo que tiene los movimientos)
         st.subheader("📜 Historial de Intervenciones")
         
-        # Filtramos en df_completo usando el TAG
-        historial_motor = df_completo[df_completo['Tag'] == tag_seleccionado].copy()
+        if not df_completo.empty:
+            historial_motor = df_completo[df_completo['Tag'] == tag_seleccionado].copy()
 
-        if not historial_motor.empty:
-            # Ordenamos por fecha
-            historial_motor['Fecha_DT'] = pd.to_datetime(historial_motor['Fecha'], dayfirst=True, errors='coerce')
-            historial_motor = historial_motor.sort_values(by='Fecha_DT', ascending=False)
+            if not historial_motor.empty:
+                # Ordenamos por fecha
+                historial_motor['Fecha_DT'] = pd.to_datetime(historial_motor['Fecha'], dayfirst=True, errors='coerce')
+                historial_motor = historial_motor.sort_values(by='Fecha_DT', ascending=False)
 
-            for index, fila in historial_motor.iterrows():
-                with st.container():
-                    col_info, col_pdf = st.columns([3, 1])
-                    
-                    with col_info:
-                        desc_str = str(fila['Descripcion']).upper()
-                        es_megado = "MEGADO" in desc_str
-                        icono = "⚡" if es_megado else "⚖️"
-                        tipo_rep = "Megado en Campo" if es_megado else "Relubricación"
+                for index, fila in historial_motor.iterrows():
+                    with st.container():
+                        col_info, col_pdf = st.columns([3, 1])
                         
-                        st.markdown(f"**{icono} {tipo_rep}**")
-                        st.write(f"📅 {fila['Fecha']} | 👤 {fila['Responsable']}")
-                        st.caption(f"Detalle: {fila['Descripcion']}")
-                    
-                    with col_pdf:
-                        # Preparamos datos para el PDF
-                        datos_pdf = fila.to_dict()
-                        # Agregamos la serie desde la ficha técnica para que el PDF salga completo
-                        datos_pdf['N_Serie'] = fijos.get('N_Serie', 'N/A')
+                        with col_info:
+                            desc_str = str(fila['Descripcion']).upper()
+                            es_megado = "MEGADO" in desc_str
+                            icono = "⚡" if es_megado else "⚖️"
+                            tipo_rep = "Megado en Campo" if es_megado else "Relubricación"
+                            
+                            st.markdown(f"**{icono} {tipo_rep}**")
+                            st.write(f"📅 {fila['Fecha']} | 👤 {fila['Responsable']}")
+                            st.caption(f"Detalle: {fila['Descripcion']}")
                         
-                        pdf_bytes = generar_pdf_mantenimiento(tipo_rep, datos_pdf)
-                        
-                        st.download_button(
-                            label="PDF",
-                            data=pdf_bytes,
-                            file_name=f"Reporte_{tag_seleccionado}_{fila['Fecha']}.pdf",
-                            mime="application/pdf",
-                            key=f"btn_qrhist_{index}"
-                        )
-                st.divider()
+                        with col_pdf:
+                            datos_pdf = fila.to_dict()
+                            # Agregamos la serie para que el PDF salga completo
+                            datos_pdf['N_Serie'] = fijos.get('N_Serie', 'N/A')
+                            
+                            # Llamamos a la función de PDF que creaste arriba
+                            pdf_bytes = generar_pdf_mantenimiento(tipo_rep, datos_pdf)
+                            
+                            st.download_button(
+                                label="PDF",
+                                data=pdf_bytes,
+                                file_name=f"Reporte_{tag_seleccionado}_{fila['Fecha']}.pdf",
+                                mime="application/pdf",
+                                key=f"btn_qrhist_{index}"
+                            )
+                    st.divider()
+            else:
+                st.info("No hay registros de mantenimiento para este equipo.")
         else:
-            st.info("No hay registros de mantenimiento para este equipo.")
+            st.warning("La base de datos de historial está vacía.")
 
 elif modo == "Relubricacion":
     # PASO A: El limpiador debe estar aquí, bien pegado al borde del 'elif'
@@ -457,6 +462,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
