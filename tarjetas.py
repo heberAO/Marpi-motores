@@ -122,7 +122,7 @@ elif modo == "Historial y QR":
             st.session_state.tag_fijo = buscado 
             
             # --- GENERADOR DE QR ---
-            url_real = "https://marpi-motores.streamlit.app/" 
+            url_real = "https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/" 
             url_final = f"{url_real}?tag={urllib.parse.quote(buscado)}"
             
             qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={urllib.parse.quote(url_final)}"
@@ -208,6 +208,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
