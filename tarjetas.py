@@ -100,33 +100,52 @@ if modo == "Nuevo Registro":
 
 elif modo == "Historial y QR":
     st.title("🔍 Historial y QR")
+    
+    # 1. LEER EL QR: Capturamos si viene un motor desde el escaneo
+    parametros = st.query_params
+    tag_del_qr = parametros.get("tag", "")
+
     if not df_completo.empty:
-        # Limpieza de TAGs para evitar errores de ordenamiento
+        # Limpieza de lista de TAGs
         tags_sucios = df_completo['Tag'].dropna().unique()
         lista_tags = [""] + sorted([str(t).strip().upper() for t in tags_sucios if str(t).strip() != ""])
         
-        buscado = st.selectbox("Seleccioná un Motor:", lista_tags)
+        # 2. DEFINIR ÍNDICE: Si el QR trae un motor, lo seleccionamos automáticamente
+        indice_defecto = 0
+        if tag_del_qr in lista_tags:
+            indice_defecto = lista_tags.index(tag_del_qr)
+        
+        buscado = st.selectbox("Seleccioná un Motor:", lista_tags, index=indice_defecto)
         
         if buscado:
-            # Línea corregida (alineada con 12 espacios o 3 tabs)
             st.session_state.tag_fijo = buscado 
             
-            # --- GENERADOR DE QR (MÉTODO SEGURO) ---
+            # --- GENERADOR DE QR ---
+            # Asegurate de que esta URL sea la de tu App publicada
             url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}"
             qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(url_app)}"
             
             col_qr, col_info = st.columns([1, 3])
-            col_qr.image(qr_api, caption=f"QR {buscado}")
-            col_info.subheader(f"🚜 Equipo: {buscado}")
+            with col_qr:
+                st.image(qr_api, caption=f"QR {buscado}")
+            with col_info:
+                st.subheader(f"🚜 Equipo: {buscado}")
+                st.caption(f"Link directo: {url_app}")
             
             # --- LISTADO HISTÓRICO ---
             hist_m = df_completo[df_completo['Tag'] == buscado].copy()
+            # Ordenamos por fecha
+            hist_m['Fecha_dt'] = pd.to_datetime(hist_m['Fecha'], dayfirst=True, errors='coerce')
+            hist_m = hist_m.sort_values(by='Fecha_dt', ascending=False)
+
             for idx, fila in hist_m.iterrows():
                 with st.expander(f"📅 {fila.get('Fecha','-')} - {fila.get('Responsable','-')}"):
                     st.write(f"**Detalle:** {fila.get('Descripcion','-')}")
+                    st.write(f"**Estado:** {fila.get('Taller_Externo', '-')}")
+                    
                     pdf_b = generar_pdf_reporte(fila.to_dict(), buscado)
                     if pdf_b:
-                        st.download_button("📄 Bajar PDF", pdf_b, f"Informe_{idx}.pdf", key=f"h_{idx}")
+                        st.download_button("📄 Bajar PDF", pdf_b, f"Informe_{buscado}_{idx}.pdf", key=f"h_{idx}")
     else:
         st.warning("La base de datos está vacía.")
 
@@ -182,6 +201,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
