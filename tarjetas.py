@@ -272,9 +272,8 @@ elif modo == "Mediciones de Campo":
         l1l3 = c14.text_input("L1 - L3 (MΩ)")
         l2l3 = c15.text_input("L2 - L3 (MΩ)")
 
-        if st.form_submit_button("💾 GUARDAR MEDICIONES"):
+      if st.form_submit_button("💾 GUARDAR MEDICIONES"):
             if t and resp:
-                # Armamos el detalle técnico para la columna Descripcion
                 detalle = (f"Resistencias: T-V1:{tv1}, T-U1:{tu1}, T-W1:{tw1} | "
                            f"Bornes: U1-U2:{u1u2}, V1-V2:{v1v2}, W1-W2:{w1w2} | "
                            f"Línea: T-L1:{tl1}, L1-L2:{l1l2}")
@@ -284,22 +283,16 @@ elif modo == "Mediciones de Campo":
                     "Tag": t,
                     "Responsable": resp,
                     "Descripcion": detalle,
-                    "Taller_Externo": f"Mediciones completas de bobinado y línea."
+                    "Taller_Externo": f"Mediciones completas."
                 }
                 
-                # Guardamos en Google Sheets
+                # Guardar en GSheets
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
-                
-                # LIMPIEZA DE CAMPOS Y RESETEO
-                st.session_state.tag_fijo = ""
-                st.success(f"✅ Mediciones de {t} guardadas exitosamente")
-                st.rerun()
-            else:
-                st.error("Por favor completa el TAG y el Responsable")
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
