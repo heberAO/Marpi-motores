@@ -17,7 +17,7 @@ df_completo = conn.read(ttl=0)
 query_params = st.query_params
 qr_tag = query_params.get("tag", "").upper()
 
-# --- 3. FUNCIÓN PDF PROFESIONAL ---
+# --- 3. FUNCIÓN PDF PROFESIONAL (REPARADA) ---
 def generar_pdf_reporte(datos, tag_motor):
     try:
         desc_full = str(datos.get('Descripcion', '')).upper()
@@ -58,9 +58,45 @@ def generar_pdf_reporte(datos, tag_motor):
         pdf.set_font("Arial", 'B', 11)
         pdf.cell(0, 8, " DETALLE TÉCNICO Y VALORES REGISTRADOS:", 1, 1, 'L', True)
         pdf.ln(2)
+        
+        if "|" in desc_full:
+            partes = desc_full.split(" | ")
+            pdf.set_font("Arial", '', 9) 
+            for p in partes:
+                pdf.cell(0, 6, f" > {p.strip()}", border='LR', ln=1)
+            pdf.cell(0, 0, "", border='T', ln=1)
+        else:
+            pdf.set_font("Arial", '', 10)
+            pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
+
+        pdf.ln(5)
+        pdf.set_font("Arial", 'B', 11)
+        pdf.set_fill_color(240, 240, 240)
+        pdf.cell(0, 8, " OBSERVACIONES FINALIZADAS:", 1, 1, 'L', True)
+        pdf.set_font("Arial", '', 10)
+        pdf.multi_cell(0, 7, f"\n{datos.get('Taller_Externo','-')}\n", border=1)
+        
+        return pdf.output(dest='S').encode('latin-1', 'replace')
+    except Exception as e:
+        return None
+
+# --- 4. BARRA LATERAL (MENÚ) ---
+with st.sidebar:
+    st.image("logo.png", width=150) if os.path.exists("logo.png") else None
+    st.title("⚙️ Menú MARPI")
+    modo = st.radio("Seleccione:", 
+                    ["Historial y QR", "Nuevo Registro", "Relubricacion", "Mediciones de Campo"])
+
+# --- 5. LÓGICA DE PROTECCIÓN (CANDADO) ---
+if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
+    if not st.session_state.get("autorizado", False):
+        st.title("🔒 Acceso Restringido")
+        st.info("Solo personal de MARPI MOTORES puede cargar datos.")
+        clave = st.
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
