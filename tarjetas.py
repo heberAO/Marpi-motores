@@ -233,37 +233,73 @@ elif modo == "Relubricacion":
             st.success("✅ Lubricación registrada")
             st.rerun()
 elif modo == "Mediciones de Campo":
-    st.title("⚡ Mediciones de Campo Completas")
-    with st.form("campo"):
-        t_c = st.text_input("TAG MOTOR", value=st.session_state.tag_fijo).upper()
-        sn_c = st.text_input("N° SERIE")
-        resp_c = st.text_input("Técnico")
-        volt = st.selectbox("Voltaje de Prueba", ["500V", "1000V", "2500V"])
+    st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
+    tag_inicial = st.session_state.get('tag_fijo', '')
+    
+    with st.form("form_megado_completo"):
+        col_t, col_r = st.columns(2)
+        t = col_t.text_input("TAG MOTOR", value=tag_inicial).upper()
+        resp = col_r.text_input("Técnico Responsable")
         
-        st.subheader("📊 Valores de Resistencia de Aislación")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("**Aislación Motor (MΩ)**")
-            ri_u = st.text_input("U1-U2 / Masa")
-            ri_v = st.text_input("V1-V2 / Masa")
-            ri_w = st.text_input("W1-W2 / Masa")
-        with col2:
-            st.markdown("**Continuidad Bobinados (Ω)**")
-            rt_tu = st.text_input("T-U (Bobinado)")
-            rt_tv = st.text_input("T-V (Bobinado)")
-            rt_tw = st.text_input("T-W (Bobinado)")
-            
-        if st.form_submit_button("💾 GUARDAR"):
-            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "Responsable": resp, "Descripcion": f"MEGADO: {val}"}
-            conn.update(data=pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True))
-            
-            # LIMPIEZA DE CAMPOS
-            st.session_state.tag_fijo = ""
-            st.success("✅ Medición guardada")
-            st.rerun()
+        st.subheader("📊 Continuidad de Bobinados (Resistencia)")
+        # Primera fila de campos chicos
+        c1, c2, c3 = st.columns(3)
+        tv1 = c1.text_input("T - V1 (Ω)")
+        tu1 = c2.text_input("T - U1 (Ω)")
+        tw1 = c3.text_input("T - W1 (Ω)")
+        
+        # Segunda fila de campos chicos
+        c4, c5, c6 = st.columns(3)
+        wv1 = c4.text_input("W1 - V1 (Ω)")
+        wu1 = c5.text_input("W1 - U1 (Ω)")
+        vu1 = c6.text_input("V1 - U1 (Ω)")
+
+        st.subheader("📏 Resistencia entre Bornes")
+        c7, c8, c9 = st.columns(3)
+        u1u2 = c7.text_input("U1 - U2 (Ω)")
+        v1v2 = c8.text_input("V1 - V2 (Ω)")
+        w1w2 = c9.text_input("W1 - W2 (Ω)")
+
+        st.subheader("🔌 Megado de Línea")
+        c10, c11, c12 = st.columns(3)
+        tl1 = c10.text_input("T - L1 (MΩ)")
+        tl2 = c11.text_input("T - L2 (MΩ)")
+        tl3 = c12.text_input("T - L3 (MΩ)")
+        
+        c13, c14, c15 = st.columns(3)
+        l1l2 = c13.text_input("L1 - L2 (MΩ)")
+        l1l3 = c14.text_input("L1 - L3 (MΩ)")
+        l2l3 = c15.text_input("L2 - L3 (MΩ)")
+
+        if st.form_submit_button("💾 GUARDAR MEDICIONES"):
+            if t and resp:
+                # Armamos el detalle técnico para la columna Descripcion
+                detalle = (f"Resistencias: T-V1:{tv1}, T-U1:{tu1}, T-W1:{tw1} | "
+                           f"Bornes: U1-U2:{u1u2}, V1-V2:{v1v2}, W1-W2:{w1w2} | "
+                           f"Línea: T-L1:{tl1}, L1-L2:{l1l2}")
+                
+                nueva = {
+                    "Fecha": date.today().strftime("%d/%m/%Y"),
+                    "Tag": t,
+                    "Responsable": resp,
+                    "Descripcion": detalle,
+                    "Taller_Externo": f"Mediciones completas de bobinado y línea."
+                }
+                
+                # Guardamos en Google Sheets
+                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+                conn.update(data=df_final)
+                
+                # LIMPIEZA DE CAMPOS Y RESETEO
+                st.session_state.tag_fijo = ""
+                st.success(f"✅ Mediciones de {t} guardadas exitosamente")
+                st.rerun()
+            else:
+                st.error("Por favor completa el TAG y el Responsable")
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
