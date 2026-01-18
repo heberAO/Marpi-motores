@@ -118,17 +118,14 @@ if modo == "Nuevo Registro":
         desc = st.text_area("Descripción de la Reparación/Trabajo")
         ext = st.text_area("Observaciones Finales")
         
-        if st.form_submit_button("💾 GUARDAR REGISTRO"):
-            if t and resp:
-                nueva_fila = {
-                    "Fecha": fecha_hoy.strftime("%d/%m/%Y"), "Tag": t, "Potencia": p, "RPM": r, "Frame": f, "N_Serie": sn,
-                    "Responsable": resp, "Descripcion": desc, "Taller_Externo": ext,
-                    "RT_TU": rt_tu, "RT_TV": rt_tv, "RT_TW": rt_tw, "RB_UV": rb_uv, "RB_VW": rb_vw, "RB_UW": rb_uw,
-                    "RI_U": ri_u, "RI_V": ri_v, "RI_W": ri_w
-                }
-                df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
-                conn.update(data=df_final)
-                st.success(f"✅ Registro Guardado para {t}"); st.rerun()
+        if st.form_submit_button("💾 GUARDAR"):
+            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "N_Serie": sn, "Responsable": resp, "Descripcion": desc, "Taller_Externo": obs}
+            conn.update(data=pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True))
+            
+            # LIMPIEZA DE CAMPOS
+            st.session_state.tag_fijo = "" 
+            st.success("✅ Registro guardado con éxito")
+            st.rerun() # Esto limpia el formulario automáticamente
             else:
                 st.warning("Por favor, completa el TAG y el Responsable.")
                 
@@ -229,26 +226,14 @@ elif modo == "Relubricacion":
         grasa = st.selectbox("Tipo de Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
         obs = st.text_area("Observaciones del estado de rodamientos")
         
-        if st.form_submit_button("💾 GUARDAR LUBRICACIÓN"):
-            if t_r and resp_r:
-                nueva = {
-                    "Fecha": date.today().strftime("%d/%m/%Y"), 
-                    "Tag": t_r, 
-                    "N_Serie": sn_r,
-                    "Responsable": resp_r,
-                    "Descripcion": f"RELUBRICACIÓN: LA: {rod_la} ({gr_la}g) / LOA: {rod_loa} ({gr_loa}g)",
-                    "Taller_Externo": f"Grasa: {grasa}. {obs}",
-                    # Mantenemos tus columnas de datos técnicos si las necesitas llenar aquí también:
-                    "Rodamiento_LA": rod_la,
-                    "Gramos_LA": gr_la,
-                    "Rodamiento_LOA": rod_loa,
-                    "Gramos_LOA": gr_loa
-                }
-                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-                conn.update(data=df_final)
-                st.success("✅ Datos de lubricación guardados correctamente")
-                st.rerun()
-
+        if st.form_submit_button("💾 GUARDAR"):
+            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "Responsable": resp, "Descripcion": f"LUBRICACIÓN: {det}"}
+            conn.update(data=pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True))
+            
+            # LIMPIEZA DE CAMPOS
+            st.session_state.tag_fijo = ""
+            st.success("✅ Lubricación registrada")
+            st.rerun()
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo Completas")
     with st.form("campo"):
@@ -270,26 +255,18 @@ elif modo == "Mediciones de Campo":
             rt_tv = st.text_input("T-V (Bobinado)")
             rt_tw = st.text_input("T-W (Bobinado)")
             
-        if st.form_submit_button("💾 GUARDAR MEDICIONES"):
-            if t_c and resp_c:
-                nueva = {
-                    "Fecha": date.today().strftime("%d/%m/%Y"), 
-                    "Tag": t_c, 
-                    "N_Serie": sn_c,
-                    "Responsable": resp_c,
-                    "Descripcion": f"MEGADO {volt}. RI: U:{ri_u} V:{ri_v} W:{ri_w}",
-                    "Taller_Externo": f"Continuidad: {rt_tu}/{rt_tv}/{rt_tw}",
-                    # Mapeo a tus columnas originales de la planilla
-                    "RI_U": ri_u, "RI_V": ri_v, "RI_W": ri_w,
-                    "RT_TU": rt_tu, "RT_TV": rt_tv, "RT_TW": rt_tw
-                }
-                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-                conn.update(data=df_final)
-                st.success("✅ Mediciones guardadas")
-                st.rerun()
+        if st.form_submit_button("💾 GUARDAR"):
+            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "Responsable": resp, "Descripcion": f"MEGADO: {val}"}
+            conn.update(data=pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True))
+            
+            # LIMPIEZA DE CAMPOS
+            st.session_state.tag_fijo = ""
+            st.success("✅ Medición guardada")
+            st.rerun())
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
