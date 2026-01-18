@@ -119,22 +119,14 @@ else:
     indice_inicio = 0
 
 # --- 5. MENÚ LATERAL ---
-opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
-
-# 1. Selección de modo en la barra lateral
-with st.sidebar:
-    st.image("logo.png", width=150) if os.path.exists("logo.png") else None
-    modo = st.radio("Menú de Gestión:", 
-                    ["Historial y QR", "Nuevo Registro", "Relubricacion", "Mediciones de Campo"])
-
-# 2. El "Candado" para personal de MARPI
+# --- LÓGICA DE PROTECCIÓN (Pon esto justo antes de los IF de los modos) ---
 if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
     if "autorizado" not in st.session_state:
         st.session_state.autorizado = False
 
     if not st.session_state.autorizado:
         st.title("🔒 Acceso Restringido")
-        st.info("Para cargar datos, por favor ingrese la clave de personal de MARPI MOTORES.")
+        st.info("Para cargar datos, ingrese la clave de personal de MARPI MOTORES.")
         
         clave = st.text_input("Contraseña:", type="password")
         if st.button("Ingresar"):
@@ -144,14 +136,27 @@ if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
                 st.rerun()
             else:
                 st.error("Contraseña incorrecta")
-        st.stop() # Esto detiene el código aquí, el usuario no ve el formulario
+        st.stop() # Esto detiene el código si no hay clave
 
-# 3. Si es "Historial y QR" o si ya puso la clave, el código sigue normal abajo
+# --- AHORA VIENEN LOS MODOS (Todos alineados a la izquierda, sin espacios extra) ---
+
 if modo == "Historial y QR":
-    # Aquí va tu código de búsqueda y visualización de PDF (LIBRE)
+    st.title("🔍 Consulta y Seguimiento de Equipos")
+    # ... (todo tu código de historial)
+
+elif modo == "Nuevo Registro":
+    st.title("📝 Registro de Reparación")
+    # ... (todo tu código de reparaciones)
+
+elif modo == "Relubricacion":
+    st.title("🛢️ Registro de Lubricación")
+    # ... (todo tu código de lubricación)
+
+elif modo == "Mediciones de Campo":
+    st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
+    # ... (todo tu código de megado)
 
 # --- 5. SECCIONES (CON TUS CAMPOS ORIGINALES) ---
-
 if modo == "Nuevo Registro":
     st.title("📝 Alta y Registro Inicial")
     fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
@@ -357,6 +362,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
