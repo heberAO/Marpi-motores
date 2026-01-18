@@ -128,56 +128,45 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta de Motor y QR")
     
     if not df_completo.empty:
-        # Limpiamos la lista de TAGs para que el buscador no falle
-        tags_validos = df_completo['Tag'].dropna().unique()
-        lista_tags = [""] + sorted([str(t).strip().upper() for t in tags_validos if str(t).strip() != ""])
+        # 1. Creamos una columna temporal de búsqueda que une TAG y Serie
+        # Usamos fillna('') para que no falle si falta algún dato
+        df_completo['Busqueda_Motor'] = (
+            df_completo['Tag'].astype(str).str.strip().str.upper() + 
+            " | SN: " + 
+            df_completo['N_Serie'].astype(str).str.strip()
+        )
         
-        # Leemos si viene un motor desde el QR
+        # 2. Generamos la lista de opciones para el selectbox
+        lista_opciones = [""] + sorted(df_completo['Busqueda_Motor'].unique().tolist())
+        
+        # 3. Lógica para el QR (detectar si el tag viene en la URL)
         query_tag = st.query_params.get("tag", "").upper()
         indice_defecto = 0
-        if query_tag in lista_tags:
-            indice_defecto = lista_tags.index(query_tag)
-
-        buscado = st.selectbox("Seleccioná un Motor:", lista_tags, index=indice_defecto)
         
-        if buscado:
-            # ESTA ES LA CLAVE: Guardamos el motor seleccionado para que aparezca en los otros modos
+        if query_tag:
+            # Buscamos en la lista combinada qué opción contiene ese TAG
+            for i, opcion in enumerate(lista_opciones):
+                if opcion.startswith(query_tag + " |"):
+                    indice_defecto = i
+                    break
+
+        # 4. El Buscador Dual
+        seleccion = st.selectbox("Escribí el TAG o N° de Serie:", lista_opciones, index=indice_defecto)
+        
+        if seleccion:
+            # Extraemos solo el TAG (lo que está antes del '|') para filtrar
+            buscado = seleccion.split(" | ")[0].strip()
             st.session_state.tag_fijo = buscado
             
-            st.success(f"Motor seleccionado: {buscado}. Ahora podés ir a cualquier pestaña y el TAG ya estará cargado.")
-
             # --- GENERADOR DE QR ---
-            # Asegurate de poner la URL real de tu app aquí
             url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}"
             qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(url_app)}"
             
             col_qr, col_info = st.columns([1, 2])
             with col_qr:
-                st.image(qr_api, caption="QR de este motor")
+                st.image(qr_api, caption=f"QR de {buscado}")
             with col_info:
-                st.subheader(f"🚜 Equipo: {buscado}")
-                st.write("Al escanear este QR con el celular, se abrirá la app directamente en este motor.")
-            
-            st.divider()
-
-            # --- HISTORIAL ---
-            st.subheader("📜 Historial de Intervenciones")
-            hist_m = df_completo[df_completo['Tag'] == buscado].copy()
-            # Mostramos lo más nuevo arriba
-            hist_m = hist_m.iloc[::-1] 
-
-            for idx, fila in hist_m.iterrows():
-                with st.expander(f"📅 {fila.get('Fecha','-')} - {fila.get('Responsable','-')}"):
-                    # Aquí podés agregar todos los campos que quieras mostrar en el historial
-                    st.write(f"**Actividad:** {fila.get('Descripcion','-')}")
-                    st.write(f"**Obs:** {fila.get('Taller_Externo', '-')}")
-                    
-                    # El PDF usa tu función original
-                    pdf_b = generar_pdf_reporte(fila.to_dict(), buscado)
-                    if pdf_b:
-                        st.download_button("📄 PDF", pdf_b, f"Informe_{idx}.pdf", key=f"btn_{idx}")
-    else:
-        st.warning("No hay datos en la planilla.")
+                st.subheader(f"🚜 Motor: {buscado}")
 elif modo == "Relubricacion":
     st.title("🛢️ Gestión de Relubricación Detallada")
     with st.form("relub"):
@@ -258,6 +247,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
