@@ -126,8 +126,8 @@ if modo == "Nuevo Registro":
             st.session_state.tag_fijo = "" 
             st.success("✅ Registro guardado con éxito")
             st.rerun() # Esto limpia el formulario automáticamente
-            else:
-                st.warning("Por favor, completa el TAG y el Responsable.")
+    else:
+        st.warning("Por favor, completa el TAG y el Responsable.")
                 
 elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
@@ -266,6 +266,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
