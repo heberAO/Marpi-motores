@@ -42,9 +42,6 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
         return pdf.output(dest='S').encode('latin-1', 'replace')
     except Exception as e:
         st.error(f"Error PDF: {e}")
-return None
-    except Exception as e:
-        st.error(f"Error PDF: {e}")
         return None
 
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
@@ -235,6 +232,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
