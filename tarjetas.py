@@ -12,36 +12,53 @@ def generar_pdf_mantenimiento(tipo, datos):
     pdf = FPDF()
     pdf.add_page()
     
-    # Encabezado con Estilo
+    # Encabezado
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"REPORTE DE {tipo.upper()} - MARPI MOTORES", ln=True, align='C')
+    pdf.cell(0, 10, f"REPORTE DE {tipo.upper()}", ln=True, align='C')
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "MARPI MOTORES - SERVICIO TÉCNICO", ln=True, align='C')
     pdf.ln(10)
     
-    # Datos Principales
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, f"TAG: {datos['Tag']} | Serie: {datos.get('N_Serie', 'N/A')}", ln=True)
-    pdf.set_font("Arial", '', 11)
-    pdf.cell(0, 10, f"Fecha: {datos['Fecha']} | Responsable: {datos['Responsable']}", ln=True)
+    # Datos Principales (usamos .get para que si no existe la columna, no explote)
+    tag = datos.get('Tag', 'N/A')
+    fecha = datos.get('Fecha', 'N/A')
+    serie = datos.get('N_Serie', 'Sin Serie')
+    resp = datos.get('Responsable', 'No especificado')
+    desc = datos.get('Descripcion', 'Sin detalle técnico')
+    obs = datos.get('Taller_Externo', 'Sin observaciones')
+
+    # Tabla de datos en el PDF
+    pdf.set_fill_color(230, 230, 230)
+    pdf.set_font("Arial", 'B', 10)
+    pdf.cell(40, 10, "TAG:", 1, 0, 'L', True)
+    pdf.set_font("Arial", '', 10)
+    pdf.cell(55, 10, str(tag), 1, 0)
+    
+    pdf.set_font("Arial", 'B', 10)
+    pdf.cell(40, 10, "SERIE:", 1, 0, 'L', True)
+    pdf.set_font("Arial", '', 10)
+    pdf.cell(55, 10, str(serie), 1, 1)
+
+    pdf.set_font("Arial", 'B', 10)
+    pdf.cell(40, 10, "FECHA:", 1, 0, 'L', True)
+    pdf.set_font("Arial", '', 10)
+    pdf.cell(55, 10, str(fecha), 1, 0)
+    
+    pdf.set_font("Arial", 'B', 10)
+    pdf.cell(40, 10, "TÉCNICO:", 1, 0, 'L', True)
+    pdf.set_font("Arial", '', 10)
+    pdf.cell(55, 10, str(resp), 1, 1)
+    
     pdf.ln(5)
-    
-    # Detalle Técnico
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "Detalles de la Intervención:", ln=True)
-    pdf.set_font("Arial", '', 11)
-    pdf.multi_cell(0, 10, datos['Descripcion'])
+    pdf.cell(0, 10, "Detalle Técnico de la Intervención:", ln=True)
+    pdf.set_font("Arial", '', 10)
+    pdf.multi_cell(0, 7, str(desc), border=1)
+    
     pdf.ln(5)
-    
-    # Observaciones y Estado
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "Estado Final:", ln=True)
-    pdf.set_font("Arial", '', 11)
-    pdf.multi_cell(0, 10, datos['Taller_Externo'])
-    
-    # Pie de página
-    pdf.ln(20)
-    pdf.set_font("Arial", 'I', 8)
-    pdf.cell(0, 10, "Documento generado digitalmente por Marpi Motors App", align='C')
-    
+    pdf.set_font("Arial", 'B', 10)
+    pdf.cell(0, 10, f"Estado / Observaciones: {obs}", ln=True)
+
     return pdf.output(dest='S').encode('latin-1')
 
 # --- 1. CONFIGURACIÓN Y ESTADO ---
@@ -152,47 +169,65 @@ elif modo == "Historial y QR":
     st.title("🔍 Hoja de Vida del Motor")
     id_ver = st.text_input("ESCRIBIR TAG O SERIE:", value=query_tag).strip().upper()
 
-    if id_ver:
-        condicion_tag = df_completo['Tag'].astype(str).str.upper().str.contains(id_ver, na=False)
-        condicion_serie = df_completo['N_Serie'].astype(str).str.upper().str.contains(id_ver, na=False) if 'N_Serie' in df_completo.columns else False
-        historial = df_completo[condicion_tag | condicion_serie]
+ if id_ver:
+        # 1. Filtramos los datos del motor (La "Ficha Técnica")
+        fijos = df_motores[df_motores['ID'] == id_ver].iloc[0]
+        tag_seleccionado = fijos['Tag']
         
-        if not historial.empty:
-            if len(historial) > 1:
-                seleccion = st.selectbox("Seleccione el motor:", historial['Tag'].unique())
-                historial = historial[historial['Tag'] == seleccion]
-            
-            fijos = historial.iloc[0]
-            st.subheader(f"Motor: {fijos['Tag']}")
-            
-            c1, c2, c3, c4, c5 = st.columns(5)
-            with c1:
-                pdf_b = generar_pdf(historial, fijos['Tag'])
-                if pdf_b: st.download_button("📥 Informe", pdf_b, f"Informe_{fijos['Tag']}.pdf")
-            
-            with c2:
-                qr_url = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={fijos['Tag']}"
-                qr = qrcode.make(qr_url)
-                buf = BytesIO()
-                qr.save(buf, format="PNG")
-                st.image(buf.getvalue(), width=100, caption="QR")
-            
-            with c3:
-                st.button("🛠️ Reparación", on_click=activar_formulario)
-            
-            with c4:
-                # Este botón cambia el menú lateral automáticamente a Relubricación
-                if st.button("🛢️ Engrase"):
-                    st.session_state.menu_option = "Relubricacion" # Cambia la selección del menú
-                    st.rerun()
-            st.dataframe(historial.sort_index(ascending=False))
-            with c5:
-                if st.button("⚡ Megado"):
-                     st.session_state.tag_seleccionado = fijos['Tag']
-                     st.session_state.menu_option = "Mediciones de Campo"
-                     st.rerun()
+        st.header(f"🚜 Motor: {tag_seleccionado}")
+        
+        # Mostramos la ficha técnica rápida
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Potencia", fijos['Potencia'])
+        c2.metric("RPM", fijos['RPM'])
+        c3.metric("Ubicación", fijos['Ubicacion'])
+
+        st.divider()
+
+        # 2. BUSCAMOS EL HISTORIAL DE ESTE MOTOR
+        st.subheader("📜 Historial de Intervenciones")
+        
+        # Filtramos en el df_completo (donde están los megados y engrases)
+        historial_motor = df_completo[df_completo['Tag'] == tag_seleccionado].copy()
+
+        if not historial_motor.empty:
+            # Ordenamos para que lo más nuevo salga arriba
+            historial_motor['Fecha_DT'] = pd.to_datetime(historial_motor['Fecha'], dayfirst=True, errors='coerce')
+            historial_motor = historial_motor.sort_values(by='Fecha_DT', ascending=False)
+
+            # --- AQUÍ EMPIEZA EL BUCLE PARA LOS PDF ---
+            for index, fila in historial_motor.iterrows():
+                with st.container():
+                    col_info, col_pdf = st.columns([3, 1])
+                    
+                    with col_info:
+                        # Armamos un título lindo según lo que se hizo
+                        es_megado = "MEGADO" in str(fila['Descripcion']).upper()
+                        icono = "⚡" if es_megado else "⚖️"
+                        tipo_rep = "Megado en Campo" if es_megado else "Relubricación"
+                        
+                        st.markdown(f"**{icono} {tipo_rep}**")
+                        st.write(f"📅 {fila['Fecha']} | 👤 {fila['Responsable']}")
+                        st.caption(f"Detalle: {fila['Descripcion'][:100]}...") # Muestra un resumen
+                    
+                    with col_pdf:
+                        # Preparamos los datos para el PDF (pasamos la fila completa como diccionario)
+                        datos_para_pdf = fila.to_dict()
+                        # IMPORTANTE: Le agregamos el N_Serie que viene de la ficha del motor
+                        datos_para_pdf['N_Serie'] = fijos.get('N_Serie', 'N/A') 
+                        
+                        pdf_bytes = generar_pdf_mantenimiento(tipo_rep, datos_para_pdf)
+                        
+                        st.download_button(
+                            label="PDF",
+                            data=pdf_bytes,
+                            file_name=f"Reporte_{tag_seleccionado}_{fila['Fecha']}.pdf",
+                            mime="application/pdf",
+                            key=f"btn_hist_{index}" # Key única para que no falle
+                        )
+                st.write("---")
         else:
-            st.warning("Motor no encontrado.")
+            st.info("Este motor no tiene intervenciones registradas todavía.")
 
 elif modo == "Relubricacion":
     # PASO A: El limpiador debe estar aquí, bien pegado al borde del 'elif'
@@ -416,6 +451,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
