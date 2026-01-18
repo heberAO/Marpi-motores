@@ -231,7 +231,7 @@ elif modo == "Relubricacion":
                 df_lub = df_lub[cond_t | cond_s]
 
             st.dataframe(
-                df_engrase, 
+                df_relubricacion, 
                 use_container_width=True, 
                 hide_index=True,
                 column_config={
@@ -373,6 +373,7 @@ elif modo == "Mediciones de Campo":
             st.warning("No hay datos registrados.")
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
