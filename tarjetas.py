@@ -169,7 +169,7 @@ elif modo == "Historial y QR":
     st.title("🔍 Hoja de Vida del Motor")
     id_ver = st.text_input("ESCRIBIR TAG O SERIE:", value=query_tag).strip().upper()
 
- if id_ver:
+    if id_ver:
         # 1. Filtramos los datos del motor (La "Ficha Técnica")
         fijos = df_motores[df_motores['ID'] == id_ver].iloc[0]
         tag_seleccionado = fijos['Tag']
@@ -451,6 +451,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
