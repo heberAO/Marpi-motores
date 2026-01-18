@@ -6,6 +6,43 @@ import qrcode
 from io import BytesIO
 import os
 from fpdf import FPDF
+import base64
+
+def generar_pdf_mantenimiento(tipo, datos):
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Encabezado con Estilo
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, f"REPORTE DE {tipo.upper()} - MARPI MOTORES", ln=True, align='C')
+    pdf.ln(10)
+    
+    # Datos Principales
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, f"TAG: {datos['Tag']} | Serie: {datos.get('N_Serie', 'N/A')}", ln=True)
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(0, 10, f"Fecha: {datos['Fecha']} | Responsable: {datos['Responsable']}", ln=True)
+    pdf.ln(5)
+    
+    # Detalle Técnico
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "Detalles de la Intervención:", ln=True)
+    pdf.set_font("Arial", '', 11)
+    pdf.multi_cell(0, 10, datos['Descripcion'])
+    pdf.ln(5)
+    
+    # Observaciones y Estado
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "Estado Final:", ln=True)
+    pdf.set_font("Arial", '', 11)
+    pdf.multi_cell(0, 10, datos['Taller_Externo'])
+    
+    # Pie de página
+    pdf.ln(20)
+    pdf.set_font("Arial", 'I', 8)
+    pdf.cell(0, 10, "Documento generado digitalmente por Marpi Motors App", align='C')
+    
+    return pdf.output(dest='S').encode('latin-1')
 
 # --- 1. CONFIGURACIÓN Y ESTADO ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
@@ -328,7 +365,16 @@ elif modo == "Mediciones de Campo":
                     conn.update(data=df_final)
                     st.session_state.count_campo += 1
                     st.success("✅ Medición guardada correctamente.")
-                    st.rerun()
+                    
+                    pdf_bytes = generar_pdf_mantenimiento("Megado en Campo", nueva_med)
+                    
+                    st.download_button(
+                        label="📥 Descargar Reporte PDF",
+                        data=pdf_bytes,
+                        file_name=f"Megado_{tag_campo}_{fecha_hoy}.pdf",
+                        mime="application/pdf"
+                    )
+                    st.info("👆 Descargá el reporte antes de realizar otra carga.")
                 else:
                     st.error("⚠️ Tag y Responsable son obligatorios.")
 
@@ -370,6 +416,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
