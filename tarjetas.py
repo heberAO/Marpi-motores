@@ -70,20 +70,24 @@ else:
     indice_inicio = 0
 
 # --- 5. MENÚ LATERAL ---
+opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
+
 with st.sidebar:
     if os.path.exists("logo.png"): st.image("logo.png", width=150)
     st.title("⚡ MARPI MOTORES")
     
-    # Esta variable controlará en qué pestaña estamos
-    if "opcion_menu" not in st.session_state:
-        st.session_state.opcion_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"][indice_inicio]
+    # Si no existe la opción en memoria, usamos el índice del QR
+    if "seleccion_manual" not in st.session_state:
+        st.session_state.seleccion_manual = opciones_menu[indice_inicio]
 
-    # Creamos el radio vinculado al session_state
+    # El radio se alimenta de la variable 'seleccion_manual'
     modo = st.radio(
         "SELECCIONE:", 
-        ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"],
-        key="menu_principal"
+        opciones_menu,
+        index=opciones_menu.index(st.session_state.seleccion_manual)
     )
+    # Actualizamos la memoria con lo que el usuario toque físicamente
+    st.session_state.seleccion_manual = modo
     
     # Si el usuario hace click en el menú, bloqueamos la redirección del QR para que pueda navegar
     if st.sidebar.button("Resetear Navegación"):
@@ -286,6 +290,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
