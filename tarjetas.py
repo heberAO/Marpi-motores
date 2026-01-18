@@ -272,7 +272,10 @@ elif modo == "Mediciones de Campo":
         l1l3 = c14.text_input("L1 - L3 (MΩ)")
         l2l3 = c15.text_input("L2 - L3 (MΩ)")
 
-      if st.form_submit_button("💾 GUARDAR MEDICIONES"):
+     # BOTÓN DE GUARDADO (Alineado correctamente)
+        btn_guardar = st.form_submit_button("💾 GUARDAR MEDICIONES")
+
+        if btn_guardar:
             if t and resp:
                 detalle = (f"Resistencias: T-V1:{tv1}, T-U1:{tu1}, T-W1:{tw1} | "
                            f"Bornes: U1-U2:{u1u2}, V1-V2:{v1v2}, W1-W2:{w1w2} | "
@@ -283,15 +286,24 @@ elif modo == "Mediciones de Campo":
                     "Tag": t,
                     "Responsable": resp,
                     "Descripcion": detalle,
-                    "Taller_Externo": f"Mediciones completas."
+                    "Taller_Externo": "Mediciones completas cargadas desde App."
                 }
                 
-                # Guardar en GSheets
+                # Actualizar base de datos
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
+                
+                # RESET DE CAMPOS
+                st.session_state.tag_fijo = ""
+                st.session_state.cnt_meg += 1 # Cambia la KEY para limpiar el form
+                st.success(f"✅ Mediciones de {t} guardadas y campos limpios")
+                st.rerun()
+            else:
+                st.error("⚠️ Falta completar TAG o Técnico")
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
