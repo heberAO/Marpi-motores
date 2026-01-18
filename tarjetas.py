@@ -316,17 +316,16 @@ elif modo == "Mediciones de Campo":
         c13, c14, c15 = st.columns(3)
         l1l2, l1l3, l2l3 = c13.text_input("L1 - L2 (MΩ)"), c14.text_input("L1 - L3 (MΩ)"), c15.text_input("L2 - L3 (MΩ)")
 
-        btn_guardar = st.form_submit_button("💾 GUARDAR MEDICIONES")
-
-        if btn_guardar:
+       if btn_guardar:
             if t and resp:
-                # AQUÍ ESTÁ EL CAMBIO: Juntamos las 15 variables en el detalle
+                # ESTA ES LA CLAVE: Juntamos las 15 variables con el separador "|"
+                # Si no usamos el "|", el PDF no sabe que tiene que bajar de renglón
                 detalle = (
-                    f"A TIERRA: T-V1:{tv1}, T-U1:{tu1}, T-W1:{tw1} | "
-                    f"ENTRE BOBINAS: W1-V1:{wv1}, W1-U1:{wu1}, V1-U1:{vu1} | "
-                    f"INTERNAS: U1-U2:{u1u2}, V1-V2:{v1v2}, W1-W2:{w1w2} | "
-                    f"LINEA A TIERRA: T-L1:{tl1}, T-L2:{tl2}, T-L3:{tl3} | "
-                    f"LINEA A LINEA: L1-L2:{l1l2}, L1-L3:{l1l3}, L2-L3:{l2l3}"
+                    f"MEGADO A TIERRA: T-V1:{tv1}, T-U1:{tu1}, T-W1:{tw1} | "
+                    f"MEGADO ENTRE BOBINAS: W1-V1:{wv1}, W1-U1:{wu1}, V1-U1:{vu1} | "
+                    f"RESISTENCIAS INTERNAS: U1-U2:{u1u2}, V1-V2:{v1v2}, W1-W2:{w1w2} | "
+                    f"MEGADO DE LÍNEA (TIERRA): T-L1:{tl1}, T-L2:{tl2}, T-L3:{tl3} | "
+                    f"MEGADO DE LÍNEA (FASES): L1-L2:{l1l2}, L1-L3:{l1l3}, L2-L3:{l2l3}"
                 )
                 
                 nueva = {
@@ -334,21 +333,24 @@ elif modo == "Mediciones de Campo":
                     "Tag": t,
                     "Responsable": resp,
                     "Descripcion": detalle,
-                    "Taller_Externo": f"N/S: {sn}. Mediciones completas cargadas desde App."
+                    "Taller_Externo": f"N/S: {sn}. Mediciones completas registradas."
                 }
                 
+                # Guardar en la base de datos
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
                 
-                st.session_state.tag_fijo = "" 
+                # Limpiar y reiniciar
+                st.session_state.tag_fijo = ""
                 st.session_state.cnt_meg += 1 
-                st.success(f"✅ Guardado con éxito")
+                st.success(f"✅ Informe de {t} generado correctamente")
                 st.rerun()
             else:
                 st.error("⚠️ Falta completar TAG o Técnico")
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
