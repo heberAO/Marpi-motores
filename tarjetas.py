@@ -11,37 +11,43 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
     try:
         pdf = FPDF(orientation='P', unit='mm', format='A4')
         pdf.add_page()
-        if os.path.exists("logo.png"):
-            pdf.image("logo.png", 10, 8, 30)
         
-        pdf.set_font("Arial", 'B', 18)
-        pdf.set_text_color(0, 51, 102)
-        pdf.cell(0, 15, f'{tipo_trabajo}', 0, 1, 'R')
+        # Encabezado
+        if os.path.exists("logo.png"):
+            pdf.image("logo.png", 10, 8, 33)
+        
+        pdf.set_font("Arial", 'B', 15)
+        pdf.cell(0, 10, f'MARPI MOTORES - {tipo_trabajo}', 0, 1, 'R')
         pdf.ln(10)
         
-        pdf.set_fill_color(230, 233, 240)
+        # Cuadro de datos del motor
+        pdf.set_fill_color(230, 230, 230)
         pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, f" DATOS DEL EQUIPO: {tag_motor}", 1, 1, 'L', True)
+        pdf.cell(0, 10, f" EQUIPO: {tag_motor}", 1, 1, 'L', True)
         
         pdf.set_font("Arial", '', 10)
         pdf.cell(95, 8, f"Fecha: {datos.get('Fecha','-')}", 1, 0)
         pdf.cell(95, 8, f"Responsable: {datos.get('Responsable','-')}", 1, 1)
         
         pdf.ln(5)
+        
+        # Cuerpo del informe (Aquí entran todas las mediciones)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "DESCRIPCIÓN Y MEDICIONES:", 0, 1)
+        pdf.cell(0, 8, "DETALLE DE LA INTERVENCIÓN / MEDICIONES:", 0, 1)
         pdf.set_font("Arial", '', 10)
-        pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
+        
+        # multi_cell permite que el texto largo de las mediciones baje de renglón solo
+        pdf.multi_cell(0, 6, str(datos.get('Descripcion','-')), border=1)
         
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "ESTADO FINAL / OBSERVACIONES:", 0, 1)
+        pdf.cell(0, 8, "OBSERVACIONES FINALIZADAS:", 0, 1)
         pdf.set_font("Arial", '', 10)
-        pdf.multi_cell(0, 7, str(datos.get('Taller_Externo','-')), border=1)
-
+        pdf.multi_cell(0, 6, str(datos.get('Taller_Externo','-')), border=1)
+        
         return pdf.output(dest='S').encode('latin-1', 'replace')
     except Exception as e:
-        st.error(f"Error PDF: {e}")
+        print(f"Error PDF: {e}")
         return None
 
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
@@ -313,6 +319,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
