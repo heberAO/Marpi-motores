@@ -125,73 +125,59 @@ if modo == "Nuevo Registro":
                 st.warning("Por favor, completa el TAG y el Responsable.")
 
 elif modo == "Historial y QR":
-    st.title("🔍 Consulta de Motor")
+    st.title("🔍 Consulta de Motor y QR")
+    
     if not df_completo.empty:
-        # Buscador dual: TAG + N_Serie
-        tags_sucios = df_completo['Tag'].dropna().unique()
-        lista_tags = [""] + sorted([str(t).strip().upper() for t in tags_sucios if str(t).strip() != ""])
+        # Limpiamos la lista de TAGs para que el buscador no falle
+        tags_validos = df_completo['Tag'].dropna().unique()
+        lista_tags = [""] + sorted([str(t).strip().upper() for t in tags_validos if str(t).strip() != ""])
         
-        # Lógica para detectar si viene de QR
-        indice_qr = 0
-        if qr_tag and qr_tag.upper() in lista_tags:
-            indice_qr = lista_tags.index(qr_tag.upper())
+        # Leemos si viene un motor desde el QR
+        query_tag = st.query_params.get("tag", "").upper()
+        indice_defecto = 0
+        if query_tag in lista_tags:
+            indice_defecto = lista_tags.index(query_tag)
 
-        buscado = st.selectbox("Seleccioná un Motor (TAG o N° Serie):", lista_tags, index=indice_qr)
+        buscado = st.selectbox("Seleccioná un Motor:", lista_tags, index=indice_defecto)
         
         if buscado:
+            # ESTA ES LA CLAVE: Guardamos el motor seleccionado para que aparezca en los otros modos
             st.session_state.tag_fijo = buscado
             
-            # --- BOTONES DE ACCIÓN RÁPIDA (Lo que pediste) ---
-            st.subheader("➕ Nueva Tarea para este Motor")
-            col_btn1, col_btn2, col_btn3 = st.columns(3)
-            
-            with col_btn1:
-                if st.button("🛠️ Nueva Reparación"):
-                    # Al tocar aquí, el TAG ya queda en memoria y solo cambias de pestaña
-                    st.info("Cambiá a 'Nuevo Registro' en el menú lateral.")
-            with col_btn2:
-                if st.button("🛢️ Nueva Lubricación"):
-                    st.info("Cambiá a 'Relubricacion' en el menú lateral.")
-            with col_btn3:
-                if st.button("⚡ Nuevo Megado"):
-                    st.info("Cambiá a 'Mediciones de Campo' en el menú lateral.")
+            st.success(f"Motor seleccionado: {buscado}. Ahora podés ir a cualquier pestaña y el TAG ya estará cargado.")
 
-            st.divider()
-            
-            # --- FICHA Y QR ---
-            c1, c2 = st.columns([1,2])
-            url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
+            # --- GENERADOR DE QR ---
+            # Asegurate de poner la URL real de tu app aquí
+            url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}"
             qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(url_app)}"
             
-            with c1:
-                st.image(qr_api, caption=f"QR {buscado}")
-            with c2:
-                st.subheader(f"🚜 Datos del Equipo: {buscado}")
-                # Buscamos los datos fijos (Potencia, Serie, etc) del primer registro que exista
-                datos_fijos = df_completo[df_completo['Tag'] == buscado].iloc[0]
-                st.write(f"**N° Serie:** {datos_fijos.get('N_Serie', '-')}")
-                st.write(f"**Potencia:** {datos_fijos.get('Potencia', '-')}")
-
+            col_qr, col_info = st.columns([1, 2])
+            with col_qr:
+                st.image(qr_api, caption="QR de este motor")
+            with col_info:
+                st.subheader(f"🚜 Equipo: {buscado}")
+                st.write("Al escanear este QR con el celular, se abrirá la app directamente en este motor.")
+            
             st.divider()
 
-            # --- HISTORIAL DE INTERVENCIONES ---
-            st.subheader("📜 Historial de Movimientos")
+            # --- HISTORIAL ---
+            st.subheader("📜 Historial de Intervenciones")
             hist_m = df_completo[df_completo['Tag'] == buscado].copy()
-            # Ordenar por fecha de más reciente a más vieja
-            hist_m['Fecha_dt'] = pd.to_datetime(hist_m['Fecha'], dayfirst=True, errors='coerce')
-            hist_m = hist_m.sort_values(by='Fecha_dt', ascending=False)
+            # Mostramos lo más nuevo arriba
+            hist_m = hist_m.iloc[::-1] 
 
             for idx, fila in hist_m.iterrows():
-                with st.expander(f"📅 {fila.get('Fecha','-')} - {fila.get('Responsable','-')} ({fila.get('Descripcion','-')[:30]}...)"):
-                    st.write(f"**Descripción Completa:** {fila.get('Descripcion','-')}")
-                    st.write(f"**Observaciones:** {fila.get('Taller_Externo', '-')}")
+                with st.expander(f"📅 {fila.get('Fecha','-')} - {fila.get('Responsable','-')}"):
+                    # Aquí podés agregar todos los campos que quieras mostrar en el historial
+                    st.write(f"**Actividad:** {fila.get('Descripcion','-')}")
+                    st.write(f"**Obs:** {fila.get('Taller_Externo', '-')}")
                     
+                    # El PDF usa tu función original
                     pdf_b = generar_pdf_reporte(fila.to_dict(), buscado)
                     if pdf_b:
-                        st.download_button("📄 Descargar Reporte PDF", pdf_b, f"Informe_{buscado}_{idx}.pdf", key=f"btn_hist_{idx}")
+                        st.download_button("📄 PDF", pdf_b, f"Informe_{idx}.pdf", key=f"btn_{idx}")
     else:
-        st.warning("La base de datos está vacía.")
-
+        st.warning("No hay datos en la planilla.")
 elif modo == "Relubricacion":
     st.title("🛢️ Gestión de Relubricación Detallada")
     with st.form("relub"):
@@ -272,6 +258,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
