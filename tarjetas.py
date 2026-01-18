@@ -125,45 +125,72 @@ if modo == "Nuevo Registro":
                 st.warning("Por favor, completa el TAG y el Responsable.")
 
 elif modo == "Historial y QR":
-    st.title("🔍 Historial por TAG o N° de Serie")
+    st.title("🔍 Consulta de Motor")
     if not df_completo.empty:
         # Buscador dual: TAG + N_Serie
-        df_completo['Busqueda'] = df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
-        lista_busqueda = [""] + sorted(list(df_completo['Busqueda'].unique()))
+        tags_sucios = df_completo['Tag'].dropna().unique()
+        lista_tags = [""] + sorted([str(t).strip().upper() for t in tags_sucios if str(t).strip() != ""])
         
-        # Si venimos de QR
+        # Lógica para detectar si viene de QR
         indice_qr = 0
-        if qr_tag:
-            # Buscamos si el qr_tag coincide con algún motor
-            for i, item in enumerate(lista_busqueda):
-                if qr_tag in item:
-                    indice_qr = i
-                    break
+        if qr_tag and qr_tag.upper() in lista_tags:
+            indice_qr = lista_tags.index(qr_tag.upper())
 
-        seleccion = st.selectbox("Buscar por TAG o N° de Serie:", lista_busqueda, index=indice_qr)
+        buscado = st.selectbox("Seleccioná un Motor (TAG o N° Serie):", lista_tags, index=indice_qr)
         
-        if seleccion:
-            # Extraemos el TAG puro de la selección
-            buscado = seleccion.split(" | ")[0]
+        if buscado:
             st.session_state.tag_fijo = buscado
             
-            # --- QR ---
+            # --- BOTONES DE ACCIÓN RÁPIDA (Lo que pediste) ---
+            st.subheader("➕ Nueva Tarea para este Motor")
+            col_btn1, col_btn2, col_btn3 = st.columns(3)
+            
+            with col_btn1:
+                if st.button("🛠️ Nueva Reparación"):
+                    # Al tocar aquí, el TAG ya queda en memoria y solo cambias de pestaña
+                    st.info("Cambiá a 'Nuevo Registro' en el menú lateral.")
+            with col_btn2:
+                if st.button("🛢️ Nueva Lubricación"):
+                    st.info("Cambiá a 'Relubricacion' en el menú lateral.")
+            with col_btn3:
+                if st.button("⚡ Nuevo Megado"):
+                    st.info("Cambiá a 'Mediciones de Campo' en el menú lateral.")
+
+            st.divider()
+            
+            # --- FICHA Y QR ---
+            c1, c2 = st.columns([1,2])
             url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}"
             qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(url_app)}"
             
-            c1, c2 = st.columns([1,3])
-            c1.image(qr_api, caption=f"QR {buscado}")
-            c2.subheader(f"🚜 Ficha Técnica: {buscado}")
-            
-            # --- HISTORIAL ---
+            with c1:
+                st.image(qr_api, caption=f"QR {buscado}")
+            with c2:
+                st.subheader(f"🚜 Datos del Equipo: {buscado}")
+                # Buscamos los datos fijos (Potencia, Serie, etc) del primer registro que exista
+                datos_fijos = df_completo[df_completo['Tag'] == buscado].iloc[0]
+                st.write(f"**N° Serie:** {datos_fijos.get('N_Serie', '-')}")
+                st.write(f"**Potencia:** {datos_fijos.get('Potencia', '-')}")
+
+            st.divider()
+
+            # --- HISTORIAL DE INTERVENCIONES ---
+            st.subheader("📜 Historial de Movimientos")
             hist_m = df_completo[df_completo['Tag'] == buscado].copy()
+            # Ordenar por fecha de más reciente a más vieja
+            hist_m['Fecha_dt'] = pd.to_datetime(hist_m['Fecha'], dayfirst=True, errors='coerce')
+            hist_m = hist_m.sort_values(by='Fecha_dt', ascending=False)
+
             for idx, fila in hist_m.iterrows():
-                with st.expander(f"📅 {fila.get('Fecha','-')} - {fila.get('Responsable','-')}"):
-                    st.write(f"**Trabajo:** {fila.get('Descripcion','-')}")
-                    st.write(f"**Observaciones:** {fila.get('Taller_Externo','-')}")
+                with st.expander(f"📅 {fila.get('Fecha','-')} - {fila.get('Responsable','-')} ({fila.get('Descripcion','-')[:30]}...)"):
+                    st.write(f"**Descripción Completa:** {fila.get('Descripcion','-')}")
+                    st.write(f"**Observaciones:** {fila.get('Taller_Externo', '-')}")
+                    
                     pdf_b = generar_pdf_reporte(fila.to_dict(), buscado)
                     if pdf_b:
-                        st.download_button("📄 Bajar PDF", pdf_b, f"Informe_{idx}.pdf", key=f"h_{idx}")
+                        st.download_button("📄 Descargar Reporte PDF", pdf_b, f"Informe_{buscado}_{idx}.pdf", key=f"btn_hist_{idx}")
+    else:
+        st.warning("La base de datos está vacía.")
 
 elif modo == "Relubricacion":
     st.title("🛢️ Gestión de Relubricación Detallada")
@@ -245,6 +272,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
