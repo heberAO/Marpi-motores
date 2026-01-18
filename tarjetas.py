@@ -95,6 +95,25 @@ with st.sidebar:
         st.query_params.clear()
         st.rerun()
 
+# --- 6. VALIDACIÓN DE CONTRASEÑA (NUEVA SECCIÓN) ---
+# Si la opción elegida requiere carga de datos, pedimos clave
+if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
+    if not st.session_state.get("autorizado", False):
+        st.title("🔒 Acceso Restringido")
+        st.warning("Ingrese la contraseña de personal para cargar nuevos datos.")
+        
+        clave = st.text_input("Contraseña:", type="password")
+        if st.button("Validar Ingreso"):
+            if clave == "MARPI2026": # Tu clave
+                st.session_state.autorizado = True
+                st.rerun()
+            else:
+                st.error("⚠️ Clave incorrecta. Solo personal autorizado.")
+        
+        # Este stop es clave: detiene el resto del código (tus campos)
+        # para que no aparezcan si no hay autorización.
+        st.stop()
+
 # --- 5. SECCIONES (CON TUS CAMPOS ORIGINALES) ---
 
 if modo == "Nuevo Registro":
@@ -313,6 +332,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
