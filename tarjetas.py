@@ -102,20 +102,65 @@ if modo == "Nuevo Registro":
                 st.success(f"✅ Guardado {t}"); st.session_state.form_count += 1; st.rerun()
 
 elif modo == "Historial y QR":
-    st.title("🔍 Historial y QR")
+    st.title("🔍 Consulta de Motor y QR")
+    
     if not df_completo.empty:
+        # 1. Buscador Principal
         lista_tags = [""] + list(df_completo['Tag'].unique())
         motor_buscado = st.selectbox("Seleccioná un Motor:", lista_tags)
+        
         if motor_buscado:
+            # Guardamos el tag en la memoria para que las otras pestañas lo reconozcan
+            st.session_state['tag_seleccionado'] = motor_buscado
+            
+            # Mostramos info básica (tomada del primer registro encontrado)
+            fijos = df_completo[df_completo['Tag'] == motor_buscado].iloc[0]
+            st.header(f"🚜 Motor: {motor_buscado}")
+            st.info(f"**N° Serie:** {fijos.get('N_Serie','-')} | **Potencia:** {fijos.get('Potencia','-')}")
+
+            # --- BOTONES DE ACCIÓN RÁPIDA ---
+            st.subheader("➕ Nueva Intervención")
+            c1, c2 = st.columns(2)
+            if c1.button("⚡ Registrar Megado"):
+                st.session_state.modo = "Mediciones de Campo" # Esto requiere un pequeño ajuste en el radio del sidebar
+                st.rerun()
+            if c2.button("🛢️ Registrar Lubricación"):
+                st.session_state.modo = "Relubricacion"
+                st.rerun()
+
+            st.divider()
+
+            # --- HISTORIAL ---
+            st.subheader("📜 Historial de Intervenciones")
             hist_m = df_completo[df_completo['Tag'] == motor_buscado].copy()
+            # Ordenar por fecha (asumiendo formato DD/MM/YYYY)
+            hist_m['Fecha_dt'] = pd.to_datetime(hist_m['Fecha'], format='%d/%m/%Y', errors='coerce')
+            hist_m = hist_m.sort_values(by='Fecha_dt', ascending=False)
+
             for idx, fila in hist_m.iterrows():
                 with st.expander(f"📅 {fila['Fecha']} - {fila['Responsable']}"):
                     c_txt, c_pdf = st.columns([3, 1])
-                    c_txt.write(f"**Detalle:** {fila['Descripcion']}")
-                    c_txt.write(f"**Obs:** {fila.get('Taller_Externo', '-')}")
-                    pdf_b = generar_pdf_reporte(fila.to_dict(), motor_buscado)
-                    c_pdf.download_button("📄 PDF", pdf_b, f"Reporte_{motor_buscado}_{idx}.pdf", "application/pdf", key=f"h_{idx}")
+                    with c_txt:
+                        st.write(f"**Detalle:** {fila['Descripcion']}")
+                        st.write(f"**Obs:** {fila.get('Taller_Externo', '-')}")
+                    with c_pdf:
+                        pdf_b = generar_pdf_reporte(fila.to_dict(), motor_buscado)
+                        st.download_button("📄 PDF", pdf_b, f"Reporte_{motor_buscado}_{idx}.pdf", "application/pdf", key=f"h_{idx}")
 
+            # --- GENERADOR DE QR (Para pegar en el motor) ---
+            st.divider()
+            st.subheader("🖼️ Generar Código QR")
+            # Link que apunta a este motor específico (ajusta la URL a tu app de Streamlit)
+            url_base = "https://tu-app-marpi.streamlit.app/?tag=" 
+            url_qr = url_base + motor_buscado
+            
+            qr = qrcode.make(url_qr)
+            buf = BytesIO()
+            qr.save(buf, format="PNG")
+            st.image(buf.getvalue(), caption=f"QR para el Motor {motor_buscado}", width=200)
+            st.download_button("📥 Descargar QR", buf.getvalue(), f"QR_{motor_buscado}.png", "image/png")
+    else:
+        st.warning("La base de datos está vacía.")
 elif modo == "Relubricacion":
     st.title("🛢️ Gestión de Relubricación")
     with st.form(key=f"relub_{st.session_state.count_relub}"):
@@ -177,6 +222,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
