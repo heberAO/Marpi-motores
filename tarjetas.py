@@ -95,24 +95,29 @@ with st.sidebar:
         st.query_params.clear()
         st.rerun()
 
-# --- 6. VALIDACIÓN DE CONTRASEÑA (NUEVA SECCIÓN) ---
-# Si la opción elegida requiere carga de datos, pedimos clave
+# --- 6. VALIDACIÓN DE CONTRASEÑA (VERSIÓN CORREGIDA) ---
 if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
-    if not st.session_state.get("autorizado", False):
+    if "autorizado" not in st.session_state:
+        st.session_state.autorizado = False
+
+    if not st.session_state.autorizado:
         st.title("🔒 Acceso Restringido")
-        st.warning("Ingrese la contraseña de personal para cargar nuevos datos.")
+        st.info("Esta sección es solo para personal de MARPI.")
         
-        clave = st.text_input("Contraseña:", type="password")
-        if st.button("Validar Ingreso"):
-            if clave == "MARPI2026": # Tu clave
-                st.session_state.autorizado = True
-                st.rerun()
-            else:
-                st.error("⚠️ Clave incorrecta. Solo personal autorizado.")
+        # Usamos un formulario para que el botón funcione mejor
+        with st.form("login_marpi"):
+            clave = st.text_input("Contraseña:", type="password")
+            btn_entrar = st.form_submit_button("Validar Ingreso")
+            
+            if btn_entrar:
+                if clave == "MARPI2026":
+                    st.session_state.autorizado = True
+                    st.success("✅ Acceso concedido")
+                    st.rerun()
+                else:
+                    st.error("⚠️ Clave incorrecta")
         
-        # Este stop es clave: detiene el resto del código (tus campos)
-        # para que no aparezcan si no hay autorización.
-        st.stop()
+        st.stop() # Detiene la ejecución para que no se vea el resto
 
 # --- 5. SECCIONES (CON TUS CAMPOS ORIGINALES) ---
 
@@ -332,6 +337,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
