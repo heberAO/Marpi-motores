@@ -279,7 +279,7 @@ elif modo == "Mediciones de Campo":
         tu1 = c2.text_input("T - U1 (Ω)")
         tw1 = c3.text_input("T - W1 (Ω)")
         
-        st.subheader("📊 Megado ente Boninas (Resistencia)")
+        st.subheader("📊 Megado entre Boninas (Resistencia)")
         # Segunda fila de campos chicos
         c4, c5, c6 = st.columns(3)
         wv1 = c4.text_input("W1 - V1 (Ω)")
@@ -337,6 +337,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
