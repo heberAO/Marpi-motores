@@ -359,20 +359,18 @@ elif modo == "Mediciones de Campo":
                 column_config={
                     "Fecha": st.column_config.TextColumn("📅 Fecha"),
                     "Tag": st.column_config.TextColumn("🏷️ Tag"),
-                    "Descripcion": st.column_config.TextColumn("📝 Detalle Técnico"),
+                    "N_Serie": st.column_config.TextColumn("🔢 Serie"),
+                    "Responsable": st.column_config.TextColumn("👤 Técnico"),
+                    "Descripcion": st.column_config.TextColumn("⚡ Detalle de Fases"),
                     "Taller_Externo": st.column_config.TextColumn("🚩 Estado/Obs")
                 }
             )
-            
-            # BOTÓN DE WHATSAPP (Opcional)
-            if not df_m.empty and busc_tag:
-                ultimo_estado = df_m.iloc[-1]['Taller_Externo']
-                msg = f"Hola! Informo que se realizó el megado del motor {busc_tag}. Resultado: {ultimo_estado}"
-                st.link_button(f"📲 Informar resultado de {busc_tag} por WhatsApp", f"https://wa.me/?text={msg}")
         else:
-            st.warning("No hay datos registrados.")
+            st.warning("Aún no hay mediciones registradas.")
+            
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
