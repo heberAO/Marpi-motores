@@ -125,48 +125,63 @@ if modo == "Nuevo Registro":
                 st.warning("Por favor, completa el TAG y el Responsable.")
 
 elif modo == "Historial y QR":
-    st.title("🔍 Consulta de Motor y QR")
+    st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Creamos una columna temporal de búsqueda que une TAG y Serie
-        # Usamos fillna('') para que no falle si falta algún dato
-        df_completo['Busqueda_Motor'] = (
-            df_completo['Tag'].astype(str).str.strip().str.upper() + 
-            " | SN: " + 
-            df_completo['N_Serie'].astype(str).str.strip()
+        # 1. Lista para el buscador (TAG + Serie)
+        df_completo['Busqueda_Combo'] = (
+            df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
         )
+        opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
         
-        # 2. Generamos la lista de opciones para el selectbox
-        lista_opciones = [""] + sorted(df_completo['Busqueda_Motor'].unique().tolist())
-        
-        # 3. Lógica para el QR (detectar si el tag viene en la URL)
+        # 2. Detección de QR
         query_tag = st.query_params.get("tag", "").upper()
-        indice_defecto = 0
-        
+        idx_q = 0
         if query_tag:
-            # Buscamos en la lista combinada qué opción contiene ese TAG
-            for i, opcion in enumerate(lista_opciones):
-                if opcion.startswith(query_tag + " |"):
-                    indice_defecto = i
+            for i, op in enumerate(opciones):
+                if op.startswith(query_tag + " |"):
+                    idx_q = i
                     break
-
-        # 4. El Buscador Dual
-        seleccion = st.selectbox("Escribí el TAG o N° de Serie:", lista_opciones, index=indice_defecto)
+        
+        seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
         
         if seleccion:
-            # Extraemos solo el TAG (lo que está antes del '|') para filtrar
+            # Extraemos el TAG puro
             buscado = seleccion.split(" | ")[0].strip()
             st.session_state.tag_fijo = buscado
             
-            # --- GENERADOR DE QR ---
+            # --- BOTONES DE CARGA RÁPIDA ---
+            st.subheader("➕ ¿Qué deseas cargar para este motor?")
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                if st.button("🛠️ Nueva Reparación"):
+                    st.warning("Selecciona 'Nuevo Registro' en el menú de la izquierda. El TAG ya está cargado.")
+            with c2:
+                if st.button("🛢️ Nueva Lubricación"):
+                    st.warning("Selecciona 'Relubricacion' en el menú de la izquierda. El TAG ya está cargado.")
+            with c3:
+                if st.button("⚡ Nuevo Megado"):
+                    st.warning("Selecciona 'Mediciones de Campo' en el menú de la izquierda. El TAG ya está cargado.")
+
+            st.divider()
+
+            # --- QR Y DATOS ---
+            col_qr, col_info = st.columns([1, 2])
             url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}"
             qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(url_app)}"
             
-            col_qr, col_info = st.columns([1, 2])
             with col_qr:
                 st.image(qr_api, caption=f"QR de {buscado}")
             with col_info:
-                st.subheader(f"🚜 Motor: {buscado}")
+                st.subheader(f"🚜 Equipo seleccionado: {buscado}")
+                st.write(f"**Link directo:** {url_app}")
+            
+            st.divider()
+
+            # --- HISTORIAL Y PDF ---
+            st.subheader("📜 Historial de Intervenciones")
+            hist_m = df_completo[df_completo['Tag'] == buscado].copy()
+            hist_m = hist_m.iloc[::-1
 elif modo == "Relubricacion":
     st.title("🛢️ Gestión de Relubricación Detallada")
     with st.form("relub"):
@@ -247,6 +262,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
