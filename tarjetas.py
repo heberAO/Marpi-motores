@@ -101,9 +101,11 @@ if modo == "Nuevo Registro":
 elif modo == "Historial y QR":
     st.title("🔍 Historial y QR")
     if not df_completo.empty:
-        lista_tags = [""] + sorted(list(df_completo['Tag'].unique()))
+        # 1. Limpiamos y preparamos la lista de TAGs (Evita el error de sorted)
+        tags_sucios = df_completo['Tag'].dropna().unique() # Quitamos vacíos
+        lista_tags = [""] + sorted([str(t).strip().upper() for t in tags_sucios if str(t).strip() != ""])
+        
         buscado = st.selectbox("Seleccioná un Motor:", lista_tags)
-        if buscado:
             st.session_state.tag_fijo = buscado # Guardamos para las otras pestañas
             
             # --- GENERADOR DE QR (MÉTODO SEGURO) ---
@@ -174,6 +176,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
