@@ -42,12 +42,17 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
         return pdf.output(dest='S').encode('latin-1', 'replace')
     except Exception as e:
         st.error(f"Error PDF: {e}")
+return None
+    except Exception as e:
+        st.error(f"Error PDF: {e}")
         return None
 
-# --- 2. CONFIGURACIÓN ---
+# --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
+# Inicializamos variables de estado
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
+if "modo_manual" not in st.session_state: st.session_state.modo_manual = False
 
 # --- 3. CONEXIÓN A DATOS ---
 try:
@@ -57,11 +62,33 @@ except Exception as e:
     st.error(f"Error de conexión: {e}")
     df_completo = pd.DataFrame()
 
-# --- 4. MENÚ LATERAL ---
+# --- 4. LÓGICA DE REDIRECCIÓN QR ---
+query_params = st.query_params
+qr_tag = query_params.get("tag", "")
+
+# Si el QR trae un motor y el usuario no ha cambiado de pestaña manualmente
+if qr_tag and not st.session_state.modo_manual:
+    indice_inicio = 1 # Posición de "Historial y QR"
+else:
+    indice_inicio = 0
+
+# --- 5. UN SOLO MENÚ LATERAL ---
 with st.sidebar:
-    if os.path.exists("logo.png"): st.image("logo.png", width=150)
+    if os.path.exists("logo.png"): 
+        st.image("logo.png", width=150)
     st.title("⚡ MARPI MOTORES")
-    modo = st.radio("SELECCIONE:", ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"])
+    
+    modo = st.radio(
+        "SELECCIONE:", 
+        ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"],
+        index=indice_inicio
+    )
+    
+    # Si el usuario hace click en el menú, bloqueamos la redirección del QR para que pueda navegar
+    if st.sidebar.button("Resetear Navegación"):
+        st.session_state.modo_manual = True
+        st.query_params.clear()
+        st.rerun()
 
 # --- 5. SECCIONES (CON TUS CAMPOS ORIGINALES) ---
 
@@ -208,6 +235,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
