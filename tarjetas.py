@@ -58,63 +58,10 @@ def generar_pdf_reporte(datos, tag_motor):
         pdf.set_font("Arial", 'B', 11)
         pdf.cell(0, 8, " DETALLE TÉCNICO Y VALORES REGISTRADOS:", 1, 1, 'L', True)
         pdf.ln(2)
-        
-        if "|" in desc_full:
-            partes = desc_full.split(" | ")
-            pdf.set_font("Arial", '', 9) 
-            for p in partes:
-                pdf.cell(0, 6, f" > {p.strip()}", border='LR', ln=1)
-            pdf.cell(0, 0, "", border='T', ln=1)
-        else:
-            pdf.set_font("Arial", '', 10)
-            pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
-
-        pdf.ln(5)
-        pdf.set_font("Arial", 'B', 11)
-        pdf.set_fill_color(240, 240, 240)
-        pdf.cell(0, 8, " OBSERVACIONES FINALIZADAS:", 1, 1, 'L', True)
-        pdf.set_font("Arial", '', 10)
-        pdf.multi_cell(0, 7, f"\n{datos.get('Taller_Externo','-')}\n", border=1)
-        
-        return pdf.output(dest='S').encode('latin-1', 'replace')
-    except Exception: return None
-
-# --- 4. BARRA LATERAL (MENÚ) ---
-with st.sidebar:
-    st.image("logo.png", width=150) if os.path.exists("logo.png") else None
-    st.title("⚙️ Menú MARPI")
-    
-    # Manejo de navegación desde botones
-    if "menu_option" not in st.session_state:
-        st.session_state.menu_option = "Historial y QR"
-
-    modo = st.sidebar.radio("Seleccione:", 
-                            ["Historial y QR", "Nuevo Registro", "Relubricacion", "Mediciones de Campo"],
-                            key="navegacion_radio")
-
-# --- 5. LÓGICA DE PROTECCIÓN ---
-if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
-    if not st.session_state.get("autorizado", False):
-        st.title("🔒 Acceso Restringido")
-        st.info("Para cargar datos, ingrese la clave de personal de MARPI MOTORES.")
-        clave = st.text_input("Contraseña:", type="password")
-        if st.button("Ingresar"):
-            if clave == PASSWORD_MARPI:
-                st.session_state.autorizado = True
-                st.rerun()
-            else: st.error("Clave Incorrecta")
-        st.stop()
-
-# --- 6. SECCIONES ---
-
-if modo == "Historial y QR":
-    st.title("🔍 Historial y Gestión de Motores")
-    if not df_completo.empty:
-        # Buscador combinado
-        df_completo['Busqueda_Combo'] = df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
