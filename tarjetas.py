@@ -9,80 +9,83 @@ import urllib.parse  # Para el QR sin errores
 # --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
 def generar_pdf_reporte(datos, tag_motor):
     try:
-        # 1. Detectamos el tipo de trabajo para poner el color del título
         desc_full = str(datos.get('Descripcion', '')).upper()
         
-        # Estilo por defecto (Gris para reparaciones)
-        color_r, color_g, color_b = (60, 60, 60) 
-        tipo_label = "REPORTE TÉCNICO DE REPARACIÓN"
-
-        if "LUBRICACIÓN" in desc_full or "LUBRICACION" in desc_full:
-            color_r, color_g, color_b = (0, 102, 204) # Azul para lubricación
-            tipo_label = "REPORTE DE LUBRICACIÓN Y MANTENIMIENTO"
-        elif "RESISTENCIAS:" in desc_full or "MEGADO" in desc_full:
-            color_r, color_g, color_b = (204, 102, 0) # Naranja/Rayo para megado
+        # --- LÓGICA DE DETECCIÓN Y COLORES ---
+        if "RESISTENCIAS:" in desc_full or "BORNES:" in desc_full:
+            color_rgb = (204, 102, 0) # Naranja para Megado
             tipo_label = "PROTOCOLO DE MEDICIONES ELÉCTRICAS"
+        elif "LUBRICACIÓN" in desc_full or "LUBRICACION" in desc_full:
+            color_rgb = (0, 102, 204) # Azul para Lubricación
+            tipo_label = "REPORTE DE LUBRICACIÓN"
+        else:
+            color_rgb = (60, 60, 60) # Gris para Reparación
+            tipo_label = "REPORTE TÉCNICO DE REPARACIÓN"
 
         pdf = FPDF(orientation='P', unit='mm', format='A4')
         pdf.add_page()
         
-        # --- ENCABEZADO ---
+        # Encabezado
         if os.path.exists("logo.png"):
             pdf.image("logo.png", 10, 8, 35)
         
-        pdf.set_text_color(color_r, color_g, color_b)
+        pdf.set_text_color(*color_rgb)
         pdf.set_font("Arial", 'B', 14)
         pdf.cell(0, 10, tipo_label, 0, 1, 'R')
-        pdf.set_text_color(0, 0, 0) # Volver a negro
+        pdf.set_text_color(0, 0, 0)
         pdf.ln(12)
         
-        # --- TABLA DE DATOS DEL EQUIPO ---
-        pdf.set_fill_color(color_r, color_g, color_b)
-        pdf.set_text_color(255, 255, 255) # Texto blanco para el fondo de color
-        pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, f" IDENTIFICACIÓN DEL EQUIPO: {tag_motor}", 1, 1, 'L', True)
+        # Tabla de Identificación
+        pdf.set_fill_color(*color_rgb)
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 8, f" DATOS DEL EQUIPO: {tag_motor}", 1, 1, 'L', True)
         
         pdf.set_text_color(0, 0, 0)
-        pdf.set_font("Arial", 'B', 10)
-        pdf.cell(40, 8, " FECHA:", 1, 0, 'L')
-        pdf.set_font("Arial", '', 10)
-        pdf.cell(55, 8, f" {datos.get('Fecha','-')}", 1, 0, 'L')
-        pdf.set_font("Arial", 'B', 10)
-        pdf.cell(40, 8, " RESPONSABLE:", 1, 0, 'L')
-        pdf.set_font("Arial", '', 10)
-        pdf.cell(55, 8, f" {datos.get('Responsable','-')}", 1, 1, 'L')
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(40, 7, " FECHA:", 1, 0); pdf.set_font("Arial", '', 9)
+        pdf.cell(55, 7, f" {datos.get('Fecha','-')}", 1, 0)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(40, 7, " RESPONSABLE:", 1, 0); pdf.set_font("Arial", '', 9)
+        pdf.cell(55, 7, f" {datos.get('Responsable','-')}", 1, 1)
         
         pdf.ln(5)
-        
-        # --- CUERPO DEL INFORME ---
-        pdf.set_fill_color(245, 245, 245)
+
+        # --- SECCIÓN DE DETALLE / MEDICIONES ---
+        pdf.set_fill_color(240, 240, 240)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, " DETALLE DEL TRABAJO REALIZADO:", 1, 1, 'L', True)
+        pdf.cell(0, 8, " DETALLE TÉCNICO Y VALORES REGISTRADOS:", 1, 1, 'L', True)
         
         pdf.set_font("Arial", '', 10)
-        # Reemplazamos los separadores "|" por saltos de línea para que se vea ordenado en Megado
-        detalle_limpio = str(datos.get('Descripcion','-')).replace(" | ", "\n")
-        pdf.multi_cell(0, 7, f"\n{detalle_limpio}\n", border=1)
+        pdf.ln(2)
+        
+        # Si es un megado, separamos las mediciones por líneas para que sea legible
+        if "|" in desc_full:
+            partes = desc_full.split(" | ")
+            for p in partes:
+                pdf.multi_cell(0, 6, f" > {p}", border='LR')
+            pdf.cell(0, 0, "", border='T', ln=1) # Cierre de tabla
+        else:
+            pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
         
         pdf.ln(5)
         
         # --- OBSERVACIONES ---
-        pdf.set_fill_color(245, 245, 245)
+        pdf.set_fill_color(240, 240, 240)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, " OBSERVACIONES Y ESTADO FINAL:", 1, 1, 'L', True)
+        pdf.cell(0, 8, " OBSERVACIONES FINALIZADAS:", 1, 1, 'L', True)
         pdf.set_font("Arial", '', 10)
         pdf.multi_cell(0, 7, f"\n{datos.get('Taller_Externo','-')}\n", border=1)
         
-        # --- PIE DE PÁGINA ---
-        pdf.set_y(-30)
+        # Pie de página
+        pdf.set_y(-25)
         pdf.set_font("Arial", 'I', 8)
-        pdf.cell(0, 10, "Este documento fue generado automáticamente por el Sistema de Gestión Marpi Motores.", 0, 0, 'C')
+        pdf.cell(0, 10, f"Informe generado por Sistema Marpi - Equipo: {tag_motor}", 0, 0, 'C')
         
         return pdf.output(dest='S').encode('latin-1', 'replace')
     except Exception as e:
-        print(f"Error PDF: {e}")
+        st.error(f"Error generando PDF: {e}")
         return None
-
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
@@ -352,6 +355,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
