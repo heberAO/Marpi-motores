@@ -6,6 +6,9 @@ import os
 from fpdf import FPDF
 import urllib.parse  # Para el QR sin errores
 
+# --- CONFIGURACIÓN Y CREDENCIALES ---
+PASSWORD_MARPI = "MARPI2026"  # Esta es la clave que pedirá para cargar datos
+
 # --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
 def generar_pdf_reporte(datos, tag_motor):
     try:
@@ -118,28 +121,34 @@ else:
 # --- 5. MENÚ LATERAL ---
 opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
 
+# 1. Selección de modo en la barra lateral
 with st.sidebar:
-    if os.path.exists("logo.png"): st.image("logo.png", width=150)
-    st.title("⚡ MARPI MOTORES")
-    
-    # Si no existe la opción en memoria, usamos el índice del QR
-    if "seleccion_manual" not in st.session_state:
-        st.session_state.seleccion_manual = opciones_menu[indice_inicio]
+    st.image("logo.png", width=150) if os.path.exists("logo.png") else None
+    modo = st.radio("Menú de Gestión:", 
+                    ["Historial y QR", "Nuevo Registro", "Relubricacion", "Mediciones de Campo"])
 
-    # El radio se alimenta de la variable 'seleccion_manual'
-    modo = st.radio(
-        "SELECCIONE:", 
-        opciones_menu,
-        index=opciones_menu.index(st.session_state.seleccion_manual)
-    )
-    # Actualizamos la memoria con lo que el usuario toque físicamente
-    st.session_state.seleccion_manual = modo
-    
-    # Si el usuario hace click en el menú, bloqueamos la redirección del QR para que pueda navegar
-    if st.sidebar.button("Resetear Navegación"):
-        st.session_state.modo_manual = True
-        st.query_params.clear()
-        st.rerun()
+# 2. El "Candado" para personal de MARPI
+if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
+    if "autorizado" not in st.session_state:
+        st.session_state.autorizado = False
+
+    if not st.session_state.autorizado:
+        st.title("🔒 Acceso Restringido")
+        st.info("Para cargar datos, por favor ingrese la clave de personal de MARPI MOTORES.")
+        
+        clave = st.text_input("Contraseña:", type="password")
+        if st.button("Ingresar"):
+            if clave == PASSWORD_MARPI:
+                st.session_state.autorizado = True
+                st.success("¡Acceso correcto!")
+                st.rerun()
+            else:
+                st.error("Contraseña incorrecta")
+        st.stop() # Esto detiene el código aquí, el usuario no ve el formulario
+
+# 3. Si es "Historial y QR" o si ya puso la clave, el código sigue normal abajo
+if modo == "Historial y QR":
+    # Aquí va tu código de búsqueda y visualización de PDF (LIBRE)
 
 # --- 5. SECCIONES (CON TUS CAMPOS ORIGINALES) ---
 
@@ -348,6 +357,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
