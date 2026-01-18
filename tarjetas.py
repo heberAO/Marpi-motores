@@ -4,37 +4,50 @@ from streamlit_gsheets import GSheetsConnection
 from datetime import date
 import os
 from fpdf import FPDF
-import urllib.parse
+import urllib.parse  # Para el QR sin errores
 
-# --- 1. FUNCIÓN PDF UNIFICADA ---
+# --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
 def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
     try:
         pdf = FPDF(orientation='P', unit='mm', format='A4')
         pdf.add_page()
         if os.path.exists("logo.png"):
             pdf.image("logo.png", 10, 8, 30)
+        
         pdf.set_font("Arial", 'B', 18)
         pdf.set_text_color(0, 51, 102)
         pdf.cell(0, 15, f'{tipo_trabajo}', 0, 1, 'R')
         pdf.ln(10)
+        
         pdf.set_fill_color(230, 233, 240)
         pdf.set_font("Arial", 'B', 12)
         pdf.cell(0, 10, f" DATOS DEL EQUIPO: {tag_motor}", 1, 1, 'L', True)
+        
         pdf.set_font("Arial", '', 10)
         pdf.cell(95, 8, f"Fecha: {datos.get('Fecha','-')}", 1, 0)
         pdf.cell(95, 8, f"Responsable: {datos.get('Responsable','-')}", 1, 1)
-        pdf.cell(190, 8, f"Detalle: {datos.get('Descripcion','-')}", 1, 1)
+        
+        pdf.ln(5)
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 8, "DESCRIPCIÓN Y MEDICIONES:", 0, 1)
+        pdf.set_font("Arial", '', 10)
+        pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
+        
+        pdf.ln(5)
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 8, "ESTADO FINAL / OBSERVACIONES:", 0, 1)
+        pdf.set_font("Arial", '', 10)
+        pdf.multi_cell(0, 7, str(datos.get('Taller_Externo','-')), border=1)
+
         return pdf.output(dest='S').encode('latin-1', 'replace')
     except Exception as e:
         st.error(f"Error PDF: {e}")
         return None
 
-# --- 2. CONFIGURACIÓN Y ESTADO ---
+# --- 2. CONFIGURACIÓN ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
-# Inicializar memorias (Session State)
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
-if "serie_fija" not in st.session_state: st.session_state.serie_fija = ""
 
 # --- 3. CONEXIÓN A DATOS ---
 try:
@@ -48,77 +61,120 @@ except Exception as e:
 with st.sidebar:
     if os.path.exists("logo.png"): st.image("logo.png", width=150)
     st.title("⚡ MARPI MOTORES")
-    modo = st.radio("MENÚ:", ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"])
+    modo = st.radio("SELECCIONE:", ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"])
 
-# --- 5. SECCIONES ---
+# --- 5. SECCIONES (CON TUS CAMPOS ORIGINALES) ---
 
 if modo == "Nuevo Registro":
-    st.title("📝 Alta de Motor")
+    st.title("📝 Alta y Registro Inicial")
+    fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
     with st.form("alta"):
-        t = st.text_input("TAG MOTOR").upper()
-        resp = st.text_input("Técnico")
-        if st.form_submit_button("💾 GUARDAR"):
-            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "Responsable": resp, "Descripcion": "ALTA DE EQUIPO"}
-            df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-            conn.update(data=df_final)
-            st.success("Guardado"); st.rerun()
+        col1, col2, col3, col4, col5 = st.columns(5)
+        t = col1.text_input("TAG/ID MOTOR").upper()
+        p = col2.text_input("Potencia")
+        r = col3.selectbox("RPM", ["-", "750", "1500", "3000"])
+        f = col4.text_input("Carcasa")
+        sn = col5.text_input("N° de Serie")
+        
+        st.subheader("🔍 Mediciones Iniciales")
+        m1, m2, m3 = st.columns(3)
+        with m1: rt_tu, rt_tv, rt_tw = st.text_input("T-U"), st.text_input("T-V"), st.text_input("T-W")
+        with m2: rb_uv, rb_vw, rb_uw = st.text_input("U-V"), st.text_input("V-W"), st.text_input("U-W")
+        with m3: ri_u, ri_v, ri_w = st.text_input("U1-U2"), st.text_input("V1-V2"), st.text_input("W1-W2")
+        
+        resp = st.text_input("Técnico Responsable")
+        desc = st.text_area("Descripción Inicial")
+        ext = st.text_area("Trabajos Externos")
+        
+        if st.form_submit_button("💾 GUARDAR ALTA"):
+            if t and resp:
+                nueva_fila = {
+                    "Fecha": fecha_hoy.strftime("%d/%m/%Y"), "Tag": t, "Potencia": p, "RPM": r, "Frame": f, "N_Serie": sn,
+                    "Responsable": resp, "Descripcion": desc, "Taller_Externo": ext,
+                    "RT_TU": rt_tu, "RT_TV": rt_tv, "RT_TW": rt_tw, "RB_UV": rb_uv, "RB_VW": rb_vw, "RB_UW": rb_uw,
+                    "RI_U": ri_u, "RI_V": ri_v, "RI_W": ri_w
+                }
+                df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
+                conn.update(data=df_final)
+                st.success(f"✅ Guardado {t}"); st.rerun()
 
 elif modo == "Historial y QR":
-    st.title("🔍 Consulta y Generador de QR")
+    st.title("🔍 Historial y QR")
     if not df_completo.empty:
         lista_tags = [""] + sorted(list(df_completo['Tag'].unique()))
-        buscado = st.selectbox("Seleccioná Motor:", lista_tags)
-        
+        buscado = st.selectbox("Seleccioná un Motor:", lista_tags)
         if buscado:
-            # Guardamos en memoria para las otras pestañas
-            st.session_state.tag_fijo = buscado
-            info = df_completo[df_completo['Tag'] == buscado].iloc[-1]
-            st.session_state.serie_fija = info.get('N_Serie', '')
-
-            st.header(f"🚜 Equipo: {buscado}")
+            st.session_state.tag_fijo = buscado # Guardamos para las otras pestañas
             
-            # --- GENERADOR DE QR (Sin librerías fallas) ---
+            # --- GENERADOR DE QR (MÉTODO SEGURO) ---
             url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}"
-            qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(url_app)}"
+            qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(url_app)}"
             
-            c1, c2 = st.columns([1, 3])
-            c1.image(qr_url, caption="QR del Motor")
-            c2.write("Indique al personal que escanee este código para ver el historial.")
+            col_qr, col_info = st.columns([1, 3])
+            col_qr.image(qr_api, caption=f"QR {buscado}")
+            col_info.subheader(f"🚜 Equipo: {buscado}")
             
-            # --- HISTORIAL ---
-            st.subheader("📜 Historial")
-            hist = df_completo[df_completo['Tag'] == buscado].copy()
-            for idx, fila in hist.iterrows():
+            # --- LISTADO HISTÓRICO ---
+            hist_m = df_completo[df_completo['Tag'] == buscado].copy()
+            for idx, fila in hist_m.iterrows():
                 with st.expander(f"📅 {fila['Fecha']} - {fila['Responsable']}"):
+                    st.write(f"**Detalle:** {fila['Descripcion']}")
                     pdf_b = generar_pdf_reporte(fila.to_dict(), buscado)
-                    st.download_button("📥 PDF", pdf_b, f"Informe_{idx}.pdf", key=f"h_{idx}")
+                    st.download_button("📄 Bajar PDF", pdf_b, f"Informe_{idx}.pdf", key=f"h_{idx}")
 
 elif modo == "Relubricacion":
-    st.title("🛢️ Registro de Engrase")
-    # El campo se autocompleta si buscaste antes en el Historial
+    st.title("🛢️ Gestión de Relubricación")
     with st.form("relub"):
-        tag_r = st.text_input("TAG MOTOR", value=st.session_state.tag_fijo).upper()
-        gr_la = st.text_input("Gramos LA")
-        gr_loa = st.text_input("Gramos LOA")
-        if st.form_submit_button("💾 GUARDAR"):
-            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": tag_r, "Descripcion": f"ENGRASE LA:{gr_la}g LOA:{gr_loa}g"}
-            df_f = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-            conn.update(data=df_f)
-            st.success("Registrado")
+        t_r = st.text_input("TAG DEL MOTOR", value=st.session_state.tag_fijo).upper()
+        sn_r = st.text_input("N° de Serie")
+        resp_r = st.text_input("Responsable")
+        c1, c2 = st.columns(2)
+        rod_la = c1.text_input("Rodamiento LA")
+        gr_la = c1.text_input("Gramos LA")
+        rod_loa = c2.text_input("Rodamiento LOA")
+        gr_loa = c2.text_input("Gramos LOA")
+        grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+        obs = st.text_area("Observaciones")
+        
+        if st.form_submit_button("💾 GUARDAR ENGRASE"):
+            nueva = {
+                "Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t_r, "N_Serie": sn_r, "Responsable": resp_r,
+                "Descripcion": f"RELUBRICACIÓN: LA: {rod_la} ({gr_la}g) - LOA: {rod_loa} ({gr_loa}g)",
+                "Taller_Externo": f"Grasa: {grasa}. {obs}"
+            }
+            df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+            conn.update(data=df_final)
+            st.success("✅ Guardado")
 
 elif modo == "Mediciones de Campo":
-    st.title("⚡ Megado de Campo")
+    st.title("⚡ Mediciones de Campo")
     with st.form("campo"):
-        tag_c = st.text_input("TAG MOTOR", value=st.session_state.tag_fijo).upper()
-        res_m = st.text_input("Resultado MΩ")
-        if st.form_submit_button("💾 GUARDAR"):
-            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": tag_c, "Descripcion": f"MEGADO: {res_m} MΩ"}
-            df_f = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-            conn.update(data=df_f)
-            st.success("Registrado")
+        t_c = st.text_input("TAG MOTOR", value=st.session_state.tag_fijo).upper()
+        sn_c = st.text_input("N° SERIE")
+        resp_c = st.text_input("Técnico")
+        volt = st.selectbox("Voltaje", ["500V", "1000V", "2500V"])
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("### 🟢 Motor")
+            rt_tu, rt_tv, rt_tw = st.text_input("T-U "), st.text_input("T-V "), st.text_input("T-W ")
+        with col2:
+            st.markdown("### 🔵 Línea")
+            rl1, rl2, rl3 = st.text_input("T-L1"), st.text_input("T-L2"), st.text_input("T-L3")
+        
+        if st.form_submit_button("💾 GUARDAR MEGADO"):
+            detalle = f"MEGADO {volt}. Mot:[T:{rt_tu}/{rt_tv}/{rt_tw}] - Lin:[T:{rl1}/{rl2}/{rl3}]"
+            nueva = {
+                "Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t_c, "N_Serie": sn_c, "Responsable": resp_c,
+                "Descripcion": detalle, "Taller_Externo": "Medición en campo"
+            }
+            df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+            conn.update(data=df_final)
+            st.success("✅ Guardado")
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
