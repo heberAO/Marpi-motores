@@ -262,10 +262,11 @@ elif modo == "Mediciones de Campo":
             # LIMPIEZA DE CAMPOS
             st.session_state.tag_fijo = ""
             st.success("✅ Medición guardada")
-            st.rerun())
+            st.rerun()
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
