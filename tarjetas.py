@@ -166,52 +166,86 @@ elif modo == "Historial y QR":
                         st.download_button("📄 Bajar PDF", pdf_b, f"Informe_{idx}.pdf", key=f"h_{idx}")
 
 elif modo == "Relubricacion":
-    st.title("🛢️ Cargar Nueva Lubricación")
+    st.title("🛢️ Gestión de Relubricación Detallada")
     with st.form("relub"):
         t_r = st.text_input("TAG DEL MOTOR", value=st.session_state.tag_fijo).upper()
-        resp_r = st.text_input("Técnico")
+        sn_r = st.text_input("N° de Serie")
+        resp_r = st.text_input("Responsable de Tarea")
+        
+        st.subheader("🔧 Datos de Rodamientos")
         c1, c2 = st.columns(2)
-        grasa = st.selectbox("Grasa Utilizada", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
-        cant = st.text_input("Cantidad Total (Gramos)")
-        obs = st.text_area("Puntos lubricados / Observaciones")
+        with c1:
+            rod_la = st.text_input("Rodamiento LA")
+            gr_la = st.text_input("Gramos LA")
+        with c2:
+            rod_loa = st.text_input("Rodamiento LOA")
+            gr_loa = st.text_input("Gramos LOA")
+            
+        grasa = st.selectbox("Tipo de Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+        obs = st.text_area("Observaciones del estado de rodamientos")
         
         if st.form_submit_button("💾 GUARDAR LUBRICACIÓN"):
             if t_r and resp_r:
                 nueva = {
-                    "Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t_r, "Responsable": resp_r,
-                    "Descripcion": f"LUBRICACIÓN: {grasa} - Cantidad: {cant}g",
-                    "Taller_Externo": obs
+                    "Fecha": date.today().strftime("%d/%m/%Y"), 
+                    "Tag": t_r, 
+                    "N_Serie": sn_r,
+                    "Responsable": resp_r,
+                    "Descripcion": f"RELUBRICACIÓN: LA: {rod_la} ({gr_la}g) / LOA: {rod_loa} ({gr_loa}g)",
+                    "Taller_Externo": f"Grasa: {grasa}. {obs}",
+                    # Mantenemos tus columnas de datos técnicos si las necesitas llenar aquí también:
+                    "Rodamiento_LA": rod_la,
+                    "Gramos_LA": gr_la,
+                    "Rodamiento_LOA": rod_loa,
+                    "Gramos_LOA": gr_loa
                 }
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
-                st.success("✅ Lubricación guardada"); st.rerun()
+                st.success("✅ Datos de lubricación guardados correctamente")
+                st.rerun()
 
 elif modo == "Mediciones de Campo":
-    st.title("⚡ Cargar Nuevo Megado (Campo)")
+    st.title("⚡ Mediciones de Campo Completas")
     with st.form("campo"):
         t_c = st.text_input("TAG MOTOR", value=st.session_state.tag_fijo).upper()
+        sn_c = st.text_input("N° SERIE")
         resp_c = st.text_input("Técnico")
-        volt = st.selectbox("Voltaje aplicado", ["500V", "1000V", "2500V"])
+        volt = st.selectbox("Voltaje de Prueba", ["500V", "1000V", "2500V"])
         
-        st.markdown("### 🟢 Valores de Aislación")
-        c1, c2, c3 = st.columns(3)
-        m_u = c1.text_input("Fase U (MΩ)")
-        m_v = c2.text_input("Fase V (MΩ)")
-        m_w = c3.text_input("Fase W (MΩ)")
-        
-        if st.form_submit_button("💾 GUARDAR MEDICIÓN"):
+        st.subheader("📊 Valores de Resistencia de Aislación")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Aislación Motor (MΩ)**")
+            ri_u = st.text_input("U1-U2 / Masa")
+            ri_v = st.text_input("V1-V2 / Masa")
+            ri_w = st.text_input("W1-W2 / Masa")
+        with col2:
+            st.markdown("**Continuidad Bobinados (Ω)**")
+            rt_tu = st.text_input("T-U (Bobinado)")
+            rt_tv = st.text_input("T-V (Bobinado)")
+            rt_tw = st.text_input("T-W (Bobinado)")
+            
+        if st.form_submit_button("💾 GUARDAR MEDICIONES"):
             if t_c and resp_c:
-                detalle = f"MEGADO {volt}. Lecturas: U:{m_u} / V:{m_v} / W:{m_w}"
                 nueva = {
-                    "Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t_c, "Responsable": resp_c,
-                    "Descripcion": detalle, "Taller_Externo": "Medición de aislación en campo"
+                    "Fecha": date.today().strftime("%d/%m/%Y"), 
+                    "Tag": t_c, 
+                    "N_Serie": sn_c,
+                    "Responsable": resp_c,
+                    "Descripcion": f"MEGADO {volt}. RI: U:{ri_u} V:{ri_v} W:{ri_w}",
+                    "Taller_Externo": f"Continuidad: {rt_tu}/{rt_tv}/{rt_tw}",
+                    # Mapeo a tus columnas originales de la planilla
+                    "RI_U": ri_u, "RI_V": ri_v, "RI_W": ri_w,
+                    "RT_TU": rt_tu, "RT_TV": rt_tv, "RT_TW": rt_tw
                 }
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
-                st.success("✅ Megado guardado"); st.rerun()
+                st.success("✅ Mediciones guardadas")
+                st.rerun()
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
