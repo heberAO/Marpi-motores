@@ -124,7 +124,7 @@ if modo == "Nuevo Registro":
             else:
                 st.warning("Por favor, completa el TAG y el Responsable.")
                 
-    elif modo == "Historial y QR":
+elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
@@ -281,6 +281,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
