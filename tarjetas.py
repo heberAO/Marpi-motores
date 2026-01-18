@@ -100,17 +100,17 @@ if modo == "Nuevo Registro":
         f = col4.text_input("Carcasa")
         sn = col5.text_input("N° de Serie")
         
-        st.subheader("🔍 Mediciones Iniciales")
+        st.subheader("🔍 Mediciones Iniciales / Reparación")
         m1, m2, m3 = st.columns(3)
         with m1: rt_tu, rt_tv, rt_tw = st.text_input("T-U"), st.text_input("T-V"), st.text_input("T-W")
         with m2: rb_uv, rb_vw, rb_uw = st.text_input("U-V"), st.text_input("V-W"), st.text_input("U-W")
         with m3: ri_u, ri_v, ri_w = st.text_input("U1-U2"), st.text_input("V1-V2"), st.text_input("W1-W2")
         
         resp = st.text_input("Técnico Responsable")
-        desc = st.text_area("Descripción Inicial")
-        ext = st.text_area("Trabajos Externos")
+        desc = st.text_area("Descripción de la Reparación/Trabajo")
+        ext = st.text_area("Observaciones Finales")
         
-        if st.form_submit_button("💾 GUARDAR ALTA"):
+        if st.form_submit_button("💾 GUARDAR REGISTRO"):
             if t and resp:
                 nueva_fila = {
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"), "Tag": t, "Potencia": p, "RPM": r, "Frame": f, "N_Serie": sn,
@@ -120,118 +120,99 @@ if modo == "Nuevo Registro":
                 }
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_final)
-                st.success(f"✅ Guardado {t}"); st.rerun()
+                st.success(f"✅ Registro Guardado para {t}"); st.rerun()
+            else:
+                st.warning("Por favor, completa el TAG y el Responsable.")
 
 elif modo == "Historial y QR":
-    st.title("🔍 Historial y QR")
-    
-    # 1. DETECCIÓN AUTOMÁTICA DE PARÁMETROS (Para el escaneo)
-    query_tag = st.query_params.get("tag", "")
-
+    st.title("🔍 Historial por TAG o N° de Serie")
     if not df_completo.empty:
-        # Limpieza de lista de TAGs para evitar errores de ordenamiento
-        tags_sucios = df_completo['Tag'].dropna().unique()
-        lista_tags = [""] + sorted([str(t).strip().upper() for t in tags_sucios if str(t).strip() != ""])
+        # Buscador dual: TAG + N_Serie
+        df_completo['Busqueda'] = df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
+        lista_busqueda = [""] + sorted(list(df_completo['Busqueda'].unique()))
         
-        # Si el QR envió un TAG, lo buscamos en la lista
-        indice_defecto = 0
-        if query_tag and query_tag in lista_tags:
-            indice_defecto = lista_tags.index(query_tag)
-            st.success(f"Motor detectado por QR: {query_tag}")
-        
-        # El selectbox ahora se posiciona solo si viene del QR
-        buscado = st.selectbox("Seleccioná un Motor:", lista_tags, index=indice_defecto)
-        
-        if buscado:
-            st.session_state.tag_fijo = buscado 
-            
-            # --- GENERADOR DE QR ---
-            url_real = "https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/" 
-            url_final = f"{url_real}?tag={urllib.parse.quote(buscado)}"
-            
-            qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={urllib.parse.quote(url_final)}"
-            
-            col_qr, col_info = st.columns([1, 2])
-            with col_qr:
-                st.image(qr_api, caption=f"QR de {buscado}")
-            with col_info:
-                st.subheader(f"🚜 Equipo: {buscado}")
-                st.info("Al escanear este código con un celular, se abrirá directamente el historial de este motor.")
-                st.download_button("📥 Descargar QR", qr_api, file_name=f"QR_{buscado}.png")
-            
-            st.divider()
+        # Si venimos de QR
+        indice_qr = 0
+        if qr_tag:
+            # Buscamos si el qr_tag coincide con algún motor
+            for i, item in enumerate(lista_busqueda):
+                if qr_tag in item:
+                    indice_qr = i
+                    break
 
-            # --- LISTADO HISTÓRICO ---
+        seleccion = st.selectbox("Buscar por TAG o N° de Serie:", lista_busqueda, index=indice_qr)
+        
+        if seleccion:
+            # Extraemos el TAG puro de la selección
+            buscado = seleccion.split(" | ")[0]
+            st.session_state.tag_fijo = buscado
+            
+            # --- QR ---
+            url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}"
+            qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(url_app)}"
+            
+            c1, c2 = st.columns([1,3])
+            c1.image(qr_api, caption=f"QR {buscado}")
+            c2.subheader(f"🚜 Ficha Técnica: {buscado}")
+            
+            # --- HISTORIAL ---
             hist_m = df_completo[df_completo['Tag'] == buscado].copy()
-            # Ordenar fechas (de más reciente a más antigua)
-            hist_m['Fecha_dt'] = pd.to_datetime(hist_m['Fecha'], dayfirst=True, errors='coerce')
-            hist_m = hist_m.sort_values(by='Fecha_dt', ascending=False)
-
             for idx, fila in hist_m.iterrows():
                 with st.expander(f"📅 {fila.get('Fecha','-')} - {fila.get('Responsable','-')}"):
-                    c_txt, c_pdf = st.columns([3, 1])
-                    with c_txt:
-                        st.write(f"**Actividad:** {fila.get('Descripcion','-')}")
-                        st.write(f"**Observaciones:** {fila.get('Taller_Externo','-')}")
-                    with c_pdf:
-                        pdf_b = generar_pdf_reporte(fila.to_dict(), buscado)
-                        if pdf_b:
-                            st.download_button("📄 PDF", pdf_b, f"Informe_{buscado}_{idx}.pdf", key=f"btn_h_{idx}")
-    else:
-        st.warning("La base de datos está vacía.")
+                    st.write(f"**Trabajo:** {fila.get('Descripcion','-')}")
+                    st.write(f"**Observaciones:** {fila.get('Taller_Externo','-')}")
+                    pdf_b = generar_pdf_reporte(fila.to_dict(), buscado)
+                    if pdf_b:
+                        st.download_button("📄 Bajar PDF", pdf_b, f"Informe_{idx}.pdf", key=f"h_{idx}")
 
 elif modo == "Relubricacion":
-    st.title("🛢️ Gestión de Relubricación")
+    st.title("🛢️ Cargar Nueva Lubricación")
     with st.form("relub"):
         t_r = st.text_input("TAG DEL MOTOR", value=st.session_state.tag_fijo).upper()
-        sn_r = st.text_input("N° de Serie")
-        resp_r = st.text_input("Responsable")
+        resp_r = st.text_input("Técnico")
         c1, c2 = st.columns(2)
-        rod_la = c1.text_input("Rodamiento LA")
-        gr_la = c1.text_input("Gramos LA")
-        rod_loa = c2.text_input("Rodamiento LOA")
-        gr_loa = c2.text_input("Gramos LOA")
-        grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
-        obs = st.text_area("Observaciones")
+        grasa = st.selectbox("Grasa Utilizada", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+        cant = st.text_input("Cantidad Total (Gramos)")
+        obs = st.text_area("Puntos lubricados / Observaciones")
         
-        if st.form_submit_button("💾 GUARDAR ENGRASE"):
-            nueva = {
-                "Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t_r, "N_Serie": sn_r, "Responsable": resp_r,
-                "Descripcion": f"RELUBRICACIÓN: LA: {rod_la} ({gr_la}g) - LOA: {rod_loa} ({gr_loa}g)",
-                "Taller_Externo": f"Grasa: {grasa}. {obs}"
-            }
-            df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-            conn.update(data=df_final)
-            st.success("✅ Guardado")
+        if st.form_submit_button("💾 GUARDAR LUBRICACIÓN"):
+            if t_r and resp_r:
+                nueva = {
+                    "Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t_r, "Responsable": resp_r,
+                    "Descripcion": f"LUBRICACIÓN: {grasa} - Cantidad: {cant}g",
+                    "Taller_Externo": obs
+                }
+                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+                conn.update(data=df_final)
+                st.success("✅ Lubricación guardada"); st.rerun()
 
 elif modo == "Mediciones de Campo":
-    st.title("⚡ Mediciones de Campo")
+    st.title("⚡ Cargar Nuevo Megado (Campo)")
     with st.form("campo"):
         t_c = st.text_input("TAG MOTOR", value=st.session_state.tag_fijo).upper()
-        sn_c = st.text_input("N° SERIE")
         resp_c = st.text_input("Técnico")
-        volt = st.selectbox("Voltaje", ["500V", "1000V", "2500V"])
+        volt = st.selectbox("Voltaje aplicado", ["500V", "1000V", "2500V"])
         
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("### 🟢 Motor")
-            rt_tu, rt_tv, rt_tw = st.text_input("T-U "), st.text_input("T-V "), st.text_input("T-W ")
-        with col2:
-            st.markdown("### 🔵 Línea")
-            rl1, rl2, rl3 = st.text_input("T-L1"), st.text_input("T-L2"), st.text_input("T-L3")
+        st.markdown("### 🟢 Valores de Aislación")
+        c1, c2, c3 = st.columns(3)
+        m_u = c1.text_input("Fase U (MΩ)")
+        m_v = c2.text_input("Fase V (MΩ)")
+        m_w = c3.text_input("Fase W (MΩ)")
         
-        if st.form_submit_button("💾 GUARDAR MEGADO"):
-            detalle = f"MEGADO {volt}. Mot:[T:{rt_tu}/{rt_tv}/{rt_tw}] - Lin:[T:{rl1}/{rl2}/{rl3}]"
-            nueva = {
-                "Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t_c, "N_Serie": sn_c, "Responsable": resp_c,
-                "Descripcion": detalle, "Taller_Externo": "Medición en campo"
-            }
-            df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-            conn.update(data=df_final)
-            st.success("✅ Guardado")
+        if st.form_submit_button("💾 GUARDAR MEDICIÓN"):
+            if t_c and resp_c:
+                detalle = f"MEGADO {volt}. Lecturas: U:{m_u} / V:{m_v} / W:{m_w}"
+                nueva = {
+                    "Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t_c, "Responsable": resp_c,
+                    "Descripcion": detalle, "Taller_Externo": "Medición de aislación en campo"
+                }
+                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+                conn.update(data=df_final)
+                st.success("✅ Megado guardado"); st.rerun()
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
