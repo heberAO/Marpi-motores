@@ -234,6 +234,15 @@ elif modo == "Relubricacion":
             st.rerun()
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
+    # Aseguramos que el contador exista
+    if "cnt_meg" not in st.session_state:
+        st.session_state.cnt_meg = 0
+    
+    # Función para limpiar después de guardar
+    def limpiar_mediciones():
+        st.session_state.tag_fijo = ""
+        st.session_state.cnt_meg += 1
+        
     tag_inicial = st.session_state.get('tag_fijo', '')
     
     with st.form("form_megado_completo"):
@@ -303,6 +312,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
