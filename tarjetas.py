@@ -166,68 +166,74 @@ if modo == "Nuevo Registro":
                 st.error("⚠️ Tag y Técnico son obligatorios.")
 
 elif modo == "Historial y QR":
-    st.title("🔍 Hoja de Vida del Motor")
-    id_ver = st.text_input("ESCRIBIR TAG O SERIE:", value=query_tag).strip().upper()
+    st.title("🔍 Consulta de Motor y QR")
+    
+    # 1. Buscador por TAG para activar la vista
+    motor_buscado = st.selectbox("Seleccioná un Motor:", [""] + list(df_motores['Tag'].unique()))
+    
+    id_ver = None
+    if motor_buscado != "":
+        id_ver = df_motores[df_motores['Tag'] == motor_buscado]['ID'].values[0]
 
     if id_ver:
-        # 1. Filtramos los datos del motor (La "Ficha Técnica")
+        # Buscamos la fila del motor en la base de datos de 'Alta'
+        # IMPORTANTE: Asegurate que tu dataframe de motores se llame 'df_motores'
         fijos = df_motores[df_motores['ID'] == id_ver].iloc[0]
         tag_seleccionado = fijos['Tag']
         
         st.header(f"🚜 Motor: {tag_seleccionado}")
         
-        # Mostramos la ficha técnica rápida
+        # Ficha técnica rápida
         c1, c2, c3 = st.columns(3)
-        c1.metric("Potencia", fijos['Potencia'])
-        c2.metric("RPM", fijos['RPM'])
-        c3.metric("Ubicación", fijos['Ubicacion'])
+        c1.metric("Potencia", fijos.get('Potencia', 'N/A'))
+        c2.metric("RPM", fijos.get('RPM', 'N/A'))
+        c3.metric("Ubicación", fijos.get('Ubicacion', 'N/A'))
 
         st.divider()
 
-        # 2. BUSCAMOS EL HISTORIAL DE ESTE MOTOR
+        # 2. BUSCAMOS EL HISTORIAL (En el archivo de movimientos)
         st.subheader("📜 Historial de Intervenciones")
         
-        # Filtramos en el df_completo (donde están los megados y engrases)
+        # Filtramos en df_completo usando el TAG
         historial_motor = df_completo[df_completo['Tag'] == tag_seleccionado].copy()
 
         if not historial_motor.empty:
-            # Ordenamos para que lo más nuevo salga arriba
+            # Ordenamos por fecha
             historial_motor['Fecha_DT'] = pd.to_datetime(historial_motor['Fecha'], dayfirst=True, errors='coerce')
             historial_motor = historial_motor.sort_values(by='Fecha_DT', ascending=False)
 
-            # --- AQUÍ EMPIEZA EL BUCLE PARA LOS PDF ---
             for index, fila in historial_motor.iterrows():
                 with st.container():
                     col_info, col_pdf = st.columns([3, 1])
                     
                     with col_info:
-                        # Armamos un título lindo según lo que se hizo
-                        es_megado = "MEGADO" in str(fila['Descripcion']).upper()
+                        desc_str = str(fila['Descripcion']).upper()
+                        es_megado = "MEGADO" in desc_str
                         icono = "⚡" if es_megado else "⚖️"
                         tipo_rep = "Megado en Campo" if es_megado else "Relubricación"
                         
                         st.markdown(f"**{icono} {tipo_rep}**")
                         st.write(f"📅 {fila['Fecha']} | 👤 {fila['Responsable']}")
-                        st.caption(f"Detalle: {fila['Descripcion'][:100]}...") # Muestra un resumen
+                        st.caption(f"Detalle: {fila['Descripcion']}")
                     
                     with col_pdf:
-                        # Preparamos los datos para el PDF (pasamos la fila completa como diccionario)
-                        datos_para_pdf = fila.to_dict()
-                        # IMPORTANTE: Le agregamos el N_Serie que viene de la ficha del motor
-                        datos_para_pdf['N_Serie'] = fijos.get('N_Serie', 'N/A') 
+                        # Preparamos datos para el PDF
+                        datos_pdf = fila.to_dict()
+                        # Agregamos la serie desde la ficha técnica para que el PDF salga completo
+                        datos_pdf['N_Serie'] = fijos.get('N_Serie', 'N/A')
                         
-                        pdf_bytes = generar_pdf_mantenimiento(tipo_rep, datos_para_pdf)
+                        pdf_bytes = generar_pdf_mantenimiento(tipo_rep, datos_pdf)
                         
                         st.download_button(
                             label="PDF",
                             data=pdf_bytes,
                             file_name=f"Reporte_{tag_seleccionado}_{fila['Fecha']}.pdf",
                             mime="application/pdf",
-                            key=f"btn_hist_{index}" # Key única para que no falle
+                            key=f"btn_qrhist_{index}"
                         )
-                st.write("---")
+                st.divider()
         else:
-            st.info("Este motor no tiene intervenciones registradas todavía.")
+            st.info("No hay registros de mantenimiento para este equipo.")
 
 elif modo == "Relubricacion":
     # PASO A: El limpiador debe estar aquí, bien pegado al borde del 'elif'
@@ -451,6 +457,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
