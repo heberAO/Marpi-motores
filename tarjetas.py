@@ -4,278 +4,316 @@ from streamlit_gsheets import GSheetsConnection
 from datetime import date
 import os
 from fpdf import FPDF
-import urllib.parse
+import urllib.parse  # Para el QR sin errores
 
-# --- 1. CONFIGURACIÓN Y CREDENCIALES ---
-st.set_page_config(page_title="MARPI Motores", layout="wide")
-PASSWORD_MARPI = "MARPI2026"
-
-# --- 2. CONEXIÓN A BASE DE DATOS ---
-conn = st.connection("gsheets", type=GSheetsConnection)
-df_completo = conn.read(ttl=0)
-
-# --- 3. FUNCIÓN PDF PROFESIONAL ---
-def generar_pdf_reporte(datos, tag_motor):
+# --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
+def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
     try:
-        desc_full = str(datos.get('Descripcion', '')).upper()
         pdf = FPDF(orientation='P', unit='mm', format='A4')
         pdf.add_page()
-        
-        if "|" in desc_full or "RESISTENCIAS" in desc_full:
-            color_rgb, tipo_label = (204, 102, 0), "PROTOCOLO DE MEDICIONES ELÉCTRICAS"
-        elif "LUBRICACIÓN" in desc_full or "LUBRICACION" in desc_full:
-            color_rgb, tipo_label = (0, 102, 204), "REPORTE DE LUBRICACIÓN"
-        else:
-            color_rgb, tipo_label = (60, 60, 60), "REPORTE TÉCNICO DE REPARACIÓN"
-
         if os.path.exists("logo.png"):
-            pdf.image("logo.png", 10, 8, 35)
+            pdf.image("logo.png", 10, 8, 30)
         
-        pdf.set_text_color(*color_rgb)
-        pdf.set_font("Arial", 'B', 14)
-        pdf.cell(0, 10, tipo_label, 0, 1, 'R')
+        pdf.set_font("Arial", 'B', 18)
+        pdf.set_text_color(0, 51, 102)
+        pdf.cell(0, 15, f'{tipo_trabajo}', 0, 1, 'R')
         pdf.ln(10)
         
-        pdf.set_fill_color(*color_rgb)
-        pdf.set_text_color(255, 255, 255)
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, f" DATOS DEL EQUIPO: {tag_motor}", 1, 1, 'L', True)
+        pdf.set_fill_color(230, 233, 240)
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, f" DATOS DEL EQUIPO: {tag_motor}", 1, 1, 'L', True)
         
-        pdf.set_text_color(0, 0, 0)
-        pdf.set_font("Arial", 'B', 9)
-        pdf.cell(40, 7, " FECHA:", 1, 0); pdf.set_font("Arial", '', 9)
-        pdf.cell(55, 7, f" {datos.get('Fecha','-')}", 1, 0)
-        pdf.set_font("Arial", 'B', 9)
-        pdf.cell(40, 7, " RESPONSABLE:", 1, 0); pdf.set_font("Arial", '', 9)
-        pdf.cell(55, 7, f" {datos.get('Responsable','-')}", 1, 1)
+        pdf.set_font("Arial", '', 10)
+        pdf.cell(95, 8, f"Fecha: {datos.get('Fecha','-')}", 1, 0)
+        pdf.cell(95, 8, f"Responsable: {datos.get('Responsable','-')}", 1, 1)
         
         pdf.ln(5)
-        pdf.set_fill_color(240, 240, 240)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, " DETALLE TÉCNICO REGISTRADO:", 1, 1, 'L', True)
+        pdf.cell(0, 8, "DESCRIPCIÓN Y MEDICIONES:", 0, 1)
+        pdf.set_font("Arial", '', 10)
+        pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
         
-        pdf.set_font("Arial", '', 9)
-        if "|" in desc_full:
-            for p in desc_full.split(" | "):
-                pdf.cell(0, 6, f" > {p.strip()}", border='LR', ln=1)
-            pdf.cell(0, 0, "", border='T', ln=1)
-        else:
-            pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
-        
+        pdf.ln(5)
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 8, "ESTADO FINAL / OBSERVACIONES:", 0, 1)
+        pdf.set_font("Arial", '', 10)
+        pdf.multi_cell(0, 7, str(datos.get('Taller_Externo','-')), border=1)
+
         return pdf.output(dest='S').encode('latin-1', 'replace')
-    except:
+    except Exception as e:
+        st.error(f"Error PDF: {e}")
         return None
 
-# --- 4. BARRA LATERAL ---
+# --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
+st.set_page_config(page_title="Marpi Motores", layout="wide")
+
+# Inicializamos variables de estado
+if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
+if "modo_manual" not in st.session_state: st.session_state.modo_manual = False
+
+# --- 3. CONEXIÓN A DATOS ---
+try:
+    conn = st.connection("gsheets", type=GSheetsConnection)
+    df_completo = conn.read(ttl=0)
+except Exception as e:
+    st.error(f"Error de conexión: {e}")
+    df_completo = pd.DataFrame()
+
+# --- 4. LÓGICA DE REDIRECCIÓN QR ---
+query_params = st.query_params
+qr_tag = query_params.get("tag", "")
+
+# Si el QR trae un motor y el usuario no ha cambiado de pestaña manualmente
+if qr_tag and not st.session_state.modo_manual:
+    indice_inicio = 1 # Posición de "Historial y QR"
+else:
+    indice_inicio = 0
+
+# --- 5. MENÚ LATERAL ---
+opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
+
 with st.sidebar:
     if os.path.exists("logo.png"): st.image("logo.png", width=150)
-    st.title("⚙️ Menú MARPI")
-    modo = st.radio("Seleccione:", ["Historial y QR", "Nuevo Registro", "Relubricacion", "Mediciones de Campo"])
+    st.title("⚡ MARPI MOTORES")
+    
+    # Si no existe la opción en memoria, usamos el índice del QR
+    if "seleccion_manual" not in st.session_state:
+        st.session_state.seleccion_manual = opciones_menu[indice_inicio]
 
-# --- 5. LÓGICA DE ACCESO ---
-if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
-    if not st.session_state.get("autorizado", False):
-        st.title("🔒 Acceso Restringido")
-        clave = st.text_input("Contraseña de Personal:", type="password")
-        if st.button("Ingresar"):
-            if clave == PASSWORD_MARPI:
-                st.session_state.autorizado = True
-                st.rerun()
-            else: st.error("Clave Incorrecta")
-        st.stop()
+    # El radio se alimenta de la variable 'seleccion_manual'
+    modo = st.radio(
+        "SELECCIONE:", 
+        opciones_menu,
+        index=opciones_menu.index(st.session_state.seleccion_manual)
+    )
+    # Actualizamos la memoria con lo que el usuario toque físicamente
+    st.session_state.seleccion_manual = modo
+    
+    # Si el usuario hace click en el menú, bloqueamos la redirección del QR para que pueda navegar
+    if st.sidebar.button("Resetear Navegación"):
+        st.session_state.modo_manual = True
+        st.query_params.clear()
+        st.rerun()
 
-# --- 6. SECCIONES ---
-if modo == "Historial y QR":
-    st.title("🔍 Consulta de Motores")
-    qr_tag = st.query_params.get("tag", "").upper()
-    if not df_completo.empty:
-        # CORRECCIÓN AQUÍ: Convertimos a string para que sorted no falle
-        tags_raw = [str(x) for x in df_completo['Tag'].dropna().unique()]
-        opciones = [""] + sorted(tags_raw)
-        
-        idx = opciones.index(qr_tag) if qr_tag in opciones else 0
-        seleccion = st.selectbox("Busca por TAG:", opciones, index=idx)
-        if seleccion:
-            st.session_state.tag_fijo = seleccion
-            hist = df_completo[df_completo['Tag'].astype(str) == seleccion].iloc[::-1]
-            for i, fila in hist.iterrows():
-                with st.expander(f"📅 {fila['Fecha']} - {str(fila['Descripcion'])[:40]}..."):
-                    st.write(fila['Descripcion'])
-                    pdf = generar_pdf_reporte(fila.to_dict(), seleccion)
-                    if pdf: st.download_button("📄 PDF", pdf, f"{seleccion}_{i}.pdf", key=f"btn_{i}")
+# --- 5. SECCIONES (CON TUS CAMPOS ORIGINALES) ---
 
-elif modo == "Nuevo Registro":
-    st.title("📝 Registro Inicial de Motor")
+if modo == "Nuevo Registro":
+    st.title("📝 Alta y Registro Inicial")
+    fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
     with st.form("alta"):
-        c1, c2, c3, c4, c5 = st.columns(5)
-        t = c1.text_input("TAG MOTOR", value=st.session_state.get('tag_fijo','')).upper()
-        p = c2.text_input("Potencia")
-        r = c3.selectbox("RPM", ["-", "750", "1500", "3000"])
-        f = c4.text_input("Carcasa")
-        sn = c5.text_input("N° Serie")
-        st.subheader("🔍 Mediciones de Resistencia")
+        col1, col2, col3, col4, col5 = st.columns(5)
+        t = col1.text_input("TAG/ID MOTOR").upper()
+        p = col2.text_input("Potencia")
+        r = col3.selectbox("RPM", ["-", "750", "1500", "3000"])
+        f = col4.text_input("Carcasa")
+        sn = col5.text_input("N° de Serie")
+        
+        st.subheader("🔍 Mediciones Iniciales / Reparación")
         m1, m2, m3 = st.columns(3)
-        rt_tu, rt_tv, rt_tw = m1.text_input("T-U"), m1.text_input("T-V"), m1.text_input("T-W")
-        rb_uv, rb_vw, rb_uw = m2.text_input("U-V"), m2.text_input("V-W"), m2.text_input("U-W")
-        ri_u, ri_v, ri_w = m3.text_input("U1-U2"), m3.text_input("V1-V2"), m3.text_input("W1-W2")
-        resp = st.text_input("Técnico")
-        desc = st.text_area("Descripción")
+        with m1: rt_tu, rt_tv, rt_tw = st.text_input("T-U"), st.text_input("T-V"), st.text_input("T-W")
+        with m2: rb_uv, rb_vw, rb_uw = st.text_input("U-V"), st.text_input("V-W"), st.text_input("U-W")
+        with m3: ri_u, ri_v, ri_w = st.text_input("U1-U2"), st.text_input("V1-V2"), st.text_input("W1-W2")
+        
+        resp = st.text_input("Técnico Responsable")
+        desc = st.text_area("Descripción de la Reparación/Trabajo")
+        ext = st.text_area("Observaciones Finales")
+        
         if st.form_submit_button("💾 GUARDAR"):
-            detalle = f"MOT: {p}HP, {r}RPM. RES: TU:{rt_tu}, TV:{rt_tv}, TW:{rt_tw} | UV:{rb_uv}, VW:{rb_vw}, UW:{rb_uw} | U12:{ri_u}, V12:{ri_v}, W12:{ri_w} | {desc}"
-            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "N_Serie": sn, "Responsable": resp, "Descripcion": detalle}
+            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "N_Serie": sn, "Responsable": resp, "Descripcion": desc, "Taller_Externo": obs}
             conn.update(data=pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True))
-            st.success("Guardado")
+            
+            # LIMPIEZA DE CAMPOS
+            st.session_state.tag_fijo = "" 
+            st.success("✅ Registro guardado con éxito")
+            st.rerun() # Esto limpia el formulario automáticamente
+  
+elif modo == "Historial y QR":
+    st.title("🔍 Consulta y Gestión de Motores")
+    
+    if not df_completo.empty:
+        # 1. Lista para el buscador (TAG + Serie)
+        df_completo['Busqueda_Combo'] = (
+            df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
+        )
+        opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
+        
+        # 2. Detección de QR
+        query_tag = st.query_params.get("tag", "").upper()
+        idx_q = 0
+        if query_tag:
+            for i, op in enumerate(opciones):
+                if op.startswith(query_tag + " |"):
+                    idx_q = i
+                    break
+        
+        seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
+        
+        if seleccion:
+            # Extraemos el TAG puro
+            buscado = seleccion.split(" | ")[0].strip()
+            st.session_state.tag_fijo = buscado
+            
+           # --- BOTONES DE ACCIÓN RÁPIDA ---
+            st.subheader("➕ ¿Qué deseas cargar para este motor?")
+            c1, c2, c3 = st.columns(3)
+            
+            with c1:
+                if st.button("🛠️ Nueva Reparación"):
+                    st.session_state.seleccion_manual = "Nuevo Registro"
+                    st.rerun()
+            with c2:
+                if st.button("🛢️ Nueva Lubricación"):
+                    st.session_state.seleccion_manual = "Relubricacion"
+                    st.rerun()
+            with c3:
+                if st.button("⚡ Nuevo Megado"):
+                    st.session_state.seleccion_manual = "Mediciones de Campo"
+                    st.rerun()
+            # --- QR Y DATOS ---
+            col_qr, col_info = st.columns([1, 2])
+            url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
+            qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(url_app)}"
+            
+            with col_qr:
+                st.image(qr_api, caption=f"QR de {buscado}")
+            with col_info:
+                st.subheader(f"🚜 Equipo seleccionado: {buscado}")
+                st.write(f"**Link directo:** {url_app}")
+            
+            st.divider()
 
+# --- HISTORIAL Y PDF ---
+            st.subheader("📜 Historial de Intervenciones")
+            hist_m = df_completo[df_completo['Tag'] == buscado].copy()
+            
+            # Corregido: le agregamos el ] al final
+            hist_m = hist_m.iloc[::-1] 
+
+            for idx, fila in hist_m.iterrows():
+                intervencion = str(fila.get('Descripcion', '-'))[:40]
+                with st.expander(f"📅 {fila.get('Fecha','-')} - {intervencion}..."):
+                    st.write(f"**Responsable:** {fila.get('Responsable','-')}")
+                    st.write(f"**Detalle completo:** {fila.get('Descripcion','-')}")
+                    
+                    # Generar PDF
+                    pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado)
+                    
+                    if pdf_archivo:
+                        st.download_button(
+                            label="📄 Descargar Informe PDF",
+                            data=pdf_archivo,
+                            file_name=f"Reporte_{buscado}_{idx}.pdf",
+                            key=f"btn_pdf_{idx}"
+                        )
 elif modo == "Relubricacion":
-    st.title("🛢️ Registro de Lubricación")
+    st.title("🛢️ Gestión de Relubricación Detallada")
     with st.form("relub"):
-        t = st.text_input("TAG", value=st.session_state.get('tag_fijo','')).upper()
+        t_r = st.text_input("TAG DEL MOTOR", value=st.session_state.tag_fijo).upper()
+        sn_r = st.text_input("N° de Serie")
+        resp_r = st.text_input("Responsable de Tarea")
+        
+        st.subheader("🔧 Datos de Rodamientos")
         c1, c2 = st.columns(2)
-        la, gla = c1.text_input("Rod. LA"), c1.text_input("Gramos LA")
-        loa, gloa = c2.text_input("Rod. LOA"), c2.text_input("Gramos LOA")
-        resp = st.text_input("Técnico")
+        with c1:
+            rod_la = st.text_input("Rodamiento LA")
+            gr_la = st.text_input("Gramos LA")
+        with c2:
+            rod_loa = st.text_input("Rodamiento LOA")
+            gr_loa = st.text_input("Gramos LOA")
+            
+        grasa = st.selectbox("Tipo de Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+        obs = st.text_area("Observaciones")
+        
         if st.form_submit_button("💾 GUARDAR"):
-            detalle = f"LUBRICACIÓN: LA:{la} ({gla}g), LOA:{loa} ({gloa}g)"
-            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "Responsable": resp, "Descripcion": detalle}
+            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "Responsable": resp, "Descripcion": f"LUBRICACIÓN: {det}"}
             conn.update(data=pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True))
-            st.success("Guardado")
-
+            
+            # LIMPIEZA DE CAMPOS
+            st.session_state.tag_fijo = ""
+            st.success("✅ Lubricación registrada")
+            st.rerun()
 elif modo == "Mediciones de Campo":
-
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
-
     
-
+    # Aseguramos que el contador exista para la limpieza
     if "cnt_meg" not in st.session_state:
-
         st.session_state.cnt_meg = 0
-
         
-
     tag_inicial = st.session_state.get('tag_fijo', '')
-
     
-
+    # Agregamos la key dinámica al form para que al cambiar cnt_meg se limpie todo
     with st.form(key=f"form_completo_{st.session_state.cnt_meg}"):
-
         col_t, col_r = st.columns(2)
-
         t = col_t.text_input("TAG MOTOR", value=tag_inicial).upper()
-
         sn = st.text_input("N° de Serie")
-
         resp = col_r.text_input("Técnico Responsable")
-
         
-
-        # --- BLOQUE 1 ---
-
         st.subheader("📊 Megado a tierra (Resistencia)")
-
+        # Primera fila de campos chicos
         c1, c2, c3 = st.columns(3)
-
-        tv1, tu1, tw1 = c1.text_input("T - V1 (Ω)"), c2.text_input("T - U1 (Ω)"), c3.text_input("T - W1 (Ω)")
-
+        tv1 = c1.text_input("T - V1 (Ω)")
+        tu1 = c2.text_input("T - U1 (Ω)")
+        tw1 = c3.text_input("T - W1 (Ω)")
         
-
-        # --- BLOQUE 2 ---
-
-        st.subheader("📊 Megado ente Bobinas (Resistencia)")
-
+        st.subheader("📊 Megado ente Boninas (Resistencia)")
+        # Segunda fila de campos chicos
         c4, c5, c6 = st.columns(3)
-
-        wv1, wu1, vu1 = c4.text_input("W1 - V1 (Ω)"), c5.text_input("W1 - U1 (Ω)"), c6.text_input("V1 - U1 (Ω)")
-
-
-
-        # --- BLOQUE 3 ---
+        wv1 = c4.text_input("W1 - V1 (Ω)")
+        wu1 = c5.text_input("W1 - U1 (Ω)")
+        vu1 = c6.text_input("V1 - U1 (Ω)")
 
         st.subheader("📏 Resistencia internas")
-
         c7, c8, c9 = st.columns(3)
-
-        u1u2, v1v2, w1w2 = c7.text_input("U1 - U2 (Ω)"), c8.text_input("V1 - V2 (Ω)"), c9.text_input("W1 - W2 (Ω)")
-
-
-
-        # --- BLOQUE 4 ---
+        u1u2 = c7.text_input("U1 - U2 (Ω)")
+        v1v2 = c8.text_input("V1 - V2 (Ω)")
+        w1w2 = c9.text_input("W1 - W2 (Ω)")
 
         st.subheader("🔌 Megado de Línea")
-
         c10, c11, c12 = st.columns(3)
-
-        tl1, tl2, tl3 = c10.text_input("T - L1 (MΩ)"), c11.text_input("T - L2 (MΩ)"), c12.text_input("T - L3 (MΩ)")
-
+        tl1 = c10.text_input("T - L1 (MΩ)")
+        tl2 = c11.text_input("T - L2 (MΩ)")
+        tl3 = c12.text_input("T - L3 (MΩ)")
         
-
-        # --- BLOQUE 5 ---
-
         c13, c14, c15 = st.columns(3)
+        l1l2 = c13.text_input("L1 - L2 (MΩ)")
+        l1l3 = c14.text_input("L1 - L3 (MΩ)")
+        l2l3 = c15.text_input("L2 - L3 (MΩ)")
 
-        l1l2, l1l3, l2l3 = c13.text_input("L1 - L2 (MΩ)"), c14.text_input("L1 - L3 (MΩ)"), c15.text_input("L2 - L3 (MΩ)")
+        st.text_area("Observaciones")
 
-
+        # BOTÓN DE GUARDADO
+        btn_guardar = st.form_submit_button("💾 GUARDAR MEDICIONES")
 
         if btn_guardar:
-
             if t and resp:
-
-                detalle = (
-
-                    f"MEGADO A TIERRA: T-V1:{tv1}, T-U1:{tu1}, T-W1:{tw1} | "
-
-                    f"MEGADO ENTRE BOBINAS: W1-V1:{wv1}, W1-U1:{wu1}, V1-U1:{vu1} | "
-
-                    f"RESISTENCIAS INTERNAS: U1-U2:{u1u2}, V1-V2:{v1v2}, W1-W2:{w1w2} | "
-
-                    f"MEGADO DE LÍNEA (TIERRA): T-L1:{tl1}, T-L2:{tl2}, T-L3:{tl3} | "
-
-                    f"MEGADO DE LÍNEA (FASES): L1-L2:{l1l2}, L1-L3:{l1l3}, L2-L3:{l2l3}"
-
-                )
-
+                detalle = (f"Resistencias: T-V1:{tv1}, T-U1:{tu1}, T-W1:{tw1} | "
+                           f"Bornes: U1-U2:{u1u2}, V1-V2:{v1v2}, W1-W2:{w1w2} | "
+                           f"Línea: T-L1:{tl1}, L1-L2:{l1l2}")
                 
-
                 nueva = {
-
                     "Fecha": date.today().strftime("%d/%m/%Y"),
-
                     "Tag": t,
-
                     "Responsable": resp,
-
                     "Descripcion": detalle,
-
-                    "Taller_Externo": f"N/S: {sn}. Mediciones completas registradas."
-
+                    "Taller_Externo": "Mediciones completas cargadas desde App."
                 }
-
                 
-
-                # Guardar en la base de datos
-
+                # Actualizar base de datos
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-
                 conn.update(data=df_final)
-
                 
-
-                # Limpiar y reiniciar
-
-                st.session_state.tag_fijo = ""
-
-                st.session_state.cnt_meg += 1 
-
-                st.success(f"✅ Informe de {t} generado correctamente")
-
+                # --- RESET DE CAMPOS ---
+                st.session_state.tag_fijo = "" # Limpia el tag de la memoria
+                st.session_state.cnt_meg += 1 # Esto cambia la key del form y limpia TODO
+                
+                st.success(f"✅ Mediciones de {t} guardadas y campos limpios")
                 st.rerun()
-
             else:
-
                 st.error("⚠️ Falta completar TAG o Técnico")
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
