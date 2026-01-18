@@ -158,21 +158,21 @@ elif modo == "Historial y QR":
             buscado = seleccion.split(" | ")[0].strip()
             st.session_state.tag_fijo = buscado
             
-            # --- BOTONES DE CARGA RÁPIDA ---
+           # --- BOTONES DE ACCIÓN RÁPIDA ---
             st.subheader("➕ ¿Qué deseas cargar para este motor?")
             c1, c2, c3 = st.columns(3)
             
             with c1:
                 if st.button("🛠️ Nueva Reparación"):
-                    st.session_state.menu_principal = "Nuevo Registro"
+                    st.session_state.seleccion_manual = "Nuevo Registro"
                     st.rerun()
             with c2:
                 if st.button("🛢️ Nueva Lubricación"):
-                    st.session_state.menu_principal = "Relubricacion"
+                    st.session_state.seleccion_manual = "Relubricacion"
                     st.rerun()
             with c3:
                 if st.button("⚡ Nuevo Megado"):
-                    st.session_state.menu_principal = "Mediciones de Campo"
+                    st.session_state.seleccion_manual = "Mediciones de Campo"
                     st.rerun()
             # --- QR Y DATOS ---
             col_qr, col_info = st.columns([1, 2])
@@ -290,6 +290,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
