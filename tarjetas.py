@@ -93,33 +93,15 @@ def generar_pdf_reporte(datos, tag_motor):
         
     except Exception as e:
         return None
-# --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
-st.set_page_config(page_title="Marpi Motores", layout="wide")
+# --- 1. BARRA LATERAL (MENÚ) ---
+with st.sidebar:
+    st.image("logo.png", width=150) if os.path.exists("logo.png") else None
+    st.title("⚙️ Menú de Gestión")
+    modo = st.radio("Seleccione una opción:", 
+                    ["Historial y QR", "Nuevo Registro", "Relubricacion", "Mediciones de Campo"],
+                    index=0)
 
-# Inicializamos variables de estado
-if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
-if "modo_manual" not in st.session_state: st.session_state.modo_manual = False
-
-# --- 3. CONEXIÓN A DATOS ---
-try:
-    conn = st.connection("gsheets", type=GSheetsConnection)
-    df_completo = conn.read(ttl=0)
-except Exception as e:
-    st.error(f"Error de conexión: {e}")
-    df_completo = pd.DataFrame()
-
-# --- 4. LÓGICA DE REDIRECCIÓN QR ---
-query_params = st.query_params
-qr_tag = query_params.get("tag", "")
-
-# Si el QR trae un motor y el usuario no ha cambiado de pestaña manualmente
-if qr_tag and not st.session_state.modo_manual:
-    indice_inicio = 1 # Posición de "Historial y QR"
-else:
-    indice_inicio = 0
-
-# --- 5. MENÚ LATERAL ---
-# --- LÓGICA DE PROTECCIÓN (Pon esto justo antes de los IF de los modos) ---
+# --- 2. LÓGICA DE PROTECCIÓN (EL CANDADO) ---
 if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
     if "autorizado" not in st.session_state:
         st.session_state.autorizado = False
@@ -136,26 +118,7 @@ if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
                 st.rerun()
             else:
                 st.error("Contraseña incorrecta")
-        st.stop() # Esto detiene el código si no hay clave
-
-# --- AHORA VIENEN LOS MODOS (Todos alineados a la izquierda, sin espacios extra) ---
-
-if modo == "Historial y QR":
-    st.title("🔍 Consulta y Seguimiento de Equipos")
-    # ... (todo tu código de historial)
-
-elif modo == "Nuevo Registro":
-    st.title("📝 Registro de Reparación")
-    # ... (todo tu código de reparaciones)
-
-elif modo == "Relubricacion":
-    st.title("🛢️ Registro de Lubricación")
-    # ... (todo tu código de lubricación)
-
-elif modo == "Mediciones de Campo":
-    st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
-    # ... (todo tu código de megado)
-
+        st.stop() # DETIENE LA EJECUCIÓN SI NO HAY CLAVE
 # --- 5. SECCIONES (CON TUS CAMPOS ORIGINALES) ---
 if modo == "Nuevo Registro":
     st.title("📝 Alta y Registro Inicial")
@@ -362,6 +325,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
