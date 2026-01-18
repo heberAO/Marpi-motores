@@ -202,8 +202,6 @@ elif modo == "Historial y QR":
                 st.divider()
         else:
             st.info("Sin intervenciones registradas.")
-        else:
-            st.warning("La base de datos de historial está vacía.")
 
 elif modo == "Relubricacion":
     # PASO A: El limpiador debe estar aquí, bien pegado al borde del 'elif'
@@ -427,6 +425,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
