@@ -343,7 +343,7 @@ elif modo == "Mediciones de Campo":
             with c_busc1:
                 busc_tag = st.text_input("🔍 Buscar por TAG:", key="b_tag").strip().upper()
             with c_busc2:
-                busc_resp = st.text_input("👤 Buscar por Técnico:", key="b_resp")
+                busc_resp = st.text_input("👤 Buscar por Responsable:", key="b_resp")
 
             # Aplicar filtros
             if busc_tag:
@@ -370,6 +370,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
