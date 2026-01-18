@@ -8,58 +8,47 @@ import os
 from fpdf import FPDF
 import base64
 
-def generar_pdf_mantenimiento(tipo, datos):
-    pdf = FPDF()
-    pdf.add_page()
-    
-    # Encabezado
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"REPORTE DE {tipo.upper()}", ln=True, align='C')
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "MARPI MOTORES - SERVICIO TÉCNICO", ln=True, align='C')
-    pdf.ln(10)
-    
-    # Datos Principales (usamos .get para que si no existe la columna, no explote)
-    tag = datos.get('Tag', 'N/A')
-    fecha = datos.get('Fecha', 'N/A')
-    serie = datos.get('N_Serie', 'Sin Serie')
-    resp = datos.get('Responsable', 'No especificado')
-    desc = datos.get('Descripcion', 'Sin detalle técnico')
-    obs = datos.get('Taller_Externo', 'Sin observaciones')
+def generar_pdf(datos, tag_motor):
+    try:
+        pdf = FPDF(orientation='P', unit='mm', format='A4')
+        pdf.add_page()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        
+        # Logo (opcional)
+        if os.path.exists("logo.png"):
+            pdf.image("logo.png", 10, 8, 30)
+            
+        pdf.set_font("Arial", 'B', 20)
+        pdf.set_text_color(0, 51, 102)
+        pdf.cell(0, 15, 'INFORME TÉCNICO MARPI', 0, 1, 'R')
+        pdf.ln(10)
+        
+        # Datos del Equipo
+        pdf.set_fill_color(230, 233, 240)
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, f" DETALLES DEL MOTOR: {tag_motor}", 1, 1, 'L', True)
+        
+        pdf.set_font("Arial", '', 10)
+        # Aquí usamos datos.get porque 'datos' ahora será un diccionario de la fila
+        texto_linea1 = f"Fecha: {datos.get('Fecha','-')} | Técnico: {datos.get('Responsable','-')}"
+        pdf.cell(0, 8, texto_linea1, 1, 1)
+        
+        pdf.ln(5)
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 8, "DESCRIPCIÓN DE LA TAREA:", 0, 1)
+        pdf.set_font("Arial", '', 10)
+        pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
+        
+        pdf.ln(5)
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 8, "ESTADO / OBSERVACIONES:", 0, 1)
+        pdf.set_font("Arial", '', 10)
+        pdf.multi_cell(0, 7, str(datos.get('Taller_Externo','-')), border=1)
 
-    # Tabla de datos en el PDF
-    pdf.set_fill_color(230, 230, 230)
-    pdf.set_font("Arial", 'B', 10)
-    pdf.cell(40, 10, "TAG:", 1, 0, 'L', True)
-    pdf.set_font("Arial", '', 10)
-    pdf.cell(55, 10, str(tag), 1, 0)
-    
-    pdf.set_font("Arial", 'B', 10)
-    pdf.cell(40, 10, "SERIE:", 1, 0, 'L', True)
-    pdf.set_font("Arial", '', 10)
-    pdf.cell(55, 10, str(serie), 1, 1)
-
-    pdf.set_font("Arial", 'B', 10)
-    pdf.cell(40, 10, "FECHA:", 1, 0, 'L', True)
-    pdf.set_font("Arial", '', 10)
-    pdf.cell(55, 10, str(fecha), 1, 0)
-    
-    pdf.set_font("Arial", 'B', 10)
-    pdf.cell(40, 10, "TÉCNICO:", 1, 0, 'L', True)
-    pdf.set_font("Arial", '', 10)
-    pdf.cell(55, 10, str(resp), 1, 1)
-    
-    pdf.ln(5)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "Detalle Técnico de la Intervención:", ln=True)
-    pdf.set_font("Arial", '', 10)
-    pdf.multi_cell(0, 7, str(desc), border=1)
-    
-    pdf.ln(5)
-    pdf.set_font("Arial", 'B', 10)
-    pdf.cell(0, 10, f"Estado / Observaciones: {obs}", ln=True)
-
-    return pdf.output(dest='S').encode('latin-1')
+        return pdf.output(dest='S').encode('latin-1', 'replace')
+    except Exception as e:
+        st.error(f"Error en PDF: {e}")
+        return None
 
 # --- 1. CONFIGURACIÓN Y ESTADO ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
@@ -168,75 +157,51 @@ if modo == "Nuevo Registro":
 elif modo == "Historial y QR":
     st.title("🔍 Consulta de Motor y QR")
     
-    # IMPORTANTE: Aquí cambié df_motores por df. Si tu base de datos de motores tiene otro nombre, usalo aquí.
-    # Usamos df que es el nombre estándar que venías usando para la tabla principal.
-    lista_tags = [""] + list(df['Tag'].unique()) if not df.empty else [""]
-    
+    # Usamos df_recepcion que es donde están tus motores registrados
+    if 'df_recepcion' in locals() or 'df_recepcion' in globals():
+        base_motores = df_recepcion
+    else:
+        st.error("No se encontró la base de datos de motores.")
+        st.stop()
+
+    lista_tags = [""] + list(base_motores['Tag'].unique())
     motor_buscado = st.selectbox("Seleccioná un Motor:", lista_tags)
     
-    id_ver = None
     if motor_buscado != "":
-        # Buscamos el ID correspondiente al Tag seleccionado
-        id_ver = df[df['Tag'] == motor_buscado]['ID'].values[0]
-
-    if id_ver:
-        # Aquí también cambiamos df_motores por df
-        fijos = df[df['ID'] == id_ver].iloc[0]
-        tag_seleccionado = fijos['Tag']
+        # Extraemos los datos fijos
+        fijos = base_motores[base_motores['Tag'] == motor_buscado].iloc[0]
         
-        st.header(f"🚜 Motor: {tag_seleccionado}")
+        st.header(f"🚜 Motor: {motor_buscado}")
+        st.write(f"**N° Serie:** {fijos.get('N_Serie','-')} | **Potencia:** {fijos.get('Potencia','-')}")
         
-        # Ficha técnica rápida
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Potencia", fijos.get('Potencia', 'N/A'))
-        c2.metric("RPM", fijos.get('RPM', 'N/A'))
-        c3.metric("Ubicación", fijos.get('Ubicacion', 'N/A'))
-
         st.divider()
-
-        # 2. BUSCAMOS EL HISTORIAL (En df_completo que tiene los movimientos)
         st.subheader("📜 Historial de Intervenciones")
         
-        if not df_completo.empty:
-            historial_motor = df_completo[df_completo['Tag'] == tag_seleccionado].copy()
-
-            if not historial_motor.empty:
-                # Ordenamos por fecha
-                historial_motor['Fecha_DT'] = pd.to_datetime(historial_motor['Fecha'], dayfirst=True, errors='coerce')
-                historial_motor = historial_motor.sort_values(by='Fecha_DT', ascending=False)
-
-                for index, fila in historial_motor.iterrows():
-                    with st.container():
-                        col_info, col_pdf = st.columns([3, 1])
+        # Filtramos en el historial completo
+        hist_motor = df_completo[df_completo['Tag'] == motor_buscado].copy()
+        
+        if not hist_motor.empty:
+            for index, fila in hist_motor.iterrows():
+                with st.container():
+                    col_info, col_pdf = st.columns([4, 1])
+                    with col_info:
+                        st.markdown(f"**📅 {fila['Fecha']}** - {fila['Responsable']}")
+                        st.caption(fila['Descripcion'])
+                    with col_pdf:
+                        # LE PASAMOS LA FILA COMO DICCIONARIO
+                        pdf_bytes = generar_pdf(fila.to_dict(), motor_buscado)
                         
-                        with col_info:
-                            desc_str = str(fila['Descripcion']).upper()
-                            es_megado = "MEGADO" in desc_str
-                            icono = "⚡" if es_megado else "⚖️"
-                            tipo_rep = "Megado en Campo" if es_megado else "Relubricación"
-                            
-                            st.markdown(f"**{icono} {tipo_rep}**")
-                            st.write(f"📅 {fila['Fecha']} | 👤 {fila['Responsable']}")
-                            st.caption(f"Detalle: {fila['Descripcion']}")
-                        
-                        with col_pdf:
-                            datos_pdf = fila.to_dict()
-                            # Agregamos la serie para que el PDF salga completo
-                            datos_pdf['N_Serie'] = fijos.get('N_Serie', 'N/A')
-                            
-                            # Llamamos a la función de PDF que creaste arriba
-                            pdf_bytes = generar_pdf_mantenimiento(tipo_rep, datos_pdf)
-                            
+                        if pdf_bytes:
                             st.download_button(
-                                label="PDF",
+                                label="📄 PDF",
                                 data=pdf_bytes,
-                                file_name=f"Reporte_{tag_seleccionado}_{fila['Fecha']}.pdf",
+                                file_name=f"Reporte_{motor_buscado}_{index}.pdf",
                                 mime="application/pdf",
-                                key=f"btn_qrhist_{index}"
+                                key=f"btn_pdf_qr_{index}"
                             )
-                    st.divider()
-            else:
-                st.info("No hay registros de mantenimiento para este equipo.")
+                st.divider()
+        else:
+            st.info("Sin intervenciones registradas.")
         else:
             st.warning("La base de datos de historial está vacía.")
 
@@ -462,6 +427,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
