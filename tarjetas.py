@@ -141,19 +141,142 @@ elif modo == "Relubricacion":
             st.success("Guardado")
 
 elif modo == "Mediciones de Campo":
-    st.title("⚡ Protocolo de 15 Mediciones")
-    with st.form("megado"):
-        t = st.text_input("TAG MOTOR", value=st.session_state.get('tag_fijo', '')).upper()
-        resp = st.text_input("Técnico")
-        st.subheader("1. Megado a Tierra (Ω)")
-        c1, c2, c3 = st.columns(3); tv1, tu1, tw1 = c1.text_input("T-V1"), c2.text_input("T-U1"), c3.text_input("T-W1")
-        st.subheader("2. Megado entre Bobinas (Ω)")
-        c4, c5, c6 = st.columns(3); wv1, wu1, vu1 = c4.text_input("W1-V1"), c5.text_input("W1-U1"), c6.text_input("V1-U1")
-        st.subheader("3. Resistencias Internas (Ω)")
-        c7, c8, c9 = st.columns(3); u12, v12, w12 = c7.text_input("U1-U2"), c8
+
+    st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
+
+    
+
+    if "cnt_meg" not in st.session_state:
+
+        st.session_state.cnt_meg = 0
+
+        
+
+    tag_inicial = st.session_state.get('tag_fijo', '')
+
+    
+
+    with st.form(key=f"form_completo_{st.session_state.cnt_meg}"):
+
+        col_t, col_r = st.columns(2)
+
+        t = col_t.text_input("TAG MOTOR", value=tag_inicial).upper()
+
+        sn = st.text_input("N° de Serie")
+
+        resp = col_r.text_input("Técnico Responsable")
+
+        
+
+        # --- BLOQUE 1 ---
+
+        st.subheader("📊 Megado a tierra (Resistencia)")
+
+        c1, c2, c3 = st.columns(3)
+
+        tv1, tu1, tw1 = c1.text_input("T - V1 (Ω)"), c2.text_input("T - U1 (Ω)"), c3.text_input("T - W1 (Ω)")
+
+        
+
+        # --- BLOQUE 2 ---
+
+        st.subheader("📊 Megado ente Bobinas (Resistencia)")
+
+        c4, c5, c6 = st.columns(3)
+
+        wv1, wu1, vu1 = c4.text_input("W1 - V1 (Ω)"), c5.text_input("W1 - U1 (Ω)"), c6.text_input("V1 - U1 (Ω)")
+
+
+
+        # --- BLOQUE 3 ---
+
+        st.subheader("📏 Resistencia internas")
+
+        c7, c8, c9 = st.columns(3)
+
+        u1u2, v1v2, w1w2 = c7.text_input("U1 - U2 (Ω)"), c8.text_input("V1 - V2 (Ω)"), c9.text_input("W1 - W2 (Ω)")
+
+
+
+        # --- BLOQUE 4 ---
+
+        st.subheader("🔌 Megado de Línea")
+
+        c10, c11, c12 = st.columns(3)
+
+        tl1, tl2, tl3 = c10.text_input("T - L1 (MΩ)"), c11.text_input("T - L2 (MΩ)"), c12.text_input("T - L3 (MΩ)")
+
+        
+
+        # --- BLOQUE 5 ---
+
+        c13, c14, c15 = st.columns(3)
+
+        l1l2, l1l3, l2l3 = c13.text_input("L1 - L2 (MΩ)"), c14.text_input("L1 - L3 (MΩ)"), c15.text_input("L2 - L3 (MΩ)")
+
+
+
+        if btn_guardar:
+
+            if t and resp:
+
+                detalle = (
+
+                    f"MEGADO A TIERRA: T-V1:{tv1}, T-U1:{tu1}, T-W1:{tw1} | "
+
+                    f"MEGADO ENTRE BOBINAS: W1-V1:{wv1}, W1-U1:{wu1}, V1-U1:{vu1} | "
+
+                    f"RESISTENCIAS INTERNAS: U1-U2:{u1u2}, V1-V2:{v1v2}, W1-W2:{w1w2} | "
+
+                    f"MEGADO DE LÍNEA (TIERRA): T-L1:{tl1}, T-L2:{tl2}, T-L3:{tl3} | "
+
+                    f"MEGADO DE LÍNEA (FASES): L1-L2:{l1l2}, L1-L3:{l1l3}, L2-L3:{l2l3}"
+
+                )
+
+                
+
+                nueva = {
+
+                    "Fecha": date.today().strftime("%d/%m/%Y"),
+
+                    "Tag": t,
+
+                    "Responsable": resp,
+
+                    "Descripcion": detalle,
+
+                    "Taller_Externo": f"N/S: {sn}. Mediciones completas registradas."
+
+                }
+
+                
+
+                # Guardar en la base de datos
+
+                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+
+                conn.update(data=df_final)
+
+                
+
+                # Limpiar y reiniciar
+
+                st.session_state.tag_fijo = ""
+
+                st.session_state.cnt_meg += 1 
+
+                st.success(f"✅ Informe de {t} generado correctamente")
+
+                st.rerun()
+
+            else:
+
+                st.error("⚠️ Falta completar TAG o Técnico")
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
