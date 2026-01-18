@@ -69,16 +69,20 @@ if qr_tag and not st.session_state.modo_manual:
 else:
     indice_inicio = 0
 
-# --- 5. UN SOLO MENÚ LATERAL ---
+# --- 5. MENÚ LATERAL ---
 with st.sidebar:
-    if os.path.exists("logo.png"): 
-        st.image("logo.png", width=150)
+    if os.path.exists("logo.png"): st.image("logo.png", width=150)
     st.title("⚡ MARPI MOTORES")
     
+    # Esta variable controlará en qué pestaña estamos
+    if "opcion_menu" not in st.session_state:
+        st.session_state.opcion_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"][indice_inicio]
+
+    # Creamos el radio vinculado al session_state
     modo = st.radio(
         "SELECCIONE:", 
         ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"],
-        index=indice_inicio
+        key="menu_principal"
     )
     
     # Si el usuario hace click en el menú, bloqueamos la redirección del QR para que pueda navegar
@@ -153,18 +157,19 @@ elif modo == "Historial y QR":
             # --- BOTONES DE CARGA RÁPIDA ---
             st.subheader("➕ ¿Qué deseas cargar para este motor?")
             c1, c2, c3 = st.columns(3)
+            
             with c1:
                 if st.button("🛠️ Nueva Reparación"):
-                    st.warning("Selecciona 'Nuevo Registro' en el menú de la izquierda. El TAG ya está cargado.")
+                    st.session_state.menu_principal = "Nuevo Registro"
+                    st.rerun()
             with c2:
                 if st.button("🛢️ Nueva Lubricación"):
-                    st.warning("Selecciona 'Relubricacion' en el menú de la izquierda. El TAG ya está cargado.")
+                    st.session_state.menu_principal = "Relubricacion"
+                    st.rerun()
             with c3:
                 if st.button("⚡ Nuevo Megado"):
-                    st.warning("Selecciona 'Mediciones de Campo' en el menú de la izquierda. El TAG ya está cargado.")
-
-            st.divider()
-
+                    st.session_state.menu_principal = "Mediciones de Campo"
+                    st.rerun()
             # --- QR Y DATOS ---
             col_qr, col_info = st.columns([1, 2])
             url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
@@ -281,6 +286,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
