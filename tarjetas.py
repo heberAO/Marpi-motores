@@ -101,12 +101,15 @@ if modo == "Nuevo Registro":
 elif modo == "Historial y QR":
     st.title("🔍 Historial y QR")
     if not df_completo.empty:
-        # 1. Limpiamos y preparamos la lista de TAGs (Evita el error de sorted)
-        tags_sucios = df_completo['Tag'].dropna().unique() # Quitamos vacíos
+        # Limpieza de TAGs para evitar errores de ordenamiento
+        tags_sucios = df_completo['Tag'].dropna().unique()
         lista_tags = [""] + sorted([str(t).strip().upper() for t in tags_sucios if str(t).strip() != ""])
         
         buscado = st.selectbox("Seleccioná un Motor:", lista_tags)
-            st.session_state.tag_fijo = buscado # Guardamos para las otras pestañas
+        
+        if buscado:
+            # Línea corregida (alineada con 12 espacios o 3 tabs)
+            st.session_state.tag_fijo = buscado 
             
             # --- GENERADOR DE QR (MÉTODO SEGURO) ---
             url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}"
@@ -119,10 +122,13 @@ elif modo == "Historial y QR":
             # --- LISTADO HISTÓRICO ---
             hist_m = df_completo[df_completo['Tag'] == buscado].copy()
             for idx, fila in hist_m.iterrows():
-                with st.expander(f"📅 {fila['Fecha']} - {fila['Responsable']}"):
-                    st.write(f"**Detalle:** {fila['Descripcion']}")
+                with st.expander(f"📅 {fila.get('Fecha','-')} - {fila.get('Responsable','-')}"):
+                    st.write(f"**Detalle:** {fila.get('Descripcion','-')}")
                     pdf_b = generar_pdf_reporte(fila.to_dict(), buscado)
-                    st.download_button("📄 Bajar PDF", pdf_b, f"Informe_{idx}.pdf", key=f"h_{idx}")
+                    if pdf_b:
+                        st.download_button("📄 Bajar PDF", pdf_b, f"Informe_{idx}.pdf", key=f"h_{idx}")
+    else:
+        st.warning("La base de datos está vacía.")
 
 elif modo == "Relubricacion":
     st.title("🛢️ Gestión de Relubricación")
@@ -176,6 +182,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
