@@ -157,52 +157,70 @@ if modo == "Nuevo Registro":
 elif modo == "Historial y QR":
     st.title("🔍 Consulta de Motor y QR")
     
-    # Usamos df_recepcion que es donde están tus motores registrados
-    if 'df_recepcion' in locals() or 'df_recepcion' in globals():
-        base_motores = df_recepcion
-    else:
-        st.error("No se encontró la base de datos de motores.")
+    # --- PASO 1: RE-CARGAR LAS BASES PARA EVITAR EL ERROR ---
+    try:
+        # Aquí usamos los nombres de las hojas de tu Google Sheets
+        # Asegúrate de que coincidan con los nombres de tus pestañas en el Excel
+        base_motores = conn.read(worksheet="Motores", ttl=0) # O "Recepcion"
+        movimientos = conn.read(worksheet="Movimientos", ttl=0) # O "Historial"
+    except Exception as e:
+        st.error(f"Error al conectar con las planillas: {e}")
         st.stop()
 
-    lista_tags = [""] + list(base_motores['Tag'].unique())
-    motor_buscado = st.selectbox("Seleccioná un Motor:", lista_tags)
-    
-    if motor_buscado != "":
-        # Extraemos los datos fijos
-        fijos = base_motores[base_motores['Tag'] == motor_buscado].iloc[0]
+    # --- PASO 2: BUSCADOR ---
+    if not base_motores.empty:
+        lista_tags = [""] + list(base_motores['Tag'].unique())
+        motor_buscado = st.selectbox("Seleccioná un Motor para ver su historial:", lista_tags)
         
-        st.header(f"🚜 Motor: {motor_buscado}")
-        st.write(f"**N° Serie:** {fijos.get('N_Serie','-')} | **Potencia:** {fijos.get('Potencia','-')}")
-        
-        st.divider()
-        st.subheader("📜 Historial de Intervenciones")
-        
-        # Filtramos en el historial completo
-        hist_motor = df_completo[df_completo['Tag'] == motor_buscado].copy()
-        
-        if not hist_motor.empty:
-            for index, fila in hist_motor.iterrows():
-                with st.container():
-                    col_info, col_pdf = st.columns([4, 1])
-                    with col_info:
-                        st.markdown(f"**📅 {fila['Fecha']}** - {fila['Responsable']}")
-                        st.caption(fila['Descripcion'])
-                    with col_pdf:
-                        # LE PASAMOS LA FILA COMO DICCIONARIO
-                        pdf_bytes = generar_pdf(fila.to_dict(), motor_buscado)
-                        
-                        if pdf_bytes:
-                            st.download_button(
-                                label="📄 PDF",
-                                data=pdf_bytes,
-                                file_name=f"Reporte_{motor_buscado}_{index}.pdf",
-                                mime="application/pdf",
-                                key=f"btn_pdf_qr_{index}"
-                            )
-                st.divider()
-        else:
-            st.info("Sin intervenciones registradas.")
+        if motor_buscado != "":
+            # Extraemos los datos de la ficha técnica
+            fijos = base_motores[base_motores['Tag'] == motor_buscado].iloc[0]
+            
+            st.success(f"✅ Motor localizado: {motor_buscado}")
+            
+            # Panel de información rápida
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Potencia", fijos.get('Potencia', '-'))
+            with col2:
+                st.metric("N° Serie", fijos.get('N_Serie', '-'))
+            with col3:
+                st.metric("Ubicación", fijos.get('Ubicacion', '-'))
 
+            st.divider()
+
+            # --- PASO 3: MOSTRAR INTERVENCIONES ---
+            st.subheader("📜 Historial de Intervenciones")
+            
+            # Filtramos en la tabla de movimientos
+            historial = movimientos[movimientos['Tag'] == motor_buscado].copy()
+
+            if not historial.empty:
+                # Intentamos ordenar por fecha
+                historial['Fecha_DT'] = pd.to_datetime(historial['Fecha'], dayfirst=True, errors='coerce')
+                historial = historial.sort_values(by='Fecha_DT', ascending=False)
+
+                for index, fila in historial.iterrows():
+                    with st.expander(f"📅 {fila['Fecha']} - {fila['Responsable']}", expanded=False):
+                        c_inf, c_btn = st.columns([3, 1])
+                        with c_inf:
+                            st.write(f"**Detalle:** {fila['Descripcion']}")
+                            st.write(f"**Estado/Obs:** {fila.get('Taller_Externo', '-')}")
+                        with c_btn:
+                            # Generamos el PDF usando tu función corregida
+                            pdf_bytes = generar_pdf(fila.to_dict(), motor_buscado)
+                            if pdf_bytes:
+                                st.download_button(
+                                    label="📥 PDF",
+                                    data=pdf_bytes,
+                                    file_name=f"Reporte_{motor_buscado}_{index}.pdf",
+                                    mime="application/pdf",
+                                    key=f"qr_btn_{index}"
+                                )
+            else:
+                st.info("Este motor no tiene registros de megado o engrase todavía.")
+    else:
+        st.warning("La base de datos de motores está vacía.")
 elif modo == "Relubricacion":
     # PASO A: El limpiador debe estar aquí, bien pegado al borde del 'elif'
     if "count_relub" not in st.session_state:
@@ -425,6 +443,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
