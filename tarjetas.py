@@ -12,8 +12,12 @@ def generar_pdf_reporte(datos, tag_motor):
         desc_full = str(datos.get('Descripcion', '')).upper()
         
         # --- LÓGICA DE DETECCIÓN Y COLORES ---
-        if "RESISTENCIAS:" in desc_full or "BORNES:" in desc_full:
-            color_rgb = (204, 102, 0) # Naranja para Megado
+        if "RESISTENCIAS:" if "|" in desc_full:
+            partes = desc_full.split(" | ")
+            pdf.set_font("Arial", '', 9) # Fuente un poco más chica para que entre todo
+            for p in partes:
+                pdf.cell(0, 6, f"  {p}", border='LR', ln=1)
+            pdf.cell(0, 0, "", border='T', ln=1)
             tipo_label = "PROTOCOLO DE MEDICIONES ELÉCTRICAS"
         elif "LUBRICACIÓN" in desc_full or "LUBRICACION" in desc_full:
             color_rgb = (0, 102, 204) # Azul para Lubricación
@@ -324,30 +328,32 @@ elif modo == "Mediciones de Campo":
         st.text_area("Observaciones")
 
         # BOTÓN DE GUARDADO
-        btn_guardar = st.form_submit_button("💾 GUARDAR MEDICIONES")
-
         if btn_guardar:
             if t and resp:
-                detalle = (f"Resistencias: T-V1:{tv1}, T-U1:{tu1}, T-W1:{tw1} | "
-                           f"Bornes: U1-U2:{u1u2}, V1-V2:{v1v2}, W1-W2:{w1w2} | "
-                           f"Línea: T-L1:{tl1}, L1-L2:{l1l2}")
+                # ARMAMOS EL DETALLE COMPLETO CON LAS 15 MEDICIONES
+                detalle = (
+                    f"MEGADO A TIERRA: T-V1:{tv1} | T-U1:{tu1} | T-W1:{tw1} | "
+                    f"MEGADO ENTRE BOBINAS: W1-V1:{wv1} | W1-U1:{wu1} | V1-U1:{vu1} | "
+                    f"RESISTENCIAS INTERNAS: U1-U2:{u1u2} | V1-V2:{v1v2} | W1-W2:{w1w2} | "
+                    f"MEGADO DE LÍNEA: T-L1:{tl1} | T-L2:{tl2} | T-L3:{tl3} | "
+                    f"LÍNEA-LÍNEA: L1-L2:{l1l2} | L1-L3:{l1l3} | L2-L3:{l2l3}"
+                )
                 
                 nueva = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": t,
                     "Responsable": resp,
                     "Descripcion": detalle,
-                    "Taller_Externo": "Mediciones completas cargadas desde App."
+                    "Taller_Externo": "Mediciones técnicas detalladas."
                 }
                 
-                # Actualizar base de datos
+                # Guardar en GSheets
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
                 
-                # --- RESET DE CAMPOS ---
-                st.session_state.tag_fijo = "" # Limpia el tag de la memoria
-                st.session_state.cnt_meg += 1 # Esto cambia la key del form y limpia TODO
-                
+                # RESET DE CAMPOS
+                st.session_state.tag_fijo = ""
+                st.session_state.cnt_meg += 1 
                 st.success(f"✅ Mediciones de {t} guardadas y campos limpios")
                 st.rerun()
             else:
@@ -355,6 +361,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
