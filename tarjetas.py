@@ -123,8 +123,15 @@ if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
 
 if modo == "Nuevo Registro":
     st.title("📝 Alta y Registro Inicial")
+    
+    # 1. Usamos una "llave" para el formulario (counter) para poder resetearlo
+    if "form_key" not in st.session_state:
+        st.session_state.form_key = 0
+
     fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
-    with st.form("alta"):
+
+    # 2. El formulario usa la llave de la memoria
+    with st.form(key=f"alta_motor_{st.session_state.form_key}"):
         col1, col2, col3, col4, col5 = st.columns(5)
         t = col1.text_input("TAG/ID MOTOR").upper()
         p = col2.text_input("Potencia")
@@ -140,24 +147,41 @@ if modo == "Nuevo Registro":
         
         resp = st.text_input("Técnico Responsable")
         desc = st.text_area("Descripción de la Reparación/Trabajo")
-        ext = st.text_area("Observaciones Finales") # <--- ACÁ SE LLAMA 'ext'
+        ext = st.text_area("Observaciones Finales")
         
         if st.form_submit_button("💾 GUARDAR"):
-            # CORRECCIÓN AQUÍ ABAJO (cambié obs por ext)
-            nueva = {
-                "Fecha": fecha_hoy.strftime("%d/%m/%Y"), 
-                "Tag": t, 
-                "N_Serie": sn, 
-                "Responsable": resp, 
-                "Descripcion": desc, 
-                "Taller_Externo": ext  # <--- ANTES DECÍA 'obs' Y DABA ERROR
-            }
-            conn.update(data=pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True))
-            
-            # LIMPIEZA DE CAMPOS
-            st.session_state.tag_fijo = "" 
-            st.success("✅ Registro guardado con éxito")
-            st.rerun()
+            if not t or not resp:
+                st.error("⚠️ El TAG y el Responsable son obligatorios.")
+            else:
+                # 3. Consolidamos TODA la información en el campo Descripción
+                # Si no lo guardamos aquí, esos datos de potencia/rpm se pierden
+                detalle_completo = (
+                    f"POT: {p} | RPM: {r} | CARC: {f} | "
+                    f"RES: T-U:{rt_tu}, T-V:{rt_tv}, T-W:{rt_tw} | "
+                    f"UV:{rb_uv}, VW:{rb_vw}, UW:{rb_uw} | "
+                    f"U12:{ri_u}, V12:{ri_v}, W12:{ri_w} | "
+                    f"TRABAJO: {desc}"
+                )
+
+                nueva = {
+                    "Fecha": fecha_hoy.strftime("%d/%m/%Y"), 
+                    "Tag": t, 
+                    "N_Serie": sn, 
+                    "Responsable": resp, 
+                    "Descripcion": detalle_completo, 
+                    "Taller_Externo": ext
+                }
+                
+                # 4. Guardado y actualización de la base
+                df_actualizado = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+                conn.update(data=df_actualizado)
+                
+                # 5. Éxito y reseteo de la "llave" para limpiar campos
+                st.session_state.form_key += 1
+                st.success("✅ Registro guardado con éxito en la base de datos.")
+                
+                # Forzamos el refresco para que aparezca el cartel y limpie todo
+                st.rerun()
   
 elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
@@ -345,6 +369,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
