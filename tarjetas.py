@@ -167,8 +167,11 @@ if modo == "Nuevo Registro":
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"), 
                     "Tag": t, 
                     "N_Serie": sn, 
-                    "Responsable": resp, 
-                    "Descripcion": detalle_completo, 
+                    "Responsable": resp,
+                    "Potencia": p,      # <--- NUEVA COLUMNA
+                    "RPM": r,           # <--- NUEVA COLUMNA
+                    "Frame": f,         # <--- NUEVA COLUMNA
+                    "Descripcion": f"{desc} | {mediciones}", 
                     "Taller_Externo": ext
                 }
                 
@@ -394,6 +397,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
