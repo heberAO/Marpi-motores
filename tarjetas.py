@@ -308,7 +308,6 @@ elif modo == "Relubricacion":
         res = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)]
         if not res.empty:
             motor_encontrado = res.iloc[-1]
-            st.write("Datos encontrados:", motor_encontrado)
             st.success(f"✅ Motor: {motor_encontrado['Tag']}")
 
     st.divider()
@@ -476,6 +475,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
