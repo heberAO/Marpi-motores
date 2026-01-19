@@ -290,21 +290,19 @@ elif modo == "Historial y QR":
 elif modo == "Relubricacion":
     st.title("🔍 Lubricación Inteligente MARPI")
 
-    # --- FUNCIÓN PARA LIMPIAR TODO ---
-    def limpiar_formulario():
-        st.session_state["busqueda_key"] = ""
-        st.session_state["resp_key"] = ""
-        st.session_state["obs_key"] = ""
-        # Esto resetea el buscador y los campos de texto
-    
-    # 1. Buscador con "key" para poder resetearlo
+    # --- EL SECRETO: Creamos un ID único para el formulario ---
+    # Si este ID cambia, el formulario se vacía sí o sí
+    if "form_id" not in st.session_state:
+        st.session_state.form_id = 0
+
+    # 1. Buscador (con una clave que cambia para resetearse)
     df_lista = df_completo.fillna("-")
     lista_sugerencias = sorted(list(set(df_lista['Tag'].astype(str).tolist() + df_lista['N_Serie'].astype(str).tolist())))
     
     opcion_elegida = st.selectbox(
         "Seleccione TAG o N° DE SERIE", 
         options=[""] + lista_sugerencias,
-        key="busqueda_key" # <--- CLAVE PARA RESETEO
+        key=f"search_{st.session_state.form_id}" # <--- ID Dinámico
     )
 
     motor_encontrado = None
@@ -316,25 +314,24 @@ elif modo == "Relubricacion":
 
     st.divider()
 
-    # 2. Campos de Rodamientos
+    # 2. Rodamientos y Cálculo
     col1, col2 = st.columns(2)
     with col1:
         val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None else ""
-        rod_la = st.text_input("Rodamiento LA", value=val_la if val_la != "-" else "", key="la_input").upper()
+        rod_la = st.text_input("Rodamiento LA", value=val_la if val_la != "-" else "", key=f"la_{st.session_state.form_id}").upper()
         gr_la_sug = calcular_grasa_avanzado(rod_la)
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
         val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
-        rod_loa = st.text_input("Rodamiento LOA", value=val_loa if val_loa != "-" else "", key="loa_input").upper()
+        rod_loa = st.text_input("Rodamiento LOA", value=val_loa if val_loa != "-" else "", key=f"loa_{st.session_state.form_id}").upper()
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
-    # 3. Formulario
-    with st.form("registro_lub_marpi"):
-        # Usamos keys también aquí
+    # 3. Formulario de Carga
+    with st.form(key=f"form_main_{st.session_state.form_id}"): # <--- El formulario también cambia de ID
         serie_final = st.text_input("Confirmar N° de Serie", value=str(motor_encontrado['N_Serie']) if motor_encontrado is not None else "")
-        resp_r = st.text_input("Técnico Responsable", key="resp_key")
+        resp_r = st.text_input("Técnico Responsable")
         
         c1, c2 = st.columns(2)
         with c1:
@@ -343,16 +340,17 @@ elif modo == "Relubricacion":
             gr_f_loa = st.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
             
         grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
-        obs = st.text_area("Notas", key="obs_key")
+        obs = st.text_area("Notas")
         
         btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
-    # 4. Lógica de Guardado con "Hard Reset"
+    # 4. Lógica de Guardado y RESET TOTAL
     if btn_guardar:
         if not resp_r or not opcion_elegida:
-            st.error("⚠️ Falta completar el Responsable o seleccionar un Motor.")
+            st.error("⚠️ Falta completar datos.")
         else:
             try:
+                # (Tu lógica de guardado de siempre)
                 nueva_fila = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": str(opcion_elegida),
@@ -366,25 +364,20 @@ elif modo == "Relubricacion":
                     "Descripcion": "RELUBRICACIÓN CAMPO",
                     "Taller_Externo": obs
                 }
-                
-                # Unimos y guardamos
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_final)
                 
-                # MENSAJE Y LIMPIEZA TOTAL
-                st.success("✅ ¡Registro guardado exitosamente!")
+                # --- AQUÍ OCURRE LA MAGIA ---
+                st.session_state.form_id += 1  # Cambiamos el ID, esto "destruye" el form viejo y crea uno nuevo vacío
+                st.success("✅ ¡Guardado con éxito! Limpiando...")
                 st.balloons()
                 
-                # --- TRUCO MAESTRO PARA LIMPIAR ---
-                st.cache_data.clear() # Borra la memoria de datos
                 import time
-                time.sleep(1) 
-                
-                # Esto reinicia la App de forma que no recuerda lo anterior
-                st.rerun() 
+                time.sleep(1)
+                st.rerun() # Recargamos con el nuevo ID
                 
             except Exception as e:
-                st.error(f"❌ Error al guardar: {e}")
+                st.error(f"❌ Error: {e}")
                     
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -467,6 +460,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
