@@ -6,6 +6,27 @@ import os
 from fpdf import FPDF
 import urllib.parse  # Para el QR sin errores
 
+# --- ESTA FUNCIÓN VA AQUÍ ARRIBA, PEGADA AL MARGEN IZQUIERDO ---
+def calcular_grasa_avanzado(codigo):
+    try:
+        if not codigo or codigo == "None" or codigo == "": return 0.0
+        solo_numeros = re.sub(r'\D', '', str(codigo)) 
+        if len(solo_numeros) < 3: return 0.0
+        
+        serie_eje = int(solo_numeros[-2:])
+        d = serie_eje * 5
+        serie_tipo = int(solo_numeros[-3])
+        
+        if serie_tipo == 3: # Serie pesada
+            D, B = d * 2.2, (d * 2.2) * 0.25
+        else: # Serie liviana
+            D, B = d * 1.8, (d * 1.8) * 0.22
+            
+        gramos = D * B * 0.005
+        return round(gramos, 1)
+    except:
+        return 0.0
+
 # --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
 def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
     try:
@@ -259,41 +280,6 @@ elif modo == "Historial y QR":
 
 elif modo == "Relubricacion":
     st.title("🔍 Buscador de Lubricación Inteligente - MARPI")
-
-    # 1. Definimos la función de cálculo ARRIBA para evitar el NameError
-   def calcular_grasa_avanzado(codigo):
-        try:
-            # Convertimos a string y limpiamos cualquier caracter que no sea número
-            # Esto sirve por si el Excel tiene "6314" o "6314 C3"
-            import re
-            solo_numeros = re.sub(r'\D', '', str(codigo)) 
-            
-            if len(solo_numeros) < 3: 
-                return 0.0
-            
-            # Tomamos los últimos 4 o 5 dígitos importantes
-            # Ej: si es 6314, serie_eje es 14, d es 70mm
-            serie_eje = int(solo_numeros[-2:])
-            d = serie_eje * 5
-            
-            # El dígito de la serie (el tercero de atrás para adelante)
-            # En 6314 es el 3. En 6210 es el 2.
-            serie_tipo = int(solo_numeros[-3])
-            
-            # Dimensiones estimadas según serie
-            if serie_tipo == 3: # Serie pesada (63xx, NU3xx)
-                D = d * 2.2
-                B = D * 0.25
-            else: # Serie liviana o media (62xx, 60xx, NU2xx)
-                D = d * 1.8
-                B = D * 0.22
-            
-            # Fórmula G = D * B * 0.005
-            gramos = D * B * 0.005
-            return round(gramos, 1)
-        except:
-            return 0.0
-
    # 2. Interfaz de búsqueda mejorada
     busqueda = st.text_input("🔍 BUSCAR POR TAG O N° DE MOTOR (SERIE)").upper()
     
@@ -449,6 +435,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
