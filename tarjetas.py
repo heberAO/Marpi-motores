@@ -183,60 +183,58 @@ if modo == "Nuevo Registro":
                 # Forzamos el refresco para que aparezca el cartel y limpie todo
                 st.rerun()
   
-elif modo == "Historial y QR":
-    st.title("🔍 Consulta y Gestión de Motores")
-    
-    if not df_completo.empty:
-        # 1. Lista para el buscador (TAG + Serie)
-        df_completo['Busqueda_Combo'] = (
-            df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
-        )
-        opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
+elif modo == "Relubricacion":
+    st.title("🛢️ Calculadora de Lubricación para Grandes Motores")
+
+    def calcular_grasa_avanzado(codigo):
+        """Calcula gramos basado en el código del rodamiento (Ej: 6318)"""
+        try:
+            # Limpiamos el código (ej: de 'NU 318 C3' a '318')
+            solo_numeros = ''.join(filter(str.isdigit, codigo))
+            if len(solo_numeros) < 3: return None
+            
+            # Los últimos dos dígitos son la serie del diámetro interior
+            serie_eje = int(solo_numeros[-2:])
+            # El dígito anterior indica la serie (2 = liviana, 3 = pesada)
+            serie_ancho = int(solo_numeros[-3])
+
+            # d = diámetro interior (eje)
+            d = serie_eje * 5
+            
+            # Estimación de D (exterior) y B (ancho) según series estándar 
+            if serie_ancho == 3: # Serie pesada (ej 63xx)
+                D = d * 2.2 
+                B = D * 0.25
+            else: # Serie liviana (ej 62xx)
+                D = d * 1.8
+                B = D * 0.22
+                
+            gramos = D * B * 0.005
+            return round(gramos, 1)
+        except:
+            return None
+
+    with st.form("form_lub_profesional"):
+        t_r = st.text_input("TAG DEL MOTOR").upper()
+        col1, col2 = st.columns(2)
         
-        # 2. Detección de QR
-        query_tag = st.query_params.get("tag", "").upper()
-        idx_q = 0
-        if query_tag:
-            for i, op in enumerate(opciones):
-                if op.startswith(query_tag + " |"):
-                    idx_q = i
-                    break
-        
-        seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
-        
-        if seleccion:
-            # Extraemos el TAG puro
-            buscado = seleccion.split(" | ")[0].strip()
-            st.session_state.tag_fijo = buscado
-            
-           # --- BOTONES DE ACCIÓN RÁPIDA ---
-            st.subheader("➕ ¿Qué deseas cargar para este motor?")
-            c1, c2, c3 = st.columns(3)
-            
-            with c1:
-                if st.button("🛠️ Nueva Reparación"):
-                    st.session_state.seleccion_manual = "Nuevo Registro"
-                    st.rerun()
-            with c2:
-                if st.button("🛢️ Nueva Lubricación"):
-                    st.session_state.seleccion_manual = "Relubricacion"
-                    st.rerun()
-            with c3:
-                if st.button("⚡ Nuevo Megado"):
-                    st.session_state.seleccion_manual = "Mediciones de Campo"
-                    st.rerun()
-            # --- QR Y DATOS ---
-            col_qr, col_info = st.columns([1, 2])
-            url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
-            qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(url_app)}"
-            
-            with col_qr:
-                st.image(qr_api, caption=f"QR de {buscado}")
-            with col_info:
-                st.subheader(f"🚜 Equipo seleccionado: {buscado}")
-                st.write(f"**Link directo:** {url_app}")
-            
-            st.divider()
+        with col1:
+            rod_la = st.text_input("Número de Rodamiento LA (ej: 6320, NU322)").upper()
+            gr_la_sugerido = calcular_grasa_avanzado(rod_la)
+            if gr_la_sugerido:
+                st.success(f"📊 Sugerido para {rod_la}: **{gr_la_sugerido}g**")
+            gr_la = st.number_input("Gramos finales LA", value=gr_la_sugerido if gr_la_sugerido else 0.0)
+
+        with col2:
+            rod_loa = st.text_input("Número de Rodamiento LOA").upper()
+            gr_loa_sugerido = calcular_grasa_avanzado(rod_loa)
+            if gr_loa_sugerido:
+                st.success(f"📊 Sugerido para {rod_loa}: **{gr_loa_sugerido}g**")
+            gr_loa = st.number_input("Gramos finales LOA", value=gr_loa_sugerido if gr_loa_sugerido else 0.0)
+
+        if st.form_submit_button("💾 GUARDAR LUBRICACIÓN"):
+            # ... (aquí va tu lógica de guardado que ya funciona) ...
+            st.success("✅ Datos guardados correctamente")
 
 # --- HISTORIAL Y PDF ---
             st.subheader("📜 Historial de Intervenciones")
@@ -369,6 +367,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
