@@ -306,8 +306,34 @@ elif modo == "Relubricacion":
             gr_loa = st.number_input("Gramos finales LOA", value=gr_loa_sugerido if gr_loa_sugerido else 0.0)
 
         if st.form_submit_button("💾 GUARDAR LUBRICACIÓN"):
-            # ... (aquí va tu lógica de guardado que ya funciona) ...
-            st.success("✅ Datos guardados correctamente")
+            if not t_r or not resp_r:
+                st.error("⚠️ Tag y Responsable son obligatorios")
+            else:
+                # Armamos el diccionario con las nuevas columnas
+                nueva = {
+                    "Fecha": date.today().strftime("%d/%m/%Y"), 
+                    "Tag": t_r, 
+                    "Responsable": resp_r, 
+                    "Potencia": "-",      # Opcional: podrías traerla de la base
+                    "RPM": "-",           
+                    "Frame": "-",
+                    "Rodamiento_LA": rod_la,     # <--- COLUMNA NUEVA
+                    "Gramos_LA": gr_la,           # <--- COLUMNA NUEVA
+                    "Rodamiento_LOA": rod_loa,   # <--- COLUMNA NUEVA
+                    "Gramos_LOA": gr_loa,         # <--- COLUMNA NUEVA
+                    "Tipo_Grasa": grasa,         # <--- COLUMNA NUEVA
+                    "Descripcion": f"LUBRICACIÓN PERIÓDICA: {grasa}", 
+                    "Taller_Externo": obs_r
+                }
+                
+                # Guardado en la base
+                df_act = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+                conn.update(data=df_act)
+                
+                # Limpieza y Éxito
+                st.session_state.form_lub_key += 1
+                st.success(f"✅ Lubricación del motor {t_r} guardada (Total: {gr_la + gr_loa}g)")
+                st.rerun()
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
     
@@ -389,6 +415,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
