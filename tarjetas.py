@@ -5,6 +5,7 @@ from datetime import date
 import os
 from fpdf import FPDF
 import urllib.parse  # Para el QR sin errores
+import re
 
 def calcular_grasa_avanzado(codigo):
     try:
@@ -297,41 +298,34 @@ elif modo == "Relubricacion":
                           (df_completo['N_Serie'].astype(str).str.upper() == busqueda)]
         if not res.empty:
             motor_encontrado = res.iloc[-1]
-            st.success(f"✅ Motor: {motor_encontrado['Tag']} | Serie: {motor_encontrado['N_Serie']}")
+            st.success(f"✅ Motor: {motor_encontrado['Tag']}")
 
-    # --- CAMPOS DE RODAMIENTOS FUERA DEL FORMULARIO PARA CÁLCULO EN VIVO ---
     st.markdown("### 🛠️ Configuración de Rodamientos")
     col1, col2 = st.columns(2)
     
     with col1:
         val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None else ""
-        rod_la = st.text_input("Rodamiento LA", value=val_la).upper()
-        gr_la_sug = calcular_grasa_avanzado(rod_la) # <--- CALCULA AL INSTANTE
+        rod_la = st.text_input("Rodamiento LA", value=val_la, key="la_input").upper()
+        # Calculamos los gramos
+        gr_la_sug = calcular_grasa_avanzado(rod_la)
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
         val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
-        rod_loa = st.text_input("Rodamiento LOA", value=val_loa).upper()
-        st.write(f"DEBUG: El código limpio es: {re.sub(r'\D', '', str(rod_la).split('.')[0])}")
-        gr_loa_sug = calcular_grasa_avanzado(rod_loa) # <--- CALCULA AL INSTANTE
+        rod_loa = st.text_input("Rodamiento LOA", value=val_loa, key="loa_input").upper()
+        # Calculamos los gramos
+        gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
-    # --- FORMULARIO SOLO PARA EL GUARDADO ---
-    with st.form("form_guardado_lub"):
-        resp_r = st.text_input("Técnico Responsable")
-        # El técnico puede ajustar los gramos finales basados en el sugerido
+    # Formulario para guardar
+    with st.form("form_final"):
+        resp_r = st.text_input("Responsable")
         gr_final_la = st.number_input("Gramos Finales LA", value=float(gr_la_sug))
         gr_final_loa = st.number_input("Gramos Finales LOA", value=float(gr_loa_sug))
         
-        grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Otra"])
-        obs_r = st.text_area("Observaciones")
-        
-        if st.form_submit_button("💾 REGISTRAR LUBRICACIÓN"):
-            if not resp_r:
-                st.error("⚠️ El responsable es obligatorio")
-            else:
-                # ... (Lógica de guardado que ya tenemos) ...
-                st.success("✅ Guardado con éxito")
+        if st.form_submit_button("💾 GUARDAR REGISTRO"):
+            # Aquí pones tu lógica de guardado al excel...
+            st.success("Guardado correctamente")
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
     
@@ -413,6 +407,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
