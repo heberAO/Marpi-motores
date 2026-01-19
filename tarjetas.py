@@ -347,13 +347,12 @@ elif modo == "Relubricacion":
         
         btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
-    # 4. Lógica de Guardado (Modo Seguro)
+    # 4. Lógica de Guardado con "Hard Reset"
     if btn_guardar:
         if not resp_r or not opcion_elegida:
             st.error("⚠️ Falta completar el Responsable o seleccionar un Motor.")
         else:
             try:
-                # Armamos la fila exactamente igual
                 nueva_fila = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": str(opcion_elegida),
@@ -368,19 +367,20 @@ elif modo == "Relubricacion":
                     "Taller_Externo": obs
                 }
                 
-                # Unimos y subimos a Google Sheets
+                # Unimos y guardamos
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_final)
                 
-                # MENSAJE DE ÉXITO
-                st.success("✅ ¡Registro guardado! Reiniciando formulario...")
+                # MENSAJE Y LIMPIEZA TOTAL
+                st.success("✅ ¡Registro guardado exitosamente!")
                 st.balloons()
                 
-                # El truco para que se limpie: 
-                # Simplemente esperamos y refrescamos. 
-                # Al no haber valores 'default' fijos en los inputs, volverán a su estado inicial.
+                # --- TRUCO MAESTRO PARA LIMPIAR ---
+                st.cache_data.clear() # Borra la memoria de datos
                 import time
-                time.sleep(1.5)
+                time.sleep(1) 
+                
+                # Esto reinicia la App de forma que no recuerda lo anterior
                 st.rerun() 
                 
             except Exception as e:
@@ -467,6 +467,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
