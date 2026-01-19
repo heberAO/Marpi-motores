@@ -350,8 +350,49 @@ elif modo == "Relubricacion":
         obs = st.text_area("Observaciones")
         
         if st.form_submit_button("💾 REGISTRAR LUBRICACIÓN"):
-            # Aquí va tu lógica de guardado que ya funciona...
-            st.success("¡Datos guardados!")
+            # 1. Validación de seguridad
+            # Usamos opcion_elegida (del buscador) si el TAG está vacío
+            tag_final = opcion_elegida if opcion_elegida != "" else "S/T"
+            
+            if not resp_r:
+                st.error("⚠️ El nombre del responsable es obligatorio")
+            else:
+                try:
+                    # 2. Creamos el nuevo registro con los nombres EXACTOS de tus columnas
+                    # Asegúrate de que estos nombres coincidan con tu Excel
+                    nueva_fila = {
+                        "Fecha": date.today().strftime("%d/%m/%Y"),
+                        "Tag": str(tag_final),
+                        "N_Serie": str(motor_encontrado['N_Serie']) if motor_encontrado is not None else "-",
+                        "Responsable": str(resp_r),
+                        "Rodamiento_LA": str(rod_la),
+                        "Gramos_LA": float(gr_f_la),
+                        "Rodamiento_LOA": str(rod_loa),
+                        "Gramos_LOA": float(gr_f_loa),
+                        "Tipo_Grasa": str(grasa),
+                        "Descripcion": "RELUBRICACIÓN CAMPO",
+                        "Taller_Externo": str(obs)
+                    }
+                    
+                    # 3. Convertimos a DataFrame y unimos
+                    nueva_fila_df = pd.DataFrame([nueva_fila])
+                    
+                    # Limpiamos el DataFrame original de posibles filas vacías antes de unir
+                    df_base = df_completo.dropna(how='all')
+                    
+                    df_final = pd.concat([df_base, nueva_fila_df], ignore_index=True)
+                    
+                    # 4. Enviamos a Google Sheets
+                    conn.update(data=df_final)
+                    
+                    st.success(f"✅ ¡Lubricación de {tag_final} guardada exitosamente!")
+                    st.balloons() # Un pequeño efecto visual de éxito
+                    st.rerun()
+                    
+                except Exception as e:
+                    st.error(f"❌ Error al guardar: {e}")
+                    st.info("Revisá que el Excel no esté abierto o que no se hayan cambiado los nombres de las columnas.")
+                    
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
     
@@ -433,6 +474,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
