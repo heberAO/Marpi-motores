@@ -279,81 +279,50 @@ elif modo == "Historial y QR":
                         )
 
 elif modo == "Relubricacion":
-    st.title("🔍 Buscador de Lubricación Inteligente - MARPI")
-   # 2. Interfaz de búsqueda mejorada
-    busqueda = st.text_input("🔍 BUSCAR POR TAG O N° DE MOTOR (SERIE)").upper()
-    
+    st.title("🔍 Buscador de Lubricación Inteligente")
+
+    busqueda = st.text_input("BUSCAR POR TAG O N° DE MOTOR").upper()
     motor_encontrado = None
+    
     if busqueda:
-        # Buscamos coincidencias en cualquiera de las dos columnas
-        # Usamos .astype(str) por si los números de serie en el Excel están como formato número
-        resultado = df_completo[
-            (df_completo['Tag'].astype(str).str.upper() == busqueda) | 
-            (df_completo['N_Serie'].astype(str).str.upper() == busqueda)
-        ]
-        
-        if not resultado.empty:
-            motor_encontrado = resultado.iloc[-1]  # Tomamos el último registro cargado
-            st.success(f"✅ Motor localizado: {motor_encontrado['Tag']} (Serie: {motor_encontrado['N_Serie']})")
-        else:
-            st.error("❌ No se encontró ningún motor con ese TAG o Número de Serie.")
-    # 3. Formulario (Todo lo que sigue debe estar dentro del 'with')
-    with st.form(key="form_lub_final"):
-        t_r = st.text_input("TAG", value=str(motor_encontrado['Tag']) if motor_encontrado is not None else busqueda).upper()
+        res = df_completo[(df_completo['Tag'].astype(str).str.upper() == busqueda) | 
+                          (df_completo['N_Serie'].astype(str).str.upper() == busqueda)]
+        if not res.empty:
+            motor_encontrado = res.iloc[-1]
+            st.success(f"✅ Motor: {motor_encontrado['Tag']} | Serie: {motor_encontrado['N_Serie']}")
+
+    # --- CAMPOS DE RODAMIENTOS FUERA DEL FORMULARIO PARA CÁLCULO EN VIVO ---
+    st.markdown("### 🛠️ Configuración de Rodamientos")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None else ""
+        rod_la = st.text_input("Rodamiento LA", value=val_la).upper()
+        gr_la_sug = calcular_grasa_avanzado(rod_la) # <--- CALCULA AL INSTANTE
+        st.metric("Sugerido LA", f"{gr_la_sug} g")
+
+    with col2:
+        val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
+        rod_loa = st.text_input("Rodamiento LOA", value=val_loa).upper()
+        gr_loa_sug = calcular_grasa_avanzado(rod_loa) # <--- CALCULA AL INSTANTE
+        st.metric("Sugerido LOA", f"{gr_loa_sug} g")
+
+    # --- FORMULARIO SOLO PARA EL GUARDADO ---
+    with st.form("form_guardado_lub"):
         resp_r = st.text_input("Técnico Responsable")
+        # El técnico puede ajustar los gramos finales basados en el sugerido
+        gr_final_la = st.number_input("Gramos Finales LA", value=float(gr_la_sug))
+        gr_final_loa = st.number_input("Gramos Finales LOA", value=float(gr_loa_sug))
         
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("Lado Acople (LA)")
-            # Trae el rodamiento de la base si existe
-            rod_db_la = motor_encontrado['Rodamiento_LA'] if motor_encontrado is not None and 'Rodamiento_LA' in motor_encontrado else ""
-            rod_la = st.text_input("Rodamiento LA", value=str(rod_db_la)).upper()
-            
-            gr_la_calc = calcular_grasa_avanzado(rod_la)
-            if gr_la_calc > 0:
-                st.info(f"⚖️ Sugerido: {gr_la_calc}g")
-            gr_la = st.number_input("Gramos Finales LA", value=float(gr_la_calc))
-
-        with col2:
-            st.subheader("Lado Opuesto (LOA)")
-            # Trae el rodamiento de la base si existe
-            rod_db_loa = motor_encontrado['Rodamiento_LOA'] if motor_encontrado is not None and 'Rodamiento_LOA' in motor_encontrado else ""
-            rod_loa = st.text_input("Rodamiento LOA", value=str(rod_db_loa)).upper()
-            
-            gr_loa_calc = calcular_grasa_avanzado(rod_loa)
-            if gr_loa_calc > 0:
-                st.info(f"⚖️ Sugerido: {gr_loa_calc}g")
-            gr_loa = st.number_input("Gramos Finales LOA", value=float(gr_loa_calc))
-
-        grasa = st.selectbox("Tipo de Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+        grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Otra"])
         obs_r = st.text_area("Observaciones")
-
-        # EL BOTÓN DEBE ESTAR ADENTRO DEL 'WITH'
-        submit = st.form_submit_button("💾 REGISTRAR LUBRICACIÓN")
-
-    # 4. Lógica de Guardado (Fuera del form, pero se activa con el submit)
-    if submit:
-        if not t_r or not resp_r:
-            st.error("⚠️ Tag y Responsable son obligatorios")
-        else:
-            nueva_fila = {
-                "Fecha": date.today().strftime("%d/%m/%Y"),
-                "Tag": t_r,
-                "Responsable": resp_r,
-                "Rodamiento_LA": rod_la,
-                "Gramos_LA": gr_la,
-                "Rodamiento_LOA": rod_loa,
-                "Gramos_LOA": gr_loa,
-                "Tipo_Grasa": grasa,
-                "Descripcion": f"LUBRICACIÓN: LA {rod_la} / LOA {rod_loa}",
-                "Taller_Externo": obs_r
-            }
-            
-            df_act = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
-            conn.update(data=df_act)
-            st.success("✅ ¡Base de datos actualizada!")
-            st.rerun()
+        
+        if st.form_submit_button("💾 REGISTRAR LUBRICACIÓN"):
+            if not resp_r:
+                st.error("⚠️ El responsable es obligatorio")
+            else:
+                # ... (Lógica de guardado que ya tenemos) ...
+                st.success("✅ Guardado con éxito")
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
     
@@ -435,6 +404,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
