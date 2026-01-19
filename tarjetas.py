@@ -262,33 +262,32 @@ elif modo == "Relubricacion":
     def calcular_grasa_avanzado(codigo):
         """Calcula gramos basado en el código del rodamiento (Ej: 6318)"""
         try:
-            # Limpiamos el código (ej: de 'NU 318 C3' a '318')
             solo_numeros = ''.join(filter(str.isdigit, codigo))
             if len(solo_numeros) < 3: return None
-            
-            # Los últimos dos dígitos son la serie del diámetro interior
             serie_eje = int(solo_numeros[-2:])
-            # El dígito anterior indica la serie (2 = liviana, 3 = pesada)
             serie_ancho = int(solo_numeros[-3])
-
-            # d = diámetro interior (eje)
             d = serie_eje * 5
-            
-            # Estimación de D (exterior) y B (ancho) según series estándar 
-            if serie_ancho == 3: # Serie pesada (ej 63xx)
+            if serie_ancho == 3: # Serie pesada
                 D = d * 2.2 
                 B = D * 0.25
-            else: # Serie liviana (ej 62xx)
+            else: # Serie liviana
                 D = d * 1.8
                 B = D * 0.22
-                
             gramos = D * B * 0.005
             return round(gramos, 1)
         except:
             return None
 
-    with st.form("form_lub_profesional"):
+    # Usamos la llave para resetear el formulario tras guardar
+    if "form_lub_key" not in st.session_state:
+        st.session_state.form_lub_key = 0
+
+    with st.form(key=f"form_lub_profesional_{st.session_state.form_lub_key}"):
         t_r = st.text_input("TAG DEL MOTOR").upper()
+        
+        # AGREGAMOS EL RESPONSABLE (Faltaba definir resp_r)
+        resp_r = st.text_input("Técnico Responsable")
+        
         col1, col2 = st.columns(2)
         
         with col1:
@@ -305,34 +304,37 @@ elif modo == "Relubricacion":
                 st.success(f"📊 Sugerido para {rod_loa}: **{gr_loa_sugerido}g**")
             gr_loa = st.number_input("Gramos finales LOA", value=gr_loa_sugerido if gr_loa_sugerido else 0.0)
 
+        # AGREGAMOS EL TIPO DE GRASA (Faltaba definir grasa)
+        grasa = st.selectbox("Tipo de Grasa Utilizada", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+        
+        # AGREGAMOS LAS OBSERVACIONES (Faltaba definir obs_r)
+        obs_r = st.text_area("Observaciones de Lubricación")
+
         if st.form_submit_button("💾 GUARDAR LUBRICACIÓN"):
             if not t_r or not resp_r:
                 st.error("⚠️ Tag y Responsable son obligatorios")
             else:
-                # Armamos el diccionario con las nuevas columnas
                 nueva = {
                     "Fecha": date.today().strftime("%d/%m/%Y"), 
                     "Tag": t_r, 
                     "Responsable": resp_r, 
-                    "Potencia": "-",      # Opcional: podrías traerla de la base
+                    "Potencia": "-", 
                     "RPM": "-",           
                     "Frame": "-",
-                    "Rodamiento_LA": rod_la,     # <--- COLUMNA NUEVA
-                    "Gramos_LA": gr_la,           # <--- COLUMNA NUEVA
-                    "Rodamiento_LOA": rod_loa,   # <--- COLUMNA NUEVA
-                    "Gramos_LOA": gr_loa,         # <--- COLUMNA NUEVA
-                    "Tipo_Grasa": grasa,         # <--- COLUMNA NUEVA
+                    "Rodamiento_LA": rod_la,
+                    "Gramos_LA": gr_la,
+                    "Rodamiento_LOA": rod_loa,
+                    "Gramos_LOA": gr_loa,
+                    "Tipo_Grasa": grasa,
                     "Descripcion": f"LUBRICACIÓN PERIÓDICA: {grasa}", 
                     "Taller_Externo": obs_r
                 }
                 
-                # Guardado en la base
                 df_act = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_act)
                 
-                # Limpieza y Éxito
                 st.session_state.form_lub_key += 1
-                st.success(f"✅ Lubricación del motor {t_r} guardada (Total: {gr_la + gr_loa}g)")
+                st.success(f"✅ Lubricación del motor {t_r} guardada correctamente")
                 st.rerun()
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -415,6 +417,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
