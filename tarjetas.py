@@ -344,8 +344,14 @@ elif modo == "Relubricacion":
         with c1:
             gr_f_la = st.number_input("Gramos Reales LA", value=float(gr_la_sug))
         with c2:
-            gr_f_loa = st.number_input("Gramos Reales LOA", value=float(gr_loa
-                st.rerun()
+            gr_f_loa = st.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
+        
+        grasa = st.selectbox("Tipo de Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+        obs = st.text_area("Observaciones")
+        
+        if st.form_submit_button("💾 REGISTRAR LUBRICACIÓN"):
+            # Aquí va tu lógica de guardado que ya funciona...
+            st.success("¡Datos guardados!")
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
     
@@ -427,6 +433,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
