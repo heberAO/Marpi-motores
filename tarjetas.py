@@ -256,11 +256,6 @@ elif modo == "Historial y QR":
                             file_name=f"Reporte_{buscado}_{idx}.pdf",
                             key=f"btn_pdf_{idx}"
                         )
-Este error ocurre por dos razones: la función calcular_grasa_avanzado no está definida antes de ser llamada (o quedó fuera del bloque elif), y el botón de guardado quedó fuera del contenedor del formulario.
-
-Aquí tienes el código completo de la sección de Relubricación corregido. He movido la función de cálculo arriba de todo para que siempre esté disponible y asegurado que el botón esté dentro del with st.form.
-
-Python
 
 elif modo == "Relubricacion":
     st.title("🔍 Buscador de Lubricación Inteligente - MARPI")
@@ -436,6 +431,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
