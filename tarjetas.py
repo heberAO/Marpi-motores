@@ -153,37 +153,29 @@ if modo == "Nuevo Registro":
             if not t or not resp:
                 st.error("⚠️ El TAG y el Responsable son obligatorios.")
             else:
-                # 3. Consolidamos TODA la información en el campo Descripción
-                # Si no lo guardamos aquí, esos datos de potencia/rpm se pierden
-                detalle_completo = (
-                    f"POT: {p} | RPM: {r} | CARC: {f} | "
-                    f"RES: T-U:{rt_tu}, T-V:{rt_tv}, T-W:{rt_tw} | "
-                    f"UV:{rb_uv}, VW:{rb_vw}, UW:{rb_uw} | "
-                    f"U12:{ri_u}, V12:{ri_v}, W12:{ri_w} | "
-                    f"TRABAJO: {desc}"
-                )
+                # 1. CREAMOS la variable mediciones antes de usarla
+                mediciones = f"RES: T-U:{rt_tu}, T-V:{rt_tv}, T-W:{rt_tw} | B: UV:{rb_uv}, VW:{rb_vw}, UW:{rb_uw}"
 
+                # 2. Ahora armamos el diccionario con todas las columnas
                 nueva = {
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"), 
                     "Tag": t, 
                     "N_Serie": sn, 
                     "Responsable": resp,
-                    "Potencia": p,      # <--- NUEVA COLUMNA
-                    "RPM": r,           # <--- NUEVA COLUMNA
-                    "Frame": f,         # <--- NUEVA COLUMNA
+                    "Potencia": p,      
+                    "RPM": r,           
+                    "Frame": f,         
                     "Descripcion": f"{desc} | {mediciones}", 
                     "Taller_Externo": ext
                 }
                 
-                # 4. Guardado y actualización de la base
+                # 3. Guardado en la base de datos
                 df_actualizado = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_actualizado)
                 
-                # 5. Éxito y reseteo de la "llave" para limpiar campos
+                # 4. Mensaje de éxito y limpieza
                 st.session_state.form_key += 1
-                st.success("✅ Registro guardado con éxito en la base de datos.")
-                
-                # Forzamos el refresco para que aparezca el cartel y limpie todo
+                st.success(f"✅ Motor {t} guardado con Potencia {p} y {r} RPM")
                 st.rerun()
   
 elif modo == "Historial y QR":
@@ -397,6 +389,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
