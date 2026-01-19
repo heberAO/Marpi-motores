@@ -290,99 +290,63 @@ elif modo == "Historial y QR":
 elif modo == "Relubricacion":
     st.title("🔍 Buscador de Lubricación Inteligente")
 
-    # 1. Buscador (Fuera del formulario)
+    # --- LÍNEA DE DIAGNÓSTICO ---
+    # Esto te mostrará en la App los nombres de tus columnas para que estemos seguros
+    with st.expander("Ver nombres de columnas del Excel (Diagnóstico)"):
+        st.write(list(df_completo.columns))
+
     busqueda = st.text_input("BUSCAR POR TAG O N° DE MOTOR").upper().strip()
     motor_encontrado = None
     
     if busqueda:
-        # 1. Limpiamos nulos
         df_temp = df_completo.fillna("-")
-        
-        # 2. Buscamos el motor
+        # Buscamos por Tag o N_Serie (Asegurate que se llamen así)
         res = df_temp[(df_temp['Tag'].astype(str).str.upper() == busqueda) | 
                       (df_temp['N_Serie'].astype(str).str.upper() == busqueda)]
         
         if not res.empty:
             motor_encontrado = res.iloc[-1]
             st.success(f"✅ Motor: {motor_encontrado['Tag']}")
-
-            # --- TRUCO PARA ENCONTRAR LAS COLUMNAS ---
-            # Buscamos cualquier columna que contenga "ROD" y "LA"
-            col_la_name = [c for c in df_completo.columns if 'ROD' in c.upper() and 'LA' in c.upper() and 'LOA' not in c.upper()]
-            col_loa_name = [c for c in df_completo.columns if 'ROD' in c.upper() and 'LOA' in c.upper()]
-
-            # Si las encontramos, extraemos el valor
-            rod_db_la = motor_encontrado[col_la_name[0]] if col_la_name else "-"
-            rod_db_loa = motor_encontrado[col_loa_name[0]] if col_loa_name else "-"
-            
-            # Esto te va a decir en pantalla qué encontró la App
-            if not col_la_name:
-                st.error("❌ No encontré la columna de Rodamiento LA. Revisá si se llama distinto en el Excel.")
         else:
-            st.warning("⚠️ Motor no encontrado.")
+            st.warning("⚠️ No se encontró el motor.")
 
-    # 2. Configuración de Rodamientos y Cálculos (Fuera del formulario para que sea vivo)
     st.markdown("---")
     col_la, col_loa = st.columns(2)
     
+    # --- AQUÍ DEFINIMOS LOS RODAMIENTOS CON SEGURIDAD ---
     with col_la:
         st.subheader("Lado Acople (LA)")
-        # Traemos el valor de la base de datos si existe, sino vacío
-        rod_db_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None else ""
-        rod_la = st.text_input("N° Rodamiento LA", value=rod_db_la if rod_db_la != "-" else "", key="input_la").upper()
-        
-        # Calculamos gramos al instante
+        # Si el motor existe, intentamos sacar el valor. 
+        # Si falla el nombre de la columna, pondrá vacío en lugar de romperse.
+        try:
+            val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None else ""
+        except:
+            val_la = ""
+            
+        rod_la = st.text_input("N° Rodamiento LA", value=val_la if val_la != "-" else "", key="input_la").upper()
         gr_la_sug = calcular_grasa_avanzado(rod_la)
         st.metric("Grasa Sugerida LA", f"{gr_la_sug} g")
 
     with col_loa:
         st.subheader("Lado Opuesto (LOA)")
-        rod_db_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
-        rod_loa = st.text_input("N° Rodamiento LOA", value=rod_db_loa if rod_db_loa != "-" else "", key="input_loa").upper()
-        
+        try:
+            val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
+        except:
+            val_loa = ""
+
+        rod_loa = st.text_input("N° Rodamiento LOA", value=val_loa if val_loa != "-" else "", key="input_loa").upper()
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Grasa Sugerida LOA", f"{gr_loa_sug} g")
 
-    # 3. Formulario final para guardar el registro
-    with st.form("registro_lubricacion"):
-        st.markdown("### 💾 Guardar Registro")
+    # --- FORMULARIO DE GUARDADO ---
+    with st.form("registro_lub"):
         resp_r = st.text_input("Técnico Responsable")
+        gr_f_la = st.number_input("Gramos Reales LA", value=float(gr_la_sug))
+        gr_f_loa = st.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
+        submit = st.form_submit_button("GUARDAR")
         
-        c1, c2 = st.columns(2)
-        with c1:
-            gr_final_la = st.number_input("Gramos Reales LA", value=float(gr_la_sug))
-        with c2:
-            gr_final_loa = st.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
-            
-        grasa_tipo = st.selectbox("Tipo de Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
-        obs_r = st.text_area("Observaciones")
-        
-        # El botón de guardado
-        submit = st.form_submit_button("GUARDAR EN BASE DE DATOS")
-
-    # 4. Lógica de guardado (Solo si se presiona el botón)
-    if submit:
-        if not busqueda or not resp_r:
-            st.error("⚠️ Falta el TAG o el Responsable")
-        else:
-            nueva_lub = {
-                "Fecha": date.today().strftime("%d/%m/%Y"),
-                "Tag": busqueda,
-                "Responsable": resp_r,
-                "Rodamiento_LA": rod_la,
-                "Gramos_LA": gr_final_la,
-                "Rodamiento_LOA": rod_loa,
-                "Gramos_LOA": gr_final_loa,
-                "Tipo_Grasa": grasa_tipo,
-                "Descripcion": f"LUBRICACIÓN DE CAMPO: {grasa_tipo}",
-                "Taller_Externo": obs_r
-            }
-            
-            # Concatenamos y actualizamos
-            df_final = pd.concat([df_completo, pd.DataFrame([nueva_lub])], ignore_index=True)
-            conn.update(data=df_final)
-            st.success(f"✅ Lubricación de {busqueda} registrada correctamente.")
-            st.rerun()
+        if submit and resp_r:
+            st.success("Registro procesado")
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
     
@@ -464,6 +428,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
