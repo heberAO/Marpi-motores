@@ -261,57 +261,56 @@ elif modo == "Relubricacion":
     st.title("🔍 Buscador de Lubricación Inteligente - MARPI")
 
     # 1. Definimos la función de cálculo ARRIBA para evitar el NameError
-    def calcular_grasa_avanzado(codigo):
+   def calcular_grasa_avanzado(codigo):
         try:
-            if not codigo or codigo == "None" or codigo == "": return 0.0
-            
-            # 1. Limpiamos: Quitamos espacios, guiones y pasamos a mayúsculas
-            # Ej: "6318 C3" -> "6318C3"
-            codigo_limpio = str(codigo).replace(" ", "").replace("-", "").upper()
-            
-            # 2. Extraemos solo los primeros 4 o 5 números (la esencia del rodamiento)
+            # Convertimos a string y limpiamos cualquier caracter que no sea número
+            # Esto sirve por si el Excel tiene "6314" o "6314 C3"
             import re
-            match = re.search(r'(\d{4,5})', codigo_limpio)
-            if not match: return 0.0
+            solo_numeros = re.sub(r'\D', '', str(codigo)) 
             
-            solo_numeros = match.group(1)
+            if len(solo_numeros) < 3: 
+                return 0.0
             
-            # 3. Identificamos diámetro interior (d) y serie de ancho
-            # Los últimos dos dígitos x 5 = diámetro eje (d)
+            # Tomamos los últimos 4 o 5 dígitos importantes
+            # Ej: si es 6314, serie_eje es 14, d es 70mm
             serie_eje = int(solo_numeros[-2:])
             d = serie_eje * 5
             
-            # El dígito que define si es serie 2 (liviana) o 3 (pesada)
-            # En un 6318 es el '3'. En un 6212 es el '2'.
+            # El dígito de la serie (el tercero de atrás para adelante)
+            # En 6314 es el 3. En 6210 es el 2.
             serie_tipo = int(solo_numeros[-3])
             
-            # 4. Aplicamos dimensiones estándar según catálogo SKF
-            if serie_tipo == 3: # Serie 63xx, NU3xx
-                D = d * 2.2  # Diámetro exterior estimado
-                B = D * 0.25 # Ancho estimado
-            else: # Serie 62xx, NU2xx, 60xx
+            # Dimensiones estimadas según serie
+            if serie_tipo == 3: # Serie pesada (63xx, NU3xx)
+                D = d * 2.2
+                B = D * 0.25
+            else: # Serie liviana o media (62xx, 60xx, NU2xx)
                 D = d * 1.8
                 B = D * 0.22
-                
-            # Fórmula SKF: G = D * B * 0.005
+            
+            # Fórmula G = D * B * 0.005
             gramos = D * B * 0.005
             return round(gramos, 1)
         except:
             return 0.0
 
-    # 2. Lógica de Búsqueda
-    busqueda = st.text_input("BUSCAR POR TAG O N° DE SERIE").upper()
-    motor_encontrado = None
+   # 2. Interfaz de búsqueda mejorada
+    busqueda = st.text_input("🔍 BUSCAR POR TAG O N° DE MOTOR (SERIE)").upper()
     
+    motor_encontrado = None
     if busqueda:
-        # Buscamos en el DataFrame que cargamos al inicio
-        resultado = df_completo[(df_completo['Tag'] == busqueda) | (df_completo['N_Serie'] == busqueda)]
+        # Buscamos coincidencias en cualquiera de las dos columnas
+        # Usamos .astype(str) por si los números de serie en el Excel están como formato número
+        resultado = df_completo[
+            (df_completo['Tag'].astype(str).str.upper() == busqueda) | 
+            (df_completo['N_Serie'].astype(str).str.upper() == busqueda)
+        ]
+        
         if not resultado.empty:
-            motor_encontrado = resultado.iloc[-1]
-            st.success(f"✅ Datos recuperados para el Tag: {motor_encontrado['Tag']}")
+            motor_encontrado = resultado.iloc[-1]  # Tomamos el último registro cargado
+            st.success(f"✅ Motor localizado: {motor_encontrado['Tag']} (Serie: {motor_encontrado['N_Serie']})")
         else:
-            st.warning("⚠️ No se encontró historial. Ingrese los datos manualmente.")
-
+            st.error("❌ No se encontró ningún motor con ese TAG o Número de Serie.")
     # 3. Formulario (Todo lo que sigue debe estar dentro del 'with')
     with st.form(key="form_lub_final"):
         t_r = st.text_input("TAG", value=str(motor_encontrado['Tag']) if motor_encontrado is not None else busqueda).upper()
@@ -450,6 +449,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
