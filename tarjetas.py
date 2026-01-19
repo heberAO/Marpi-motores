@@ -290,108 +290,85 @@ elif modo == "Historial y QR":
 elif modo == "Relubricacion":
     st.title("🔍 Lubricación Inteligente MARPI")
 
-    # Filtramos nulos para que no de error
+    # 1. Buscador Predictivo (como el de Historial)
     df_lista = df_completo.fillna("-")
+    lista_sugerencias = sorted(list(set(df_lista['Tag'].astype(str).tolist() + df_lista['N_Serie'].astype(str).tolist())))
     
-    # Creamos una lista de sugerencias que el técnico verá al escribir
-    lista_sugerencias = df_lista['Tag'].astype(str).unique().tolist() + \
-                        df_lista['N_Serie'].astype(str).unique().tolist()
-    # Limpiamos duplicados y guiones
-    lista_sugerencias = [s for s in lista_sugerencias if s != "-"]
-
-    # 2. El buscador con sugerencias (Selectbox con búsqueda)
-    opcion_elegida = st.selectbox(
-        "🔎 Busque por Coincidencia (Tag o N° Serie)",
-        options=[""] + sorted(lista_sugerencias),
-        format_func=lambda x: "Escriba para buscar..." if x == "" else x
-    )
+    opcion_elegida = st.selectbox("Seleccione TAG o N° DE SERIE", options=[""] + lista_sugerencias)
 
     motor_encontrado = None
     if opcion_elegida != "":
-        # Buscamos el registro que coincida con lo elegido
+        # Buscamos el registro más reciente para ese motor
         res = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)]
         if not res.empty:
             motor_encontrado = res.iloc[-1]
-            st.success(f"✅ Motor seleccionado: {motor_encontrado['Tag']}")
-        else:
-            st.info("ℹ️ Motor nuevo (se registrará al guardar)")
+            st.success(f"✅ Motor: {motor_encontrado['Tag']} | Serie Actual: {motor_encontrado['N_Serie']}")
+            st.info(f"Potencia: {motor_encontrado.get('Potencia','-')} HP | RPM: {motor_encontrado.get('RPM','-')}")
 
+    # 2. Campos de Rodamientos (Fuera del form para cálculo vivo)
     st.divider()
-
-    # 3. Datos de Rodamientos y Cálculo en Vivo
     col1, col2 = st.columns(2)
     
     with col1:
-        # Si lo encontró, precargamos el rodamiento, si no, dejamos vacío
-        rod_la_val = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None else ""
-        rod_la = st.text_input("Rodamiento LA", value=rod_la_val if rod_la_val != "-" else "").upper()
-        
-        # El cálculo que ya arreglamos
+        val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None else ""
+        rod_la = st.text_input("Rodamiento LA", value=val_la if val_la != "-" else "").upper()
         gr_la_sug = calcular_grasa_avanzado(rod_la)
-        st.metric("Grasa Sugerida LA", f"{gr_la_sug} g")
+        st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
-        rod_loa_val = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
-        rod_loa = st.text_input("Rodamiento LOA", value=rod_loa_val if rod_loa_val != "-" else "").upper()
-        
+        val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
+        rod_loa = st.text_input("Rodamiento LOA", value=val_loa if val_loa != "-" else "").upper()
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
-        st.metric("Grasa Sugerida LOA", f"{gr_loa_sug} g")
+        st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
-    # 4. Formulario de Carga
-    with st.form("registro_final"):
+    # 3. Formulario de Carga
+    with st.form("registro_lub_marpi", clear_on_submit=False):
+        # Mantenemos el N° de serie detectado o permitimos uno nuevo
+        serie_final = st.text_input("Confirmar N° de Motor/Serie", value=str(motor_encontrado['N_Serie']) if motor_encontrado is not None else "")
         resp_r = st.text_input("Técnico Responsable")
+        
         c1, c2 = st.columns(2)
         with c1:
             gr_f_la = st.number_input("Gramos Reales LA", value=float(gr_la_sug))
         with c2:
             gr_f_loa = st.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
-        
-        grasa = st.selectbox("Tipo de Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
-        obs = st.text_area("Observaciones")
-        
-        if st.form_submit_button("💾 REGISTRAR LUBRICACIÓN"):
-            # 1. Validación de seguridad
-            # Usamos opcion_elegida (del buscador) si el TAG está vacío
-            tag_final = opcion_elegida if opcion_elegida != "" else "S/T"
             
-            if not resp_r:
-                st.error("⚠️ El nombre del responsable es obligatorio")
-            else:
-                try:
-                    # 2. Creamos el nuevo registro con los nombres EXACTOS de tus columnas
-                    # Asegúrate de que estos nombres coincidan con tu Excel
-                    nueva_fila = {
-                        "Fecha": date.today().strftime("%d/%m/%Y"),
-                        "Tag": str(tag_final),
-                        "N_Serie": str(motor_encontrado['N_Serie']) if motor_encontrado is not None else "-",
-                        "Responsable": str(resp_r),
-                        "Rodamiento_LA": str(rod_la),
-                        "Gramos_LA": float(gr_f_la),
-                        "Rodamiento_LOA": str(rod_loa),
-                        "Gramos_LOA": float(gr_f_loa),
-                        "Tipo_Grasa": str(grasa),
-                        "Descripcion": "RELUBRICACIÓN CAMPO",
-                        "Taller_Externo": str(obs)
-                    }
-                    
-                    # 3. Convertimos a DataFrame y unimos
-                    nueva_fila_df = pd.DataFrame([nueva_fila])
-                    
-                    # Limpiamos el DataFrame original de posibles filas vacías antes de unir
-                    df_base = df_completo.dropna(how='all')
-                    
-                    df_final = pd.concat([df_base, nueva_fila_df], ignore_index=True)
-                    
-                    # 4. Enviamos a Google Sheets
-                    conn.update(data=df_final)
-                    
-                    st.success(f"✅ ¡Lubricación de {tag_final} guardada exitosamente!")
-                    st.balloons() # Un pequeño efecto visual de éxito
-                    st.rerun()
-                    
-                except Exception as e:
-                    st.error(f"❌ Error al guardar: {e}")
-                    st.info("Revisá que el Excel no esté abierto o que no se hayan cambiado los nombres de las columnas.")
+        grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+        obs = st.text_area("Notas del servicio")
+        
+        btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
+
+    # 4. Lógica de Guardado (CORREGIDA)
+    if btn_guardar:
+        if not resp_r or not opcion_elegida:
+            st.error("⚠️ Falta completar el Responsable o seleccionar un Motor.")
+        else:
+            try:
+                nueva_fila = {
+                    "Fecha": date.today().strftime("%d/%m/%Y"),
+                    "Tag": str(opcion_elegida),
+                    "N_Serie": str(serie_final),
+                    "Responsable": str(resp_r),
+                    "Rodamiento_LA": str(rod_la),
+                    "Gramos_LA": gr_f_la,
+                    "Rodamiento_LOA": str(rod_loa),
+                    "Gramos_LOA": gr_f_loa,
+                    "Tipo_Grasa": grasa,
+                    "Descripcion": "RELUBRICACIÓN CAMPO",
+                    "Taller_Externo": obs
+                }
+                
+                # Actualizamos la base
+                df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
+                conn.update(data=df_final)
+                
+                # IMPORTANTE: Mostrar mensaje y esperar un poco antes de reiniciar
+                st.success(f"✅ ¡Guardado con éxito! Motor {opcion_elegida} actualizado.")
+                st.balloons()
+                # Quitamos el st.rerun() inmediato para que se vea el mensaje
+                
+            except Exception as e:
+                st.error(f"❌ Error al conectar con la base: {e}")
                     
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -474,6 +451,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
