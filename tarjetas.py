@@ -303,7 +303,6 @@ elif modo == "Relubricacion":
         options=[""] + lista_sugerencias,
         key=f"search_{st.session_state.form_id}" # <--- ID Dinámico
     )
-
     motor_encontrado = None
     if opcion_elegida != "":
         res = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)]
@@ -313,6 +312,18 @@ elif modo == "Relubricacion":
             st.success(f"✅ Motor: {motor_encontrado['Tag']}")
 
     st.divider()
+    
+    # --- 2. PREPARACIÓN DE VALORES PARA LOS CAMPOS ---
+    if motor_encontrado is not None:
+        # Usamos .get por si acaso, pero fijate que el nombre coincida con el st.write
+        val_la_sug = str(motor_encontrado.get('Rodamiento_LA', ''))
+        val_loa_sug = str(motor_encontrado.get('Rodamiento_LOA', ''))
+        serie_sug = str(motor_encontrado.get('N_Serie', ''))
+
+    else:
+       val_la_sug = ""
+       val_loa_sug = ""
+       serie_sug = ""
 
     # 2. Rodamientos y Cálculo
     col1, col2 = st.columns(2)
@@ -465,6 +476,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
