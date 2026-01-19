@@ -290,42 +290,51 @@ elif modo == "Historial y QR":
 elif modo == "Relubricacion":
     st.title("🔍 Lubricación Inteligente MARPI")
 
-    # 1. Buscador Predictivo (como el de Historial)
+    # --- FUNCIÓN PARA LIMPIAR TODO ---
+    def limpiar_formulario():
+        st.session_state["busqueda_key"] = ""
+        st.session_state["resp_key"] = ""
+        st.session_state["obs_key"] = ""
+        # Esto resetea el buscador y los campos de texto
+    
+    # 1. Buscador con "key" para poder resetearlo
     df_lista = df_completo.fillna("-")
     lista_sugerencias = sorted(list(set(df_lista['Tag'].astype(str).tolist() + df_lista['N_Serie'].astype(str).tolist())))
     
-    opcion_elegida = st.selectbox("Seleccione TAG o N° DE SERIE", options=[""] + lista_sugerencias)
+    opcion_elegida = st.selectbox(
+        "Seleccione TAG o N° DE SERIE", 
+        options=[""] + lista_sugerencias,
+        key="busqueda_key" # <--- CLAVE PARA RESETEO
+    )
 
     motor_encontrado = None
     if opcion_elegida != "":
-        # Buscamos el registro más reciente para ese motor
         res = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)]
         if not res.empty:
             motor_encontrado = res.iloc[-1]
-            st.success(f"✅ Motor: {motor_encontrado['Tag']} | Serie Actual: {motor_encontrado['N_Serie']}")
-            st.info(f"Potencia: {motor_encontrado.get('Potencia','-')} HP | RPM: {motor_encontrado.get('RPM','-')}")
+            st.success(f"✅ Motor: {motor_encontrado['Tag']}")
 
-    # 2. Campos de Rodamientos (Fuera del form para cálculo vivo)
     st.divider()
+
+    # 2. Campos de Rodamientos
     col1, col2 = st.columns(2)
-    
     with col1:
         val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None else ""
-        rod_la = st.text_input("Rodamiento LA", value=val_la if val_la != "-" else "").upper()
+        rod_la = st.text_input("Rodamiento LA", value=val_la if val_la != "-" else "", key="la_input").upper()
         gr_la_sug = calcular_grasa_avanzado(rod_la)
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
         val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
-        rod_loa = st.text_input("Rodamiento LOA", value=val_loa if val_loa != "-" else "").upper()
+        rod_loa = st.text_input("Rodamiento LOA", value=val_loa if val_loa != "-" else "", key="loa_input").upper()
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
-    # 3. Formulario de Carga
-    with st.form("registro_lub_marpi", clear_on_submit=False):
-        # Mantenemos el N° de serie detectado o permitimos uno nuevo
-        serie_final = st.text_input("Confirmar N° de Motor/Serie", value=str(motor_encontrado['N_Serie']) if motor_encontrado is not None else "")
-        resp_r = st.text_input("Técnico Responsable")
+    # 3. Formulario
+    with st.form("registro_lub_marpi"):
+        # Usamos keys también aquí
+        serie_final = st.text_input("Confirmar N° de Serie", value=str(motor_encontrado['N_Serie']) if motor_encontrado is not None else "")
+        resp_r = st.text_input("Técnico Responsable", key="resp_key")
         
         c1, c2 = st.columns(2)
         with c1:
@@ -334,14 +343,14 @@ elif modo == "Relubricacion":
             gr_f_loa = st.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
             
         grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
-        obs = st.text_area("Notas del servicio")
+        obs = st.text_area("Notas", key="obs_key")
         
         btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
-    # 4. Lógica de Guardado (CORREGIDA)
+    # 4. Lógica de Guardado y RESET
     if btn_guardar:
         if not resp_r or not opcion_elegida:
-            st.error("⚠️ Falta completar el Responsable o seleccionar un Motor.")
+            st.error("⚠️ Falta completar datos.")
         else:
             try:
                 nueva_fila = {
@@ -358,23 +367,20 @@ elif modo == "Relubricacion":
                     "Taller_Externo": obs
                 }
                 
-                # Guardamos en Google Sheets
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_final)
                 
-                # --- EL TRUCO PARA LIMPIAR TODO ---
-                st.success(f"✅ ¡Guardado con éxito! Motor {opcion_elegida} registrado.")
-                st.balloons()
+                st.success("✅ ¡Guardado! Limpiando pantalla...")
                 
-                # Esperamos 2 segundos para que el técnico vea el mensaje y LUEGO limpiamos
+                # --- AQUÍ VACIAMOS LA MEMORIA ---
+                limpiar_formulario()
+                
                 import time
-                time.sleep(2) 
-                
-                # Al ejecutar rerun, la App vuelve al principio y los campos quedan vacíos
-                st.rerun()
+                time.sleep(1.5)
+                st.rerun() # Ahora sí vuelve a cero porque las "keys" están vacías
                 
             except Exception as e:
-                st.error(f"❌ Error al guardar: {e}")
+                st.error(f"❌ Error: {e}")
                     
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -457,6 +463,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
