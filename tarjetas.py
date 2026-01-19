@@ -358,17 +358,23 @@ elif modo == "Relubricacion":
                     "Taller_Externo": obs
                 }
                 
-                # Actualizamos la base
+                # Guardamos en Google Sheets
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_final)
                 
-                # IMPORTANTE: Mostrar mensaje y esperar un poco antes de reiniciar
-                st.success(f"✅ ¡Guardado con éxito! Motor {opcion_elegida} actualizado.")
+                # --- EL TRUCO PARA LIMPIAR TODO ---
+                st.success(f"✅ ¡Guardado con éxito! Motor {opcion_elegida} registrado.")
                 st.balloons()
-                # Quitamos el st.rerun() inmediato para que se vea el mensaje
+                
+                # Esperamos 2 segundos para que el técnico vea el mensaje y LUEGO limpiamos
+                import time
+                time.sleep(2) 
+                
+                # Al ejecutar rerun, la App vuelve al principio y los campos quedan vacíos
+                st.rerun()
                 
             except Exception as e:
-                st.error(f"❌ Error al conectar con la base: {e}")
+                st.error(f"❌ Error al guardar: {e}")
                     
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -451,6 +457,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
