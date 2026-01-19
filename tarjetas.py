@@ -6,25 +6,33 @@ import os
 from fpdf import FPDF
 import urllib.parse  # Para el QR sin errores
 
-# --- ESTA FUNCIÓN VA AQUÍ ARRIBA, PEGADA AL MARGEN IZQUIERDO ---
 def calcular_grasa_avanzado(codigo):
     try:
-        if not codigo or codigo == "None" or codigo == "": return 0.0
-        solo_numeros = re.sub(r'\D', '', str(codigo)) 
-        if len(solo_numeros) < 3: return 0.0
+        s = str(codigo).split('.')[0] # Quitamos el .0 si existe
+        solo_numeros = re.sub(r'\D', '', s) 
+        
+        if len(solo_numeros) < 3: 
+            return 0.0
         
         serie_eje = int(solo_numeros[-2:])
         d = serie_eje * 5
+        
         serie_tipo = int(solo_numeros[-3])
         
-        if serie_tipo == 3: # Serie pesada
-            D, B = d * 2.2, (d * 2.2) * 0.25
-        else: # Serie liviana
-            D, B = d * 1.8, (d * 1.8) * 0.22
+        # 4. Cálculo de dimensiones (D=Exterior, B=Ancho)
+        if serie_tipo == 3: # Serie pesada (63xx)
+            D = d * 2.2
+            B = D * 0.25
+        else: # Serie liviana/media (62xx, 60xx)
+            D = d * 1.8
+            B = D * 0.22
             
+        # 5. Fórmula SKF (G = D * B * 0.005)
         gramos = D * B * 0.005
         return round(gramos, 1)
-    except:
+    except Exception as e:
+        # Esto nos va a ayudar a ver si hay un error escondido
+        print(f"Error en cálculo: {e}")
         return 0.0
 
 # --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
@@ -304,6 +312,7 @@ elif modo == "Relubricacion":
     with col2:
         val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
         rod_loa = st.text_input("Rodamiento LOA", value=val_loa).upper()
+        st.write(f"DEBUG: El código limpio es: {re.sub(r'\D', '', str(rod_la).split('.')[0])}")
         gr_loa_sug = calcular_grasa_avanzado(rod_loa) # <--- CALCULA AL INSTANTE
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
@@ -404,6 +413,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
