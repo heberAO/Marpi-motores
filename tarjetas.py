@@ -290,25 +290,27 @@ elif modo == "Historial y QR":
 elif modo == "Relubricacion":
     st.title("🔍 Buscador de Lubricación Inteligente")
 
-    busqueda = st.text_input("BUSCAR POR TAG O N° DE MOTOR").upper()
+    # 2. Interfaz de búsqueda (Fuera del formulario)
+    busqueda = st.text_input("🔍 BUSCAR POR TAG O N° DE MOTOR (SERIE)").upper().strip()
+    
     motor_encontrado = None
-    
     if busqueda:
-        res = df_completo[(df_completo['Tag'].astype(str).str.upper() == busqueda) | 
-                          (df_completo['N_Serie'].astype(str).str.upper() == busqueda)]
-        if not res.empty:
-            motor_encontrado = res.iloc[-1]
-            st.success(f"✅ Motor: {motor_encontrado['Tag']}")
-
-    st.markdown("### 🛠️ Configuración de Rodamientos")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None else ""
-        rod_la = st.text_input("Rodamiento LA", value=val_la, key="la_input").upper()
-        # Calculamos los gramos
-        gr_la_sug = calcular_grasa_avanzado(rod_la)
-        st.metric("Sugerido LA", f"{gr_la_sug} g")
+        # Convertimos todo a texto y quitamos los valores vacíos para que no de error
+        df_temp = df_completo.copy().fillna("")
+        
+        # Buscamos en Tag o en N_Serie
+        filtro = (df_temp['Tag'].astype(str).str.upper() == busqueda) | \
+                 (df_temp['N_Serie'].astype(str).str.upper() == busqueda)
+        
+        resultado = df_temp[filtro]
+        
+        if not resultado.empty:
+            motor_encontrado = resultado.iloc[-1]
+            st.success(f"✅ Motor: {motor_encontrado['Tag']} | Serie: {motor_encontrado['N_Serie']}")
+            # Mostramos info extra para confirmar que es el motor correcto
+            st.caption(f"Potencia: {motor_encontrado.get('Potencia','S/D')} | RPM: {motor_encontrado.get('RPM','S/D')}")
+        else:
+            st.error("❌ No se encontró el motor. Verifique el Tag o N° de Serie.")
 
     with col2:
         val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
@@ -407,6 +409,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
