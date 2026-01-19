@@ -290,7 +290,6 @@ elif modo == "Historial y QR":
 elif modo == "Relubricacion":
     st.title("🔍 Lubricación Inteligente MARPI")
 
-    # --- EL SECRETO: Creamos un ID único para el formulario ---
     # Si este ID cambia, el formulario se vacía sí o sí
     if "form_id" not in st.session_state:
         st.session_state.form_id = 0
@@ -338,6 +337,11 @@ elif modo == "Relubricacion":
             gr_f_la = st.number_input("Gramos Reales LA", value=float(gr_la_sug))
         with c2:
             gr_f_loa = st.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
+        Tipo_tarea = st.radio(
+            "Tipo de Intervencion",
+            ["Preventivo (planificaco)", "Correctiva (Urgencia)"],
+            index=0 # por defecto marca la primera
+        )
             
         grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
         obs = st.text_area("Notas")
@@ -460,6 +464,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
