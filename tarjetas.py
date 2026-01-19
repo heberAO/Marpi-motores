@@ -257,84 +257,80 @@ elif modo == "Historial y QR":
                             key=f"btn_pdf_{idx}"
                         )
 elif modo == "Relubricacion":
-    st.title("🛢️ Calculadora de Lubricación para Grandes Motores")
+    st.title("🔍 Buscador de Lubricación MARPI")
 
-    def calcular_grasa_avanzado(codigo):
-        """Calcula gramos basado en el código del rodamiento (Ej: 6318)"""
-        try:
-            solo_numeros = ''.join(filter(str.isdigit, codigo))
-            if len(solo_numeros) < 3: return None
-            serie_eje = int(solo_numeros[-2:])
-            serie_ancho = int(solo_numeros[-3])
-            d = serie_eje * 5
-            if serie_ancho == 3: # Serie pesada
-                D = d * 2.2 
-                B = D * 0.25
-            else: # Serie liviana
-                D = d * 1.8
-                B = D * 0.22
-            gramos = D * B * 0.005
-            return round(gramos, 1)
-        except:
-            return None
+    # 1. Función de búsqueda en la base de datos
+    def buscar_motor(termino):
+        # Buscamos por Tag o por Número de Serie
+        resultado = df_completo[(df_completo['Tag'] == termino) | (df_completo['N_Serie'] == termino)]
+        if not resultado.empty:
+            return resultado.iloc[-1]  # Traemos el registro más reciente
+        return None
 
-    # Usamos la llave para resetear el formulario tras guardar
-    if "form_lub_key" not in st.session_state:
-        st.session_state.form_lub_key = 0
+    # 2. Interfaz de búsqueda
+    busqueda = st.text_input("Ingrese TAG o N° DE SERIE del motor").upper()
+    
+    motor_encontrado = None
+    if busqueda:
+        motor_encontrado = buscar_motor(busqueda)
+        if motor_encontrado is not None:
+            st.success(f"✅ Motor encontrado: {motor_encontrado['Tag']} - {motor_encontrado.get('Potencia', 'S/D')} HP")
+        else:
+            st.warning("⚠️ El motor no está en la base de datos. Ingrese los datos manualmente.")
 
-    with st.form(key=f"form_lub_profesional_{st.session_state.form_lub_key}"):
-        t_r = st.text_input("TAG DEL MOTOR").upper()
-        
-        # AGREGAMOS EL RESPONSABLE (Faltaba definir resp_r)
+    # 3. Formulario de Lubricación
+    with st.form("form_lub_inteligente"):
+        # Si lo encontró, precargamos los datos; si no, campos vacíos
+        t_r = st.text_input("TAG", value=motor_encontrado['Tag'] if motor_encontrado is not None else busqueda).upper()
         resp_r = st.text_input("Técnico Responsable")
         
         col1, col2 = st.columns(2)
         
         with col1:
-            rod_la = st.text_input("Número de Rodamiento LA (ej: 6320, NU322)").upper()
-            gr_la_sugerido = calcular_grasa_avanzado(rod_la)
+            st.subheader("Lado Acople (LA)")
+            # Si el motor tiene el rodamiento cargado, lo mostramos
+            rod_la_db = motor_encontrado['Rodamiento_LA'] if motor_encontrado is not None and 'Rodamiento_LA' in motor_encontrado else ""
+            rod_la = st.text_input("Rodamiento LA", value=str(rod_la_db)).upper()
+            
+            gr_la_sugerido = calcular_grasa_avanzado(codigo=rod_la)
             if gr_la_sugerido:
-                st.success(f"📊 Sugerido para {rod_la}: **{gr_la_sugerido}g**")
-            gr_la = st.number_input("Gramos finales LA", value=gr_la_sugerido if gr_la_sugerido else 0.0)
+                st.info(f"⚖️ Lleva: **{gr_la_sugerido}g**")
+            gr_la = st.number_input("Gramos cargados LA", value=gr_la_sugerido if gr_la_sugerido else 0.0)
 
         with col2:
-            rod_loa = st.text_input("Número de Rodamiento LOA").upper()
-            gr_loa_sugerido = calcular_grasa_avanzado(rod_loa)
+            st.subheader("Lado Opuesto (LOA)")
+            rod_loa_db = motor_encontrado['Rodamiento_LOA'] if motor_encontrado is not None and 'Rodamiento_LOA' in motor_encontrado else ""
+            rod_loa = st.text_input("Rodamiento LOA", value=str(rod_loa_db)).upper()
+            
+            gr_loa_sugerido = calcular_grasa_avanzado(codigo=rod_loa)
             if gr_loa_sugerido:
-                st.success(f"📊 Sugerido para {rod_loa}: **{gr_loa_sugerido}g**")
-            gr_loa = st.number_input("Gramos finales LOA", value=gr_loa_sugerido if gr_loa_sugerido else 0.0)
+                st.info(f"⚖️ Lleva: **{gr_loa_sugerido}g**")
+            gr_loa = st.number_input("Gramos cargados LOA", value=gr_loa_sugerido if gr_loa_sugerido else 0.0)
 
-        # AGREGAMOS EL TIPO DE GRASA (Faltaba definir grasa)
-        grasa = st.selectbox("Tipo de Grasa Utilizada", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
-        
-        # AGREGAMOS LAS OBSERVACIONES (Faltaba definir obs_r)
-        obs_r = st.text_area("Observaciones de Lubricación")
+        grasa = st.selectbox("Tipo de Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+        obs_r = st.text_area("Observaciones")
 
-        if st.form_submit_button("💾 GUARDAR LUBRICACIÓN"):
+        if st.form_submit_button("💾 REGISTRAR Y ACTUALIZAR BASE"):
             if not t_r or not resp_r:
                 st.error("⚠️ Tag y Responsable son obligatorios")
             else:
-                nueva = {
-                    "Fecha": date.today().strftime("%d/%m/%Y"), 
-                    "Tag": t_r, 
-                    "Responsable": resp_r, 
-                    "Potencia": "-", 
-                    "RPM": "-",           
-                    "Frame": "-",
+                # Guardamos el registro de lubricación
+                nueva_fila = {
+                    "Fecha": date.today().strftime("%d/%m/%Y"),
+                    "Tag": t_r,
+                    "Responsable": resp_r,
                     "Rodamiento_LA": rod_la,
                     "Gramos_LA": gr_la,
                     "Rodamiento_LOA": rod_loa,
                     "Gramos_LOA": gr_loa,
                     "Tipo_Grasa": grasa,
-                    "Descripcion": f"LUBRICACIÓN PERIÓDICA: {grasa}", 
+                    "Descripcion": f"LUBRICACIÓN CAMPO. Rodamientos: LA:{rod_la} / LOA:{rod_loa}",
                     "Taller_Externo": obs_r
                 }
                 
-                df_act = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+                df_act = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_act)
-                
-                st.session_state.form_lub_key += 1
-                st.success(f"✅ Lubricación del motor {t_r} guardada correctamente")
+                st.success(f"✅ ¡Lubricación guardada! La base de datos de {t_r} ha sido actualizada.")
                 st.rerun()
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -417,6 +413,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
