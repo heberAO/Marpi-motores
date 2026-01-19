@@ -263,20 +263,39 @@ elif modo == "Relubricacion":
     # 1. Definimos la función de cálculo ARRIBA para evitar el NameError
     def calcular_grasa_avanzado(codigo):
         try:
-            if not codigo or len(codigo) < 3: return 0.0
-            solo_numeros = ''.join(filter(str.isdigit, codigo))
-            if len(solo_numeros) < 3: return 0.0
+            if not codigo or codigo == "None" or codigo == "": return 0.0
             
+            # 1. Limpiamos: Quitamos espacios, guiones y pasamos a mayúsculas
+            # Ej: "6318 C3" -> "6318C3"
+            codigo_limpio = str(codigo).replace(" ", "").replace("-", "").upper()
+            
+            # 2. Extraemos solo los primeros 4 o 5 números (la esencia del rodamiento)
+            import re
+            match = re.search(r'(\d{4,5})', codigo_limpio)
+            if not match: return 0.0
+            
+            solo_numeros = match.group(1)
+            
+            # 3. Identificamos diámetro interior (d) y serie de ancho
+            # Los últimos dos dígitos x 5 = diámetro eje (d)
             serie_eje = int(solo_numeros[-2:])
-            serie_ancho = int(solo_numeros[-3])
             d = serie_eje * 5
             
-            if serie_ancho == 3: # Serie pesada (63xx)
-                D, B = d * 2.2, (d * 2.2) * 0.25
-            else: # Serie liviana (62xx)
-                D, B = d * 1.8, (d * 1.8) * 0.22
+            # El dígito que define si es serie 2 (liviana) o 3 (pesada)
+            # En un 6318 es el '3'. En un 6212 es el '2'.
+            serie_tipo = int(solo_numeros[-3])
+            
+            # 4. Aplicamos dimensiones estándar según catálogo SKF
+            if serie_tipo == 3: # Serie 63xx, NU3xx
+                D = d * 2.2  # Diámetro exterior estimado
+                B = D * 0.25 # Ancho estimado
+            else: # Serie 62xx, NU2xx, 60xx
+                D = d * 1.8
+                B = D * 0.22
                 
-            return round(D * B * 0.005, 1)
+            # Fórmula SKF: G = D * B * 0.005
+            gramos = D * B * 0.005
+            return round(gramos, 1)
         except:
             return 0.0
 
@@ -431,6 +450,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
