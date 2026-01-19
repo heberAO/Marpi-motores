@@ -183,6 +183,84 @@ if modo == "Nuevo Registro":
                 # Forzamos el refresco para que aparezca el cartel y limpie todo
                 st.rerun()
   
+elif modo == "Historial y QR":
+    st.title("🔍 Consulta y Gestión de Motores")
+    
+    if not df_completo.empty:
+        # 1. Lista para el buscador (TAG + Serie)
+        df_completo['Busqueda_Combo'] = (
+            df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
+        )
+        opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
+        
+        # 2. Detección de QR
+        query_tag = st.query_params.get("tag", "").upper()
+        idx_q = 0
+        if query_tag:
+            for i, op in enumerate(opciones):
+                if op.startswith(query_tag + " |"):
+                    idx_q = i
+                    break
+        
+        seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
+        
+        if seleccion:
+            # Extraemos el TAG puro
+            buscado = seleccion.split(" | ")[0].strip()
+            st.session_state.tag_fijo = buscado
+            
+           # --- BOTONES DE ACCIÓN RÁPIDA ---
+            st.subheader("➕ ¿Qué deseas cargar para este motor?")
+            c1, c2, c3 = st.columns(3)
+            
+            with c1:
+                if st.button("🛠️ Nueva Reparación"):
+                    st.session_state.seleccion_manual = "Nuevo Registro"
+                    st.rerun()
+            with c2:
+                if st.button("🛢️ Nueva Lubricación"):
+                    st.session_state.seleccion_manual = "Relubricacion"
+                    st.rerun()
+            with c3:
+                if st.button("⚡ Nuevo Megado"):
+                    st.session_state.seleccion_manual = "Mediciones de Campo"
+                    st.rerun()
+            # --- QR Y DATOS ---
+            col_qr, col_info = st.columns([1, 2])
+            url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
+            qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(url_app)}"
+            
+            with col_qr:
+                st.image(qr_api, caption=f"QR de {buscado}")
+            with col_info:
+                st.subheader(f"🚜 Equipo seleccionado: {buscado}")
+                st.write(f"**Link directo:** {url_app}")
+            
+            st.divider()
+
+# --- HISTORIAL Y PDF ---
+            st.subheader("📜 Historial de Intervenciones")
+            hist_m = df_completo[df_completo['Tag'] == buscado].copy()
+            
+            # Corregido: le agregamos el ] al final
+            hist_m = hist_m.iloc[::-1] 
+
+            for idx, fila in hist_m.iterrows():
+                intervencion = str(fila.get('Descripcion', '-'))[:40]
+                with st.expander(f"📅 {fila.get('Fecha','-')} - {intervencion}..."):
+                    st.write(f"**Responsable:** {fila.get('Responsable','-')}")
+                    st.write(f"**Detalle completo:** {fila.get('Descripcion','-')}")
+                    
+                    # Generar PDF
+                    pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado)
+                    
+                    if pdf_archivo:
+                        st.download_button(
+                            label="📄 Descargar Informe PDF",
+                            data=pdf_archivo,
+                            file_name=f"Reporte_{buscado}_{idx}.pdf",
+                            key=f"btn_pdf_{idx}"
+                        )
 elif modo == "Relubricacion":
     st.title("🛢️ Calculadora de Lubricación para Grandes Motores")
 
@@ -235,57 +313,6 @@ elif modo == "Relubricacion":
         if st.form_submit_button("💾 GUARDAR LUBRICACIÓN"):
             # ... (aquí va tu lógica de guardado que ya funciona) ...
             st.success("✅ Datos guardados correctamente")
-
-# --- HISTORIAL Y PDF ---
-            st.subheader("📜 Historial de Intervenciones")
-            hist_m = df_completo[df_completo['Tag'] == buscado].copy()
-            
-            # Corregido: le agregamos el ] al final
-            hist_m = hist_m.iloc[::-1] 
-
-            for idx, fila in hist_m.iterrows():
-                intervencion = str(fila.get('Descripcion', '-'))[:40]
-                with st.expander(f"📅 {fila.get('Fecha','-')} - {intervencion}..."):
-                    st.write(f"**Responsable:** {fila.get('Responsable','-')}")
-                    st.write(f"**Detalle completo:** {fila.get('Descripcion','-')}")
-                    
-                    # Generar PDF
-                    pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado)
-                    
-                    if pdf_archivo:
-                        st.download_button(
-                            label="📄 Descargar Informe PDF",
-                            data=pdf_archivo,
-                            file_name=f"Reporte_{buscado}_{idx}.pdf",
-                            key=f"btn_pdf_{idx}"
-                        )
-elif modo == "Relubricacion":
-    st.title("🛢️ Gestión de Relubricación Detallada")
-    with st.form("relub"):
-        t_r = st.text_input("TAG DEL MOTOR", value=st.session_state.tag_fijo).upper()
-        sn_r = st.text_input("N° de Serie")
-        resp_r = st.text_input("Responsable de Tarea")
-        
-        st.subheader("🔧 Datos de Rodamientos")
-        c1, c2 = st.columns(2)
-        with c1:
-            rod_la = st.text_input("Rodamiento LA")
-            gr_la = st.text_input("Gramos LA")
-        with c2:
-            rod_loa = st.text_input("Rodamiento LOA")
-            gr_loa = st.text_input("Gramos LOA")
-            
-        grasa = st.selectbox("Tipo de Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
-        obs = st.text_area("Observaciones")
-        
-        if st.form_submit_button("💾 GUARDAR"):
-            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "Responsable": resp, "Descripcion": f"LUBRICACIÓN: {det}"}
-            conn.update(data=pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True))
-            
-            # LIMPIEZA DE CAMPOS
-            st.session_state.tag_fijo = ""
-            st.success("✅ Lubricación registrada")
-            st.rerun()
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
     
@@ -367,6 +394,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
