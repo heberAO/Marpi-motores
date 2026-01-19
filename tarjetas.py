@@ -140,16 +140,24 @@ if modo == "Nuevo Registro":
         
         resp = st.text_input("Técnico Responsable")
         desc = st.text_area("Descripción de la Reparación/Trabajo")
-        ext = st.text_area("Observaciones Finales")
+        ext = st.text_area("Observaciones Finales") # <--- ACÁ SE LLAMA 'ext'
         
         if st.form_submit_button("💾 GUARDAR"):
-            nueva = {"Fecha": date.today().strftime("%d/%m/%Y"), "Tag": t, "N_Serie": sn, "Responsable": resp, "Descripcion": desc, "Taller_Externo": obs}
+            # CORRECCIÓN AQUÍ ABAJO (cambié obs por ext)
+            nueva = {
+                "Fecha": fecha_hoy.strftime("%d/%m/%Y"), 
+                "Tag": t, 
+                "N_Serie": sn, 
+                "Responsable": resp, 
+                "Descripcion": desc, 
+                "Taller_Externo": ext  # <--- ANTES DECÍA 'obs' Y DABA ERROR
+            }
             conn.update(data=pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True))
             
             # LIMPIEZA DE CAMPOS
             st.session_state.tag_fijo = "" 
             st.success("✅ Registro guardado con éxito")
-            st.rerun() # Esto limpia el formulario automáticamente
+            st.rerun()
   
 elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
@@ -337,6 +345,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
