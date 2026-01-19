@@ -295,15 +295,31 @@ elif modo == "Relubricacion":
     motor_encontrado = None
     
     if busqueda:
-        # Buscamos en el DataFrame limpiando nulos para que no falle
+        # 1. Limpiamos nulos
         df_temp = df_completo.fillna("-")
+        
+        # 2. Buscamos el motor
         res = df_temp[(df_temp['Tag'].astype(str).str.upper() == busqueda) | 
                       (df_temp['N_Serie'].astype(str).str.upper() == busqueda)]
+        
         if not res.empty:
             motor_encontrado = res.iloc[-1]
-            st.success(f"✅ Motor: {motor_encontrado['Tag']} | Serie: {motor_encontrado['N_Serie']}")
+            st.success(f"✅ Motor: {motor_encontrado['Tag']}")
+
+            # --- TRUCO PARA ENCONTRAR LAS COLUMNAS ---
+            # Buscamos cualquier columna que contenga "ROD" y "LA"
+            col_la_name = [c for c in df_completo.columns if 'ROD' in c.upper() and 'LA' in c.upper() and 'LOA' not in c.upper()]
+            col_loa_name = [c for c in df_completo.columns if 'ROD' in c.upper() and 'LOA' in c.upper()]
+
+            # Si las encontramos, extraemos el valor
+            rod_db_la = motor_encontrado[col_la_name[0]] if col_la_name else "-"
+            rod_db_loa = motor_encontrado[col_loa_name[0]] if col_loa_name else "-"
+            
+            # Esto te va a decir en pantalla qué encontró la App
+            if not col_la_name:
+                st.error("❌ No encontré la columna de Rodamiento LA. Revisá si se llama distinto en el Excel.")
         else:
-            st.warning("⚠️ Motor no encontrado. Cargue los datos manualmente.")
+            st.warning("⚠️ Motor no encontrado.")
 
     # 2. Configuración de Rodamientos y Cálculos (Fuera del formulario para que sea vivo)
     st.markdown("---")
@@ -448,6 +464,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
