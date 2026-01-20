@@ -47,23 +47,22 @@ def generar_pdf_reporte(datos, titulo_informe):
     pdf = FPDF()
     pdf.add_page()
     
-    # 1. ENCABEZADO Y LOGO
+    # 1. LOGO Y ENCABEZADO
     try:
         pdf.image("logo.png", 10, 8, 33)
     except:
         pdf.set_font("Arial", 'B', 14)
-        pdf.cell(0, 10, "MARPI MOTORES", ln=True, align='L')
+        pdf.cell(0, 10, "MARPI MOTORES", ln=True)
 
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(0, 10, f"{titulo_informe}", ln=True, align='C')
     pdf.ln(5)
     
-    # Función para limpiar los NAN
     def v(clave):
         val = str(datos.get(clave, ""))
         return "---" if val.lower() in ["nan", "none", "", "n/a"] else val
 
-    # 2. DATOS DE IDENTIFICACIÓN (Siempre van)
+    # 2. INFORMACIÓN BÁSICA
     pdf.set_font("Arial", 'B', 11)
     pdf.set_fill_color(230, 230, 230)
     pdf.cell(0, 8, " INFORMACIÓN DEL EQUIPO", ln=True, fill=True)
@@ -72,8 +71,7 @@ def generar_pdf_reporte(datos, titulo_informe):
     pdf.cell(0, 7, f"TAG: {v('Tag')} | N° Serie: {v('N_Serie')}", ln=True)
     pdf.ln(3)
 
-    # 3. SI ES "NUEVO REGISTRO" (ALTA)
-    # --- SECCIÓN: DATOS DE PLACA ---
+    # 3. DATOS DE PLACA (SOLO SI ES ALTA)
     if "Potencia" in datos:
         pdf.set_font("Arial", 'B', 11)
         pdf.cell(0, 8, " DATOS DE PLACA", ln=True, fill=True)
@@ -83,7 +81,7 @@ def generar_pdf_reporte(datos, titulo_informe):
         pdf.cell(0, 7, f"Rodamiento LA: {v('Rodamiento_LA')} | Rodamiento LOA: {v('Rodamiento_LOA')}", ln=True)
         pdf.ln(3)
 
-    # --- SECCIÓN: MEDICIONES ELÉCTRICAS (9 MEDICIONES DE ALTA) ---
+    # 4. MEDICIONES INICIALES (ALTA)
     if "RT_TU" in datos:
         pdf.set_font("Arial", 'B', 11)
         pdf.cell(0, 8, " MEDICIONES ELÉCTRICAS INICIALES", ln=True, fill=True)
@@ -93,66 +91,29 @@ def generar_pdf_reporte(datos, titulo_informe):
         pdf.cell(0, 7, f"Resistencias Internas: U:{v('RI_U')} | V:{v('RI_V')} | W:{v('RI_W')}", ln=True)
         pdf.ln(3)
 
-    # --- SECCIÓN: MEGADO DE CAMPO (15 MEDICIONES) ---
+    # 5. MEDICIONES DE CAMPO (MEGADO 15 DATOS)
     if "RT_TV1" in datos:
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, " MEDICIONES DE CAMPO", ln=True, fill=True)
-        # Campos de Alta
-       if "RT_TU" in datos:
-        pdf.ln(2)
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, " MEDICIONES ELÉCTRICAS INICIALES", ln=True, fill=True)
+        pdf.cell(0, 8, " MEDICIONES DE CAMPO (MEGADO)", ln=True, fill=True)
         pdf.set_font("Arial", '', 10)
-        pdf.cell(0, 7, f"Aislamiento a Tierra: TU:{v('RT_TU')} | TV:{v('RT_TV')} | TW:{v('RT_TW')}", ln=True)
-        pdf.cell(0, 7, f"Aislamiento entre Bobinas: UV:{v('RB_UV')} | VW:{v('RB_VW')} | UW:{v('RB_UW')}", ln=True)
-        pdf.cell(0, 7, f"Resistencias Internas: U:{v('RI_U')} | V:{v('RI_V')} | W:{v('RI_W')}", ln=True)
-        # Campos de Megado de campo
-        if "RT_TV1" in datos:
-            pdf.ln(2)
-            pdf.set_font("Arial", 'B', 11)
-            pdf.set_fill_color(200, 220, 255) # Un color celeste para destacar
-            pdf.cell(0, 8, " MEDICIONES DE MEGADO Y RESISTENCIAS", ln=True, fill=True)
-            pdf.set_font("Arial", '', 10)
+        pdf.cell(0, 7, f"Tierra: V1:{v('RT_TV1')} | U1:{v('RT_TU1')} | W1:{v('RT_TW1')}", ln=True)
+        pdf.cell(0, 7, f"Bobinas: WV1:{v('RB_WV1')} | WU1:{v('RB_WU1')} | VU1:{v('RB_VU1')}", ln=True)
+        pdf.cell(0, 7, f"Internas: U1U2:{v('RI_U1U2')} | V1V2:{v('RI_V1V2')} | W1W2:{v('RI_W1W2')}", ln=True)
+        pdf.cell(0, 7, f"Linea-T: L1:{v('ML_L1')} | L2:{v('ML_L2')} | L3:{v('ML_L3')}", ln=True)
+        pdf.cell(0, 7, f"Linea-Linea: L1L2:{v('ML_L1L2')} | L1L3:{v('ML_L1L3')} | L2L3:{v('ML_L2L3')}", ln=True)
+        pdf.ln(3)
 
-        # 1. Megado a Tierra (Motor) - 3 datos
-            pdf.set_font("Arial", 'B', 10)
-            pdf.cell(0, 7, "Aislamiento a Tierra (Motor):", ln=True)
-            pdf.set_font("Arial", '', 10)
-            pdf.cell(0, 7, f"T-V1: {v('RT_TV1')} GOhm | T-U1: {v('RT_TU1')} GOhm | T-W1: {v('RT_TW1')} GOhm", ln=True)
-
-        # 2. Megado entre Bobinas (Motor) - 3 datos
-            pdf.set_font("Arial", 'B', 10)
-            pdf.cell(0, 7, "Aislamiento entre Bobinas:", ln=True)
-            pdf.set_font("Arial", '', 10)
-            pdf.cell(0, 7, f"W1-V1: {v('RB_WV1')} GOhm | W1-U1: {v('RB_WU1')} GOhm | V1-U1: {v('RB_VU1')} GOhm", ln=True)
-
-        # 3. Resistencias Internas - 3 datos
-            pdf.set_font("Arial", 'B', 10)
-            pdf.cell(0, 7, "Resistencias Internas (Continuidad):", ln=True)
-            pdf.set_font("Arial", '', 10)
-            pdf.cell(0, 7, f"U1-U2: {v('RI_U1U2')} Ohm | V1-V2: {v('RI_V1V2')} Ohm | W1-W2: {v('RI_W1W2')} Ohm", ln=True)
-
-            pdf.ln(2)
-            # 4. Megado de Línea - 6 datos
-            pdf.set_font("Arial", 'B', 10)
-            pdf.cell(0, 7, "Mediciones de Línea (Alimentación):", ln=True)
-            pdf.set_font("Arial", '', 10)
-            pdf.cell(0, 7, f"Tierra-L1: {v('ML_L1')} GOhm | Tierra-L2: {v('ML_L2')} GOhm | Tierra-L3: {v('ML_L3')} GOhm", ln=True)
-            pdf.cell(0, 7, f"L1-L2: {v('ML_L1L2')} GOhm | L1-L3: {v('ML_L1L3')} GOhm | L2-L3: {v('ML_L2L3')} GOhm", ln=True)
-
-    # 5. DETALLE / DESCRIPCIÓN (Lubricación, Reparación u Otros)
+    # 6. DESCRIPCIÓN O NOTAS
     if "Descripcion" in datos:
-        pdf.ln(2)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, " DETALLE DE INTERVENCIÓN", ln=True, fill=True)
+        pdf.cell(0, 8, " DETALLE DE LA TAREA / OBSERVACIONES", ln=True, fill=True)
         pdf.set_font("Arial", '', 10)
         pdf.multi_cell(0, 7, v("Descripcion"))
 
-    # 6. PIE DE PÁGINA
+    # 7. PIE DE PÁGINA
     pdf.set_y(-25)
     pdf.set_font("Arial", 'I', 8)
-    pdf.cell(0, 5, "Informe generado por Sistema Marpi Motores", align='C', ln=True)
-    pdf.cell(0, 5, "PROPIEDAD DE MARPI MOTORES - CONFIDENCIAL", align='C', ln=True)
+    pdf.cell(0, 10, "ESTE INFORME ES PROPIEDAD DE MARPI MOTORES.", align='C', ln=True)
     
     return pdf.output(dest='S').encode('latin-1', 'replace')
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
@@ -593,6 +554,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
