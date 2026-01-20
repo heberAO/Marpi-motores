@@ -398,7 +398,6 @@ if opcion_elegida != "":
             st.error("⚠️ Falta completar datos.")
         else:
             try:
-                # 1. Preparamos el diccionario con los nombres EXACTOS de tu Excel
                 datos_para_historial = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": opcion_elegida,
@@ -409,34 +408,23 @@ if opcion_elegida != "":
                     "Gramos LA": gr_f_la,
                     "Gramos LOA": gr_f_loa,
                     "Grasa": grasa,
-                    "Descripcion": Tipo_tarea, # Usamos 'Descripcion' porque así lo busca el historial
+                    "Descripcion": Tipo_tarea, 
                     "Observaciones": obs
                 }
 
-                # 2. GUARDAR EN EXCEL/GOOGLE SHEETS
-                # Reemplazá 'registrar_intervencion' por el nombre de tu función de guardado
-                exito = registrar_intervencion(datos_para_historial) 
+                cargar_intervencion(datos_para_historial) 
 
-                if exito:
-                    # 3. GENERAR PDF PARA DESCARGAR
-                    pdf_content = generar_pdf_reporte(datos_para_historial, opcion_elegida, "REPORTE DE LUBRICACIÓN")
-                    
-                    if pdf_content:
-                        st.download_button(
-                            label="📥 Descargar Reporte PDF",
-                            data=pdf_content,
-                            file_name=f"Lubricacion_{opcion_elegida}.pdf",
-                            mime="application/pdf"
-                        )
-                    
-                    st.success("✅ ¡Registro guardado en la base de datos!")
-                    st.balloons()
-                    
-                    # Resetear formulario
-                    st.session_state.form_id += 1
-                    import time
-                    time.sleep(2)
-                    st.rerun()
+                st.success("✅ ¡Registro guardado con éxito!")
+                
+                # Generar el PDF para que el usuario se lo lleve
+                pdf_content = generar_pdf_reporte(datos_para_historial, opcion_elegida, "REPORTE DE LUBRICACIÓN")
+                if pdf_content:
+                    st.download_button("📥 Descargar Reporte PDF", pdf_content, f"Lubricacion_{opcion_elegida}.pdf")
+
+                st.balloons()
+                time.sleep(2)
+                st.rerun()
+
             except Exception as e:
                 st.error(f"❌ Error al guardar: {e}")
                     
@@ -521,6 +509,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
