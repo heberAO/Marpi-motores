@@ -324,37 +324,38 @@ elif modo == "Historial y QR":
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
 
-    # 1. Limpieza de datos y buscador (SIN duplicar la barra)
+    # 1. Inicializar form_id si no existe (evita el error de anoche)
+    if "form_id" not in st.session_state:
+        st.session_state.form_id = 0
+
+    # 2. Preparar datos y Buscador
     df_lista = df_completo.copy()
-    df_lista.columns = [str(c).strip() for c in df_lista.columns]
+    df_lista.columns = [str(c).strip() for c in df_lista.columns] # Limpia espacios en nombres de columnas
     
-    # Lista limpia de TAGs
     tags_disponibles = sorted([str(x) for x in df_lista['Tag'].unique() if str(x) not in ['nan', 'None', '']])
     
-    # Única barra de búsqueda
     tag_seleccionado = st.selectbox(
         "Seleccione el TAG del Motor", 
         options=[""] + tags_disponibles,
-        key="buscador_unico_lub"
+        key=f"buscador_{st.session_state.form_id}" # Key dinámica para limpiar buscador también
     )
 
-    # Variables para guardar lo que encontremos
+    # Variables vacías por defecto
     v_la, v_loa, v_serie = "", "", ""
 
+    # 3. LÓGICA DE BÚSQUEDA (Rastreador)
     if tag_seleccionado != "":
-        # Filtramos todas las filas de ese TAG
         hist = df_lista[df_lista['Tag'] == tag_seleccionado]
-        
         if not hist.empty:
-            # RASTREO: Buscamos el último valor real en la columna Rodamiento_LA
+            # Buscamos el último Rodamiento LA real
             res_la = hist['Rodamiento_LA'].astype(str).replace(['', 'nan', 'None', '0', '0.0'], pd.NA).dropna()
             if not res_la.empty: v_la = res_la.iloc[-1]
             
-            # RASTREO: Buscamos el último valor real en la columna Rodamiento_LOA
+            # Buscamos el último Rodamiento LOA real
             res_loa = hist['Rodamiento_LOA'].astype(str).replace(['', 'nan', 'None', '0', '0.0'], pd.NA).dropna()
             if not res_loa.empty: v_loa = res_loa.iloc[-1]
 
-            # RASTREO: N° de Serie
+            # Buscamos el N° de Serie
             res_sn = hist['N_Serie'].astype(str).replace(['', 'nan', 'None'], pd.NA).dropna()
             if not res_sn.empty: v_serie = res_sn.iloc[-1]
             
@@ -362,20 +363,19 @@ elif modo == "Relubricacion":
 
     st.divider()
 
-    # 2. CAMPOS DE TEXTO (Le pasan el valor 'v_la' y 'v_loa' directamente)
+    # 4. Inputs de Rodamientos (Fuera del formulario para que el 'value' funcione bien)
     col1, col2 = st.columns(2)
     with col1:
-        # AGREGAMOS LA KEY AQUÍ
         rod_la = st.text_input("Rodamiento LA", value=v_la, key=f"la_{st.session_state.form_id}").upper()
         gr_la_sug = calcular_grasa_avanzado(rod_la)
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
-        # AGREGAMOS LA KEY AQUÍ
         rod_loa = st.text_input("Rodamiento LOA", value=v_loa, key=f"loa_{st.session_state.form_id}").upper()
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
+    # 5. Formulario de Guardado
     with st.form(key=f"form_lub_{st.session_state.form_id}"):
         serie_final = st.text_input("Confirmar N° de Serie", value=v_serie)
         resp_r = st.text_input("Técnico Responsable")
@@ -385,16 +385,16 @@ elif modo == "Relubricacion":
         gr_f_loa = c2.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
         
         tipo_t = st.radio("Tipo de Intervención", ["Preventivo", "Correctiva"])
-        
-        # FIJATE ACÁ: Asegurate que el nombre sea 'grasa_s'
         grasa_s = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
-        
         obs = st.text_area("Notas")
         
         btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
-    if btn_guardar: # Cuando se presiona el botón, se ejecutan estas líneas
-        if resp_r and tag_seleccionado:
+    # 6. Ejecución del Guardado
+    if btn_guardar:
+        if not resp_r or tag_seleccionado == "":
+            st.error("⚠️ Falta completar el Responsable o seleccionar un Motor.")
+        else:
             try:
                 nueva_f = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
@@ -405,19 +405,25 @@ elif modo == "Relubricacion":
                     "Gramos_LA": gr_f_la, 
                     "Rodamiento_LOA": rod_loa,
                     "Gramos_LOA": gr_f_loa, 
-                    "Tipo_Grasa": grasa_s, # <--- ACÁ USAMOS LA VARIABLE
+                    "Tipo_Grasa": grasa_s, 
                     "Tipo_Tarea": tipo_t, 
                     "Descripcion": "RELUBRICACIÓN",
                     "Taller_Externo": obs
                 }
+                
+                # Actualizar Google Sheets
                 df_act = pd.concat([df_completo, pd.DataFrame([nueva_f])], ignore_index=True)
                 conn.update(data=df_act)
                 
+                # LIMPIEZA: Sumamos 1 al ID para que todo se resetee
                 st.session_state.form_id += 1 
-                st.success("✅ ¡Guardado con éxito!")
+                st.success("✅ ¡Guardado con éxito! Formulario reiniciado.")
+                st.balloons()
+                time.sleep(1)
                 st.rerun()
+                
             except Exception as e:
-                st.error(f"Error al guardar: {e}")
+                st.error(f"❌ Error al guardar: {e}")
                 
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -500,6 +506,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
