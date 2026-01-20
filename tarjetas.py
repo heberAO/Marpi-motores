@@ -301,11 +301,11 @@ elif modo == "Historial y QR":
 
 # --- Generar PDF (CORREGIDO) ---
             with st.expander(f"📅 {fila.get('Fecha','-')} - {intervencion}..."):
-                    st.write(f"**Responsable:** {fila.get('Responsable','-')}")
-                    st.write(f"**Detalle completo:** {fila.get('Descripcion','-')}")
+                st.write(f"**Responsable:** {fila.get('Responsable','-')}")
+                st.write(f"**Detalle completo:** {fila.get('Descripcion','-')}")
                     
                     # --- FIJATE QUE ESTO ESTÉ ALINEADO CON LOS ST.WRITE ---
-                    desc_para_filtro = str(fila.get('Descripcion', '')).upper()
+                desc_para_filtro = str(fila.get('Descripcion', '')).upper()
                     
                 if "PREVENTIVA" in desc_para_filtro or "CORRECTIVA" in desc_para_filtro:
                     tipo_de_informe = "REPORTE DE LUBRICACIÓN"
@@ -315,7 +315,7 @@ elif modo == "Historial y QR":
                     tipo_de_informe = "INFORME TÉCNICO"
 
                     # Llamada a la función con 3 argumentos
-            pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado, tipo_de_informe)
+                pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado, tipo_de_informe)
 
     # Si este ID cambia, el formulario se vacía sí o sí
     if "form_id" not in st.session_state:
@@ -510,6 +510,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
