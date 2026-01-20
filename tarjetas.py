@@ -302,43 +302,55 @@ elif modo == "Historial y QR":
                         )
 
 elif modo == "Relubricacion":
-    st.title("🔍 Lubricación Inteligente MARPI")
+    st.title("🛢️ Lubricación Inteligente MARPI")
 
     if "form_id" not in st.session_state:
         st.session_state.form_id = 0
 
-    df_lista = df_completo.fillna("-")
-    lista_sugerencias = sorted(list(set(df_lista['Tag'].astype(str).tolist() + df_lista['N_Serie'].astype(str).tolist())))
+    # Limpiamos los nombres de las columnas por si tienen espacios invisibles
+    df_completo.columns = df_completo.columns.str.strip()
+    df_lista = df_completo.copy()
+    
+    # Lista de motores para el buscador
+    lista_sugerencias = sorted(list(set(df_lista['Tag'].dropna().astype(str).tolist())))
     
     opcion_elegida = st.selectbox(
-        "Seleccione TAG o N° DE SERIE", 
+        "Seleccione TAG del Motor", 
         options=[""] + lista_sugerencias,
         key=f"search_{st.session_state.form_id}"
     )
 
     motor_encontrado = None
     if opcion_elegida != "":
-        # Buscamos el motor y limpiamos valores nulos para evitar errores
-        res = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)].replace("-", "")
+        # Buscamos la última intervención de ese motor para traer los rodamientos más recientes
+        res = df_lista[df_lista['Tag'] == opcion_elegida]
         if not res.empty:
-            motor_encontrado = res.iloc[-1]
-            st.success(f"✅ Motor seleccionado: {motor_encontrado['Tag']}")
+            # Buscamos en todo el historial el primer valor que NO sea nulo para los rodamientos
+            # Esto es por si en la última fila no se cargaron pero en la anterior sí
+            motor_encontrado = res.replace(["", "nan", "None", "-"], pd.NA).ffill().iloc[-1]
+            st.success(f"✅ Motor: {motor_encontrado['Tag']}")
 
     st.divider()
 
     col1, col2 = st.columns(2)
     with col1:
-        # Extraemos el Rodamiento LA de la columna AB de tu Sheet1 
-        val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None and 'Rodamiento_LA' in motor_encontrado else ""
-        # Si el valor es "0" o nulo, lo dejamos vacío para escribir
-        rod_la = st.text_input("Rodamiento LA", value=val_la if val_la not in ["0", "nan", "None"] else "", key=f"la_{st.session_state.form_id}").upper()
+        # Intentamos traer el dato. Si falla, ponemos vacío.
+        try:
+            val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None else ""
+        except:
+            val_la = ""
+            
+        rod_la = st.text_input("Rodamiento LA", value=val_la if val_la not in ["<NA>", "nan", "None", "0.0", "0"] else "", key=f"la_{st.session_state.form_id}").upper()
         gr_la_sug = calcular_grasa_avanzado(rod_la)
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
-        # Extraemos el Rodamiento LOA de la columna AD de tu Sheet1 
-        val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None and 'Rodamiento_LOA' in motor_encontrado else ""
-        rod_loa = st.text_input("Rodamiento LOA", value=val_loa if val_loa not in ["0", "nan", "None"] else "", key=f"loa_{st.session_state.form_id}").upper()
+        try:
+            val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
+        except:
+            val_loa = ""
+            
+        rod_loa = st.text_input("Rodamiento LOA", value=val_loa if val_loa not in ["<NA>", "nan", "None", "0.0", "0"] else "", key=f"loa_{st.session_state.form_id}").upper()
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
@@ -477,6 +489,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
