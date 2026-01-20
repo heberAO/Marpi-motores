@@ -399,8 +399,8 @@ if opcion_elegida != "":
             st.error("⚠️ Falta completar datos.")
         else:
             try:
-                # 1. Armamos los datos
-                datos_nuevos = pd.DataFrame([{
+                # 1. Creamos el diccionario con los nombres EXACTOS de tus columnas
+                nuevo_registro = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": opcion_elegida,
                     "N_Serie": serie_final,
@@ -412,27 +412,28 @@ if opcion_elegida != "":
                     "Grasa": grasa,
                     "Descripcion": Tipo_tarea,
                     "Observaciones": obs
-                }])
+                }
 
-                # 2. GUARDADO DIRECTO (Sin usar variables externas)
-                # Usamos la misma conexión 'conn' que usás para leer el historial
-                conn.create(data=datos_nuevos) 
+                # 2. MÉTODO DE GUARDADO (FORZADO)
+                # Leemos lo que hay, sumamos lo nuevo y sobreescribimos
+                df_actual = conn.read(worksheet="Intervenciones", ttl=0) # ttl=0 para que no use memoria vieja
+                df_nuevo = pd.DataFrame([nuevo_registro])
+                df_final = pd.concat([df_actual, df_nuevo], ignore_index=True)
                 
-                st.success("✅ ¡Registro guardado en Google Sheets!")
+                # Esta es la línea que manda los datos al espacio
+                conn.update(worksheet="Intervenciones", data=df_final)
+                
+                st.success("✅ ¡REGISTRO GUARDADO EN LA PLANILLA!")
 
-                # 3. GENERAR PDF PARA DESCARGAR
-                # Usamos datos_nuevos.iloc[0] para que la función del PDF reciba un diccionario
-                pdf_content = generar_pdf_reporte(datos_nuevos.iloc[0].to_dict(), opcion_elegida, "REPORTE DE LUBRICACIÓN")
-                
+                # 3. PDF (Para que no se pierda)
+                pdf_content = generar_pdf_reporte(nuevo_registro, opcion_elegida, "REPORTE DE LUBRICACIÓN")
                 if pdf_content:
                     st.download_button("📥 Descargar Reporte PDF", pdf_content, f"Lubricacion_{opcion_elegida}.pdf")
 
                 st.balloons()
-                time.sleep(2)
-                st.rerun()
-
+                
             except Exception as e:
-                st.error(f"❌ Error al guardar: {e}")
+                st.error(f"❌ No se pudo guardar: {e}")
                     
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -515,6 +516,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
