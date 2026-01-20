@@ -8,6 +8,9 @@ import urllib.parse  # Para el QR sin errores
 import re
 import time
 
+if "form_id" not in st.session_state:
+    st.session_state.form_id = 0
+
 def calcular_grasa_avanzado(codigo):
     try:
         s = str(codigo).split('.')[0] # Quitamos el .0 si existe
@@ -362,29 +365,24 @@ elif modo == "Relubricacion":
     # 2. CAMPOS DE TEXTO (Le pasan el valor 'v_la' y 'v_loa' directamente)
     col1, col2 = st.columns(2)
     with col1:
-        # Aquí es donde 'v_la' llena el cuadro automáticamente
-        rod_la = st.text_input("Rodamiento LA", value=v_la).upper()
+        # AGREGAMOS LA KEY AQUÍ
+        rod_la = st.text_input("Rodamiento LA", value=v_la, key=f"la_{st.session_state.form_id}").upper()
         gr_la_sug = calcular_grasa_avanzado(rod_la)
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
-        # Aquí es donde 'v_loa' llena el cuadro automáticamente
-        rod_loa = st.text_input("Rodamiento LOA", value=v_loa).upper()
+        # AGREGAMOS LA KEY AQUÍ
+        rod_loa = st.text_input("Rodamiento LOA", value=v_loa, key=f"loa_{st.session_state.form_id}").upper()
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
-    # 3. Formulario de guardado
-    with st.form(key="form_guardado_lub"):
+    with st.form(key=f"form_lub_{st.session_state.form_id}"): # Formulario también con key dinámica
         serie_final = st.text_input("Confirmar N° de Serie", value=v_serie)
         resp_r = st.text_input("Técnico Responsable")
         
         c1, c2 = st.columns(2)
         gr_f_la = c1.number_input("Gramos Reales LA", value=float(gr_la_sug))
         gr_f_loa = c2.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
-        
-        tipo_t = st.radio("Tipo de Intervención", ["Preventivo", "Correctiva"])
-        grasa_s = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus"])
-        obs = st.text_area("Notas")
         
         if st.form_submit_button("💾 GUARDAR REGISTRO"):
             if resp_r and tag_seleccionado:
@@ -486,6 +484,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
