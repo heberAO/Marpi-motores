@@ -540,12 +540,14 @@ elif modo == "Mediciones de Campo":
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
                     "Tag": t,
                     "Responsable": resp,
-                    "RT_TV1": tv1, "RT_TU1": tu1, "RT_TW1": tw1,   # 3 de tierra
-                    "RB_WV1": wv1, "RB_WU1": wu1, "RB_VU1": vu1,   # 3 entre bobinas
-                    "RI_U1U2": u1u2, "RI_V1V2": v1v2, "RI_W1W2": w1w2, # 3 internas
-                    "ML_L1": tl1, "ML_L2": tl2, "ML_L3": tl3,      # 3 línea-tierra
-                    "ML_L1L2": l1l2, "ML_L1L3": l1l3, "ML_L2L3": l2l3, # 3 línea-línea
-                    "Descripcion": obs # Si tenés un campo de observaciones
+                    "RT_TV1": tv1, "RT_TU1": tu1, "RT_TW1": tw1,
+                    "RB_WV1": wv1, "RB_WU1": wu1, "RB_VU1": vu1,
+                    "RI_U1U2": u1u2, "RI_V1V2": v1v2, "RI_W1W2": w1w2,
+                    "ML_L1": tl1, "ML_L2": tl2, "ML_L3": tl3,
+                    # AGREGÁ ESTAS 3 AQUÍ:
+                    "ML_L1L2": l1l2, 
+                    "ML_L1L3": l1l3, 
+                    "ML_L2L3": l2l3
                 }
                 
                 # Actualizar base de datos
@@ -577,6 +579,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
