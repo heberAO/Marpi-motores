@@ -39,6 +39,7 @@ def calcular_grasa_avanzado(codigo):
 # --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
 def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
     try:
+        from fpdf import FPDF
         pdf = FPDF(orientation='P', unit='mm', format='A4')
         pdf.add_page()
         if os.path.exists("logo.png"):
@@ -49,31 +50,77 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
         pdf.cell(0, 15, f'{tipo_trabajo}', 0, 1, 'R')
         pdf.ln(10)
         
+        # --- BLOQUE DATOS BÁSICOS ---
         pdf.set_fill_color(230, 233, 240)
         pdf.set_font("Arial", 'B', 12)
         pdf.cell(0, 10, f" DATOS DEL EQUIPO: {tag_motor}", 1, 1, 'L', True)
-        
         pdf.set_font("Arial", '', 10)
+        pdf.set_text_color(0, 0, 0)
         pdf.cell(95, 8, f"Fecha: {datos.get('Fecha','-')}", 1, 0)
         pdf.cell(95, 8, f"Responsable: {datos.get('Responsable','-')}", 1, 1)
+
+        # --- SECCIÓN LUBRICACIÓN ---
+        if "LUBRICACION" in tipo_trabajo.upper():
+            pdf.ln(5)
+            pdf.set_fill_color(245, 245, 245)
+            pdf.set_font("Arial", 'B', 11)
+            pdf.cell(0, 8, " DETALLES DE LUBRICACIÓN:", 1, 1, 'L', True)
+            pdf.set_font("Arial", '', 10)
+            # Busca todas las variantes de nombres de columnas
+            r_la = datos.get('Rodamiento_LA') or datos.get('Rodamiento LA') or '-'
+            g_la = datos.get('Gramos_LA') or datos.get('Gramos LA') or '0'
+            r_loa = datos.get('Rodamiento_LOA') or datos.get('Rodamiento LOA') or '-'
+            g_loa = datos.get('Gramos_LOA') or datos.get('Gramos LOA') or '0'
+            pdf.cell(95, 8, f"Rod. LA: {r_la}", 1, 0)
+            pdf.cell(95, 8, f"Gramos LA: {g_la} g", 1, 1)
+            pdf.cell(95, 8, f"Rod. LOA: {r_loa}", 1, 0)
+            pdf.cell(95, 8, f"Gramos LOA: {g_loa} g", 1, 1)
+
+        # --- SECCIÓN MEGADO (AISLACIÓN) ---
+        elif "MEGADO" in tipo_trabajo.upper() or "AISLACION" in tipo_trabajo.upper():
+            pdf.ln(5)
+            pdf.set_fill_color(0, 51, 102)
+            pdf.set_text_color(255, 255, 255)
+            pdf.set_font("Arial", 'B', 11)
+            pdf.cell(0, 8, " MEDICIONES DE AISLACIÓN (MOhms)", 1, 1, 'C', True)
+            pdf.set_text_color(0, 0, 0)
+            # Busca variantes como U_Gnd, U-Gnd, o Fase_U
+            u = datos.get('U_Gnd') or datos.get('U-Gnd') or datos.get('Fase_U') or '-'
+            v = datos.get('V_Gnd') or datos.get('V-Gnd') or datos.get('Fase_V') or '-'
+            w = datos.get('W_Gnd') or datos.get('W-Gnd') or datos.get('Fase_W') or '-'
+            pdf.cell(63, 12, f"U-GND: {u}", 1, 0, 'C')
+            pdf.cell(63, 12, f"V-GND: {v}", 1, 0, 'C')
+            pdf.cell(64, 12, f"W-GND: {w}", 1, 1, 'C')
+
+        # --- SECCIÓN REPARACIONES ---
+        elif "REPARACION" in tipo_trabajo.upper():
+            pdf.ln(5)
+            pdf.set_fill_color(245, 245, 245)
+            pdf.set_font("Arial", 'B', 11)
+            pdf.cell(0, 8, " DETALLE DE REPARACIÓN:", 1, 1, 'L', True)
+            pdf.set_font("Arial", '', 10)
+            falla = datos.get('Falla') or datos.get('Sintoma') or 'No especificado'
+            pdf.multi_cell(0, 8, f"Falla detectada: {falla}", border=1)
+
+        # --- TEXTOS FINALES (Siempre aparecen) ---
+        pdf.ln(5)
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 8, "DESCRIPCIÓN / TAREAS REALIZADAS:", 0, 1)
+        pdf.set_font("Arial", '', 10)
+        # Busca en 'Descripcion' o 'Detalle' o 'Intervencion'
+        desc = datos.get('Descripcion') or datos.get('Detalle') or datos.get('Intervencion') or '-'
+        pdf.multi_cell(0, 7, str(desc), border=1)
         
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "DESCRIPCIÓN Y MEDICIONES:", 0, 1)
+        pdf.cell(0, 8, "OBSERVACIONES FINAL / ESTADO:", 0, 1)
         pdf.set_font("Arial", '', 10)
-        pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
-        
-        pdf.ln(5)
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "ESTADO FINAL / OBSERVACIONES:", 0, 1)
-        pdf.set_font("Arial", '', 10)
-        pdf.multi_cell(0, 7, str(datos.get('Taller_Externo','-')), border=1)
+        obs = datos.get('Taller_Externo') or datos.get('Observaciones') or datos.get('Notas') or '-'
+        pdf.multi_cell(0, 7, str(obs), border=1)
 
         return pdf.output(dest='S').encode('latin-1', 'replace')
     except Exception as e:
-        st.error(f"Error PDF: {e}")
         return None
-
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
@@ -263,11 +310,11 @@ elif modo == "Historial y QR":
             
             st.divider()
 
-# --- HISTORIAL Y PDF ---
+            # HISTORIAL Y EL BUSCADOR ---
+
+            # 1. Título del historial
             st.subheader("📜 Historial de Intervenciones")
             hist_m = df_completo[df_completo['Tag'] == buscado].copy()
-            
-            # Corregido: le agregamos el ] al final
             hist_m = hist_m.iloc[::-1] 
 
             for idx, fila in hist_m.iterrows():
@@ -276,55 +323,74 @@ elif modo == "Historial y QR":
                     st.write(f"**Responsable:** {fila.get('Responsable','-')}")
                     st.write(f"**Detalle completo:** {fila.get('Descripcion','-')}")
                     
-                    # Generar PDF
-                    pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado)
+                    # Identificamos qué tipo de trabajo era para el PDF
+                    desc_txt = str(fila.get('Descripcion', '')).upper()
+                    if "PREVENTIVA" in desc_txt or "CORRECTIVA" in desc_txt:
+                        t_inf = "REPORTE DE LUBRICACIÓN"
+                    elif "MEGADO" in desc_txt or "AISLACION" in desc_txt:
+                        t_inf = "INFORME DE MEGADO"
+                    else:
+                        t_inf = "INFORME TÉCNICO"
+
+                    # Generamos el PDF usando la función que está arriba
+                    pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado, t_inf)
                     
                     if pdf_archivo:
                         st.download_button(
                             label="📄 Descargar Informe PDF",
                             data=pdf_archivo,
                             file_name=f"Reporte_{buscado}_{idx}.pdf",
-                            key=f"btn_pdf_{idx}"
+                            key=f"btn_pdf_{idx}",
+                            mime="application/pdf"
                         )
 
-elif modo == "Relubricacion":
-    st.title("🔍 Lubricación Inteligente MARPI")
+# --- SALIMOS DEL HISTORIAL 
+st.divider()
 
-    # Si este ID cambia, el formulario se vacía sí o sí
-    if "form_id" not in st.session_state:
-        st.session_state.form_id = 0
+if "form_id" not in st.session_state:
+    st.session_state.form_id = 0
 
-    # 1. Buscador (con una clave que cambia para resetearse)
-    df_lista = df_completo.fillna("-")
-    lista_sugerencias = sorted(list(set(df_lista['Tag'].astype(str).tolist() + df_lista['N_Serie'].astype(str).tolist())))
+# 2. EL BUSCADOR (Lo ponemos aquí para que Python lo lea antes de usarlo abajo)
+df_lista = df_completo.fillna("-")
+lista_sugerencias = sorted(list(set(df_lista['Tag'].astype(str).tolist() + df_lista['N_Serie'].astype(str).tolist())))
+
+opcion_elegida = st.selectbox(
+    "Seleccione TAG o N° DE SERIE para nueva carga", 
+    options=[""] + lista_sugerencias,
+    key=f"search_{st.session_state.form_id}"
+)
+
+# 3. LÓGICA DE MOTOR ENCONTRADO
+motor_encontrado = None
+if opcion_elegida != "":
+    res = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)]
+    if not res.empty:
+        motor_encontrado = res.iloc[-1]
+        st.success(f"✅ Motor detectado: {motor_encontrado['Tag']}")
     
-    opcion_elegida = st.selectbox(
-        "Seleccione TAG o N° DE SERIE", 
-        options=[""] + lista_sugerencias,
-        key=f"search_{st.session_state.form_id}" # <--- ID Dinámico
-    )
+    # --- 2. PREPARACIÓN DE VALORES PARA LOS CAMPOS ---
+    if motor_encontrado is not None:
+        # Usamos .get por si acaso, pero fijate que el nombre coincida con el st.write
+        val_la_sug = str(motor_encontrado.get('Rodamiento_LA', ''))
+        val_loa_sug = str(motor_encontrado.get('Rodamiento_LOA', ''))
+        serie_sug = str(motor_encontrado.get('N_Serie', ''))
 
-    motor_encontrado = None
-    if opcion_elegida != "":
-        res = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)]
-        if not res.empty:
-            motor_encontrado = res.iloc[-1]
-            st.write("Datos encontrados:", motor_encontrado)
-            st.success(f"✅ Motor: {motor_encontrado['Tag']}")
-
-    st.divider()
+    else:
+       val_la_sug = ""
+       val_loa_sug = ""
+       serie_sug = ""
 
     # 2. Rodamientos y Cálculo
     col1, col2 = st.columns(2)
     with col1:
         val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None else ""
-        rod_la = st.text_input("Rodamiento LA", value=val_la if val_la != "-" else "", key=f"la_{st.session_state.form_id}").upper()
+        rod_la = st.text_input("Rodamiento LA", value=val_la_sug).upper()
         gr_la_sug = calcular_grasa_avanzado(rod_la)
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
         val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
-        rod_loa = st.text_input("Rodamiento LOA", value=val_loa if val_loa != "-" else "", key=f"loa_{st.session_state.form_id}").upper()
+        rod_loa = st.text_input("Rodamiento LOA", value=val_loa_sug).upper()
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
@@ -356,21 +422,29 @@ elif modo == "Relubricacion":
         else:
             try:
                 # (Tu lógica de guardado de siempre)
-                nueva_fila = {
+                datos_para_pdf = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
-                    "Tag": str(opcion_elegida),
-                    "N_Serie": str(serie_final),
-                    "Responsable": str(resp_r),
-                    "Rodamiento_LA": str(rod_la),
-                    "Gramos_LA": gr_f_la,
-                    "Rodamiento_LOA": str(rod_loa),
-                    "Gramos_LOA": gr_f_loa,
-                    "Tipo_Grasa": grasa,
-                    "Descripcion": "RELUBRICACIÓN CAMPO",
-                    "Taller_Externo": obs
+                    "Tag": opcion_elegida,
+                    "N_Serie": serie_final,
+                    "Responsable": resp_r,
+                    "Rodamiento LA": rod_la,      # <--- Fijate que sea la variable del input
+                    "Rodamiento LOA": rod_loa,    # <--- Idem
+                    "Gramos LA": gr_f_la,
+                    "Gramos LOA": gr_f_loa,
+                    "Tipo de Grasa": grasa,
+                    "Intervencion": tipo_tarea,   # <--- La nueva del st.radio
+                    "Observaciones": obs
                 }
-                df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
-                conn.update(data=df_final)
+                # Llamamos a la función del PDF con estos datos
+                pdf_content = generar_pdf_lubricacion(datos_para_pdf) 
+    
+                # Y mostramos el botón de descarga
+                st.download_button(
+                    label="📥 Descargar Reporte PDF",
+                    data=pdf_content,
+                    file_name=f"Lubricacion_{opcion_elegida}.pdf",
+                    mime="application/pdf"
+                )
                 
                 # --- AQUÍ OCURRE LA MAGIA ---
                 st.session_state.form_id += 1  # Cambiamos el ID, esto "destruye" el form viejo y crea uno nuevo vacío
@@ -463,9 +537,10 @@ elif modo == "Mediciones de Campo":
             else:
                 st.error("⚠️ Falta completar TAG o Técnico")
             
-            
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
+
 
 
 
