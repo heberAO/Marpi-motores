@@ -207,34 +207,40 @@ if modo == "Nuevo Registro":
         
         btn_guardar = st.form_submit_button("💾 GUARDAR Y GENERAR PDF")
 
-    if btn_reparacion: # O el nombre que tenga tu botón
+    if btn_guardar:
             if t and resp:
+                # Armamos el diccionario con ABSOLUTAMENTE TODO
                 nueva = {
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
                     "Tag": t,
+                    "N_Serie": sn,
                     "Responsable": resp,
-                    "Descripcion": f"Trabajo: {tarea_texto}"
+                    "Potencia": p,
+                    "Tension": v,
+                    "Corriente": cor,
+                    "RPM": r,
+                    "Carcasa": carc,
+                    "Rodamiento_LA": r_la,
+                    "Rodamiento_LOA": r_loa,
+                    "RT_TU": v_rt_tu, "RT_TV": v_rt_tv, "RT_TW": v_rt_tw,
+                    "RB_UV": v_rb_uv, "RB_VW": v_rb_vw, "RB_UW": v_rb_uw,
+                    "RI_U": v_ri_u, "RI_V": v_ri_v, "RI_W": v_ri_w,
+                    "Descripcion": desc,
+                    "Trabajos_Externos": ext
                 }
-                # ESTA LÍNEA DEBE ESTAR EN LA MISMA COLUMNA QUE 'nueva'
-                st.session_state.pdf_a_descargar = generar_pdf_reporte(nueva, "INFORME DE REPARACIÓN")
                 
+                # 1. Guardar en Google Sheets
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
-            st.success("✅ Datos guardados en la nube.")
-
-            # 3. GENERAMOS EL PDF
-            pdf_bytes = generar_pdf_reporte(nueva, t)
-            
-            if pdf_bytes:
-                st.download_button(
-                    label="📥 DESCARGAR PROTOCOLO DE ALTA (PDF)",
-                    data=pdf_bytes,
-                    file_name=f"Alta_{t}_{nueva['Fecha']}.pdf",
-                    mime="application/pdf"
-                )
+                
+                # 2. Generar el PDF usando el diccionario completo
+                st.session_state.pdf_a_descargar = generar_pdf_reporte(nueva, "PROTOCOLO DE ALTA")
+                st.session_state.tag_actual = t
+                
+                st.success(f"✅ Motor {t} registrado con éxito.")
                 st.balloons()
             else:
-                st.error("❌ El Excel se guardó pero hubo un problema con el PDF.")
+                st.error("⚠️ El TAG y el Responsable son obligatorios.")
   
 elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
@@ -510,6 +516,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
