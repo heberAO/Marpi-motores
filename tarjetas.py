@@ -325,41 +325,38 @@ elif modo == "Relubricacion":
 
     val_la, val_loa, n_serie_detectado = "", "", ""
 
+    opcion_elegida = st.selectbox(
+        "Seleccione el TAG del Motor", 
+        options=[""] + tags_disponibles,
+        key=f"search_box_{st.session_state.form_id}"
+    )
+
+    # 2. RASTREO Y ASIGNACIÓN FORZADA
     if opcion_elegida != "":
-        # Filtramos todas las filas de ese TAG
         filtro_motor = df_lista[df_lista['Tag'] == opcion_elegida]
         
         if not filtro_motor.empty:
-            # 1. Buscamos el N° de Serie (último disponible)
-            series = filtro_motor['N_Serie'].replace(['', 'nan', 'None'], pd.NA).dropna()
-            n_serie_detectado = str(series.iloc[-1]) if not series.empty else ""
+            # Buscamos Rodamiento LA
+            datos_la = filtro_motor['Rodamiento_LA'].astype(str).replace(['', 'nan', 'None', '0', '0.0'], pd.NA).dropna()
+            val_la_recuperado = datos_la.iloc[-1] if not datos_la.empty else ""
+            
+            # Buscamos Rodamiento LOA
+            datos_loa = filtro_motor['Rodamiento_LOA'].astype(str).replace(['', 'nan', 'None', '0', '0.0'], pd.NA).dropna()
+            val_loa_recuperado = datos_loa.iloc[-1] if not datos_loa.empty else ""
 
-            # 2. Buscamos Rodamiento_LA (Buscamos en TODO el historial de ese motor)
-            if 'Rodamiento_LA' in filtro_motor.columns:
-                # Quitamos lo que no sirve y nos quedamos con el último valor real
-                datos_la = filtro_motor['Rodamiento_LA'].astype(str).replace(['', 'nan', 'None', '0', '0.0'], pd.NA).dropna()
-                if not datos_la.empty:
-                    val_la = datos_la.iloc[-1]
+            # --- LA CLAVE: Guardamos en la memoria de los inputs ---
+            st.session_state[f"la_input_{st.session_state.form_id}"] = val_la_recuperado
+            st.session_state[f"loa_input_{st.session_state.form_id}"] = val_loa_recuperado
             
-            # 3. Buscamos Rodamiento_LOA
-            if 'Rodamiento_LOA' in filtro_motor.columns:
-                datos_loa = filtro_motor['Rodamiento_LOA'].astype(str).replace(['', 'nan', 'None', '0', '0.0'], pd.NA).dropna()
-                if not datos_loa.empty:
-                    val_loa = datos_loa.iloc[-1]
-            
-            if val_la or val_loa:
-                st.success(f"✅ Rodamientos encontrados: LA: {val_la} | LOA: {val_loa}")
-            else:
-                st.warning("⚠️ El motor existe, pero no encontré rodamientos cargados en las columnas Rodamiento_LA / Rodamiento_LOA")
+            st.success(f"✅ Datos cargados: LA {val_la_recuperado} | LOA {val_loa_recuperado}")
 
     st.divider()
 
+    # 3. CUADROS DE TEXTO (Ahora leen de la memoria que cargamos arriba)
     col1, col2 = st.columns(2)
     with col1:
-        # Forzamos el valor recuperado en el campo de texto
         rod_la = st.text_input(
             "Rodamiento LA", 
-            value=val_la, 
             key=f"la_input_{st.session_state.form_id}"
         ).upper()
         
@@ -367,10 +364,8 @@ elif modo == "Relubricacion":
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
-        # Forzamos el valor recuperado en el campo de texto
         rod_loa = st.text_input(
             "Rodamiento LOA", 
-            value=val_loa, 
             key=f"loa_input_{st.session_state.form_id}"
         ).upper()
         
@@ -494,6 +489,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
