@@ -394,9 +394,6 @@ elif modo == "Relubricacion":
                 st.session_state.form_id += 1 
                 st.rerun()
                 
-            except Exception as e:
-                st.error(f"❌ Error: Aseguráte de que las columnas existan en el Excel. Detalle: {e}")
-                    
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
     
@@ -478,6 +475,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
