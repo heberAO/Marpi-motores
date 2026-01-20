@@ -525,16 +525,16 @@ elif modo == "Mediciones de Campo":
         st.subheader("📊 Megado a tierra (Resistencia)")
         # Primera fila de campos chicos
         c1, c2, c3 = st.columns(3)
-        tv1 = c1.text_input("T - V1 (Ω)")
-        tu1 = c2.text_input("T - U1 (Ω)")
-        tw1 = c3.text_input("T - W1 (Ω)")
+        tv1 = c1.text_input("T - V1 (GΩ)")
+        tu1 = c2.text_input("T - U1 (GΩ)")
+        tw1 = c3.text_input("T - W1 (GΩ)")
         
         st.subheader("📊 Megado entre Boninas (Resistencia)")
         # Segunda fila de campos chicos
         c4, c5, c6 = st.columns(3)
-        wv1 = c4.text_input("W1 - V1 (Ω)")
-        wu1 = c5.text_input("W1 - U1 (Ω)")
-        vu1 = c6.text_input("V1 - U1 (Ω)")
+        wv1 = c4.text_input("W1 - V1 (GΩ)")
+        wu1 = c5.text_input("W1 - U1 (GΩ)")
+        vu1 = c6.text_input("V1 - U1 (GΩ)")
 
         st.subheader("📏 Resistencia internas")
         c7, c8, c9 = st.columns(3)
@@ -549,9 +549,9 @@ elif modo == "Mediciones de Campo":
         tl3 = c12.text_input("T - L3 (MΩ)")
         
         c13, c14, c15 = st.columns(3)
-        l1l2 = c13.text_input("L1 - L2 (MΩ)")
-        l1l3 = c14.text_input("L1 - L3 (MΩ)")
-        l2l3 = c15.text_input("L2 - L3 (MΩ)")
+        l1l2 = c13.text_input("L1 - L2 (GΩ)")
+        l1l3 = c14.text_input("L1 - L3 (GΩ)")
+        l2l3 = c15.text_input("L2 - L3 (GΩ)")
 
         st.text_area("Observaciones")
 
@@ -591,13 +591,15 @@ elif modo == "Mediciones de Campo":
                 st.session_state.pdf_buffer = generar_pdf_reporte(nueva, "REPORTE DE MEGADO")
                 st.session_state.tag_buffer = f"{t}_MEGADO"
                 
-                st.success(f"✅ Mediciones de {t} guardadas con {equipo_megado}")
-                st.rerun()
+                # --- EL DETALLITO: AVISO DE ÉXITO ---
+                st.success(f"✅ ¡Excelente! Las mediciones del motor {t} se guardaron correctamente.")
+                st.balloons()
             else:
                 st.error("⚠️ El TAG y el Responsable son obligatorios.")
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
