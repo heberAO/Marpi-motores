@@ -394,18 +394,6 @@ if opcion_elegida != "":
         btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
     # 4. Lógica de Guardado
-    Heber, ese error es una señal clarísima: la aplicación está buscando una pestaña que no existe con ese nombre exacto. Es como intentar guardar una carpeta en un cajón que no está.
-
-Para solucionar esto, vamos a hacer que el código detecte automáticamente el nombre de la hoja o use el que ya sabemos que funciona (porque si el historial se ve, es porque los datos se están leyendo de algún lado).
-
-Paso 1: Identificar el nombre correcto
-Buscá al principio de tu archivo tarjetas.py la línea donde cargás los datos por primera vez. Seguramente dice algo como: df_completo = conn.read(worksheet="Hoja 1", ...) o worksheet="DATOS".
-
-Paso 2: El código de guardado "a prueba de errores"
-Reemplazá tu bloque de guardado por este. He añadido una mejora para que, si falla con "Intervenciones", te diga qué hojas encontró realmente:
-
-Python
-
     if btn_guardar:
         if not resp_r or not opcion_elegida:
             st.error("⚠️ Falta completar datos.")
@@ -530,6 +518,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
