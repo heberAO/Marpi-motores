@@ -310,7 +310,9 @@ elif modo == "Historial y QR":
             
             st.divider()
 
-# --- HISTORIAL Y PDF ---
+            # HISTORIAL Y EL BUSCADOR ---
+
+            # 1. Título del historial
             st.subheader("📜 Historial de Intervenciones")
             hist_m = df_completo[df_completo['Tag'] == buscado].copy()
             hist_m = hist_m.iloc[::-1] 
@@ -321,16 +323,17 @@ elif modo == "Historial y QR":
                     st.write(f"**Responsable:** {fila.get('Responsable','-')}")
                     st.write(f"**Detalle completo:** {fila.get('Descripcion','-')}")
                     
-                    desc_para_filtro = str(fila.get('Descripcion', '')).upper()
-                    
-                    if "PREVENTIVA" in desc_para_filtro or "CORRECTIVA" in desc_para_filtro:
-                        tipo_de_informe = "REPORTE DE LUBRICACIÓN"
-                    elif "MEGADO" in desc_para_filtro or "AISLACION" in desc_para_filtro:
-                        tipo_de_informe = "INFORME DE MEGADO"
+                    # Identificamos qué tipo de trabajo era para el PDF
+                    desc_txt = str(fila.get('Descripcion', '')).upper()
+                    if "PREVENTIVA" in desc_txt or "CORRECTIVA" in desc_txt:
+                        t_inf = "REPORTE DE LUBRICACIÓN"
+                    elif "MEGADO" in desc_txt or "AISLACION" in desc_txt:
+                        t_inf = "INFORME DE MEGADO"
                     else:
-                        tipo_de_informe = "INFORME TÉCNICO"
+                        t_inf = "INFORME TÉCNICO"
 
-                    pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado, tipo_de_informe)
+                    # Generamos el PDF usando la función que está arriba
+                    pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado, t_inf)
                     
                     if pdf_archivo:
                         st.download_button(
@@ -340,21 +343,30 @@ elif modo == "Historial y QR":
                             key=f"btn_pdf_{idx}",
                             mime="application/pdf"
                         )
-            # --- AQUÍ TERMINA EL HISTORIAL ---
 
-# A PARTIR DE AQUÍ, TODO DEBE IR CON MENOS ESPACIOS A LA IZQUIERDA
+# --- SALIMOS DEL HISTORIAL 
+st.divider()
+
 if "form_id" not in st.session_state:
     st.session_state.form_id = 0
 
-# 1. Buscador...
-    motor_encontrado = None
-    if opcion_elegida != "":
-        res = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)]
-        if not res.empty:
-            motor_encontrado = res.iloc[-1]
-            st.success(f"✅ Motor: {motor_encontrado['Tag']}")
+# 2. EL BUSCADOR (Lo ponemos aquí para que Python lo lea antes de usarlo abajo)
+df_lista = df_completo.fillna("-")
+lista_sugerencias = sorted(list(set(df_lista['Tag'].astype(str).tolist() + df_lista['N_Serie'].astype(str).tolist())))
 
-    st.divider()
+opcion_elegida = st.selectbox(
+    "Seleccione TAG o N° DE SERIE para nueva carga", 
+    options=[""] + lista_sugerencias,
+    key=f"search_{st.session_state.form_id}"
+)
+
+# 3. LÓGICA DE MOTOR ENCONTRADO
+motor_encontrado = None
+if opcion_elegida != "":
+    res = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)]
+    if not res.empty:
+        motor_encontrado = res.iloc[-1]
+        st.success(f"✅ Motor detectado: {motor_encontrado['Tag']}")
     
     # --- 2. PREPARACIÓN DE VALORES PARA LOS CAMPOS ---
     if motor_encontrado is not None:
@@ -527,6 +539,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
