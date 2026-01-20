@@ -393,13 +393,24 @@ if opcion_elegida != "":
         btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
     # 4. Lógica de Guardado
+    ¡Estamos en el último tramo, Heber! No te vuelvas loco, ese error pasa porque la dirección de tu Excel (la URL) está guardada en una variable con otro nombre o está dentro de tus Secrets de Streamlit.
+
+Para que no dependamos de nombres raros, vamos a usar lo que ya tenés funcionando. Si tu App ya muestra el historial, es porque ya está conectada a la planilla.
+
+La solución "Corta" (Hacé esto primero)
+Buscá en tu código la parte donde dice conn.read(...). Verás que adentro dice algo como spreadsheet=url o spreadsheet=st.secrets["..."].
+
+Cambiá tu bloque de guardado por este, que es el más estándar para Streamlit:
+
+Python
+
     if btn_guardar:
         if not resp_r or not opcion_elegida:
             st.error("⚠️ Falta completar datos.")
         else:
             try:
-                # 1. Armamos el diccionario
-                datos_para_historial = {
+                # 1. Armamos los datos
+                datos_nuevos = pd.DataFrame([{
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": opcion_elegida,
                     "N_Serie": serie_final,
@@ -409,16 +420,20 @@ if opcion_elegida != "":
                     "Gramos LA": gr_f_la,
                     "Gramos LOA": gr_f_loa,
                     "Grasa": grasa,
-                    "Descripcion": Tipo_tarea, # Usamos 'T' mayúscula como definiste en el radio
+                    "Descripcion": Tipo_tarea,
                     "Observaciones": obs
-                }
+                }])
 
-                conn.update(spreadsheet=url_planilla, data=datos_para_historial)
-
-                st.success("✅ Registro guardado en la base de datos.")
+                # 2. GUARDADO DIRECTO (Sin usar variables externas)
+                # Usamos la misma conexión 'conn' que usás para leer el historial
+                conn.create(data=datos_nuevos) 
                 
-                # 3. GENERAR PDF
-                pdf_content = generar_pdf_reporte(datos_para_historial, opcion_elegida, "REPORTE DE LUBRICACIÓN")
+                st.success("✅ ¡Registro guardado en Google Sheets!")
+
+                # 3. GENERAR PDF PARA DESCARGAR
+                # Usamos datos_nuevos.iloc[0] para que la función del PDF reciba un diccionario
+                pdf_content = generar_pdf_reporte(datos_nuevos.iloc[0].to_dict(), opcion_elegida, "REPORTE DE LUBRICACIÓN")
+                
                 if pdf_content:
                     st.download_button("📥 Descargar Reporte PDF", pdf_content, f"Lubricacion_{opcion_elegida}.pdf")
 
@@ -510,6 +525,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
