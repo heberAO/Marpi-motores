@@ -344,22 +344,6 @@ elif modo == "Historial y QR":
                             mime="application/pdf"
                         )
 
-# --- SALIMOS DEL HISTORIAL 
-st.divider()
-
-if "form_id" not in st.session_state:
-    st.session_state.form_id = 0
-
-# 2. EL BUSCADOR (Lo ponemos aquí para que Python lo lea antes de usarlo abajo)
-df_lista = df_completo.fillna("-")
-lista_sugerencias = sorted(list(set(df_lista['Tag'].astype(str).tolist() + df_lista['N_Serie'].astype(str).tolist())))
-
-opcion_elegida = st.selectbox(
-    "Seleccione TAG o N° DE SERIE para nueva carga", 
-    options=[""] + lista_sugerencias,
-    key=f"search_{st.session_state.form_id}"
-)
-
 # 3. LÓGICA DE MOTOR ENCONTRADO
 motor_encontrado = None
 if opcion_elegida != "":
@@ -539,6 +523,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
