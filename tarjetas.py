@@ -376,7 +376,7 @@ elif modo == "Relubricacion":
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
-    with st.form(key=f"form_lub_{st.session_state.form_id}"): # Formulario también con key dinámica
+    with st.form(key=f"form_lub_{st.session_state.form_id}"):
         serie_final = st.text_input("Confirmar N° de Serie", value=v_serie)
         resp_r = st.text_input("Técnico Responsable")
         
@@ -384,24 +384,40 @@ elif modo == "Relubricacion":
         gr_f_la = c1.number_input("Gramos Reales LA", value=float(gr_la_sug))
         gr_f_loa = c2.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
         
-        if st.form_submit_button("💾 GUARDAR REGISTRO"):
-            if resp_r and tag_seleccionado:
+        tipo_t = st.radio("Tipo de Intervención", ["Preventivo", "Correctiva"])
+        
+        # FIJATE ACÁ: Asegurate que el nombre sea 'grasa_s'
+        grasa_s = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+        
+        obs = st.text_area("Notas")
+        
+        btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
+
+    if btn_guardar: # Cuando se presiona el botón, se ejecutan estas líneas
+        if resp_r and tag_seleccionado:
+            try:
                 nueva_f = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
-                    "Tag": tag_seleccionado, "N_Serie": serie_final,
-                    "Responsable": resp_r, "Rodamiento_LA": rod_la,
-                    "Gramos_LA": gr_f_la, "Rodamiento_LOA": rod_loa,
-                    "Gramos_LOA": gr_f_loa, "Tipo_Grasa": grasa_s,
-                    "Tipo_Tarea": tipo_t, "Descripcion": "RELUBRICACIÓN",
+                    "Tag": tag_seleccionado, 
+                    "N_Serie": serie_final,
+                    "Responsable": resp_r, 
+                    "Rodamiento_LA": rod_la,
+                    "Gramos_LA": gr_f_la, 
+                    "Rodamiento_LOA": rod_loa,
+                    "Gramos_LOA": gr_f_loa, 
+                    "Tipo_Grasa": grasa_s, # <--- ACÁ USAMOS LA VARIABLE
+                    "Tipo_Tarea": tipo_t, 
+                    "Descripcion": "RELUBRICACIÓN",
                     "Taller_Externo": obs
                 }
                 df_act = pd.concat([df_completo, pd.DataFrame([nueva_f])], ignore_index=True)
                 conn.update(data=df_act)
-                st.session_state.form_id += 1
-                st.success("✅ Guardado con éxito")
-                st.balloons()
-                time.sleep(1.5) # Damos tiempo para ver el mensaje
+                
+                st.session_state.form_id += 1 
+                st.success("✅ ¡Guardado con éxito!")
                 st.rerun()
+            except Exception as e:
+                st.error(f"Error al guardar: {e}")
                 
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -484,6 +500,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
