@@ -451,20 +451,32 @@ elif modo == "Relubricacion":
                 if modo == "Relubricacion":
                     nueva["Descripcion"] = f"LUBRICACIÓN: {grasa_t}. LA: {gr_real_la}g, LOA: {gr_real_loa}g."
 
-                # 3. GUARDAR Y GENERAR PDF
+               # 3. GUARDAR Y GENERAR PDF
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
+                
+                # ACÁ GUARDAMOS EL PDF Y EL TAG EN EL BUFFER
                 st.session_state.pdf_buffer = generar_pdf_reporte(nueva, f"REPORTE DE {modo.upper()}")
+                st.session_state.tag_buffer = t if 't' in locals() else tag_seleccionado
 
-    # --- BOTÓN DE DESCARGA (PEGADO AL MARGEN IZQUIERDO DEL MODO RELUBRICACION) ---
-    if st.session_state.get("pdf_buffer"):
-        st.divider()
+    # --- BOTÓN DE DESCARGA (CORREGIDO) ---
+    if st.session_state.get("pdf_buffer") is not None:
+        st.divider() # <--- Ves? Estos espacios son los que faltaban
+        st.subheader("📥 Reporte Listo para Descargar")
+        
+        nombre_tag = st.session_state.get("tag_buffer", "Motor")
+        
         st.download_button(
-            label="📥 DESCARGAR REPORTE PDF",
+            label=f"Hacé clic aquí para descargar Reporte {nombre_tag}",
             data=st.session_state.pdf_buffer,
-            file_name=f"Reporte_{st.session_state.tag_buffer}.pdf",
+            file_name=f"Reporte_{nombre_tag}.pdf",
             mime="application/pdf"
         )
+        
+        if st.button("Limpiar y hacer otro registro"):
+            st.session_state.pdf_buffer = None
+            st.session_state.tag_buffer = None
+            st.rerun()
                 
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -555,28 +567,40 @@ elif modo == "Mediciones de Campo":
                 if modo == "Relubricacion":
                     nueva["Descripcion"] = f"LUBRICACIÓN: {grasa_t}. LA: {gr_real_la}g, LOA: {gr_real_loa}g."
 
-                # 3. GUARDAR Y GENERAR PDF
+               # 3. GUARDAR Y GENERAR PDF
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
+                
+                # Usamos estos nombres fijos:
                 st.session_state.pdf_buffer = generar_pdf_reporte(nueva, f"REPORTE DE {modo.upper()}")
+                st.session_state.tag_buffer = t if 't' in locals() else tag_seleccionado
+                st.success("✅ Registro guardado")
 
     # --- 2. EL BOTÓN DE DESCARGA VA AFUERA DEL FORMULARIO (Saliendo del 'with st.form') ---
-    if "pdf_a_descargar" in st.session_state and st.session_state.pdf_a_descargar is not None:
+    if st.session_state.get("pdf_buffer") is not None:
         st.write("---")
+        
+        # Recuperamos el nombre del tag para el archivo
+        tag_descarga = st.session_state.get("tag_buffer", "Motor")
+        
         st.download_button(
             label="📥 CLIC AQUÍ PARA DESCARGAR REPORTE PDF",
-            data=st.session_state.pdf_a_descargar,
-            file_name=f"Reporte_{st.session_state.tag_actual}.pdf",
+            data=st.session_state.pdf_buffer,
+            file_name=f"Reporte_{tag_descarga}.pdf",
             mime="application/pdf"
         )
+        
         if st.button("Hacer otro registro (Limpiar)"):
-            st.session_state.pdf_a_descargar = None
-            st.session_state.tag_fijo = ""
-            st.session_state.cnt_meg += 1
+            st.session_state.pdf_buffer = None
+            st.session_state.tag_buffer = None
+            # Si usas cnt_meg para limpiar el form, dejalo:
+            if "cnt_meg" in st.session_state:
+                st.session_state.cnt_meg += 1
             st.rerun()
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
