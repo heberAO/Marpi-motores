@@ -64,7 +64,7 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
 
 # --- ESTRUCTURA DE PESTAÑAS (REPARADA) ---
 
-if modo == "Nuevo Registro":
+elif modo == "Nuevo Registro":
     st.title("📝 Alta y Registro Inicial")
     if "form_key" not in st.session_state: st.session_state.form_key = 0
     fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
@@ -210,6 +210,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
