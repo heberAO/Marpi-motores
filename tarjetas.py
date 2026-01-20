@@ -413,7 +413,7 @@ if opcion_elegida != "":
                     "Observaciones": obs
                 }
 
-                cargar_intervencion(datos_para_historial) 
+                conn.update(spreadsheet=url_planilla, data=datos_para_historial)
 
                 st.success("✅ Registro guardado en la base de datos.")
                 
@@ -510,6 +510,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
