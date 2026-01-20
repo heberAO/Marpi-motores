@@ -398,10 +398,14 @@ if opcion_elegida != "":
         if not resp_r or not opcion_elegida:
             st.error("⚠️ Falta completar datos.")
         else:
+            if btn_guardar:
+        if not resp_r or not opcion_elegida:
+            st.error("⚠️ Falta completar datos.")
+        else:
             try:
-                # 1. Definimos el nombre de la pestaña (¡Cambiá "Hoja 1" por el nombre real!)
-                # Si en tu Excel la pestaña se llama "Datos", poné "Datos"
-                NOMBRE_HOJA = "Hoja 1" 
+                # --- BUSCÁ EL NOMBRE AQUÍ ---
+                # Si arriba en tu código dice worksheet="DATOS", poné "DATOS" aquí abajo:
+                NOMBRE_REAL_DE_TU_EXCEL = "Intervenciones" # <--- CAMBIÁ ESTO
 
                 nuevo_registro = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
@@ -417,25 +421,23 @@ if opcion_elegida != "":
                     "Observaciones": obs
                 }
 
-                # 2. Guardado Robusto
-                df_actual = conn.read(worksheet=NOMBRE_HOJA, ttl=0)
+                # Guardado directo
+                df_actual = conn.read(worksheet=NOMBRE_REAL_DE_TU_EXCEL, ttl=0)
                 df_nuevo = pd.DataFrame([nuevo_registro])
                 df_final = pd.concat([df_actual, df_nuevo], ignore_index=True)
                 
-                conn.update(worksheet=NOMBRE_HOJA, data=df_final)
+                conn.update(worksheet=NOMBRE_REAL_DE_TU_EXCEL, data=df_final)
                 
-                st.success(f"✅ ¡Guardado con éxito en {NOMBRE_HOJA}!")
-                st.balloons()
-
-                # 3. PDF
+                st.success(f"✅ ¡Guardado con éxito en la pestaña {NOMBRE_REAL_DE_TU_EXCEL}!")
+                
+                # PDF
                 pdf_content = generar_pdf_reporte(nuevo_registro, opcion_elegida, "REPORTE DE LUBRICACIÓN")
                 if pdf_content:
                     st.download_button("📥 Descargar Reporte PDF", pdf_content, f"Lubricacion_{opcion_elegida}.pdf")
 
             except Exception as e:
-                st.error(f"❌ Error: La pestaña '{NOMBRE_HOJA}' no existe. Revisá el nombre en tu Excel.")
-                # Esto te va a mostrar en la consola de Streamlit qué nombres hay disponibles
-                print(f"Error de guardado: {e}")
+                st.error(f"❌ Error: La pestaña '{NOMBRE_REAL_DE_TU_EXCEL}' no existe.")
+                st.info("💡 Consejo: Revisá el nombre de la pestaña abajo en tu Google Sheets.")
                     
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -518,6 +520,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
