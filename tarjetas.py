@@ -72,23 +72,21 @@ def generar_pdf_reporte(datos, titulo_informe):
 
     # 4. DISCRIMINACIÓN DE FORMATO
     
-    # CASO MEGADO: Si existen las claves de mediciones eléctricas
-    if "RT_TV1" in datos:
+    # DENTRO DE generar_pdf_reporte, después de los datos generales:
+    if "Potencia" in datos: # Si es un Alta, imprimimos los datos de placa
         pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, "MEDICIONES DE AISLAMIENTO Y RESISTENCIA:", ln=True)
+        pdf.cell(0, 10, "DATOS DE PLACA:", ln=True)
         pdf.set_font("Arial", '', 11)
-        pdf.cell(0, 7, f"Megado a Tierra: T-V1:{v('RT_TV1')} | T-U1:{v('RT_TU1')} | T-W1:{v('RT_TW1')}", ln=True)
-        pdf.cell(0, 7, f"Resistencias Internas: U1-U2:{v('RI_U1U2')} | V1-V2:{v('RI_V1V2')} | W1-W2:{v('RI_W1W2')}", ln=True)
-        pdf.cell(0, 7, f"Megado de Linea: L1:{v('ML_L1')} | L2:{v('ML_L2')} | L3:{v('ML_L3')}", ln=True)
+        pdf.cell(0, 7, f"Potencia: {v('Potencia')} | Tension: {v('Tension')} | RPM: {v('RPM')}", ln=True)
+        pdf.cell(0, 7, f"Carcasa: {v('Carcasa')} | Rod. LA: {v('Rodamiento_LA')} | Rod. LOA: {v('Rodamiento_LOA')}", ln=True)
+        pdf.ln(5)
 
-    # CASO LUBRICACIÓN O REPARACIÓN: Si hay una descripción o detalle
-    # Importante: En Lubricación/Reparación, usaremos el campo 'Descripcion'
-    elif "Descripcion" in datos:
+    if "RT_TU" in datos: # Si hay mediciones eléctricas
         pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, "DETALLE DE LA TAREA REALIZADA:", ln=True)
+        pdf.cell(0, 10, "MEDICIONES ELECTRICAS:", ln=True)
         pdf.set_font("Arial", '', 11)
-        pdf.multi_cell(0, 7, v("Descripcion"))
-
+        pdf.cell(0, 7, f"Resistencia: TU:{v('RT_TU')} TV:{v('RT_TV')} TW:{v('RT_TW')}", ln=True)
+        pdf.cell(0, 7, f"Aislamiento: UV:{v('RB_UV')} VW:{v('RB_VW')} UW:{v('RB_UW')}", ln=True)
     # 5. PIE DE PÁGINA (Propiedad de Marpi Motores)
     pdf.set_y(-30)
     pdf.set_font("Arial", 'I', 8)
@@ -516,6 +514,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
