@@ -301,6 +301,26 @@ elif modo == "Historial y QR":
                             key=f"btn_pdf_{idx}"
                         )
 
+Heber, te entiendo perfectamente. Querés que la base de datos no sea solo una "bolsa" de texto en la descripción, sino que cada dato (Rodamiento LA, Gramos LA, etc.) caiga en su propia columna de Google Sheets.
+
+Para que esto funcione, primero aseguráte de que en tu Google Sheets existan exactamente estas columnas (escritas así tal cual):
+
+Rodamiento_LA
+
+Gramos_LA
+
+Rodamiento_LOA
+
+Gramos_LOA
+
+Tipo_Grasa
+
+Tipo_Tarea
+
+Aquí tenés el bloque de código de Relubricación configurado para repartir los datos en cada celda correspondiente:
+
+Python
+
 elif modo == "Relubricacion":
     st.title("🔍 Lubricación Inteligente MARPI")
 
@@ -327,13 +347,14 @@ elif modo == "Relubricacion":
 
     col1, col2 = st.columns(2)
     with col1:
-        val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None else ""
+        # Traemos el rodamiento que ya estaba guardado en su celda
+        val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None and 'Rodamiento_LA' in motor_encontrado else ""
         rod_la = st.text_input("Rodamiento LA", value=val_la if val_la != "-" else "", key=f"la_{st.session_state.form_id}").upper()
         gr_la_sug = calcular_grasa_avanzado(rod_la)
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
-        val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
+        val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None and 'Rodamiento_LOA' in motor_encontrado else ""
         rod_loa = st.text_input("Rodamiento LOA", value=val_loa if val_loa != "-" else "", key=f"loa_{st.session_state.form_id}").upper()
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
@@ -348,14 +369,13 @@ elif modo == "Relubricacion":
         with c2:
             gr_f_loa = st.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
         
-        # ACA ESTABA EL ERROR: Definimos la variable correctamente
-        tipo_tarea_seleccionada = st.radio(
+        tipo_tarea_sel = st.radio(
             "Tipo de Intervención",
             ["Preventivo (planificado)", "Correctiva (Urgencia)"],
             index=0
         )
             
-        grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+        grasa_sel = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
         obs = st.text_area("Notas")
         
         btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
@@ -365,33 +385,33 @@ elif modo == "Relubricacion":
             st.error("⚠️ Falta completar datos.")
         else:
             try:
-                detalle_lub = (f"RELUBRICACIÓN: {tipo_tarea_seleccionada} | "
-                               f"Grasa: {grasa} | LA: {gr_f_la}g ({rod_la}) | "
-                               f"LOA: {gr_f_loa}g ({rod_loa})")
-
+                # CONFIGURACIÓN DE CELDAS INDIVIDUALES
                 nueva_fila = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": str(opcion_elegida),
                     "N_Serie": str(serie_final),
                     "Responsable": str(resp_r),
-                    "Descripcion": detalle_lub,
+                    "Rodamiento_LA": str(rod_la),
+                    "Gramos_LA": float(gr_f_la),
+                    "Rodamiento_LOA": str(rod_loa),
+                    "Gramos_LOA": float(gr_f_loa),
+                    "Tipo_Grasa": str(grasa_sel),
+                    "Tipo_Tarea": str(tipo_tarea_sel),
+                    "Descripcion": "RELUBRICACIÓN DE CAMPO",
                     "Taller_Externo": obs
                 }
                 
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_final)
                 
-                st.success("✅ ¡Guardado con éxito!")
+                st.success("✅ Datos guardados en sus celdas correspondientes.")
                 st.balloons()
-                
-                # Ahora 'time' ya está definido y no dará error
-                time.sleep(1) 
-                
+                time.sleep(1)
                 st.session_state.form_id += 1 
                 st.rerun()
                 
             except Exception as e:
-                st.error(f"❌ Error al guardar: {e}")
+                st.error(f"❌ Error: Aseguráte de que las columnas existan en el Excel. Detalle: {e}")
                     
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -474,6 +494,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
