@@ -8,8 +8,8 @@ import time
 from io import BytesIO
 from fpdf import FPDF
 
-if "form_id" not in st.session_state:
-    st.session_state.form_id = 0
+if 'pdf_listo' not in st.session_state:
+    st.session_state.pdf_listo = None
 
 def calcular_grasa_avanzado(codigo):
     try:
@@ -476,6 +476,7 @@ elif modo == "Mediciones de Campo":
 
         # BOTÓN DE GUARDADO
        # BOTÓN DE GUARDADO
+        # 1. BOTÓN DE GUARDADO
         btn_guardar = st.form_submit_button("💾 GUARDAR MEDICIONES")
 
         if btn_guardar:
@@ -484,56 +485,47 @@ elif modo == "Mediciones de Campo":
                            f"Bornes: U1-U2:{u1u2}, V1-V2:{v1v2}, W1-W2:{w1w2} | "
                            f"Línea: T-L1:{tl1}, L1-L2:{l1l2}")
                 
-                # EL DICCIONARIO AHORA ESTÁ BIEN ALINEADO
                 nueva = {
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
                     "Tag": t,
                     "Responsable": resp,
-                    "Descripcion": detalle, # Guardamos el resumen en descripcion
-                    # --- MEGADO A TIERRA ---
-                    "RT_TV1": tv1,
-                    "RT_TU1": tu1,
-                    "RT_TW1": tw1,
-                    # --- MEGADO ENTRE BOBINAS ---
-                    "RB_WV1": wv1,
-                    "RB_WU1": wu1,
-                    "RB_VU1": vu1,
-                    # --- RESISTENCIAS INTERNAS ---
-                    "RI_U1U2": u1u2,
-                    "RI_V1V2": v1v2,
-                    "RI_W1W2": w1w2,
-                    # --- MEGADO DE LÍNEA ---
-                    "ML_L1": tl1,
-                    "ML_L2": tl2,
-                    "ML_L3": tl3
+                    "Descripcion": detalle,
+                    "RT_TV1": tv1, "RT_TU1": tu1, "RT_TW1": tw1,
+                    "RB_WV1": wv1, "RB_WU1": wu1, "RB_VU1": vu1,
+                    "RI_U1U2": u1u2, "RI_V1V2": v1v2, "RI_W1W2": w1w2,
+                    "ML_L1": tl1, "ML_L2": tl2, "ML_L3": tl3
                 }
                 
                 # Actualizar base de datos
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
                 
-                # --- GENERAR PDF (Opcional si querés que salga acá también) ---
-                pdf_bytes = generar_pdf_reporte(nueva, t)
-                if pdf_bytes:
-                    st.download_button(
-                        label="📥 DESCARGAR REPORTE DE MEGADO (PDF)",
-                        data=pdf_bytes,
-                        file_name=f"Megado_{t}.pdf",
-                        mime="application/pdf"
-                    )
-
-                # --- RESET DE CAMPOS ---
-                st.session_state.tag_fijo = "" 
-                st.session_state.cnt_meg += 1 
+                # GUARDAMOS EL PDF EN LA MEMORIA PARA USARLO AFUERA
+                st.session_state.pdf_a_descargar = generar_pdf_reporte(nueva, t)
+                st.session_state.tag_actual = t
                 
-                st.success(f"✅ Mediciones de {t} guardadas y campos limpios")
-                time.sleep(2)
-                st.rerun()
+                st.success(f"✅ Mediciones de {t} guardadas.")
             else:
                 st.error("⚠️ Falta TAG o Responsable")
+
+    # --- 2. EL BOTÓN DE DESCARGA VA AFUERA DEL FORMULARIO (Saliendo del 'with st.form') ---
+    if "pdf_a_descargar" in st.session_state and st.session_state.pdf_a_descargar is not None:
+        st.write("---")
+        st.download_button(
+            label="📥 CLIC AQUÍ PARA DESCARGAR REPORTE PDF",
+            data=st.session_state.pdf_a_descargar,
+            file_name=f"Reporte_{st.session_state.tag_actual}.pdf",
+            mime="application/pdf"
+        )
+        if st.button("Hacer otro registro (Limpiar)"):
+            st.session_state.pdf_a_descargar = None
+            st.session_state.tag_fijo = ""
+            st.session_state.cnt_meg += 1
+            st.rerun()
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
