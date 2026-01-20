@@ -562,11 +562,11 @@ elif modo == "Mediciones de Campo":
                 busqueda = df_completo[df_completo['Tag'] == t].tail(1)
                 info = busqueda.iloc[0].to_dict() if not busqueda.empty else {}
 
-                # 2. ARMAMOS EL DICCIONARIO 'nueva'
+                # 2. ARMAMOS EL DICCIONARIO 'nueva' COMPLETO
                 nueva = {
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
                     "Tag": t,
-                    "N_Serie": n_serie, # Usamos el que se puso en el formulario
+                    "N_Serie": n_serie,
                     "Responsable": resp,
                     "Descripcion": f"MEGADO - Equipo: {equipo_megado} ({tension_prueba})",
                     "Potencia": info.get("Potencia", ""),
@@ -575,7 +575,13 @@ elif modo == "Mediciones de Campo":
                     "Carcasa": info.get("Carcasa", ""),
                     "Rodamiento_LA": info.get("Rodamiento_LA", ""),
                     "Rodamiento_LOA": info.get("Rodamiento_LOA", ""),
-                    # No olvides agregar aquí todas las variables de tus inputs (tv1, tu1, etc.)
+                    
+                    # --- AQUÍ ESTÁ EL SECRETO: HAY QUE PASARLE LOS VALORES DEL FORMULARIO ---
+                    "RT_TV1": tv1, "RT_TU1": tu1, "RT_TW1": tw1,
+                    "RB_WV1": wv1, "RB_WU1": wu1, "RB_VU1": vu1,
+                    "RI_U1U2": u1u2, "RI_V1V2": v1v2, "RI_W1W2": w1w2,
+                    "ML_L1": tl1, "ML_L2": tl2, "ML_L3": tl3,
+                    "ML_L1L2": l1l2, "ML_L1L3": l1l3, "ML_L2L3": l2l3
                 }
 
                 # 3. GUARDAR Y PDF
@@ -592,6 +598,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
