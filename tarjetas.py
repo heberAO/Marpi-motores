@@ -299,14 +299,18 @@ elif modo == "Historial y QR":
             
             st.divider()
 
-# --- Generar PDF (CORREGIDO) ---
+# --- HISTORIAL Y PDF (COPIAR DESDE AQUÍ) ---
+            st.subheader("📜 Historial de Intervenciones")
+            hist_m = df_completo[df_completo['Tag'] == buscado].copy()
+            hist_m = hist_m.iloc[::-1] 
+
             for idx, fila in hist_m.iterrows():
                 intervencion = str(fila.get('Descripcion', '-'))[:40]
                 with st.expander(f"📅 {fila.get('Fecha','-')} - {intervencion}..."):
                     st.write(f"**Responsable:** {fila.get('Responsable','-')}")
                     st.write(f"**Detalle completo:** {fila.get('Descripcion','-')}")
                     
-                    # --- FIJATE QUE ESTO ESTÉ ALINEADO CON LOS ST.WRITE ---
+                    # Identificar tipo para el PDF
                     desc_para_filtro = str(fila.get('Descripcion', '')).upper()
                     
                     if "PREVENTIVA" in desc_para_filtro or "CORRECTIVA" in desc_para_filtro:
@@ -316,9 +320,17 @@ elif modo == "Historial y QR":
                     else:
                         tipo_de_informe = "INFORME TÉCNICO"
 
-                    # Llamada a la función con 3 argumentos
+                    # Generar PDF con los 3 argumentos necesarios
                     pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado, tipo_de_informe)
-
+                    
+                    if pdf_archivo:
+                        st.download_button(
+                            label="📄 Descargar Informe PDF",
+                            data=pdf_archivo,
+                            file_name=f"Reporte_{buscado}_{idx}.pdf",
+                            key=f"btn_pdf_{idx}",
+                            mime="application/pdf"
+                        )
     # Si este ID cambia, el formulario se vacía sí o sí
     if "form_id" not in st.session_state:
         st.session_state.form_id = 0
@@ -512,6 +524,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
