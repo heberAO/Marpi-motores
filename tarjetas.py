@@ -531,11 +531,7 @@ elif modo == "Mediciones de Campo":
 
         st.text_area("Observaciones")
 
-        # BOTÓN DE GUARDADO
-       # BOTÓN DE GUARDADO
-        # 1. BOTÓN DE GUARDADO
-        btn_guardar = st.form_submit_button("💾 GUARDAR MEDICIONES")
-
+        # BOTÓN DE Guardado
         if st.form_submit_button("💾 GUARDAR"):
             if t and resp:
                 # 1. BUSCAMOS LOS DATOS DE PLACA EN EL HISTORIAL
@@ -604,6 +600,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
