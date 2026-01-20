@@ -6,6 +6,7 @@ import os
 from fpdf import FPDF
 import urllib.parse  # Para el QR sin errores
 import re
+import time
 
 def calcular_grasa_avanzado(codigo):
     try:
@@ -364,7 +365,6 @@ elif modo == "Relubricacion":
             st.error("⚠️ Falta completar datos.")
         else:
             try:
-                # Armamos el detalle para el PDF y la base de datos
                 detalle_lub = (f"RELUBRICACIÓN: {tipo_tarea_seleccionada} | "
                                f"Grasa: {grasa} | LA: {gr_f_la}g ({rod_la}) | "
                                f"LOA: {gr_f_loa}g ({rod_loa})")
@@ -381,10 +381,13 @@ elif modo == "Relubricacion":
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_final)
                 
-                st.session_state.form_id += 1 
                 st.success("✅ ¡Guardado con éxito!")
                 st.balloons()
-                time.sleep(1)
+                
+                # Ahora 'time' ya está definido y no dará error
+                time.sleep(1) 
+                
+                st.session_state.form_id += 1 
                 st.rerun()
                 
             except Exception as e:
@@ -471,6 +474,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
