@@ -394,15 +394,22 @@ if opcion_elegida != "":
         btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
     # 4. Lógica de Guardado
+    ¡Excelente, Heber! Ese era el problema. En Google Sheets, "Sheet1" (o "Hoja1") es el nombre por defecto, y si el código buscaba "Intervenciones", nunca lo iba a encontrar.
+
+Ahora que sabemos el nombre exacto, vamos a dejar el código de guardado fijo para que no falle más.
+
+Reemplazá tu bloque de guardado por este (ya tiene puesto "Sheet1"):
+Python
+
     if btn_guardar:
         if not resp_r or not opcion_elegida:
             st.error("⚠️ Falta completar datos.")
         else:
             try:
-                # --- BUSCÁ EL NOMBRE AQUÍ ---
-                # Si arriba en tu código dice worksheet="DATOS", poné "DATOS" aquí abajo:
-                NOMBRE_REAL_DE_TU_EXCEL = "Sheet1" # <--- CAMBIÁ ESTO
+                # 1. El nombre que encontramos
+                NOMBRE_HOJA = "Sheet1" 
 
+                # 2. Armamos el registro
                 nuevo_registro = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": opcion_elegida,
@@ -417,23 +424,32 @@ if opcion_elegida != "":
                     "Observaciones": obs
                 }
 
-                # Guardado directo
-                df_actual = conn.read(worksheet=NOMBRE_REAL_DE_TU_EXCEL, ttl=0)
+                # 3. Proceso de guardado
+                # Leemos la hoja Sheet1
+                df_actual = conn.read(worksheet=NOMBRE_HOJA, ttl=0)
+                # Creamos la fila nueva
                 df_nuevo = pd.DataFrame([nuevo_registro])
+                # Las unimos
                 df_final = pd.concat([df_actual, df_nuevo], ignore_index=True)
                 
-                conn.update(worksheet=NOMBRE_REAL_DE_TU_EXCEL, data=df_final)
+                # Subimos todo de vuelta a Sheet1
+                conn.update(worksheet=NOMBRE_HOJA, data=df_final)
                 
-                st.success(f"✅ ¡Guardado con éxito en la pestaña {NOMBRE_REAL_DE_TU_EXCEL}!")
-                
-                # PDF
+                st.success(f"✅ ¡Registro guardado con éxito en {NOMBRE_HOJA}!")
+                st.balloons()
+
+                # 4. Generamos el PDF (usando la función que ya arreglamos)
                 pdf_content = generar_pdf_reporte(nuevo_registro, opcion_elegida, "REPORTE DE LUBRICACIÓN")
                 if pdf_content:
-                    st.download_button("📥 Descargar Reporte PDF", pdf_content, f"Lubricacion_{opcion_elegida}.pdf")
+                    st.download_button(
+                        label="📥 Descargar Reporte PDF",
+                        data=pdf_content,
+                        file_name=f"Lubricacion_{opcion_elegida}.pdf",
+                        mime="application/pdf"
+                    )
 
             except Exception as e:
-                st.error(f"❌ Error: La pestaña '{NOMBRE_REAL_DE_TU_EXCEL}' no existe.")
-                st.info("💡 Consejo: Revisá el nombre de la pestaña abajo en tu Google Sheets.")
+                st.error(f"❌ Error al intentar guardar en '{NOMBRE_HOJA}': {e}")
                     
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -516,6 +532,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
