@@ -522,8 +522,6 @@ elif modo == "Mediciones de Campo":
             tension_prueba = st.selectbox("Tensión de Prueba:", ["500V", "1000V", "2500V", "5000V"])
 
         st.divider()
-        st.subheader("📊 Valores de Resistencia y Aislamiento")
-        
         st.subheader("📊 Megado a tierra (Resistencia)")
         # Primera fila de campos chicos
         c1, c2, c3 = st.columns(3)
@@ -594,6 +592,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
