@@ -45,9 +45,9 @@ def generar_pdf_reporte(datos, tag_motor):
     pdf = FPDF()
     pdf.add_page()
     
-    # LOGO (Busca el archivo logo.png en tu carpeta)
+    # LOGO
     try:
-        pdf.image("logo.png", 10, 8, 33) # X=10, Y=8, Ancho=33
+        pdf.image("logo.png", 10, 8, 33)
     except:
         pdf.set_font("Arial", 'B', 12)
         pdf.cell(0, 10, "MARPI MOTORES", ln=True)
@@ -56,31 +56,46 @@ def generar_pdf_reporte(datos, tag_motor):
     pdf.cell(0, 10, f"PROTOCOLO DE ALTA - MOTOR {tag_motor}", ln=True, align='C')
     pdf.ln(10)
     
-    # DATOS PRINCIPALES
     pdf.set_font("Arial", 'B', 12)
     pdf.cell(0, 10, "DATOS DE REGISTRO:", ln=True)
     pdf.set_font("Arial", '', 11)
     
-    # Imprimimos los datos que me pasaste antes
-    columnas_interes = ["Fecha", "Responsable", "Potencia", "Tension", "RPM", "N_Serie", "Carcasa"]
-    for col in columnas_interes:
-        valor = datos.get(col, "N/A")
-        pdf.cell(0, 7, f"{col}: {valor}", ln=True)
+    # Función interna para limpiar los "nan"
+    def limpiar(valor):
+        v = str(valor)
+        return "" if v.lower() == "nan" or v.lower() == "none" else v
+
+    # Listado de datos (Asegúrate que estas claves coincidan con tu diccionario 'nueva')
+    filas = [
+        ("Fecha", datos.get('Fecha')),
+        ("Responsable", datos.get('Responsable')),
+        ("Potencia", datos.get('Potencia')),
+        ("Tensión", datos.get('Tension')),
+        ("RPM", datos.get('RPM')),
+        ("N° Serie", datos.get('N_Serie')),
+        ("Carcasa", datos.get('Carcasa'))
+    ]
+
+    for label, valor in filas:
+        pdf.cell(0, 7, f"{label}: {limpiar(valor)}", ln=True)
 
     pdf.ln(5)
-    
-    # MEDICIONES
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "MEDICIONES ELECTRICAS:", ln=True)
+    pdf.cell(0, 10, "MEDICIONES ELÉCTRICAS:", ln=True)
     pdf.set_font("Arial", '', 11)
-    pdf.cell(0, 7, f"Resistencia (RT): TU:{datos.get('RT_TU','-')} TV:{datos.get('RT_TV','-')} TW:{datos.get('RT_TW','-')}", ln=True)
     
-    # PIE DE PÁGINA
+    # Mediciones de resistencia (Megado/RT)
+    rt_info = f"RT: TU:{limpiar(datos.get('RT_TU'))} TV:{limpiar(datos.get('RT_TV'))} TW:{limpiar(datos.get('RT_TW'))}"
+    pdf.cell(0, 7, rt_info, ln=True)
+    
+    # Agregamos las de aislamiento si las usas (RB)
+    rb_info = f"RB: UV:{limpiar(datos.get('RB_UV'))} VW:{limpiar(datos.get('RB_VW'))} UW:{limpiar(datos.get('RB_UW'))}"
+    pdf.cell(0, 7, rb_info, ln=True)
+
     pdf.set_y(-30)
     pdf.set_font("Arial", 'I', 8)
     pdf.cell(0, 10, "Este informe es propiedad de MARPI MOTORES - Confidencial.", align='C', ln=True)
     
-    # Retornar como Bytes para Streamlit
     return pdf.output(dest='S').encode('latin-1', 'replace')
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
@@ -491,6 +506,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
