@@ -394,12 +394,6 @@ if opcion_elegida != "":
         btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
     # 4. Lógica de Guardado
-    ¡Excelente, Heber! Ese era el problema. En Google Sheets, "Sheet1" (o "Hoja1") es el nombre por defecto, y si el código buscaba "Intervenciones", nunca lo iba a encontrar.
-
-Ahora que sabemos el nombre exacto, vamos a dejar el código de guardado fijo para que no falle más.
-
-Reemplazá tu bloque de guardado por este (ya tiene puesto "Sheet1"):
-Python
 
     if btn_guardar:
         if not resp_r or not opcion_elegida:
@@ -532,6 +526,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
