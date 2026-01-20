@@ -41,7 +41,7 @@ def calcular_grasa_avanzado(codigo):
         return 0.0
 
 # --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
-def generar_pdf_reporte(datos, tag_motor):
+def generar_pdf_reporte(datos, titulo_informe):
     pdf = FPDF()
     pdf.add_page()
     
@@ -52,49 +52,44 @@ def generar_pdf_reporte(datos, tag_motor):
         pdf.set_font("Arial", 'B', 12)
         pdf.cell(0, 10, "MARPI MOTORES", ln=True)
 
+    # ENCABEZADO
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"PROTOCOLO DE ALTA - MOTOR {tag_motor}", ln=True, align='C')
-    pdf.ln(10)
-    
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "DATOS DE REGISTRO:", ln=True)
-    pdf.set_font("Arial", '', 11)
-    
-    # Función interna para limpiar los "nan"
-    def limpiar(valor):
-        v = str(valor)
-        return "" if v.lower() == "nan" or v.lower() == "none" else v
-
-    # Listado de datos (Asegúrate que estas claves coincidan con tu diccionario 'nueva')
-    filas = [
-        ("Fecha", datos.get('Fecha')),
-        ("Responsable", datos.get('Responsable')),
-        ("Potencia", datos.get('Potencia')),
-        ("Tensión", datos.get('Tension')),
-        ("RPM", datos.get('RPM')),
-        ("N° Serie", datos.get('N_Serie')),
-        ("Carcasa", datos.get('Carcasa'))
-    ]
-
-    for label, valor in filas:
-        pdf.cell(0, 7, f"{label}: {limpiar(valor)}", ln=True)
-
+    pdf.cell(0, 10, f"{titulo_informe}", ln=True, align='C')
     pdf.ln(5)
+    
+    # DATOS GENERALES
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "MEDICIONES ELÉCTRICAS:", ln=True)
+    pdf.cell(0, 10, "INFORMACION GENERAL:", ln=True)
     pdf.set_font("Arial", '', 11)
     
-    # Mediciones de resistencia (Megado/RT)
-    rt_info = f"RT: TU:{limpiar(datos.get('RT_TU'))} TV:{limpiar(datos.get('RT_TV'))} TW:{limpiar(datos.get('RT_TW'))}"
-    pdf.cell(0, 7, rt_info, ln=True)
-    
-    # Agregamos las de aislamiento si las usas (RB)
-    rb_info = f"RB: UV:{limpiar(datos.get('RB_UV'))} VW:{limpiar(datos.get('RB_VW'))} UW:{limpiar(datos.get('RB_UW'))}"
-    pdf.cell(0, 7, rb_info, ln=True)
+    # Esta función limpia los 'nan' para que el PDF no salga feo
+    def v(clave):
+        valor = str(datos.get(clave, ""))
+        return "" if valor.lower() in ["nan", "none", "n/a"] else valor
 
+    pdf.cell(0, 7, f"Fecha: {v('Fecha')} | Responsable: {v('Responsable')}", ln=True)
+    pdf.cell(0, 7, f"Motor (TAG): {v('Tag')}", ln=True)
+    pdf.ln(5)
+
+    # SECCION DINAMICA SEGUN EL TIPO DE INFORME
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "DETALLE DE TAREAS / MEDICIONES:", ln=True)
+    pdf.set_font("Arial", '', 11)
+
+    # Si es Megado
+    if "RT_TV1" in datos or "ML_L1" in datos:
+        pdf.cell(0, 7, f"Megado Tierra: T-V1:{v('RT_TV1')} T-U1:{v('RT_TU1')} T-W1:{v('RT_TW1')}", ln=True)
+        pdf.cell(0, 7, f"Resistencias: U1-U2:{v('RI_U1U2')} V1-V2:{v('RI_V1V2')} W1-W2:{v('RI_W1W2')}", ln=True)
+        pdf.cell(0, 7, f"Megado Linea: L1:{v('ML_L1')} L2:{v('ML_L2')} L3:{v('ML_L3')}", ln=True)
+    
+    # Si es Lubricacion o Reparacion (usamos el campo Descripcion/Detalle)
+    if "Descripcion" in datos:
+        pdf.multi_cell(0, 7, f"Detalle: {v('Descripcion')}")
+
+    # PIE DE PAGINA
     pdf.set_y(-30)
     pdf.set_font("Arial", 'I', 8)
-    pdf.cell(0, 10, "Este informe es propiedad de MARPI MOTORES - Confidencial.", align='C', ln=True)
+    pdf.cell(0, 10, "Este informe es propiedad de MARPI MOTORES - Documento Confidencial.", align='C', ln=True)
     
     return pdf.output(dest='S').encode('latin-1', 'replace')
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
@@ -525,6 +520,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
