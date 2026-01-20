@@ -6,6 +6,7 @@ import os
 from fpdf import FPDF
 import urllib.parse  # Para el QR sin errores
 import re
+import time
 
 def calcular_grasa_avanzado(codigo):
     try:
@@ -514,6 +515,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
