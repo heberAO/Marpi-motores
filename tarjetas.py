@@ -399,7 +399,7 @@ if opcion_elegida != "":
             st.error("⚠️ Falta completar datos.")
         else:
             try:
-                # 1. Creamos el diccionario con los nombres EXACTOS de tus columnas
+                # 1. Armamos los datos
                 nuevo_registro = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": opcion_elegida,
@@ -414,17 +414,17 @@ if opcion_elegida != "":
                     "Observaciones": obs
                 }
 
-                # 2. MÉTODO DE GUARDADO (FORZADO)
-                # Leemos lo que hay, sumamos lo nuevo y sobreescribimos
-                df_actual = conn.read(worksheet="Intervenciones", ttl=0) # ttl=0 para que no use memoria vieja
+                # 2. MÉTODO DE GUARDADO
+                # IMPORTANTE: Cambiá "Intervenciones" por el nombre exacto de tu pestaña de Excel
+                nombre_pestaña = "Intervenciones" 
+                
+                df_actual = conn.read(worksheet=nombre_pestaña, ttl=0)
                 df_nuevo = pd.DataFrame([nuevo_registro])
                 df_final = pd.concat([df_actual, df_nuevo], ignore_index=True)
                 
-                # Esta es la línea que manda los datos al espacio
-                conn.update(worksheet="Intervenciones", data=df_final)
+                conn.update(worksheet=nombre_pestaña, data=df_final)
                 
-                st.success("✅ ¡REGISTRO GUARDADO EN LA PLANILLA!")
-
+                st.success(f"✅ ¡Guardado en la pestaña {nombre_pestaña}!")
                 # 3. PDF (Para que no se pierda)
                 pdf_content = generar_pdf_reporte(nuevo_registro, opcion_elegida, "REPORTE DE LUBRICACIÓN")
                 if pdf_content:
@@ -516,6 +516,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
