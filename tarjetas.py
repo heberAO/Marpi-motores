@@ -301,26 +301,6 @@ elif modo == "Historial y QR":
                             key=f"btn_pdf_{idx}"
                         )
 
-Heber, te entiendo perfectamente. Querés que la base de datos no sea solo una "bolsa" de texto en la descripción, sino que cada dato (Rodamiento LA, Gramos LA, etc.) caiga en su propia columna de Google Sheets.
-
-Para que esto funcione, primero aseguráte de que en tu Google Sheets existan exactamente estas columnas (escritas así tal cual):
-
-Rodamiento_LA
-
-Gramos_LA
-
-Rodamiento_LOA
-
-Gramos_LOA
-
-Tipo_Grasa
-
-Tipo_Tarea
-
-Aquí tenés el bloque de código de Relubricación configurado para repartir los datos en cada celda correspondiente:
-
-Python
-
 elif modo == "Relubricacion":
     st.title("🔍 Lubricación Inteligente MARPI")
 
@@ -494,6 +474,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
