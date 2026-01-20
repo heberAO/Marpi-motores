@@ -103,13 +103,13 @@ def generar_pdf_reporte(datos, titulo_informe):
             pdf.set_font("Arial", 'B', 10)
             pdf.cell(0, 7, "Aislamiento a Tierra (Motor):", ln=True)
             pdf.set_font("Arial", '', 10)
-            pdf.cell(0, 7, f"T-V1: {v('RT_TV1')} Ohm | T-U1: {v('RT_TU1')} Ohm | T-W1: {v('RT_TW1')} Ohm", ln=True)
+            pdf.cell(0, 7, f"T-V1: {v('RT_TV1')} GOhm | T-U1: {v('RT_TU1')} GOhm | T-W1: {v('RT_TW1')} GOhm", ln=True)
 
         # 2. Megado entre Bobinas (Motor) - 3 datos
             pdf.set_font("Arial", 'B', 10)
             pdf.cell(0, 7, "Aislamiento entre Bobinas:", ln=True)
             pdf.set_font("Arial", '', 10)
-            pdf.cell(0, 7, f"W1-V1: {v('RB_WV1')} Ohm | W1-U1: {v('RB_WU1')} Ohm | V1-U1: {v('RB_VU1')} Ohm", ln=True)
+            pdf.cell(0, 7, f"W1-V1: {v('RB_WV1')} GOhm | W1-U1: {v('RB_WU1')} GOhm | V1-U1: {v('RB_VU1')} GOhm", ln=True)
 
         # 3. Resistencias Internas - 3 datos
             pdf.set_font("Arial", 'B', 10)
@@ -122,8 +122,8 @@ def generar_pdf_reporte(datos, titulo_informe):
             pdf.set_font("Arial", 'B', 10)
             pdf.cell(0, 7, "Mediciones de Línea (Alimentación):", ln=True)
             pdf.set_font("Arial", '', 10)
-            pdf.cell(0, 7, f"Tierra-L1: {v('ML_L1')} MOhm | Tierra-L2: {v('ML_L2')} MOhm | Tierra-L3: {v('ML_L3')} MOhm", ln=True)
-            pdf.cell(0, 7, f"L1-L2: {v('ML_L1L2')} MOhm | L1-L3: {v('ML_L1L3')} MOhm | L2-L3: {v('ML_L2L3')} MOhm", ln=True)
+            pdf.cell(0, 7, f"Tierra-L1: {v('ML_L1')} GOhm | Tierra-L2: {v('ML_L2')} GOhm | Tierra-L3: {v('ML_L3')} GOhm", ln=True)
+            pdf.cell(0, 7, f"L1-L2: {v('ML_L1L2')} GOhm | L1-L3: {v('ML_L1L3')} GOhm | L2-L3: {v('ML_L2L3')} GOhm", ln=True)
 
     # 5. DETALLE / DESCRIPCIÓN (Lubricación, Reparación u Otros)
     if "Descripcion" in datos:
@@ -577,6 +577,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
