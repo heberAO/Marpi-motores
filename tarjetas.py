@@ -91,7 +91,7 @@ def generar_pdf_reporte(datos, titulo_informe):
     pdf.set_font("Arial", 'I', 8)
     pdf.cell(0, 10, "Este informe es propiedad de MARPI MOTORES - Documento Confidencial.", align='C', ln=True)
     
-    return pdf.output(dest='S').encode('latin-1', 'replace')
+    return pdf.output(dest='S').encode('latin-1', 'replace'
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
@@ -520,6 +520,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
