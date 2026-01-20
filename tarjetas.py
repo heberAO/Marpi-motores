@@ -366,21 +366,29 @@ elif modo == "Relubricacion":
         else:
             try:
                 # (Tu lógica de guardado de siempre)
-                nueva_fila = {
+                datos_para_pdf = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
-                    "Tag": str(opcion_elegida),
-                    "N_Serie": str(serie_final),
-                    "Responsable": str(resp_r),
-                    "Rodamiento_LA": str(rod_la),
-                    "Gramos_LA": gr_f_la,
-                    "Rodamiento_LOA": str(rod_loa),
-                    "Gramos_LOA": gr_f_loa,
-                    "Tipo_Grasa": grasa,
-                    "Descripcion": "RELUBRICACIÓN CAMPO",
-                    "Taller_Externo": obs
+                    "Tag": opcion_elegida,
+                    "N_Serie": serie_final,
+                    "Responsable": resp_r,
+                    "Rodamiento LA": rod_la,      # <--- Fijate que sea la variable del input
+                    "Rodamiento LOA": rod_loa,    # <--- Idem
+                    "Gramos LA": gr_f_la,
+                    "Gramos LOA": gr_f_loa,
+                    "Tipo de Grasa": grasa,
+                    "Intervencion": tipo_tarea,   # <--- La nueva del st.radio
+                    "Observaciones": obs
                 }
-                df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
-                conn.update(data=df_final)
+                # Llamamos a la función del PDF con estos datos
+                pdf_content = generar_pdf_lubricacion(datos_para_pdf) 
+    
+                # Y mostramos el botón de descarga
+                st.download_button(
+                    label="📥 Descargar Reporte PDF",
+                    data=pdf_content,
+                    file_name=f"Lubricacion_{opcion_elegida}.pdf",
+                    mime="application/pdf"
+                )
                 
                 # --- AQUÍ OCURRE LA MAGIA ---
                 st.session_state.form_id += 1  # Cambiamos el ID, esto "destruye" el form viejo y crea uno nuevo vacío
@@ -475,6 +483,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
