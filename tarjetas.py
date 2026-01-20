@@ -58,7 +58,7 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
         pdf.cell(95, 8, f"Fecha: {datos.get('Fecha','-')}", 1, 0)
         pdf.cell(95, 8, f"Responsable: {datos.get('Responsable','-')}", 1, 1)
 
-        # --- OPCIÓN 1: FORMATO LUBRICACIÓN ---
+        # --- OPCIÓN 1: FORMATO LUBRICACIÓN (Se mantiene intacto) ---
         if tipo_trabajo == "REPORTE DE LUBRICACIÓN":
             pdf.ln(5)
             pdf.set_fill_color(245, 245, 245)
@@ -71,36 +71,42 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
             pdf.cell(95, 8, f"Gramos LOA: {datos.get('Gramos_LOA','0')} g", 1, 1)
             pdf.cell(190, 8, f"Grasa utilizada: {datos.get('Tipo_Grasa','-')}", 1, 1)
 
-        # --- OPCIÓN 2: FORMATO MEGADO (AISLACIÓN) ---
-        elif "Megado" in tipo_trabajo or "Aislacion" in tipo_trabajo:
-            pdf.ln(5)
-            pdf.set_fill_color(245, 245, 245)
+        # --- OPCIÓN 2: FORMATO MEGADO (EXPANDIDO Y SEPARADO) ---
+        elif "MEGADO" in tipo_trabajo.upper():
+            pdf.ln(8) # Más espacio
+            pdf.set_fill_color(0, 51, 102) # Azul oscuro para encabezado
+            pdf.set_text_color(255, 255, 255)
             pdf.set_font("Arial", 'B', 11)
-            pdf.cell(0, 8, " MEDICIONES DE AISLACIÓN (MOhms):", 1, 1, 'L', True)
-            pdf.set_font("Arial", '', 10)
-            pdf.cell(63, 8, f"U-GND: {datos.get('U_Gnd','-')}", 1, 0)
-            pdf.cell(63, 8, f"V-GND: {datos.get('V_Gnd','-')}", 1, 0)
-            pdf.cell(64, 8, f"W-GND: {datos.get('W_Gnd','-')}", 1, 1)
+            pdf.cell(0, 8, " PRUEBAS DE RESISTENCIA DE AISLACIÓN (MOhms)", 1, 1, 'C', True)
+            
+            pdf.set_text_color(0, 0, 0) # Volver a negro
+            pdf.set_font("Arial", 'B', 10)
+            # Fila de encabezados de tabla
+            pdf.cell(63, 8, "FASE U - TIERRA", 1, 0, 'C')
+            pdf.cell(63, 8, "FASE V - TIERRA", 1, 0, 'C')
+            pdf.cell(64, 8, "FASE W - TIERRA", 1, 1, 'C')
+            
+            pdf.set_font("Arial", '', 12) # Mediciones más grandes
+            pdf.cell(63, 12, f"{datos.get('U_Gnd','-')} MΩ", 1, 0, 'C')
+            pdf.cell(63, 12, f"{datos.get('V_Gnd','-')} MΩ", 1, 0, 'C')
+            pdf.cell(64, 12, f"{datos.get('W_Gnd','-')} MΩ", 1, 1, 'C')
+            
+            # Campos adicionales de Megado (Tensión y Temperatura)
+            pdf.ln(2)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(95, 8, f"Tensión de Prueba: {datos.get('Tension_V','500V')}", 1, 0)
+            pdf.cell(95, 8, f"Temp. Ambiente: {datos.get('Temp','-')} °C", 1, 1)
 
-        # --- OPCIÓN 3: FORMATO REPARACIÓN ---
-        elif "REPARACION" in tipo_trabajo:
-            pdf.ln(5)
-            pdf.set_fill_color(245, 245, 245)
-            pdf.set_font("Arial", 'B', 11)
-            pdf.cell(0, 8, " ESTADO TÉCNICO DE REPARACIÓN:", 1, 1, 'L', True)
-            pdf.set_font("Arial", '', 10)
-            pdf.cell(190, 8, f"Falla Detectada: {datos.get('Falla','-')}", 1, 1)
-        
-        # Secciones comunes para todos los informes
+        # --- SECCIONES COMUNES ---
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "DESCRIPCIÓN / TAREA REALIZADA:", 0, 1)
+        pdf.cell(0, 8, "DESCRIPCIÓN / ESTADO TÉCNICO:", 0, 1)
         pdf.set_font("Arial", '', 10)
         pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
         
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "OBSERVACIONES / ESTADO FINAL:", 0, 1)
+        pdf.cell(0, 8, "OBSERVACIONES / CONCLUSIÓN:", 0, 1)
         pdf.set_font("Arial", '', 10)
         pdf.multi_cell(0, 7, str(datos.get('Taller_Externo','-')), border=1)
 
@@ -517,6 +523,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
