@@ -484,27 +484,27 @@ elif modo == "Mediciones de Campo":
                            f"Línea: T-L1:{tl1}, L1-L2:{l1l2}")
                 
                 # Dentro del bloque de guardar:
-nueva = {
-    "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
-    "Tag": t,
-    "Responsable": resp,
-    # --- MEGADO A TIERRA ---
-    "RT_TV1": tv1,
-    "RT_TU1": tu1,
-    "RT_TW1": tw1,
+        nueva = {
+            "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
+            "Tag": t,
+            "Responsable": resp,
+            # --- MEGADO A TIERRA ---
+            "RT_TV1": tv1,
+            "RT_TU1": tu1,
+            "RT_TW1": tw1,
     # --- MEGADO ENTRE BOBINAS ---
-    "RB_WV1": wv1,
-    "RB_WU1": wu1,
-    "RB_VU1": vu1,
+            "RB_WV1": wv1,
+            "RB_WU1": wu1,
+            "RB_VU1": vu1,
     # --- RESISTENCIAS INTERNAS ---
-    "RI_U1U2": u1u2,
-    "RI_V1V2": v1v2,
-    "RI_W1W2": w1w2,
+            "RI_U1U2": u1u2,
+            "RI_V1V2": v1v2,
+            "RI_W1W2": w1w2,
     # --- MEGADO DE LÍNEA ---
-    "ML_L1": tl1,
-    "ML_L2": tl2,
-    "ML_L3": tl3
-}
+            "ML_L1": tl1,
+            "ML_L2": tl2,
+            "ML_L3": tl3
+        }
                 
                 # Actualizar base de datos
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
@@ -521,6 +521,7 @@ nueva = {
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
