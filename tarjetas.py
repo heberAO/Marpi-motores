@@ -38,15 +38,6 @@ def calcular_grasa_avanzado(codigo):
         return 0.0
 
 # --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
-¡Jajaja, por fin! Qué bueno que la lubricación ya quedó impecable.
-
-El problema con los PDF es que la función generar_pdf_reporte está "ciega": no sabe si lo que está imprimiendo es una Reparación, un Megado o una Lubricación, entonces usa el mismo formato para todo.
-
-Para que cada PDF sea único y guarde la información que corresponde, vamos a modificar la función para que detecte el tipo de trabajo según lo que encuentre en la columna Descripcion.
-
-1. Reemplazá tu función generar_pdf_reporte por esta versión inteligente:
-Python
-
 def generar_pdf_reporte(datos, tag_motor):
     try:
         pdf = FPDF(orientation='P', unit='mm', format='A4')
@@ -493,6 +484,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
