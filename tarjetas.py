@@ -318,24 +318,27 @@ elif modo == "Relubricacion":
 
     motor_encontrado = None
     if opcion_elegida != "":
-        res = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)]
+        # Buscamos el motor y limpiamos valores nulos para evitar errores
+        res = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)].replace("-", "")
         if not res.empty:
             motor_encontrado = res.iloc[-1]
-            st.success(f"✅ Motor: {motor_encontrado['Tag']}")
+            st.success(f"✅ Motor seleccionado: {motor_encontrado['Tag']}")
 
     st.divider()
 
     col1, col2 = st.columns(2)
     with col1:
-        # Traemos el rodamiento que ya estaba guardado en su celda
+        # Extraemos el Rodamiento LA de la columna AB de tu Sheet1 
         val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None and 'Rodamiento_LA' in motor_encontrado else ""
-        rod_la = st.text_input("Rodamiento LA", value=val_la if val_la != "-" else "", key=f"la_{st.session_state.form_id}").upper()
+        # Si el valor es "0" o nulo, lo dejamos vacío para escribir
+        rod_la = st.text_input("Rodamiento LA", value=val_la if val_la not in ["0", "nan", "None"] else "", key=f"la_{st.session_state.form_id}").upper()
         gr_la_sug = calcular_grasa_avanzado(rod_la)
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
+        # Extraemos el Rodamiento LOA de la columna AD de tu Sheet1 
         val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None and 'Rodamiento_LOA' in motor_encontrado else ""
-        rod_loa = st.text_input("Rodamiento LOA", value=val_loa if val_loa != "-" else "", key=f"loa_{st.session_state.form_id}").upper()
+        rod_loa = st.text_input("Rodamiento LOA", value=val_loa if val_loa not in ["0", "nan", "None"] else "", key=f"loa_{st.session_state.form_id}").upper()
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
@@ -474,6 +477,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
