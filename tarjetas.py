@@ -307,50 +307,50 @@ elif modo == "Relubricacion":
     if "form_id" not in st.session_state:
         st.session_state.form_id = 0
 
-    # Limpiamos los nombres de las columnas por si tienen espacios invisibles
-    df_completo.columns = df_completo.columns.str.strip()
+    # Aseguramos que Tag y N_Serie sean texto para que el buscador no falle
     df_lista = df_completo.copy()
+    df_lista['Tag'] = df_lista['Tag'].astype(str).replace("nan", "")
+    df_lista['N_Serie'] = df_lista['N_Serie'].astype(str).replace("nan", "")
     
-    # Lista de motores para el buscador
-    lista_sugerencias = sorted(list(set(df_lista['Tag'].dropna().astype(str).tolist())))
-    
+    # Creamos una lista combinada de TAGs y Números de Serie para el buscador
+    lista_para_buscar = sorted(list(set(df_lista['Tag'].tolist() + df_lista['N_Serie'].tolist())))
+    lista_para_buscar = [x for x in lista_para_buscar if x.strip() != ""]
+
     opcion_elegida = st.selectbox(
-        "Seleccione TAG del Motor", 
-        options=[""] + lista_sugerencias,
+        "Buscar por TAG o N° DE SERIE", 
+        options=[""] + lista_para_buscar,
         key=f"search_{st.session_state.form_id}"
     )
 
     motor_encontrado = None
     if opcion_elegida != "":
-        # Buscamos la última intervención de ese motor para traer los rodamientos más recientes
-        res = df_lista[df_lista['Tag'] == opcion_elegida]
-        if not res.empty:
-            # Buscamos en todo el historial el primer valor que NO sea nulo para los rodamientos
-            # Esto es por si en la última fila no se cargaron pero en la anterior sí
-            motor_encontrado = res.replace(["", "nan", "None", "-"], pd.NA).ffill().iloc[-1]
-            st.success(f"✅ Motor: {motor_encontrado['Tag']}")
+        # Buscamos el motor por cualquiera de los dos campos
+        filtro = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)]
+        if not filtro.empty:
+            # Traemos la información del motor (la fila más completa)
+            motor_encontrado = filtro.iloc[-1]
+            st.success(f"✅ Motor: {motor_encontrado['Tag']} (Serie: {motor_encontrado['N_Serie']})")
 
     st.divider()
 
     col1, col2 = st.columns(2)
     with col1:
-        # Intentamos traer el dato. Si falla, ponemos vacío.
-        try:
-            val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None else ""
-        except:
-            val_la = ""
-            
-        rod_la = st.text_input("Rodamiento LA", value=val_la if val_la not in ["<NA>", "nan", "None", "0.0", "0"] else "", key=f"la_{st.session_state.form_id}").upper()
+        # Cargamos el rodamiento directamente de la columna 'Rodamiento_LA'
+        val_la = ""
+        if motor_encontrado is not None:
+            val_la = str(motor_encontrado.get('Rodamiento_LA', ""))
+        
+        rod_la = st.text_input("Rodamiento LA", value=val_la if val_la not in ["nan", "None", "0"] else "", key=f"la_{st.session_state.form_id}").upper()
         gr_la_sug = calcular_grasa_avanzado(rod_la)
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
-        try:
-            val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
-        except:
-            val_loa = ""
+        # Cargamos el rodamiento directamente de la columna 'Rodamiento_LOA'
+        val_loa = ""
+        if motor_encontrado is not None:
+            val_loa = str(motor_encontrado.get('Rodamiento_LOA', ""))
             
-        rod_loa = st.text_input("Rodamiento LOA", value=val_loa if val_loa not in ["<NA>", "nan", "None", "0.0", "0"] else "", key=f"loa_{st.session_state.form_id}").upper()
+        rod_loa = st.text_input("Rodamiento LOA", value=val_loa if val_loa not in ["nan", "None", "0"] else "", key=f"loa_{st.session_state.form_id}").upper()
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
@@ -489,6 +489,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
