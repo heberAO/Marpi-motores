@@ -401,7 +401,7 @@ if opcion_elegida != "":
             try:
                 # --- BUSCÁ EL NOMBRE AQUÍ ---
                 # Si arriba en tu código dice worksheet="DATOS", poné "DATOS" aquí abajo:
-                NOMBRE_REAL_DE_TU_EXCEL = "Intervenciones" # <--- CAMBIÁ ESTO
+                NOMBRE_REAL_DE_TU_EXCEL = "Base_Datos_marpi" # <--- CAMBIÁ ESTO
 
                 nuevo_registro = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
@@ -516,6 +516,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
