@@ -37,22 +37,22 @@ def calcular_grasa_avanzado(codigo):
         return 0.0
 
 # --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
-def generar_pdf_marpi_v2(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
+def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
     try:
+        from fpdf import FPDF
         pdf = FPDF(orientation='P', unit='mm', format='A4')
         pdf.add_page()
         
-        # Logo
+        # Logo (si existe)
         if os.path.exists("logo.png"):
             pdf.image("logo.png", 10, 8, 30)
         
-        # Título Dinámico
         pdf.set_font("Arial", 'B', 18)
         pdf.set_text_color(0, 51, 102)
         pdf.cell(0, 15, f'{tipo_trabajo}', 0, 1, 'R')
         pdf.ln(10)
         
-        # Cuadro de datos del equipo
+        # Datos del equipo
         pdf.set_fill_color(230, 233, 240)
         pdf.set_font("Arial", 'B', 12)
         pdf.cell(0, 10, f" DATOS DEL EQUIPO: {tag_motor}", 1, 1, 'L', True)
@@ -62,50 +62,42 @@ def generar_pdf_marpi_v2(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
         pdf.cell(95, 8, f"Fecha: {datos.get('Fecha','-')}", 1, 0)
         pdf.cell(95, 8, f"Responsable: {datos.get('Responsable','-')}", 1, 1)
 
-        # --- LÓGICA DE LUBRICACIÓN ---
+        # SI ES LUBRICACIÓN
         if "LUBRICACION" in tipo_trabajo.upper():
             pdf.ln(5)
             pdf.set_fill_color(245, 245, 245)
             pdf.set_font("Arial", 'B', 11)
             pdf.cell(0, 8, " DETALLES DE LUBRICACIÓN:", 1, 1, 'L', True)
             pdf.set_font("Arial", '', 10)
-            pdf.cell(95, 8, f"Rod. LA: {datos.get('Rodamiento_LA','-')}", 1, 0)
-            pdf.cell(95, 8, f"Gramos LA: {datos.get('Gramos_LA','0')} g", 1, 1)
-            pdf.cell(95, 8, f"Rod. LOA: {datos.get('Rodamiento_LOA','-')}", 1, 0)
-            pdf.cell(95, 8, f"Gramos LOA: {datos.get('Gramos_LOA','0')} g", 1, 1)
-            pdf.cell(190, 8, f"Grasa utilizada: {datos.get('Tipo_Grasa','-')}", 1, 1)
-
-        # --- LÓGICA DE MEGADO (Aislación) ---
+            pdf.cell(95, 8, f"Rod. LA: {datos.get('Rodamiento_LA', datos.get('Rodamiento LA', '-'))}", 1, 0)
+            pdf.cell(95, 8, f"Gramos LA: {datos.get('Gramos_LA', datos.get('Gramos LA', '0'))} g", 1, 1)
+            pdf.cell(95, 8, f"Rod. LOA: {datos.get('Rodamiento_LOA', datos.get('Rodamiento LOA', '-'))}", 1, 0)
+            pdf.cell(95, 8, f"Gramos LOA: {datos.get('Gramos_LOA', datos.get('Gramos LOA', '0'))} g", 1, 1)
+        
+        # SI ES MEGADO
         elif "MEGADO" in tipo_trabajo.upper() or "AISLACION" in tipo_trabajo.upper():
-            pdf.ln(8)
+            pdf.ln(5)
             pdf.set_fill_color(0, 51, 102)
             pdf.set_text_color(255, 255, 255)
             pdf.set_font("Arial", 'B', 11)
-            pdf.cell(0, 8, " PRUEBAS DE RESISTENCIA DE AISLACIÓN", 1, 1, 'C', True)
-            
+            pdf.cell(0, 8, " MEDICIONES DE AISLACIÓN (MOhms)", 1, 1, 'C', True)
             pdf.set_text_color(0, 0, 0)
-            pdf.set_font("Arial", 'B', 10)
-            pdf.cell(63, 8, "U - GND", 1, 0, 'C')
-            pdf.cell(63, 8, "V - GND", 1, 0, 'C')
-            pdf.cell(64, 8, "W - GND", 1, 1, 'C')
-            
-            pdf.set_font("Arial", '', 14) # Mediciones bien grandes
-            pdf.cell(63, 15, f"{datos.get('U_Gnd','-')} M Ohm", 1, 0, 'C')
-            pdf.cell(63, 15, f"{datos.get('V_Gnd','-')} M Ohm", 1, 0, 'C')
-            pdf.cell(64, 15, f"{datos.get('W_Gnd','-')} M Ohm", 1, 1, 'C')
+            pdf.cell(63, 10, f"U-GND: {datos.get('U_Gnd','-')}", 1, 0, 'C')
+            pdf.cell(63, 10, f"V-GND: {datos.get('V_Gnd','-')}", 1, 0, 'C')
+            pdf.cell(64, 10, f"W-GND: {datos.get('W_Gnd','-')}", 1, 1, 'C')
 
-        # --- TEXTOS COMUNES ---
+        # Comunes
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "DESCRIPCIÓN / TAREA:", 0, 1)
+        pdf.cell(0, 8, "DESCRIPCIÓN:", 0, 1)
         pdf.set_font("Arial", '', 10)
-        pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
+        pdf.multi_cell(0, 7, str(datos.get('Descripcion', datos.get('Intervencion', '-'))), border=1)
         
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "OBSERVACIONES / ESTADO FINAL:", 0, 1)
+        pdf.cell(0, 8, "OBSERVACIONES:", 0, 1)
         pdf.set_font("Arial", '', 10)
-        pdf.multi_cell(0, 7, str(datos.get('Taller_Externo','-')), border=1)
+        pdf.multi_cell(0, 7, str(datos.get('Taller_Externo', datos.get('Observaciones', '-'))), border=1)
 
         return pdf.output(dest='S').encode('latin-1', 'replace')
     except Exception as e:
@@ -516,6 +508,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
