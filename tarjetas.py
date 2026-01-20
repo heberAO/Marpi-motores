@@ -353,19 +353,29 @@ elif modo == "Relubricacion":
                 st.warning("⚠️ El motor existe, pero no encontré rodamientos cargados en las columnas Rodamiento_LA / Rodamiento_LOA")
 
     st.divider()
-    # ... (Resto del código de inputs y guardado sigue igual)
 
     col1, col2 = st.columns(2)
     with col1:
-        rod_la = st.text_input("Rodamiento LA", value=val_la, key=f"la_{st.session_state.form_id}").upper()
+        # Forzamos el valor recuperado en el campo de texto
+        rod_la = st.text_input(
+            "Rodamiento LA", 
+            value=val_la, 
+            key=f"la_input_{st.session_state.form_id}"
+        ).upper()
+        
         gr_la_sug = calcular_grasa_avanzado(rod_la)
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
-        rod_loa = st.text_input("Rodamiento LOA", value=val_loa, key=f"loa_{st.session_state.form_id}").upper()
+        # Forzamos el valor recuperado en el campo de texto
+        rod_loa = st.text_input(
+            "Rodamiento LOA", 
+            value=val_loa, 
+            key=f"loa_input_{st.session_state.form_id}"
+        ).upper()
+        
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
-
     with st.form(key=f"form_main_{st.session_state.form_id}"):
         serie_final = st.text_input("Confirmar N° de Serie", value=n_serie_detectado)
         resp_r = st.text_input("Técnico Responsable")
@@ -484,6 +494,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
