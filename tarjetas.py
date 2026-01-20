@@ -489,18 +489,40 @@ elif modo == "Relubricacion":
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
     fecha_hoy = date.today()
-    # Aseguramos que el contador exista para la limpieza
+    
     if "cnt_meg" not in st.session_state:
         st.session_state.cnt_meg = 0
         
     tag_inicial = st.session_state.get('tag_fijo', '')
-    
-    # Agregamos la key dinámica al form para que al cambiar cnt_meg se limpie todo
-    with st.form(key=f"form_completo_{st.session_state.cnt_meg}"):
-        col_t, col_r = st.columns(2)
-        t = col_t.text_input("TAG MOTOR", value=tag_inicial).upper()
-        sn = st.text_input("N° de Serie")
-        resp = col_r.text_input("Técnico Responsable")
+
+    with st.form(f"form_megado_{st.session_state.cnt_meg}"):
+        # --- FILA 1: IDENTIFICACIÓN ---
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            t = st.text_input("TAG del Motor:", value=tag_inicial).upper()
+        with col2:
+            # Buscamos el N° de Serie si el TAG ya existe en el sistema
+            n_serie_sugerido = ""
+            if t:
+                busqueda_sn = df_completo[df_completo['Tag'] == t].tail(1)
+                if not busqueda_sn.empty:
+                    n_serie_sugerido = str(busqueda_sn['N_Serie'].values[0])
+            
+            n_serie = st.text_input("Número de Motor (Serie):", value=n_serie_sugerido)
+        with col3:
+            resp = st.text_input("Responsable:")
+
+        # --- FILA 2: EQUIPO DE MEDICIÓN ---
+        col_eq1, col_eq2 = st.columns(2)
+        with col_eq1:
+            # Lista de tus equipos de megado (puedes agregar los que quieras)
+            lista_equipos = ["Megger MIT410", "Fluke 1507", "Hipot Tester", "Otro"]
+            equipo_megado = st.selectbox("Equipo de Megado utilizado:", lista_equipos)
+        with col_eq2:
+            tension_prueba = st.selectbox("Tensión de Prueba:", ["500V", "1000V", "2500V", "5000V"])
+
+        st.divider()
+        st.subheader("📊 Valores de Resistencia y Aislamiento")
         
         st.subheader("📊 Megado a tierra (Resistencia)")
         # Primera fila de campos chicos
@@ -536,74 +558,43 @@ elif modo == "Mediciones de Campo":
         st.text_area("Observaciones")
 
         # BOTÓN DE Guardado
-        if st.form_submit_button("💾 GUARDAR"):
+        if st.form_submit_button("💾 GUARDAR MEDICIONES"):
             if t and resp:
-                # 1. BUSCAMOS LOS DATOS DE PLACA EN EL HISTORIAL
-                datos_tecnicos = df_completo[df_completo['Tag'] == t].head(1).to_dict('records')
-                info = datos_tecnicos[0] if datos_tecnicos else {}
+                # 1. RESCATE DE DATOS PARA EL PDF
+                busqueda = df_completo[df_completo['Tag'] == t].tail(1)
+                info = busqueda.iloc[0].to_dict() if not busqueda.empty else {}
 
-                # 2. ARMAMOS EL DICCIONARIO 'nueva' SUMANDO LOS DATOS DE PLACA
+                # 2. ARMAMOS EL DICCIONARIO 'nueva'
                 nueva = {
-                    "Fecha": date.today().strftime("%d/%m/%Y"),
+                    "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
                     "Tag": t,
+                    "N_Serie": n_serie, # Usamos el que se puso en el formulario
                     "Responsable": resp,
-                    "N_Serie": info.get("N_Serie", ""),
+                    "Descripcion": f"MEGADO - Equipo: {equipo_megado} ({tension_prueba})",
                     "Potencia": info.get("Potencia", ""),
                     "Tension": info.get("Tension", ""),
                     "RPM": info.get("RPM", ""),
                     "Carcasa": info.get("Carcasa", ""),
                     "Rodamiento_LA": info.get("Rodamiento_LA", ""),
                     "Rodamiento_LOA": info.get("Rodamiento_LOA", ""),
-                    # ... aquí siguen tus campos de Megado o Lubricación ...
+                    # No olvides agregar aquí todas las variables de tus inputs (tv1, tu1, etc.)
                 }
-                
-                # Para Megado, agregamos las mediciones:
-                if modo == "Mediciones de Campo":
-                    nueva.update({
-                        "RT_TV1": tv1, "RT_TU1": tu1, "RT_TW1": tw1,
-                        "RB_WV1": wv1, "RB_WU1": wu1, "RB_VU1": vu1,
-                        "RI_U1U2": u1u2, "RI_V1V2": v1v2, "RI_W1W2": w1w2,
-                        "ML_L1": tl1, "ML_L2": tl2, "ML_L3": tl3,
-                        "ML_L1L2": l1l2, "ML_L1L3": l1l3, "ML_L2L3": l2l3
-                    })
-                
-                # Para Lubricación, agregamos la descripción:
-                if modo == "Relubricacion":
-                    nueva["Descripcion"] = f"LUBRICACIÓN: {grasa_t}. LA: {gr_real_la}g, LOA: {gr_real_loa}g."
 
-               # 3. GUARDAR Y GENERAR PDF
+                # 3. GUARDAR Y PDF
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
-                
-                # Usamos estos nombres fijos:
-                st.session_state.pdf_buffer = generar_pdf_reporte(nueva, f"REPORTE DE {modo.upper()}")
-                st.session_state.tag_buffer = t if 't' in locals() else tag_seleccionado
-                st.success("✅ Registro guardado")
 
-    # --- 2. EL BOTÓN DE DESCARGA VA AFUERA DEL FORMULARIO (Saliendo del 'with st.form') ---
-    if st.session_state.get("pdf_buffer") is not None:
-        st.write("---")
-        
-        # Recuperamos el nombre del tag para el archivo
-        tag_descarga = st.session_state.get("tag_buffer", "Motor")
-        
-        st.download_button(
-            label="📥 CLIC AQUÍ PARA DESCARGAR REPORTE PDF",
-            data=st.session_state.pdf_buffer,
-            file_name=f"Reporte_{tag_descarga}.pdf",
-            mime="application/pdf"
-        )
-        
-        if st.button("Hacer otro registro (Limpiar)"):
-            st.session_state.pdf_buffer = None
-            st.session_state.tag_buffer = None
-            # Si usas cnt_meg para limpiar el form, dejalo:
-            if "cnt_meg" in st.session_state:
-                st.session_state.cnt_meg += 1
-            st.rerun()
+                st.session_state.pdf_buffer = generar_pdf_reporte(nueva, "REPORTE DE MEGADO")
+                st.session_state.tag_buffer = f"{t}_MEGADO"
+                
+                st.success(f"✅ Mediciones de {t} guardadas con {equipo_megado}")
+                st.rerun()
+            else:
+                st.error("⚠️ El TAG y el Responsable son obligatorios.")
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
