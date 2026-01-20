@@ -59,8 +59,12 @@ def generar_pdf_reporte(datos, titulo_informe):
     pdf.ln(5)
     
     def v(clave):
-        val = str(datos.get(clave, ""))
-        return "---" if val.lower() in ["nan", "none", "", "n/a"] else val
+        val = datos.get(clave, "")
+        # Convertimos a string y verificamos si es vacío, None o NaN
+        val_str = str(val).strip().lower()
+        if val_str in ["nan", "none", "", "n/a", "null"]:
+            return "---"  # Esto reemplaza el "nan" feo por rayitas
+        return str(val)
 
     # 2. INFORMACIÓN BÁSICA
     pdf.set_font("Arial", 'B', 11)
@@ -600,6 +604,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
