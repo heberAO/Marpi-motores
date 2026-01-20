@@ -41,73 +41,72 @@ def calcular_grasa_avanzado(codigo):
         return 0.0
 
 # --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
+from reportlab.lib.units import inch
+
 def generar_pdf_reporte(datos, tag_motor):
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    
+    # --- LOGO DE LA EMPRESA ---
     try:
-        pdf = FPDF(orientation='P', unit='mm', format='A4')
-        pdf.add_page()
-        
-        # Identificar el tipo de trabajo para el título
-        desc_completa = str(datos.get('Descripcion','-')).upper()
-        if "RELUBRICACIÓN" in desc_completa or "GRASA" in desc_completa:
-            tipo_trabajo = "INFORME DE LUBRICACIÓN"
-            color_encabezado = (0, 102, 51) # Verde para lubricación
-        elif "MEGADO" in desc_completa or "RESISTENCIA" in desc_completa:
-            tipo_trabajo = "PROTOCOLO DE MEDICIÓN ELÉCTRICA"
-            color_encabezado = (102, 0, 0) # Rojo para electricidad
-        else:
-            tipo_trabajo = "INFORME TÉCNICO DE REPARACIÓN"
-            color_encabezado = (0, 51, 102) # Azul para mecánica/general
+        # Posición: X=0.5 pulgada, Y=10 pulgadas (arriba a la izquierda)
+        # Tamaño: 1.5 pulgadas de ancho (el alto se ajusta solo)
+        c.drawImage("logo_empresa.png", 0.5*inch, 10*inch, width=1.5*inch, preserveAspectRatio=True, mask='auto')
+    except:
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(0.5*inch, 10.5*inch, "MARPI MOTORES") # Texto si no carga el logo
 
-        # Encabezado con color dinámico
-        pdf.set_font("Arial", 'B', 16)
-        pdf.set_text_color(*color_encabezado)
-        pdf.cell(0, 10, tipo_trabajo, 0, 1, 'C')
-        pdf.ln(5)
-        
-        # Cuadro de Datos del Equipo
-        pdf.set_fill_color(230, 233, 240)
-        pdf.set_text_color(0, 0, 0)
-        pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, f" EQUIPO: {tag_motor}", 1, 1, 'L', True)
-        
-        pdf.set_font("Arial", '', 10)
-        pdf.cell(95, 8, f"Fecha: {datos.get('Fecha','-')}", 1, 0)
-        pdf.cell(95, 8, f"Responsable: {datos.get('Responsable','-')}", 1, 1)
-        pdf.cell(95, 8, f"N° Serie: {datos.get('N_Serie','-')}", 1, 0)
-        pdf.cell(95, 8, f"Potencia/RPM: {datos.get('Potencia','-')} / {datos.get('RPM','-')}", 1, 1)
+    # --- ENCABEZADO ---
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(4.25*inch, 10.2*inch, f"PROTOCOLO DE ALTA - MOTOR {tag_motor}")
+    
+    c.setFont("Helvetica", 10)
+    c.drawCentredString(4.25*inch, 10*inch, f"Fecha de Emisión: {datos.get('Fecha', 'N/A')}")
+    
+    c.line(0.5*inch, 9.8*inch, 8*inch, 9.8*inch) # Línea divisoria
 
-        # Detalles Específicos según el tipo
-        pdf.ln(5)
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "DETALLES DE LA INTERVENCIÓN:", 0, 1)
-        pdf.set_font("Arial", '', 10)
-        
-        # Si es lubricación, mostramos los datos de las celdas nuevas
-        if "LUBRICACIÓN" in tipo_trabajo:
-            detalle_lub = (f"Rodamiento LA: {datos.get('Rodamiento_LA','-')} | Grasa: {datos.get('Gramos_LA','0')}g\n"
-                           f"Rodamiento LOA: {datos.get('Rodamiento_LOA','-')} | Grasa: {datos.get('Gramos_LOA','0')}g\n"
-                           f"Tipo de Grasa: {datos.get('Tipo_Grasa','-')}\n"
-                           f"Tipo de Tarea: {datos.get('Tipo_Tarea','-')}")
-            pdf.multi_cell(0, 7, detalle_lub, border=1)
-        else:
-            # Para reparaciones o megados, mostramos la descripción normal
-            texto_detalle = str(datos.get('Descripcion','-')).replace('|', '\n')
-            pdf.multi_cell(0, 7, texto_detalle, border=1)
-        
-        # Observaciones finales
-        pdf.ln(5)
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "OBSERVACIONES FINAL DEL TÉCNICO:", 0, 1)
-        pdf.set_font("Arial", '', 10)
-        pdf.multi_cell(0, 7, str(datos.get('Taller_Externo','-')), border=1)
+    # --- CUERPO DEL INFORME (Resumen de datos) ---
+    y = 9.4*inch
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(0.5*inch, y, "DATOS DE PLACA Y REGISTRO")
+    y -= 0.3*inch
+    
+    c.setFont("Helvetica", 10)
+    # Lista de datos a imprimir
+    items = [
+        f"Responsable: {datos.get('Responsable', 'N/A')}",
+        f"N° de Serie: {datos.get('N_Serie', 'N/A')}",
+        f"Potencia: {datos.get('Potencia', 'N/A')} | RPM: {datos.get('RPM', 'N/A')}",
+        f"Carcasa/Frame: {datos.get('Carcasa', 'N/A')}",
+        f"Rodamiento LA: {datos.get('Rodamiento_LA', 'N/A')}",
+        f"Rodamiento LOA: {datos.get('Rodamiento_LOA', 'N/A')}"
+    ]
+    
+    for item in items:
+        c.drawString(0.7*inch, y, f"• {item}")
+        y -= 0.2*inch
 
-        pdf.ln(20)
-        pdf.set_font("Arial", 'I', 8)
-        pdf.cell(0, 5, "Documento generado por Sistema de Gestión MARPI MOTORES", 0, 1, 'C')
+    # --- MEDICIONES ELÉCTRICAS ---
+    y -= 0.2*inch
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(0.5*inch, y, "MEDICIONES ELÉCTRICAS")
+    y -= 0.3*inch
+    c.setFont("Helvetica", 10)
+    c.drawString(0.7*inch, y, f"Resistencia (RT): TU: {datos.get('RT_TU', '-')} | TV: {datos.get('RT_TV', '-')} | TW: {datos.get('RT_TW', '-')}")
+    y -= 0.2*inch
+    c.drawString(0.7*inch, y, f"Aislamiento (RB): UV: {datos.get('RB_UV', '-')} | VW: {datos.get('RB_VW', '-')} | UW: {datos.get('RB_UW', '-')}")
 
-        return pdf.output(dest='S').encode('latin-1', 'replace')
-    except Exception as e:
-        return None
+    # --- PIE DE PÁGINA (Propiedad de la empresa) ---
+    c.line(0.5*inch, 1*inch, 8*inch, 1*inch)
+    c.setFont("Helvetica-Oblique", 8)
+    # ACÁ VA TU LEYENDA
+    leyenda = "Este informe es propiedad de MARPI MOTORES. Prohibida su reproducción total o parcial sin autorización."
+    c.drawCentredString(4.25*inch, 0.8*inch, leyenda)
+    
+    c.showPage()
+    c.save()
+    buffer.seek(0)
+    return buffer
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
@@ -517,6 +516,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
