@@ -310,7 +310,6 @@ elif modo == "Historial y QR":
                     st.write(f"**Responsable:** {fila.get('Responsable','-')}")
                     st.write(f"**Detalle completo:** {fila.get('Descripcion','-')}")
                     
-                    # Identificar tipo para el PDF
                     desc_para_filtro = str(fila.get('Descripcion', '')).upper()
                     
                     if "PREVENTIVA" in desc_para_filtro or "CORRECTIVA" in desc_para_filtro:
@@ -320,7 +319,6 @@ elif modo == "Historial y QR":
                     else:
                         tipo_de_informe = "INFORME TÉCNICO"
 
-                    # Generar PDF (Asegúrate de que la función acepte estos 3 datos arriba)
                     pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado, tipo_de_informe)
                     
                     if pdf_archivo:
@@ -331,19 +329,13 @@ elif modo == "Historial y QR":
                             key=f"btn_pdf_{idx}",
                             mime="application/pdf"
                         )
-    # Si este ID cambia, el formulario se vacía sí o sí
-    if "form_id" not in st.session_state:
-        st.session_state.form_id = 0
+            # --- AQUÍ TERMINA EL HISTORIAL ---
 
-    # 1. Buscador (con una clave que cambia para resetearse)
-    df_lista = df_completo.fillna("-")
-    lista_sugerencias = sorted(list(set(df_lista['Tag'].astype(str).tolist() + df_lista['N_Serie'].astype(str).tolist())))
-    
-    opcion_elegida = st.selectbox(
-        "Seleccione TAG o N° DE SERIE", 
-        options=[""] + lista_sugerencias,
-        key=f"search_{st.session_state.form_id}" # <--- ID Dinámico
-    )
+# A PARTIR DE AQUÍ, TODO DEBE IR CON MENOS ESPACIOS A LA IZQUIERDA
+if "form_id" not in st.session_state:
+    st.session_state.form_id = 0
+
+# 1. Buscador...
     motor_encontrado = None
     if opcion_elegida != "":
         res = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)]
@@ -524,6 +516,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
