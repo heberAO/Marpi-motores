@@ -115,13 +115,35 @@ if modo == "Nuevo Registro":
 
 elif modo == "Historial y QR":
     st.title("🔍 Consulta de Motores")
-   tags = [""] + sorted([str(x) for x in df_completo['Tag'].dropna().unique()])
+    # Línea 118 corregida y alineada:
+    tags = [""] + sorted([str(x) for x in df_completo['Tag'].dropna().unique()])
     sel = st.selectbox("Seleccione Motor", tags)
+    
     if sel:
         url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={sel}"
         qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(url_app)}"
-        st.image(qr_api)
-        st.write(df_completo[df_completo['Tag'] == sel])
+        
+        col_qr, col_info = st.columns([1, 2])
+        with col_qr:
+            st.image(qr_api, caption=f"QR de {sel}")
+        with col_info:
+            st.subheader(f"🚜 Equipo seleccionado: {sel}")
+            st.write(f"**Link directo:** {url_app}")
+            
+        st.divider()
+        st.subheader("📜 Historial de Intervenciones")
+        hist_m = df_completo[df_completo['Tag'] == sel].copy().iloc[::-1]
+
+        for idx, fila in hist_m.iterrows():
+            intervencion = str(fila.get('Descripcion', '-'))[:40]
+            with st.expander(f"📅 {fila.get('Fecha','-')} - {intervencion}..."):
+                st.write(f"**Responsable:** {fila.get('Responsable','-')}")
+                st.write(f"**Detalle:** {fila.get('Descripcion','-')}")
+                
+                # Botón de PDF en el historial
+                pdf_hist = generar_pdf_reporte(fila.to_dict(), sel, "INFORME TÉCNICO")
+                if pdf_hist:
+                    st.download_button("📄 Descargar PDF", pdf_hist, f"Reporte_{sel}_{idx}.pdf", "application/pdf", key=f"btn_{idx}")
 
 elif modo == "Relubricacion":
     st.title("🛢️ Registro de Relubricación")
@@ -178,6 +200,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
