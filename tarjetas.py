@@ -38,55 +38,81 @@ def calcular_grasa_avanzado(codigo):
         return 0.0
 
 # --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
-def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
+¡Jajaja, por fin! Qué bueno que la lubricación ya quedó impecable.
+
+El problema con los PDF es que la función generar_pdf_reporte está "ciega": no sabe si lo que está imprimiendo es una Reparación, un Megado o una Lubricación, entonces usa el mismo formato para todo.
+
+Para que cada PDF sea único y guarde la información que corresponde, vamos a modificar la función para que detecte el tipo de trabajo según lo que encuentre en la columna Descripcion.
+
+1. Reemplazá tu función generar_pdf_reporte por esta versión inteligente:
+Python
+
+def generar_pdf_reporte(datos, tag_motor):
     try:
         pdf = FPDF(orientation='P', unit='mm', format='A4')
         pdf.add_page()
-        if os.path.exists("logo.png"):
-            pdf.image("logo.png", 10, 8, 30)
         
-        pdf.set_font("Arial", 'B', 18)
-        pdf.set_text_color(0, 51, 102)
-        pdf.cell(0, 15, f'{tipo_trabajo}', 0, 1, 'R')
-        pdf.ln(10)
+        # Identificar el tipo de trabajo para el título
+        desc_completa = str(datos.get('Descripcion','-')).upper()
+        if "RELUBRICACIÓN" in desc_completa or "GRASA" in desc_completa:
+            tipo_trabajo = "INFORME DE LUBRICACIÓN"
+            color_encabezado = (0, 102, 51) # Verde para lubricación
+        elif "MEGADO" in desc_completa or "RESISTENCIA" in desc_completa:
+            tipo_trabajo = "PROTOCOLO DE MEDICIÓN ELÉCTRICA"
+            color_encabezado = (102, 0, 0) # Rojo para electricidad
+        else:
+            tipo_trabajo = "INFORME TÉCNICO DE REPARACIÓN"
+            color_encabezado = (0, 51, 102) # Azul para mecánica/general
+
+        # Encabezado con color dinámico
+        pdf.set_font("Arial", 'B', 16)
+        pdf.set_text_color(*color_encabezado)
+        pdf.cell(0, 10, tipo_trabajo, 0, 1, 'C')
+        pdf.ln(5)
         
+        # Cuadro de Datos del Equipo
         pdf.set_fill_color(230, 233, 240)
+        pdf.set_text_color(0, 0, 0)
         pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, f" DATOS DEL EQUIPO: {tag_motor}", 1, 1, 'L', True)
+        pdf.cell(0, 10, f" EQUIPO: {tag_motor}", 1, 1, 'L', True)
         
         pdf.set_font("Arial", '', 10)
         pdf.cell(95, 8, f"Fecha: {datos.get('Fecha','-')}", 1, 0)
         pdf.cell(95, 8, f"Responsable: {datos.get('Responsable','-')}", 1, 1)
+        pdf.cell(95, 8, f"N° Serie: {datos.get('N_Serie','-')}", 1, 0)
+        pdf.cell(95, 8, f"Potencia/RPM: {datos.get('Potencia','-')} / {datos.get('RPM','-')}", 1, 1)
 
-        # --- SECCIÓN NUEVA: Si es Lubricación, mostramos los rodamientos ---
-        if "Rodamiento_LA" in datos:
-            pdf.ln(5)
-            pdf.set_fill_color(245, 245, 245)
-            pdf.set_font("Arial", 'B', 11)
-            pdf.cell(0, 8, " DETALLES DE LUBRICACIÓN:", 1, 1, 'L', True)
-            pdf.set_font("Arial", '', 10)
-            pdf.cell(95, 8, f"Rod. LA: {datos.get('Rodamiento_LA','-')}", 1, 0)
-            pdf.cell(95, 8, f"Gramos LA: {datos.get('Gramos_LA','0')} g", 1, 1)
-            pdf.cell(95, 8, f"Rod. LOA: {datos.get('Rodamiento_LOA','-')}", 1, 0)
-            pdf.cell(95, 8, f"Gramos LOA: {datos.get('Gramos_LOA','0')} g", 1, 1)
-            pdf.cell(190, 8, f"Grasa utilizada: {datos.get('Tipo_Grasa','-')}", 1, 1)
-        
+        # Detalles Específicos según el tipo
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "TIPO DE INTERVENCIÓN / DESCRIPCIÓN:", 0, 1)
+        pdf.cell(0, 8, "DETALLES DE LA INTERVENCIÓN:", 0, 1)
         pdf.set_font("Arial", '', 10)
-        # Aquí saldrá lo que elegiste en el st.radio (Preventiva/Correctiva)
-        pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
         
+        # Si es lubricación, mostramos los datos de las celdas nuevas
+        if "LUBRICACIÓN" in tipo_trabajo:
+            detalle_lub = (f"Rodamiento LA: {datos.get('Rodamiento_LA','-')} | Grasa: {datos.get('Gramos_LA','0')}g\n"
+                           f"Rodamiento LOA: {datos.get('Rodamiento_LOA','-')} | Grasa: {datos.get('Gramos_LOA','0')}g\n"
+                           f"Tipo de Grasa: {datos.get('Tipo_Grasa','-')}\n"
+                           f"Tipo de Tarea: {datos.get('Tipo_Tarea','-')}")
+            pdf.multi_cell(0, 7, detalle_lub, border=1)
+        else:
+            # Para reparaciones o megados, mostramos la descripción normal
+            texto_detalle = str(datos.get('Descripcion','-')).replace('|', '\n')
+            pdf.multi_cell(0, 7, texto_detalle, border=1)
+        
+        # Observaciones finales
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "OBSERVACIONES FINAL:", 0, 1)
+        pdf.cell(0, 8, "OBSERVACIONES FINAL DEL TÉCNICO:", 0, 1)
         pdf.set_font("Arial", '', 10)
         pdf.multi_cell(0, 7, str(datos.get('Taller_Externo','-')), border=1)
 
+        pdf.ln(20)
+        pdf.set_font("Arial", 'I', 8)
+        pdf.cell(0, 5, "Documento generado por Sistema de Gestión MARPI MOTORES", 0, 1, 'C')
+
         return pdf.output(dest='S').encode('latin-1', 'replace')
     except Exception as e:
-        st.error(f"Error PDF: {e}")
         return None
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
@@ -467,6 +493,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
