@@ -430,19 +430,22 @@ elif modo == "Relubricacion":
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
                 
-                # 2. Guardar el PDF en la memoria para bajarlo afuera
-                st.session_state.pdf_buffer = generar_pdf_reporte(nueva, "REPORTE DE LUBRICACIÓN")
-                st.session_state.tag_buffer = tag_seleccionado
-                
-                st.success(f"✅ Lubricación de {tag_seleccionado} guardada.")
+                # --- REINICIO Y LIMPIEZA (Alineado con el st.success) ---
+                st.session_state.form_id += 1
+                st.success("✅ Guardado y Formulario Limpio")
+                # Quitamos el st.rerun() de acá adentro para que el PDF no se borre
             else:
                 st.error("⚠️ Falta Técnico o TAG")
-                
-                # REINICIO Y LIMPIEZA
-               st.session_state.form_id += 1
-               st.success("✅ Guardado y Formulario Limpio")
-               time.sleep(1)
-               st.rerun()
+
+    # --- BOTÓN DE DESCARGA (PEGADO AL MARGEN IZQUIERDO DEL MODO RELUBRICACION) ---
+    if st.session_state.get("pdf_buffer"):
+        st.divider()
+        st.download_button(
+            label="📥 DESCARGAR REPORTE PDF",
+            data=st.session_state.pdf_buffer,
+            file_name=f"Reporte_{st.session_state.tag_buffer}.pdf",
+            mime="application/pdf"
+        )
                 
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -544,6 +547,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
