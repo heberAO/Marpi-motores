@@ -56,16 +56,30 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
         pdf.set_font("Arial", '', 10)
         pdf.cell(95, 8, f"Fecha: {datos.get('Fecha','-')}", 1, 0)
         pdf.cell(95, 8, f"Responsable: {datos.get('Responsable','-')}", 1, 1)
+
+        # --- SECCIÓN NUEVA: Si es Lubricación, mostramos los rodamientos ---
+        if "Rodamiento_LA" in datos:
+            pdf.ln(5)
+            pdf.set_fill_color(245, 245, 245)
+            pdf.set_font("Arial", 'B', 11)
+            pdf.cell(0, 8, " DETALLES DE LUBRICACIÓN:", 1, 1, 'L', True)
+            pdf.set_font("Arial", '', 10)
+            pdf.cell(95, 8, f"Rod. LA: {datos.get('Rodamiento_LA','-')}", 1, 0)
+            pdf.cell(95, 8, f"Gramos LA: {datos.get('Gramos_LA','0')} g", 1, 1)
+            pdf.cell(95, 8, f"Rod. LOA: {datos.get('Rodamiento_LOA','-')}", 1, 0)
+            pdf.cell(95, 8, f"Gramos LOA: {datos.get('Gramos_LOA','0')} g", 1, 1)
+            pdf.cell(190, 8, f"Grasa utilizada: {datos.get('Tipo_Grasa','-')}", 1, 1)
         
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "DESCRIPCIÓN Y MEDICIONES:", 0, 1)
+        pdf.cell(0, 8, "TIPO DE INTERVENCIÓN / DESCRIPCIÓN:", 0, 1)
         pdf.set_font("Arial", '', 10)
+        # Aquí saldrá lo que elegiste en el st.radio (Preventiva/Correctiva)
         pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
         
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "ESTADO FINAL / OBSERVACIONES:", 0, 1)
+        pdf.cell(0, 8, "OBSERVACIONES FINAL:", 0, 1)
         pdf.set_font("Arial", '', 10)
         pdf.multi_cell(0, 7, str(datos.get('Taller_Externo','-')), border=1)
 
@@ -73,7 +87,6 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
     except Exception as e:
         st.error(f"Error PDF: {e}")
         return None
-
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
@@ -483,6 +496,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
