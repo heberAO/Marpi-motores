@@ -212,15 +212,13 @@ if modo == "Nuevo Registro":
             st.error("⚠️ El TAG y el Responsable son obligatorios.")
         else:
             # 1. ARMAMOS EL DICCIONARIO
-            nueva = {
-                "Fecha": fecha_hoy.strftime("%d/%m/%Y"), "Tag": t, "N_Serie": sn, "Responsable": resp,
-                "Potencia": p, "Tension": v, "Corriente": cor, "RPM": r, "Carcasa": carc, "Frame": carc,
-                "Rodamiento_LA": r_la, "Rodamiento_LOA": r_loa,
-                "RT_TU": v_rt_tu, "RT_TV": v_rt_tv, "RT_TW": v_rt_tw,
-                "RB_UV": v_rb_uv, "RB_VW": v_rb_vw, "RB_UW": v_rb_uw,
-                "RI_U": v_ri_u, "RI_V": v_ri_v, "RI_W": v_ri_w,
-                "Descripcion": f"ALTA INICIAL: {desc}", "Trabajos_taller_externo": ext, "Taller_Externo": ext
-            }
+           nueva = {
+               "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
+               "Tag": t,
+               "Responsable": resp,
+               "Descripcion": f"Trabajo realizado: {detalle_reparacion}"
+          }
+          st.session_state.pdf_a_descargar = generar_pdf_reporte(nueva, "INFORME DE REPARACIÓN")
             
             # 2. GUARDAMOS EN EXCEL
             df_act = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
@@ -398,21 +396,13 @@ elif modo == "Relubricacion":
         if st.form_submit_button("💾 GUARDAR REGISTRO"):
             if tecnico and tag_seleccionado:
                 # Armamos la fila para guardar
-                nueva_data = {
-                    "Fecha": date.today().strftime("%d/%m/%Y"),
-                    "Tag": tag_seleccionado, 
-                    "N_Serie": serie_confirm,
-                    "Responsable": tecnico, 
-                    "Rodamiento_LA": rod_la,
-                    "Gramos_LA": gr_real_la, 
-                    "Rodamiento_LOA": rod_loa,
-                    "Gramos_LOA": gr_real_loa, 
-                    "Tipo_Grasa": grasa_t, 
-                    "Tipo_Tarea": tipo_t, 
-                    "Descripcion": "RELUBRICACIÓN",
-                    "Taller_Externo": notas
+               nueva = {
+                    "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
+                    "Tag": t,
+                    "Responsable": resp,
+                    "Descripcion": f"Se realizó lubricación con {grasa_tipo}. Cantidad: {grasa_cant} grs."
                 }
-                
+                st.session_state.pdf_a_descargar = generar_pdf_reporte(nueva, "REPORTE DE LUBRICACIÓN")
                 # Subir a Google Sheets
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_data])], ignore_index=True)
                 conn.update(data=df_final)
@@ -523,6 +513,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
