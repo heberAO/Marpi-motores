@@ -303,19 +303,18 @@ elif modo == "Historial y QR":
 elif modo == "Relubricacion":
     st.title("🔍 Lubricación Inteligente MARPI")
 
-    # Si este ID cambia, el formulario se vacía sí o sí
     if "form_id" not in st.session_state:
         st.session_state.form_id = 0
 
-    # 1. Buscador (con una clave que cambia para resetearse)
     df_lista = df_completo.fillna("-")
     lista_sugerencias = sorted(list(set(df_lista['Tag'].astype(str).tolist() + df_lista['N_Serie'].astype(str).tolist())))
     
     opcion_elegida = st.selectbox(
         "Seleccione TAG o N° DE SERIE", 
         options=[""] + lista_sugerencias,
-        key=f"search_{st.session_state.form_id}" # <--- ID Dinámico
+        key=f"search_{st.session_state.form_id}"
     )
+
     motor_encontrado = None
     if opcion_elegida != "":
         res = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)]
@@ -324,35 +323,21 @@ elif modo == "Relubricacion":
             st.success(f"✅ Motor: {motor_encontrado['Tag']}")
 
     st.divider()
-    
-    # --- 2. PREPARACIÓN DE VALORES PARA LOS CAMPOS ---
-    if motor_encontrado is not None:
-        # Usamos .get por si acaso, pero fijate que el nombre coincida con el st.write
-        val_la_sug = str(motor_encontrado.get('Rodamiento_LA', ''))
-        val_loa_sug = str(motor_encontrado.get('Rodamiento_LOA', ''))
-        serie_sug = str(motor_encontrado.get('N_Serie', ''))
 
-    else:
-       val_la_sug = ""
-       val_loa_sug = ""
-       serie_sug = ""
-
-    # 2. Rodamientos y Cálculo
     col1, col2 = st.columns(2)
     with col1:
         val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None else ""
-        rod_la = st.text_input("Rodamiento LA", value=val_la_sug).upper()
+        rod_la = st.text_input("Rodamiento LA", value=val_la if val_la != "-" else "", key=f"la_{st.session_state.form_id}").upper()
         gr_la_sug = calcular_grasa_avanzado(rod_la)
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
         val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
-        rod_loa = st.text_input("Rodamiento LOA", value=val_loa_sug).upper()
+        rod_loa = st.text_input("Rodamiento LOA", value=val_loa if val_loa != "-" else "", key=f"loa_{st.session_state.form_id}").upper()
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
-    # 3. Formulario de Carga
-    with st.form(key=f"form_main_{st.session_state.form_id}"): # <--- El formulario también cambia de ID
+    with st.form(key=f"form_main_{st.session_state.form_id}"):
         serie_final = st.text_input("Confirmar N° de Serie", value=str(motor_encontrado['N_Serie']) if motor_encontrado is not None else "")
         resp_r = st.text_input("Técnico Responsable")
         
@@ -361,10 +346,12 @@ elif modo == "Relubricacion":
             gr_f_la = st.number_input("Gramos Reales LA", value=float(gr_la_sug))
         with c2:
             gr_f_loa = st.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
-        Tipo_tarea = st.radio(
-            "Tipo de Intervencion",
-            ["Preventivo (planificaco)", "Correctiva (Urgencia)"],
-            index=0 # por defecto marca la primera
+        
+        # ACA ESTABA EL ERROR: Definimos la variable correctamente
+        tipo_tarea_seleccionada = st.radio(
+            "Tipo de Intervención",
+            ["Preventivo (planificado)", "Correctiva (Urgencia)"],
+            index=0
         )
             
         grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
@@ -372,48 +359,36 @@ elif modo == "Relubricacion":
         
         btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
-    # 4. Lógica de Guardado y RESET TOTAL
     if btn_guardar:
         if not resp_r or not opcion_elegida:
             st.error("⚠️ Falta completar datos.")
         else:
             try:
-                # (Tu lógica de guardado de siempre)
-                datos_para_pdf = {
+                # Armamos el detalle para el PDF y la base de datos
+                detalle_lub = (f"RELUBRICACIÓN: {tipo_tarea_seleccionada} | "
+                               f"Grasa: {grasa} | LA: {gr_f_la}g ({rod_la}) | "
+                               f"LOA: {gr_f_loa}g ({rod_loa})")
+
+                nueva_fila = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
-                    "Tag": opcion_elegida,
-                    "N_Serie": serie_final,
-                    "Responsable": resp_r,
-                    "Rodamiento LA": rod_la,      # <--- Fijate que sea la variable del input
-                    "Rodamiento LOA": rod_loa,    # <--- Idem
-                    "Gramos LA": gr_f_la,
-                    "Gramos LOA": gr_f_loa,
-                    "Tipo de Grasa": grasa,
-                    "Intervencion": tipo_tarea,   # <--- La nueva del st.radio
-                    "Observaciones": obs
+                    "Tag": str(opcion_elegida),
+                    "N_Serie": str(serie_final),
+                    "Responsable": str(resp_r),
+                    "Descripcion": detalle_lub,
+                    "Taller_Externo": obs
                 }
-                # Llamamos a la función del PDF con estos datos
-                pdf_content = generar_pdf_lubricacion(datos_para_pdf) 
-    
-                # Y mostramos el botón de descarga
-                st.download_button(
-                    label="📥 Descargar Reporte PDF",
-                    data=pdf_content,
-                    file_name=f"Lubricacion_{opcion_elegida}.pdf",
-                    mime="application/pdf"
-                )
                 
-                # --- AQUÍ OCURRE LA MAGIA ---
-                st.session_state.form_id += 1  # Cambiamos el ID, esto "destruye" el form viejo y crea uno nuevo vacío
-                st.success("✅ ¡Guardado con éxito! Limpiando...")
+                df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
+                conn.update(data=df_final)
+                
+                st.session_state.form_id += 1 
+                st.success("✅ ¡Guardado con éxito!")
                 st.balloons()
-                
-                import time
                 time.sleep(1)
-                st.rerun() # Recargamos con el nuevo ID
+                st.rerun()
                 
             except Exception as e:
-                st.error(f"❌ Error: {e}")
+                st.error(f"❌ Error al guardar: {e}")
                     
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -496,6 +471,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
