@@ -384,7 +384,7 @@ if opcion_elegida != "":
         Tipo_tarea = st.radio(
             "Tipo de Intervencion",
             ["Preventivo (planificaco)", "Correctiva (Urgencia)"],
-            index=0 # por defecto marca la primera
+            index=0
         )
             
         grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
@@ -392,28 +392,28 @@ if opcion_elegida != "":
         
         btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
-    # 4. Lógica de Guardado y RESET TOTAL
+    # 4. Lógica de Guardado
     if btn_guardar:
         if not resp_r or not opcion_elegida:
             st.error("⚠️ Falta completar datos.")
         else:
             try:
-                # (Tu lógica de guardado de siempre)
                 datos_para_pdf = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": opcion_elegida,
                     "N_Serie": serie_final,
                     "Responsable": resp_r,
-                    "Rodamiento LA": rod_la,      # <--- Fijate que sea la variable del input
-                    "Rodamiento LOA": rod_loa,    # <--- Idem
+                    "Rodamiento LA": rod_la,
+                    "Rodamiento LOA": rod_loa,
                     "Gramos LA": gr_f_la,
                     "Gramos LOA": gr_f_loa,
-                    "Tipo de Grasa": grasa,
-                    "Intervencion": tipo_tarea,   # <--- La nueva del st.radio
+                    "Grasa": grasa,
+                    "Intervencion": Tipo_tarea,  # <--- CAMBIÁ ESTO: Ponelo con "T" Mayúscula
                     "Observaciones": obs
                 }
-                # Llamamos a la función del PDF con estos datos
-                pdf_content = generar_pdf_lubricacion(datos_para_pdf) 
+                
+                # Usamos la función todoterreno que arreglamos recién
+                pdf_content = generar_pdf_reporte(datos_para_pdf, opcion_elegida, "REPORTE DE LUBRICACIÓN")
     
                 # Y mostramos el botón de descarga
                 st.download_button(
@@ -516,6 +516,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
