@@ -300,7 +300,11 @@ elif modo == "Historial y QR":
             st.divider()
 
 # --- Generar PDF (CORREGIDO) ---
-                    # 1. Primero detectamos qué tipo de informe es para que el PDF sepa qué dibujar
+                   with st.expander(f"📅 {fila.get('Fecha','-')} - {intervencion}..."):
+                    st.write(f"**Responsable:** {fila.get('Responsable','-')}")
+                    st.write(f"**Detalle completo:** {fila.get('Descripcion','-')}")
+                    
+                    # --- FIJATE QUE ESTO ESTÉ ALINEADO CON LOS ST.WRITE ---
                     desc_para_filtro = str(fila.get('Descripcion', '')).upper()
                     
                     if "PREVENTIVA" in desc_para_filtro or "CORRECTIVA" in desc_para_filtro:
@@ -310,7 +314,7 @@ elif modo == "Historial y QR":
                     else:
                         tipo_de_informe = "INFORME TÉCNICO"
 
-                    # Datos, Tag y el Tipo que acabamos de detectar
+                    # Llamada a la función con 3 argumentos
                     pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado, tipo_de_informe)
 
     # Si este ID cambia, el formulario se vacía sí o sí
@@ -506,6 +510,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
