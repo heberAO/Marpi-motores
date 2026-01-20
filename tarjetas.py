@@ -307,12 +307,12 @@ elif modo == "Historial y QR":
                     # --- FIJATE QUE ESTO ESTÉ ALINEADO CON LOS ST.WRITE ---
                     desc_para_filtro = str(fila.get('Descripcion', '')).upper()
                     
-            if "PREVENTIVA" in desc_para_filtro or "CORRECTIVA" in desc_para_filtro:
-                tipo_de_informe = "REPORTE DE LUBRICACIÓN"
-            elif "MEGADO" in desc_para_filtro or "AISLACION" in desc_para_filtro:
-                tipo_de_informe = "INFORME DE MEGADO"
-            else:
-                tipo_de_informe = "INFORME TÉCNICO"
+                if "PREVENTIVA" in desc_para_filtro or "CORRECTIVA" in desc_para_filtro:
+                    tipo_de_informe = "REPORTE DE LUBRICACIÓN"
+                elif "MEGADO" in desc_para_filtro or "AISLACION" in desc_para_filtro:
+                    tipo_de_informe = "INFORME DE MEGADO"
+                else:
+                    tipo_de_informe = "INFORME TÉCNICO"
 
                     # Llamada a la función con 3 argumentos
             pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado, tipo_de_informe)
@@ -510,6 +510,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
