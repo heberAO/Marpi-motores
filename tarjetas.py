@@ -3,12 +3,14 @@ import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 from datetime import date
 import os
-from fpdf import FPDF
-import urllib.parse  # Para el QR sin errores
 import re
 import time
-from reportlab.lib.units
-import inch
+from io import BytesIO
+
+# Librerías para el PDF (Usaremos ReportLab que es mejor para logos)
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import inch
 
 if "form_id" not in st.session_state:
     st.session_state.form_id = 0
@@ -516,6 +518,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
