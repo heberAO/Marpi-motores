@@ -45,52 +45,54 @@ def generar_pdf_reporte(datos, titulo_informe):
     pdf = FPDF()
     pdf.add_page()
     
-    # LOGO (Asegurate que el archivo logo.png esté en tu GitHub)
+    # 1. LOGO
     try:
         pdf.image("logo.png", 10, 8, 33)
     except:
         pdf.set_font("Arial", 'B', 12)
         pdf.cell(0, 10, "MARPI MOTORES", ln=True)
 
-    # TÍTULO DEL INFORME
+    # 2. TÍTULO DINÁMICO (Aquí dirá "PROTOCOLO DE MEGADO" o "REPORTE DE LUBRICACIÓN")
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(0, 10, f"{titulo_informe}", ln=True, align='C')
     pdf.ln(5)
     
-    # DATOS GENERALES
+    # 3. DATOS GENERALES (Siempre presentes)
     pdf.set_font("Arial", 'B', 12)
     pdf.cell(0, 10, "INFORMACION GENERAL:", ln=True)
     pdf.set_font("Arial", '', 11)
     
-    # Limpiador de NAN
     def v(clave):
         valor = str(datos.get(clave, ""))
-        return "---" if valor.lower() in ["nan", "none", "n/a", ""] else valor
+        return "---" if valor.lower() in ["nan", "none", "", "n/a"] else valor
 
     pdf.cell(0, 7, f"Fecha: {v('Fecha')} | Responsable: {v('Responsable')}", ln=True)
     pdf.cell(0, 7, f"Motor (TAG): {v('Tag')}", ln=True)
     pdf.ln(5)
 
-    # DETALLE ESPECÍFICO
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "DETALLE DEL TRABAJO / MEDICIONES:", ln=True)
-    pdf.set_font("Arial", '', 11)
-
-    # Si hay datos de Megado (las claves que pusimos antes)
-    if "RT_TV1" in datos:
-        pdf.cell(0, 7, f"Megado Tierra: T-V1:{v('RT_TV1')} T-U1:{v('RT_TU1')} T-W1:{v('RT_TW1')}", ln=True)
-        pdf.cell(0, 7, f"Resistencias: U1-U2:{v('RI_U1U2')} V1-V2:{v('RI_V1V2')} W1-W2:{v('RI_W1W2')}", ln=True)
-        pdf.cell(0, 7, f"Megado Linea: L1:{v('ML_L1')} L2:{v('ML_L2')} L3:{v('ML_L3')}", ln=True)
+    # 4. DISCRIMINACIÓN DE FORMATO
     
-    # Para Lubricación y Reparación usamos el campo 'Descripcion'
-    if "Descripcion" in datos and datos["Descripcion"] != "":
-        pdf.multi_cell(0, 7, f"{v('Descripcion')}")
+    # CASO MEGADO: Si existen las claves de mediciones eléctricas
+    if "RT_TV1" in datos:
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, "MEDICIONES DE AISLAMIENTO Y RESISTENCIA:", ln=True)
+        pdf.set_font("Arial", '', 11)
+        pdf.cell(0, 7, f"Megado a Tierra: T-V1:{v('RT_TV1')} | T-U1:{v('RT_TU1')} | T-W1:{v('RT_TW1')}", ln=True)
+        pdf.cell(0, 7, f"Resistencias Internas: U1-U2:{v('RI_U1U2')} | V1-V2:{v('RI_V1V2')} | W1-W2:{v('RI_W1W2')}", ln=True)
+        pdf.cell(0, 7, f"Megado de Linea: L1:{v('ML_L1')} | L2:{v('ML_L2')} | L3:{v('ML_L3')}", ln=True)
 
-    # PIE DE PÁGINA (Propiedad de la empresa)
+    # CASO LUBRICACIÓN O REPARACIÓN: Si hay una descripción o detalle
+    # Importante: En Lubricación/Reparación, usaremos el campo 'Descripcion'
+    elif "Descripcion" in datos:
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, "DETALLE DE LA TAREA REALIZADA:", ln=True)
+        pdf.set_font("Arial", '', 11)
+        pdf.multi_cell(0, 7, v("Descripcion"))
+
+    # 5. PIE DE PÁGINA (Propiedad de Marpi Motores)
     pdf.set_y(-30)
     pdf.set_font("Arial", 'I', 8)
     pdf.cell(0, 10, "ESTE INFORME ES PROPIEDAD DE MARPI MOTORES.", align='C', ln=True)
-    pdf.cell(0, 5, "PROHIBIDA SU REPRODUCCION TOTAL O PARCIAL SIN AUTORIZACION.", align='C', ln=True)
     
     return pdf.output(dest='S').encode('latin-1', 'replace')
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
@@ -521,6 +523,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
