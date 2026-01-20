@@ -40,66 +40,58 @@ def calcular_grasa_avanzado(codigo):
 def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
     try:
         from fpdf import FPDF
+        # ESTO ES LO NUEVO: Limpiamos los nombres para que no importe si tienen espacio o guion
+        # Convierte "Rodamiento LA" o "Rodamiento_LA" en "rodamiento_la"
+        datos_limpios = {str(k).replace(" ", "_").lower(): v for k, v in datos.items()}
+        
         pdf = FPDF(orientation='P', unit='mm', format='A4')
         pdf.add_page()
         
-        # Título
+        # Título y Encabezado
         pdf.set_font("Arial", 'B', 18)
         pdf.set_text_color(0, 51, 102)
         pdf.cell(0, 15, f'{tipo_trabajo}', 0, 1, 'R')
         pdf.ln(5)
-        
-        # Cuadro de datos básicos
-        pdf.set_fill_color(230, 233, 240)
+
+        # Datos Básicos (usando datos_limpios)
         pdf.set_font("Arial", 'B', 12)
         pdf.cell(0, 10, f" DATOS DEL EQUIPO: {tag_motor}", 1, 1, 'L', True)
-        
         pdf.set_font("Arial", '', 10)
         pdf.set_text_color(0, 0, 0)
-        pdf.cell(95, 8, f"Fecha: {datos.get('Fecha','-')}", 1, 0)
-        pdf.cell(95, 8, f"Responsable: {datos.get('Responsable','-')}", 1, 1)
+        pdf.cell(95, 8, f"Fecha: {datos_limpios.get('fecha','-')}", 1, 0)
+        pdf.cell(95, 8, f"Responsable: {datos_limpios.get('responsable','-')}", 1, 1)
 
-        # --- LÓGICA DE LUBRICACIÓN (Busca con espacio y con guion) ---
+        # --- SECCIÓN LUBRICACIÓN ---
         if "LUBRICACION" in tipo_trabajo.upper():
             pdf.ln(5)
             pdf.set_font("Arial", 'B', 11)
             pdf.cell(0, 8, " DETALLES DE LUBRICACIÓN:", 1, 1, 'L', True)
-            
-            # Buscamos de ambas formas: 'Rodamiento_LA' o 'Rodamiento LA'
-            r_la = datos.get('Rodamiento_LA') or datos.get('Rodamiento LA') or '-'
-            g_la = datos.get('Gramos_LA') or datos.get('Gramos LA') or '0'
-            r_loa = datos.get('Rodamiento_LOA') or datos.get('Rodamiento LOA') or '-'
-            g_loa = datos.get('Gramos_LOA') or datos.get('Gramos LOA') or '0'
-
             pdf.set_font("Arial", '', 10)
-            pdf.cell(95, 8, f"Rod. LA: {r_la}", 1, 0)
-            pdf.cell(95, 8, f"Gramos LA: {g_la} g", 1, 1)
-            pdf.cell(95, 8, f"Rod. LOA: {r_loa}", 1, 0)
-            pdf.cell(95, 8, f"Gramos LOA: {g_loa} g", 1, 1)
+            pdf.cell(95, 8, f"Rod. LA: {datos_limpios.get('rodamiento_la','-')}", 1, 0)
+            pdf.cell(95, 8, f"Gramos LA: {datos_limpios.get('gramos_la','0')} g", 1, 1)
+            pdf.cell(95, 8, f"Rod. LOA: {datos_limpios.get('rodamiento_loa','-')}", 1, 0)
+            pdf.cell(95, 8, f"Gramos LOA: {datos_limpios.get('gramos_loa','0')} g", 1, 1)
 
-        # --- LÓGICA DE MEGADO (Busca todas las variantes) ---
+        # --- SECCIÓN MEGADO ---
         elif "MEGADO" in tipo_trabajo.upper() or "AISLACION" in tipo_trabajo.upper():
             pdf.ln(5)
             pdf.set_fill_color(0, 51, 102)
             pdf.set_text_color(255, 255, 255)
             pdf.cell(0, 8, " MEDICIONES DE AISLACIÓN (MOhms)", 1, 1, 'C', True)
-            
-            # Buscamos variantes comunes de nombres de columnas
-            u = datos.get('U_Gnd') or datos.get('U-Gnd') or datos.get('U_GND') or '-'
-            v = datos.get('V_Gnd') or datos.get('V-Gnd') or datos.get('V_GND') or '-'
-            w = datos.get('W_Gnd') or datos.get('W-Gnd') or datos.get('W_GND') or '-'
-            
             pdf.set_text_color(0, 0, 0)
+            # Buscamos las fases
+            u = datos_limpios.get('u_gnd') or datos_limpios.get('fase_u') or '-'
+            v = datos_limpios.get('v_gnd') or datos_limpios.get('fase_v') or '-'
+            w = datos_limpios.get('w_gnd') or datos_limpios.get('fase_w') or '-'
             pdf.cell(63, 12, f"U-GND: {u}", 1, 0, 'C')
             pdf.cell(63, 12, f"V-GND: {v}", 1, 0, 'C')
             pdf.cell(64, 12, f"W-GND: {w}", 1, 1, 'C')
 
-        # --- DESCRIPCIÓN Y OBSERVACIONES (Común a todos) ---
+        # --- DESCRIPCIÓN ---
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "DESCRIPCIÓN DE TAREAS:", 0, 1)
-        # Buscamos en 'Descripcion' o 'Intervencion'
-        desc = datos.get('Descripcion') or datos.get('Intervencion') or '-'
+        pdf.cell(0, 8, "DESCRIPCIÓN:", 0, 1)
+        desc = datos_limpios.get('descripcion') or datos_limpios.get('intervencion') or '-'
         pdf.set_font("Arial", '', 10)
         pdf.multi_cell(0, 7, str(desc), border=1)
 
@@ -524,6 +516,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
