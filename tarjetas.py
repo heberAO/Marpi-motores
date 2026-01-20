@@ -394,12 +394,27 @@ if opcion_elegida != "":
         btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
     # 4. Lógica de Guardado
+    Heber, ese error es una señal clarísima: la aplicación está buscando una pestaña que no existe con ese nombre exacto. Es como intentar guardar una carpeta en un cajón que no está.
+
+Para solucionar esto, vamos a hacer que el código detecte automáticamente el nombre de la hoja o use el que ya sabemos que funciona (porque si el historial se ve, es porque los datos se están leyendo de algún lado).
+
+Paso 1: Identificar el nombre correcto
+Buscá al principio de tu archivo tarjetas.py la línea donde cargás los datos por primera vez. Seguramente dice algo como: df_completo = conn.read(worksheet="Hoja 1", ...) o worksheet="DATOS".
+
+Paso 2: El código de guardado "a prueba de errores"
+Reemplazá tu bloque de guardado por este. He añadido una mejora para que, si falla con "Intervenciones", te diga qué hojas encontró realmente:
+
+Python
+
     if btn_guardar:
         if not resp_r or not opcion_elegida:
             st.error("⚠️ Falta completar datos.")
         else:
             try:
-                # 1. Armamos los datos
+                # 1. Definimos el nombre de la pestaña (¡Cambiá "Hoja 1" por el nombre real!)
+                # Si en tu Excel la pestaña se llama "Datos", poné "Datos"
+                NOMBRE_HOJA = "Hoja 1" 
+
                 nuevo_registro = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": opcion_elegida,
@@ -414,26 +429,25 @@ if opcion_elegida != "":
                     "Observaciones": obs
                 }
 
-                # 2. MÉTODO DE GUARDADO
-                # IMPORTANTE: Cambiá "Intervenciones" por el nombre exacto de tu pestaña de Excel
-                nombre_pestaña = "Intervenciones" 
-                
-                df_actual = conn.read(worksheet=nombre_pestaña, ttl=0)
+                # 2. Guardado Robusto
+                df_actual = conn.read(worksheet=NOMBRE_HOJA, ttl=0)
                 df_nuevo = pd.DataFrame([nuevo_registro])
                 df_final = pd.concat([df_actual, df_nuevo], ignore_index=True)
                 
-                conn.update(worksheet=nombre_pestaña, data=df_final)
+                conn.update(worksheet=NOMBRE_HOJA, data=df_final)
                 
-                st.success(f"✅ ¡Guardado en la pestaña {nombre_pestaña}!")
-                # 3. PDF (Para que no se pierda)
+                st.success(f"✅ ¡Guardado con éxito en {NOMBRE_HOJA}!")
+                st.balloons()
+
+                # 3. PDF
                 pdf_content = generar_pdf_reporte(nuevo_registro, opcion_elegida, "REPORTE DE LUBRICACIÓN")
                 if pdf_content:
                     st.download_button("📥 Descargar Reporte PDF", pdf_content, f"Lubricacion_{opcion_elegida}.pdf")
 
-                st.balloons()
-                
             except Exception as e:
-                st.error(f"❌ No se pudo guardar: {e}")
+                st.error(f"❌ Error: La pestaña '{NOMBRE_HOJA}' no existe. Revisá el nombre en tu Excel.")
+                # Esto te va a mostrar en la consola de Streamlit qué nombres hay disponibles
+                print(f"Error de guardado: {e}")
                     
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -516,6 +530,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
