@@ -405,10 +405,10 @@ elif modo == "Relubricacion":
                conn.update(data=df_final)
                 
                 # REINICIO Y LIMPIEZA
-                st.session_state.form_id += 1
-                st.success("✅ Guardado y Formulario Limpio")
-                time.sleep(1)
-                st.rerun()
+               st.session_state.form_id += 1
+               st.success("✅ Guardado y Formulario Limpio")
+               time.sleep(1)
+               st.rerun()
                 
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -510,6 +510,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
