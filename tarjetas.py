@@ -398,6 +398,7 @@ if opcion_elegida != "":
             st.error("⚠️ Falta completar datos.")
         else:
             try:
+                # 1. Armamos el diccionario
                 datos_para_historial = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": opcion_elegida,
@@ -408,15 +409,18 @@ if opcion_elegida != "":
                     "Gramos LA": gr_f_la,
                     "Gramos LOA": gr_f_loa,
                     "Grasa": grasa,
-                    "Descripcion": Tipo_tarea, 
+                    "Descripcion": Tipo_tarea, # Usamos 'T' mayúscula como definiste en el radio
                     "Observaciones": obs
                 }
 
-                cargar_intervencion(datos_para_historial) 
+                # 2. GUARDADO (IMPORTANTE: Revisa si tu función se llama 'registrar_intervencion')
+                # Si el error 'registrar_intervencion is not defined' vuelve, 
+                # cambia esa palabra por el nombre que encuentres después de un 'def' más abajo.
+                registrar_intervencion(datos_para_historial) 
 
-                st.success("✅ ¡Registro guardado con éxito!")
+                st.success("✅ Registro guardado en la base de datos.")
                 
-                # Generar el PDF para que el usuario se lo lleve
+                # 3. GENERAR PDF
                 pdf_content = generar_pdf_reporte(datos_para_historial, opcion_elegida, "REPORTE DE LUBRICACIÓN")
                 if pdf_content:
                     st.download_button("📥 Descargar Reporte PDF", pdf_content, f"Lubricacion_{opcion_elegida}.pdf")
@@ -509,6 +513,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
