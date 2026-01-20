@@ -207,22 +207,19 @@ if modo == "Nuevo Registro":
         
         btn_guardar = st.form_submit_button("💾 GUARDAR Y GENERAR PDF")
 
-    if btn_guardar:
-        if not t or not resp:
-            st.error("⚠️ El TAG y el Responsable son obligatorios.")
-        else:
-            # 1. ARMAMOS EL DICCIONARIO
-           nueva = {
-               "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
-               "Tag": t,
-               "Responsable": resp,
-               "Descripcion": f"Trabajo realizado: {detalle_reparacion}"
-          }
-          st.session_state.pdf_a_descargar = generar_pdf_reporte(nueva, "INFORME DE REPARACIÓN")
-            
-            # 2. GUARDAMOS EN EXCEL
-            df_act = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-            conn.update(data=df_act)
+    if btn_reparacion: # O el nombre que tenga tu botón
+            if t and resp:
+                nueva = {
+                    "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
+                    "Tag": t,
+                    "Responsable": resp,
+                    "Descripcion": f"Trabajo: {tarea_texto}"
+                }
+                # ESTA LÍNEA DEBE ESTAR EN LA MISMA COLUMNA QUE 'nueva'
+                st.session_state.pdf_a_descargar = generar_pdf_reporte(nueva, "INFORME DE REPARACIÓN")
+                
+                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+                conn.update(data=df_final)
             st.success("✅ Datos guardados en la nube.")
 
             # 3. GENERAMOS EL PDF
@@ -513,6 +510,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
