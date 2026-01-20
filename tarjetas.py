@@ -232,24 +232,24 @@ if modo == "Nuevo Registro":
             if t and resp:
                 # Armamos el diccionario con ABSOLUTAMENTE TODO
                 if btn_guardar:
-            if t and resp:
-                nueva = {
-                    "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
-                    "Tag": t,
-                    "N_Serie": sn,
-                    "Responsable": resp,
-                    "Potencia": p, "Tension": v, "Corriente": cor,
-                    "RPM": r, "Carcasa": carc,
-                    "Rodamiento_LA": r_la, "Rodamiento_LOA": r_loa,
-                    
-                    # --- LAS 9 MEDICIONES DE ALTA ---
-                    "RT_TU": v_rt_tu, "RT_TV": v_rt_tv, "RT_TW": v_rt_tw, # Tierra
-                    "RB_UV": v_rb_uv, "RB_VW": v_rb_vw, "RB_UW": v_rb_uw, # Entre bobinas
-                    "RI_U": v_ri_u, "RI_V": v_ri_v, "RI_W": v_ri_w,      # Resistencias
-                    
-                    "Descripcion": desc,
-                    "Trabajos_Externos": ext
-                }
+                    if t and resp:
+                        nueva = {
+                            "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
+                            "Tag": t,
+                            "N_Serie": sn,
+                            "Responsable": resp,
+                            "Potencia": p, "Tension": v, "Corriente": cor,
+                            "RPM": r, "Carcasa": carc,
+                            "Rodamiento_LA": r_la, "Rodamiento_LOA": r_loa,
+                            
+                            # --- LAS 9 MEDICIONES DE ALTA ---
+                            "RT_TU": v_rt_tu, "RT_TV": v_rt_tv, "RT_TW": v_rt_tw, # Tierra
+                            "RB_UV": v_rb_uv, "RB_VW": v_rb_vw, "RB_UW": v_rb_uw, # Entre bobinas
+                            "RI_U": v_ri_u, "RI_V": v_ri_v, "RI_W": v_ri_w,      # Resistencias
+                            
+                            "Descripcion": desc,
+                            "Trabajos_Externos": ext
+                        }
                 
                 # Guardar y generar...
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
@@ -554,6 +554,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
