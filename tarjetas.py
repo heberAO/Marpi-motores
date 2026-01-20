@@ -414,17 +414,29 @@ elif modo == "Relubricacion":
         
         if st.form_submit_button("💾 GUARDAR REGISTRO"):
             if tecnico and tag_seleccionado:
-                # Armamos la fila para guardar
-               nueva = {
-                    "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
-                    "Tag": t,
-                    "Responsable": resp,
-                    "Descripcion": f"Se realizó lubricación con {grasa_tipo}. Cantidad: {grasa_cant} grs."
-               }
-               st.session_state.pdf_a_descargar = generar_pdf_reporte(nueva, "REPORTE DE LUBRICACIÓN")
-                # Subir a Google Sheets
-               df_final = pd.concat([df_completo, pd.DataFrame([nueva_data])], ignore_index=True)
-               conn.update(data=df_final)
+                # Armamos el paquete de datos con los nombres exactos de tus variables
+                nueva = {
+                    "Fecha": date.today().strftime("%d/%m/%Y"),
+                    "Tag": tag_seleccionado, 
+                    "Responsable": tecnico,
+                    "N_Serie": v_serie,
+                    "Descripcion": (f"TAREA: {tipo_t} | GRASA: {grasa_t} | "
+                                    f"LA: {rod_la} ({gr_real_la}g) | "
+                                    f"LOA: {rod_loa} ({gr_real_loa}g) | "
+                                    f"NOTAS: {notas}")
+                }
+                
+                # 1. Guardar en Google Sheets
+                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+                conn.update(data=df_final)
+                
+                # 2. Guardar el PDF en la memoria para bajarlo afuera
+                st.session_state.pdf_buffer = generar_pdf_reporte(nueva, "REPORTE DE LUBRICACIÓN")
+                st.session_state.tag_buffer = tag_seleccionado
+                
+                st.success(f"✅ Lubricación de {tag_seleccionado} guardada.")
+            else:
+                st.error("⚠️ Falta Técnico o TAG")
                 
                 # REINICIO Y LIMPIEZA
                st.session_state.form_id += 1
@@ -532,6 +544,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
