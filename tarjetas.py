@@ -7,7 +7,8 @@ from fpdf import FPDF
 import urllib.parse  # Para el QR sin errores
 import re
 import time
-from reportlab.lib.units import inch
+from reportlab.lib.units 
+import inch
 
 if "form_id" not in st.session_state:
     st.session_state.form_id = 0
@@ -515,6 +516,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
