@@ -8,6 +8,8 @@ import time
 from io import BytesIO
 from fpdf import FPDF
 
+fecha_hoy = date.today()
+
 if 'pdf_listo' not in st.session_state:
     st.session_state.pdf_listo = None
 
@@ -530,6 +532,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
