@@ -300,22 +300,24 @@ elif modo == "Historial y QR":
             st.divider()
 
 # --- Generar PDF (CORREGIDO) ---
-            with st.expander(f"📅 {fila.get('Fecha','-')} - {intervencion}..."):
-                st.write(f"**Responsable:** {fila.get('Responsable','-')}")
-                st.write(f"**Detalle completo:** {fila.get('Descripcion','-')}")
+            for idx, fila in hist_m.iterrows():
+                intervencion = str(fila.get('Descripcion', '-'))[:40]
+                with st.expander(f"📅 {fila.get('Fecha','-')} - {intervencion}..."):
+                    st.write(f"**Responsable:** {fila.get('Responsable','-')}")
+                    st.write(f"**Detalle completo:** {fila.get('Descripcion','-')}")
                     
                     # --- FIJATE QUE ESTO ESTÉ ALINEADO CON LOS ST.WRITE ---
-                desc_para_filtro = str(fila.get('Descripcion', '')).upper()
+                    desc_para_filtro = str(fila.get('Descripcion', '')).upper()
                     
-                if "PREVENTIVA" in desc_para_filtro or "CORRECTIVA" in desc_para_filtro:
-                    tipo_de_informe = "REPORTE DE LUBRICACIÓN"
-                elif "MEGADO" in desc_para_filtro or "AISLACION" in desc_para_filtro:
-                    tipo_de_informe = "INFORME DE MEGADO"
-                else:
-                    tipo_de_informe = "INFORME TÉCNICO"
+                    if "PREVENTIVA" in desc_para_filtro or "CORRECTIVA" in desc_para_filtro:
+                        tipo_de_informe = "REPORTE DE LUBRICACIÓN"
+                    elif "MEGADO" in desc_para_filtro or "AISLACION" in desc_para_filtro:
+                        tipo_de_informe = "INFORME DE MEGADO"
+                    else:
+                        tipo_de_informe = "INFORME TÉCNICO"
 
                     # Llamada a la función con 3 argumentos
-                pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado, tipo_de_informe)
+                    pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado, tipo_de_informe)
 
     # Si este ID cambia, el formulario se vacía sí o sí
     if "form_id" not in st.session_state:
@@ -510,6 +512,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
