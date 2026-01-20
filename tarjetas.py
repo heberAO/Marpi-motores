@@ -299,7 +299,7 @@ elif modo == "Historial y QR":
             
             st.divider()
 
-# --- HISTORIAL Y PDF (COPIAR DESDE AQUÍ) ---
+# --- HISTORIAL Y PDF ---
             st.subheader("📜 Historial de Intervenciones")
             hist_m = df_completo[df_completo['Tag'] == buscado].copy()
             hist_m = hist_m.iloc[::-1] 
@@ -320,7 +320,7 @@ elif modo == "Historial y QR":
                     else:
                         tipo_de_informe = "INFORME TÉCNICO"
 
-                    # Generar PDF con los 3 argumentos necesarios
+                    # Generar PDF (Asegúrate de que la función acepte estos 3 datos arriba)
                     pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado, tipo_de_informe)
                     
                     if pdf_archivo:
@@ -524,6 +524,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
