@@ -398,10 +398,6 @@ if opcion_elegida != "":
         if not resp_r or not opcion_elegida:
             st.error("⚠️ Falta completar datos.")
         else:
-            if btn_guardar:
-        if not resp_r or not opcion_elegida:
-            st.error("⚠️ Falta completar datos.")
-        else:
             try:
                 # --- BUSCÁ EL NOMBRE AQUÍ ---
                 # Si arriba en tu código dice worksheet="DATOS", poné "DATOS" aquí abajo:
@@ -520,6 +516,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
