@@ -416,28 +416,29 @@ elif modo == "Relubricacion":
         grasa_t = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus"])
         notas = st.text_area("Notas")
         
-        if st.form_submit_button("💾 GUARDAR"):
-            if t and resp:
-                # 1. BUSCAMOS LOS DATOS DE PLACA EN EL HISTORIAL
-                datos_tecnicos = df_completo[df_completo['Tag'] == t].head(1).to_dict('records')
+        tag_actual = t if 't' in locals() else (tag_seleccionado if 'tag_seleccionado' in locals() else None)
+            resp_actual = resp if 'resp' in locals() else (tecnico if 'tecnico' in locals() else None)
+
+            if tag_actual and resp_actual:
+                # 2. BUSCAMOS LOS DATOS DE PLACA EN EL HISTORIAL
+                datos_tecnicos = df_completo[df_completo['Tag'] == tag_actual].tail(1).to_dict('records')
                 info = datos_tecnicos[0] if datos_tecnicos else {}
 
-                # 2. ARMAMOS EL DICCIONARIO 'nueva' SUMANDO LOS DATOS DE PLACA
+                # 3. ARMAMOS EL DICCIONARIO 'nueva'
                 nueva = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
-                    "Tag": t,
-                    "Responsable": resp,
+                    "Tag": tag_actual,
+                    "Responsable": resp_actual,
                     "N_Serie": info.get("N_Serie", ""),
                     "Potencia": info.get("Potencia", ""),
                     "Tension": info.get("Tension", ""),
                     "RPM": info.get("RPM", ""),
                     "Carcasa": info.get("Carcasa", ""),
                     "Rodamiento_LA": info.get("Rodamiento_LA", ""),
-                    "Rodamiento_LOA": info.get("Rodamiento_LOA", ""),
-                    # ... aquí siguen tus campos de Megado o Lubricación ...
+                    "Rodamiento_LOA": info.get("Rodamiento_LOA", "")
                 }
                 
-                # Para Megado, agregamos las mediciones:
+                # --- AGREGAR DATOS ESPECÍFICOS SEGÚN EL MODO ---
                 if modo == "Mediciones de Campo":
                     nueva.update({
                         "RT_TV1": tv1, "RT_TU1": tu1, "RT_TW1": tw1,
@@ -447,17 +448,18 @@ elif modo == "Relubricacion":
                         "ML_L1L2": l1l2, "ML_L1L3": l1l3, "ML_L2L3": l2l3
                     })
                 
-                # Para Lubricación, agregamos la descripción:
                 if modo == "Relubricacion":
                     nueva["Descripcion"] = f"LUBRICACIÓN: {grasa_t}. LA: {gr_real_la}g, LOA: {gr_real_loa}g."
 
-               # 3. GUARDAR Y GENERAR PDF
+                # 4. GUARDAR Y GENERAR PDF
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
                 
-                # ACÁ GUARDAMOS EL PDF Y EL TAG EN EL BUFFER
                 st.session_state.pdf_buffer = generar_pdf_reporte(nueva, f"REPORTE DE {modo.upper()}")
-                st.session_state.tag_buffer = t if 't' in locals() else tag_seleccionado
+                st.session_state.tag_buffer = tag_actual
+                st.success(f"✅ Registro de {tag_actual} guardado con éxito")
+            else:
+                st.error("⚠️ Error: No se encontró el TAG o el Responsable. Verifique los campos.")
 
     # --- BOTÓN DE DESCARGA (CORREGIDO) ---
     if st.session_state.get("pdf_buffer") is not None:
@@ -600,6 +602,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
