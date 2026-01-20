@@ -188,20 +188,23 @@ if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
 if modo == "Nuevo Registro":
     st.title("📝 Alta y Registro Inicial")
     
-    # 1. Usamos una "llave" para el formulario (counter) para poder resetearlo
     if "form_key" not in st.session_state:
         st.session_state.form_key = 0
 
     fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
 
-    # 2. El formulario usa la llave de la memoria
     with st.form(key=f"alta_motor_{st.session_state.form_key}"):
         col1, col2, col3, col4, col5 = st.columns(5)
         t = col1.text_input("TAG/ID MOTOR").upper()
         p = col2.text_input("Potencia")
         r = col3.selectbox("RPM", ["-", "750", "1500", "3000"])
-        f = col4.text_input("Carcasa")
+        f = col4.text_input("Carcasa/Frame") # Cambiado para claridad
         sn = col5.text_input("N° de Serie")
+        
+        st.subheader("⚙️ Rodamientos de Placa (FUNDAMENTAL)")
+        c1, c2 = st.columns(2)
+        r_la = c1.text_input("Rodamiento LA (Acople)").upper()
+        r_loa = c2.text_input("Rodamiento LOA (Opuesto)").upper()
         
         st.subheader("🔍 Mediciones Iniciales / Reparación")
         m1, m2, m3 = st.columns(3)
@@ -217,10 +220,9 @@ if modo == "Nuevo Registro":
             if not t or not resp:
                 st.error("⚠️ El TAG y el Responsable son obligatorios.")
             else:
-                # 1. CREAMOS la variable mediciones antes de usarla
                 mediciones = f"RES: T-U:{rt_tu}, T-V:{rt_tv}, T-W:{rt_tw} | B: UV:{rb_uv}, VW:{rb_vw}, UW:{rb_uw}"
 
-                # 2. Ahora armamos el diccionario con todas las columnas
+                # DICCIONARIO SINCRONIZADO CON TU EXCEL
                 nueva = {
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"), 
                     "Tag": t, 
@@ -228,18 +230,20 @@ if modo == "Nuevo Registro":
                     "Responsable": resp,
                     "Potencia": p,      
                     "RPM": r,           
-                    "Frame": f,         
-                    "Descripcion": f"{desc} | {mediciones}", 
+                    "Carcasa": f, # Asegúrate que en Excel diga 'Carcasa' o 'Frame'         
+                    "Rodamiento_LA": r_la, # <--- ESTO FALTABA
+                    "Rodamiento_LOA": r_loa, # <--- ESTO FALTABA
+                    "Descripcion": f"ALTA: {desc} | {mediciones}", 
                     "Taller_Externo": ext
                 }
                 
-                # 3. Guardado en la base de datos
                 df_actualizado = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_actualizado)
                 
-                # 4. Mensaje de éxito y limpieza
                 st.session_state.form_key += 1
-                st.success(f"✅ Motor {t} guardado con Potencia {p} y {r} RPM")
+                st.success(f"✅ Motor {t} guardado con éxito.")
+                st.balloons()
+                time.sleep(1.5)
                 st.rerun()
   
 elif modo == "Historial y QR":
@@ -505,6 +509,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
