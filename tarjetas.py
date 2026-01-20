@@ -393,17 +393,6 @@ if opcion_elegida != "":
         btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
 
     # 4. Lógica de Guardado
-    ¡Estamos en el último tramo, Heber! No te vuelvas loco, ese error pasa porque la dirección de tu Excel (la URL) está guardada en una variable con otro nombre o está dentro de tus Secrets de Streamlit.
-
-Para que no dependamos de nombres raros, vamos a usar lo que ya tenés funcionando. Si tu App ya muestra el historial, es porque ya está conectada a la planilla.
-
-La solución "Corta" (Hacé esto primero)
-Buscá en tu código la parte donde dice conn.read(...). Verás que adentro dice algo como spreadsheet=url o spreadsheet=st.secrets["..."].
-
-Cambiá tu bloque de guardado por este, que es el más estándar para Streamlit:
-
-Python
-
     if btn_guardar:
         if not resp_r or not opcion_elegida:
             st.error("⚠️ Falta completar datos.")
@@ -525,6 +514,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
