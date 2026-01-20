@@ -37,29 +37,33 @@ def calcular_grasa_avanzado(codigo):
         return 0.0
 
 # --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
-def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
+def generar_pdf_marpi_v2(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
     try:
         pdf = FPDF(orientation='P', unit='mm', format='A4')
         pdf.add_page()
+        
+        # Logo
         if os.path.exists("logo.png"):
             pdf.image("logo.png", 10, 8, 30)
         
+        # Título Dinámico
         pdf.set_font("Arial", 'B', 18)
         pdf.set_text_color(0, 51, 102)
         pdf.cell(0, 15, f'{tipo_trabajo}', 0, 1, 'R')
         pdf.ln(10)
         
-        # Bloque de datos básicos del equipo
+        # Cuadro de datos del equipo
         pdf.set_fill_color(230, 233, 240)
         pdf.set_font("Arial", 'B', 12)
         pdf.cell(0, 10, f" DATOS DEL EQUIPO: {tag_motor}", 1, 1, 'L', True)
         
         pdf.set_font("Arial", '', 10)
+        pdf.set_text_color(0, 0, 0)
         pdf.cell(95, 8, f"Fecha: {datos.get('Fecha','-')}", 1, 0)
         pdf.cell(95, 8, f"Responsable: {datos.get('Responsable','-')}", 1, 1)
 
-        # --- OPCIÓN 1: FORMATO LUBRICACIÓN (Se mantiene intacto) ---
-        if tipo_trabajo == "REPORTE DE LUBRICACIÓN":
+        # --- LÓGICA DE LUBRICACIÓN ---
+        if "LUBRICACION" in tipo_trabajo.upper():
             pdf.ln(5)
             pdf.set_fill_color(245, 245, 245)
             pdf.set_font("Arial", 'B', 11)
@@ -71,48 +75,40 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
             pdf.cell(95, 8, f"Gramos LOA: {datos.get('Gramos_LOA','0')} g", 1, 1)
             pdf.cell(190, 8, f"Grasa utilizada: {datos.get('Tipo_Grasa','-')}", 1, 1)
 
-        # --- OPCIÓN 2: FORMATO MEGADO (EXPANDIDO Y SEPARADO) ---
-        elif "MEGADO" in tipo_trabajo.upper():
-            pdf.ln(8) # Más espacio
-            pdf.set_fill_color(0, 51, 102) # Azul oscuro para encabezado
+        # --- LÓGICA DE MEGADO (Aislación) ---
+        elif "MEGADO" in tipo_trabajo.upper() or "AISLACION" in tipo_trabajo.upper():
+            pdf.ln(8)
+            pdf.set_fill_color(0, 51, 102)
             pdf.set_text_color(255, 255, 255)
             pdf.set_font("Arial", 'B', 11)
-            pdf.cell(0, 8, " PRUEBAS DE RESISTENCIA DE AISLACIÓN (MOhms)", 1, 1, 'C', True)
+            pdf.cell(0, 8, " PRUEBAS DE RESISTENCIA DE AISLACIÓN", 1, 1, 'C', True)
             
-            pdf.set_text_color(0, 0, 0) # Volver a negro
+            pdf.set_text_color(0, 0, 0)
             pdf.set_font("Arial", 'B', 10)
-            # Fila de encabezados de tabla
-            pdf.cell(63, 8, "FASE U - TIERRA", 1, 0, 'C')
-            pdf.cell(63, 8, "FASE V - TIERRA", 1, 0, 'C')
-            pdf.cell(64, 8, "FASE W - TIERRA", 1, 1, 'C')
+            pdf.cell(63, 8, "U - GND", 1, 0, 'C')
+            pdf.cell(63, 8, "V - GND", 1, 0, 'C')
+            pdf.cell(64, 8, "W - GND", 1, 1, 'C')
             
-            pdf.set_font("Arial", '', 12) # Mediciones más grandes
-            pdf.cell(63, 12, f"{datos.get('U_Gnd','-')} MΩ", 1, 0, 'C')
-            pdf.cell(63, 12, f"{datos.get('V_Gnd','-')} MΩ", 1, 0, 'C')
-            pdf.cell(64, 12, f"{datos.get('W_Gnd','-')} MΩ", 1, 1, 'C')
-            
-            # Campos adicionales de Megado (Tensión y Temperatura)
-            pdf.ln(2)
-            pdf.set_font("Arial", 'B', 10)
-            pdf.cell(95, 8, f"Tensión de Prueba: {datos.get('Tension_V','500V')}", 1, 0)
-            pdf.cell(95, 8, f"Temp. Ambiente: {datos.get('Temp','-')} °C", 1, 1)
+            pdf.set_font("Arial", '', 14) # Mediciones bien grandes
+            pdf.cell(63, 15, f"{datos.get('U_Gnd','-')} M Ohm", 1, 0, 'C')
+            pdf.cell(63, 15, f"{datos.get('V_Gnd','-')} M Ohm", 1, 0, 'C')
+            pdf.cell(64, 15, f"{datos.get('W_Gnd','-')} M Ohm", 1, 1, 'C')
 
-        # --- SECCIONES COMUNES ---
+        # --- TEXTOS COMUNES ---
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "DESCRIPCIÓN / ESTADO TÉCNICO:", 0, 1)
+        pdf.cell(0, 8, "DESCRIPCIÓN / TAREA:", 0, 1)
         pdf.set_font("Arial", '', 10)
         pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
         
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "OBSERVACIONES / CONCLUSIÓN:", 0, 1)
+        pdf.cell(0, 8, "OBSERVACIONES / ESTADO FINAL:", 0, 1)
         pdf.set_font("Arial", '', 10)
         pdf.multi_cell(0, 7, str(datos.get('Taller_Externo','-')), border=1)
 
         return pdf.output(dest='S').encode('latin-1', 'replace')
     except Exception as e:
-        st.error(f"Error PDF: {e}")
         return None
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
@@ -523,6 +519,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
