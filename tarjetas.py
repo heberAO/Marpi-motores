@@ -73,6 +73,7 @@ def generar_pdf_reporte(datos, titulo_informe):
     pdf.ln(3)
 
     # 3. SI ES "NUEVO REGISTRO" (ALTA)
+    # --- SECCIÓN: DATOS DE PLACA ---
     if "Potencia" in datos:
         pdf.set_font("Arial", 'B', 11)
         pdf.cell(0, 8, " DATOS DE PLACA", ln=True, fill=True)
@@ -80,13 +81,22 @@ def generar_pdf_reporte(datos, titulo_informe):
         pdf.cell(0, 7, f"Potencia: {v('Potencia')} | Tension: {v('Tension')} | Corriente: {v('Corriente')}", ln=True)
         pdf.cell(0, 7, f"RPM: {v('RPM')} | Carcasa: {v('Carcasa')}", ln=True)
         pdf.cell(0, 7, f"Rodamiento LA: {v('Rodamiento_LA')} | Rodamiento LOA: {v('Rodamiento_LOA')}", ln=True)
+        pdf.ln(3)
 
-    # 4. SI TIENE MEDICIONES ELÉCTRICAS (ALTA O MEGADO)
-    if "RT_TU" in datos or "RT_TV1" in datos:
-        pdf.ln(2)
+    # --- SECCIÓN: MEDICIONES ELÉCTRICAS (9 MEDICIONES DE ALTA) ---
+    if "RT_TU" in datos:
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, " MEDICIONES ELÉCTRICAS", ln=True, fill=True)
+        pdf.cell(0, 8, " MEDICIONES ELÉCTRICAS INICIALES", ln=True, fill=True)
         pdf.set_font("Arial", '', 10)
+        pdf.cell(0, 7, f"Aislamiento Tierra: TU:{v('RT_TU')} | TV:{v('RT_TV')} | TW:{v('RT_TW')}", ln=True)
+        pdf.cell(0, 7, f"Aislamiento Bobinas: UV:{v('RB_UV')} | VW:{v('RB_VW')} | UW:{v('RB_UW')}", ln=True)
+        pdf.cell(0, 7, f"Resistencias Internas: U:{v('RI_U')} | V:{v('RI_V')} | W:{v('RI_W')}", ln=True)
+        pdf.ln(3)
+
+    # --- SECCIÓN: MEGADO DE CAMPO (15 MEDICIONES) ---
+    if "RT_TV1" in datos:
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 8, " MEDICIONES DE CAMPO", ln=True, fill=True)
         # Campos de Alta
        if "RT_TU" in datos:
         pdf.ln(2)
@@ -583,6 +593,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
