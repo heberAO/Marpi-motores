@@ -93,37 +93,37 @@ def generar_pdf_reporte(datos, titulo_informe):
             pdf.cell(0, 7, f"Aislamiento: {v('RB_UV')} / {v('RB_VW')} / {v('RB_UW')}", ln=True)
         # Campos de Megado de campo
         if "RT_TV1" in datos:
-        pdf.ln(2)
-        pdf.set_font("Arial", 'B', 11)
-        pdf.set_fill_color(200, 220, 255) # Un color celeste para destacar
-        pdf.cell(0, 8, " MEDICIONES DE MEGADO Y RESISTENCIAS", ln=True, fill=True)
-        pdf.set_font("Arial", '', 10)
+            pdf.ln(2)
+            pdf.set_font("Arial", 'B', 11)
+            pdf.set_fill_color(200, 220, 255) # Un color celeste para destacar
+            pdf.cell(0, 8, " MEDICIONES DE MEGADO Y RESISTENCIAS", ln=True, fill=True)
+            pdf.set_font("Arial", '', 10)
 
         # 1. Megado a Tierra (Motor) - 3 datos
-        pdf.set_font("Arial", 'B', 10)
-        pdf.cell(0, 7, "Aislamiento a Tierra (Motor):", ln=True)
-        pdf.set_font("Arial", '', 10)
-        pdf.cell(0, 7, f"T-V1: {v('RT_TV1')} Ohm | T-U1: {v('RT_TU1')} Ohm | T-W1: {v('RT_TW1')} Ohm", ln=True)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 7, "Aislamiento a Tierra (Motor):", ln=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.cell(0, 7, f"T-V1: {v('RT_TV1')} Ohm | T-U1: {v('RT_TU1')} Ohm | T-W1: {v('RT_TW1')} Ohm", ln=True)
 
         # 2. Megado entre Bobinas (Motor) - 3 datos
-        pdf.set_font("Arial", 'B', 10)
-        pdf.cell(0, 7, "Aislamiento entre Bobinas:", ln=True)
-        pdf.set_font("Arial", '', 10)
-        pdf.cell(0, 7, f"W1-V1: {v('RB_WV1')} Ohm | W1-U1: {v('RB_WU1')} Ohm | V1-U1: {v('RB_VU1')} Ohm", ln=True)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 7, "Aislamiento entre Bobinas:", ln=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.cell(0, 7, f"W1-V1: {v('RB_WV1')} Ohm | W1-U1: {v('RB_WU1')} Ohm | V1-U1: {v('RB_VU1')} Ohm", ln=True)
 
         # 3. Resistencias Internas - 3 datos
-        pdf.set_font("Arial", 'B', 10)
-        pdf.cell(0, 7, "Resistencias Internas (Continuidad):", ln=True)
-        pdf.set_font("Arial", '', 10)
-        pdf.cell(0, 7, f"U1-U2: {v('RI_U1U2')} Ohm | V1-V2: {v('RI_V1V2')} Ohm | W1-W2: {v('RI_W1W2')} Ohm", ln=True)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 7, "Resistencias Internas (Continuidad):", ln=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.cell(0, 7, f"U1-U2: {v('RI_U1U2')} Ohm | V1-V2: {v('RI_V1V2')} Ohm | W1-W2: {v('RI_W1W2')} Ohm", ln=True)
 
-        pdf.ln(2)
-        # 4. Megado de Línea - 6 datos
-        pdf.set_font("Arial", 'B', 10)
-        pdf.cell(0, 7, "Mediciones de Línea (Alimentación):", ln=True)
-        pdf.set_font("Arial", '', 10)
-        pdf.cell(0, 7, f"Tierra-L1: {v('ML_L1')} MOhm | Tierra-L2: {v('ML_L2')} MOhm | Tierra-L3: {v('ML_L3')} MOhm", ln=True)
-        pdf.cell(0, 7, f"L1-L2: {v('ML_L1L2')} MOhm | L1-L3: {v('ML_L1L3')} MOhm | L2-L3: {v('ML_L2L3')} MOhm", ln=True)
+            pdf.ln(2)
+            # 4. Megado de Línea - 6 datos
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 7, "Mediciones de Línea (Alimentación):", ln=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.cell(0, 7, f"Tierra-L1: {v('ML_L1')} MOhm | Tierra-L2: {v('ML_L2')} MOhm | Tierra-L3: {v('ML_L3')} MOhm", ln=True)
+            pdf.cell(0, 7, f"L1-L2: {v('ML_L1L2')} MOhm | L1-L3: {v('ML_L1L3')} MOhm | L2-L3: {v('ML_L2L3')} MOhm", ln=True)
 
     # 5. DETALLE / DESCRIPCIÓN (Lubricación, Reparación u Otros)
     if "Descripcion" in datos:
@@ -577,6 +577,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
