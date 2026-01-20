@@ -427,7 +427,7 @@ elif modo == "Relubricacion":
                 
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
-    
+    fecha_hoy = date.today()
     # Aseguramos que el contador exista para la limpieza
     if "cnt_meg" not in st.session_state:
         st.session_state.cnt_meg = 0
@@ -534,6 +534,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
