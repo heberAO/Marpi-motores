@@ -347,103 +347,106 @@ if opcion_elegida != "":
         st.success(f"✅ Motor detectado: {motor_encontrado['Tag']}")
     
     # --- 2. PREPARACIÓN DE VALORES PARA LOS CAMPOS ---
-    if motor_encontrado is not None:
-        # Usamos .get por si acaso, pero fijate que el nombre coincida con el st.write
-        val_la_sug = str(motor_encontrado.get('Rodamiento_LA', ''))
-        val_loa_sug = str(motor_encontrado.get('Rodamiento_LOA', ''))
-        serie_sug = str(motor_encontrado.get('N_Serie', ''))
+    # --- 1. LIMPIEZA Y ESTADOS ---
+if "form_id" not in st.session_state:
+    st.session_state.form_id = 0
+if "pdf_listo" not in st.session_state:
+    st.session_state.pdf_listo = None
 
-    else:
-       val_la_sug = ""
-       val_loa_sug = ""
-       serie_sug = ""
+def limpiar_formulario():
+    st.session_state.form_id += 1
+    st.session_state.pdf_listo = None
 
-    # 2. Rodamientos y Cálculo
+st.divider()
+
+# --- 2. BUSCADOR ---
+df_lista = df_completo.fillna("-")
+lista_sugerencias = sorted(list(set(df_lista['Tag'].astype(str).tolist() + df_lista['N_Serie'].astype(str).tolist())))
+
+opcion_elegida = st.selectbox(
+    "Seleccione TAG o N° DE SERIE", 
+    options=[""] + lista_sugerencias,
+    key=f"search_{st.session_state.form_id}"
+)
+
+# --- 3. DETECCIÓN Y CÁLCULO AUTOMÁTICO ---
+motor_encontrado = None
+calculo_la = 0.0
+calculo_loa = 0.0
+
+if opcion_elegida != "":
+    res = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)]
+    if not res.empty:
+        motor_encontrado = res.iloc[-1]
+        # LLAMADA A TU FUNCIÓN DE CÁLCULO (La que estaba arriba en tu código)
+        calculo_la = calcular_grasa_avanzado(motor_encontrado['Rodamiento LA'])
+        calculo_loa = calcular_grasa_avanzado(motor_encontrado['Rodamiento LOA'])
+
+# --- 4. FORMULARIO CON VALORES CALCULADOS ---
+with st.form(key=f"form_lub_{st.session_state.form_id}"):
+    st.subheader("🛠️ Registro de Relubricación")
+    
     col1, col2 = st.columns(2)
     with col1:
-        val_la = str(motor_encontrado['Rodamiento_LA']) if motor_encontrado is not None else ""
-        rod_la = st.text_input("Rodamiento LA", value=val_la_sug).upper()
-        gr_la_sug = calcular_grasa_avanzado(rod_la)
-        st.metric("Sugerido LA", f"{gr_la_sug} g")
-
+        resp_r = st.text_input("Responsable", key=f"resp_{st.session_state.form_id}")
+        rod_la = st.text_input("Rodamiento LA", value=str(motor_encontrado['Rodamiento LA']) if motor_encontrado is not None else "", key=f"la_{st.session_state.form_id}")
+        # Aquí cargamos el cálculo automático
+        gr_f_la = st.number_input("Gramos LA (Sugerido)", value=float(calculo_la), step=0.1, key=f"gla_{st.session_state.form_id}")
+        
     with col2:
-        val_loa = str(motor_encontrado['Rodamiento_LOA']) if motor_encontrado is not None else ""
-        rod_loa = st.text_input("Rodamiento LOA", value=val_loa_sug).upper()
-        gr_loa_sug = calcular_grasa_avanzado(rod_loa)
-        st.metric("Sugerido LOA", f"{gr_loa_sug} g")
+        Tipo_tarea = st.radio("Tipo de Intervención", ["Preventiva", "Correctiva"], key=f"tipo_{st.session_state.form_id}")
+        rod_loa = st.text_input("Rodamiento LOA", value=str(motor_encontrado['Rodamiento LOA']) if motor_encontrado is not None else "", key=f"loa_{st.session_state.form_id}")
+        # Aquí cargamos el cálculo automático
+        gr_f_loa = st.number_input("Gramos LOA (Sugerido)", value=float(calculo_loa), step=0.1, key=f"gloa_{st.session_state.form_id}")
+    
+    grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"], key=f"grasa_{st.session_state.form_id}")
+    obs = st.text_area("Observaciones", key=f"obs_{st.session_state.form_id}")
+    
+    btn_guardar = st.form_submit_button("💾 GUARDAR Y GENERAR PDF")
 
-    # 3. Formulario de Carga
-    with st.form(key=f"form_main_{st.session_state.form_id}"): # <--- El formulario también cambia de ID
-        serie_final = st.text_input("Confirmar N° de Serie", value=str(motor_encontrado['N_Serie']) if motor_encontrado is not None else "")
-        resp_r = st.text_input("Técnico Responsable")
-        
-        c1, c2 = st.columns(2)
-        with c1:
-            gr_f_la = st.number_input("Gramos Reales LA", value=float(gr_la_sug))
-        with c2:
-            gr_f_loa = st.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
-        Tipo_tarea = st.radio(
-            "Tipo de Intervencion",
-            ["Preventivo (planificaco)", "Correctiva (Urgencia)"],
-            index=0
-        )
+# --- 5. LÓGICA DE GUARDADO ---
+if btn_guardar:
+    if not resp_r or not opcion_elegida:
+        st.error("⚠️ Falta completar Responsable o TAG.")
+    else:
+        try:
+            NOMBRE_HOJA = "Sheet1"
+            nuevo_registro = {
+                "Fecha": date.today().strftime("%d/%m/%Y"),
+                "Tag": opcion_elegida,
+                "N_Serie": str(motor_encontrado['N_Serie']) if motor_encontrado is not None else "",
+                "Responsable": resp_r,
+                "Rodamiento LA": rod_la,
+                "Rodamiento LOA": rod_loa,
+                "Gramos LA": gr_f_la,
+                "Gramos LOA": gr_f_loa,
+                "Grasa": grasa,
+                "Descripcion": Tipo_tarea,
+                "Observaciones": obs
+            }
+
+            # Guardar en Sheet1
+            df_actual = conn.read(worksheet=NOMBRE_HOJA, ttl=0)
+            df_final = pd.concat([df_actual, pd.DataFrame([nuevo_registro])], ignore_index=True)
+            conn.update(worksheet=NOMBRE_HOJA, data=df_final)
             
-        grasa = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
-        obs = st.text_area("Notas")
-        
-        btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
+            # Generar PDF
+            st.session_state.pdf_listo = generar_pdf_reporte(nuevo_registro, opcion_elegida, "REPORTE DE LUBRICACIÓN")
+            st.success("✅ ¡Registro guardado y PDF generado!")
+            st.balloons()
+            
+        except Exception as e:
+            st.error(f"❌ Error: {e}")
 
-    # 4. Lógica de Guardado
-
-    if btn_guardar:
-        if not resp_r or not opcion_elegida:
-            st.error("⚠️ Falta completar datos.")
-        else:
-            try:
-                # 1. El nombre que encontramos
-                NOMBRE_HOJA = "Sheet1" 
-
-                # 2. Armamos el registro
-                nuevo_registro = {
-                    "Fecha": date.today().strftime("%d/%m/%Y"),
-                    "Tag": opcion_elegida,
-                    "N_Serie": serie_final,
-                    "Responsable": resp_r,
-                    "Rodamiento LA": rod_la,
-                    "Rodamiento LOA": rod_loa,
-                    "Gramos LA": gr_f_la,
-                    "Gramos LOA": gr_f_loa,
-                    "Grasa": grasa,
-                    "Descripcion": Tipo_tarea,
-                    "Observaciones": obs
-                }
-
-                # 3. Proceso de guardado
-                # Leemos la hoja Sheet1
-                df_actual = conn.read(worksheet=NOMBRE_HOJA, ttl=0)
-                # Creamos la fila nueva
-                df_nuevo = pd.DataFrame([nuevo_registro])
-                # Las unimos
-                df_final = pd.concat([df_actual, df_nuevo], ignore_index=True)
-                
-                # Subimos todo de vuelta a Sheet1
-                conn.update(worksheet=NOMBRE_HOJA, data=df_final)
-                
-                st.success(f"✅ ¡Registro guardado con éxito en {NOMBRE_HOJA}!")
-                st.balloons()
-
-                # 4. Generamos el PDF (usando la función que ya arreglamos)
-                pdf_content = generar_pdf_reporte(nuevo_registro, opcion_elegida, "REPORTE DE LUBRICACIÓN")
-                if pdf_content:
-                    st.download_button(
-                        label="📥 Descargar Reporte PDF",
-                        data=pdf_content,
-                        file_name=f"Lubricacion_{opcion_elegida}.pdf",
-                        mime="application/pdf"
-                    )
-
-            except Exception as e:
-                st.error(f"❌ Error al intentar guardar en '{NOMBRE_HOJA}': {e}")
+# --- 6. BOTÓN DE DESCARGA ---
+if st.session_state.pdf_listo:
+    st.download_button(
+        label="📥 DESCARGAR REPORTE PDF",
+        data=st.session_state.pdf_listo,
+        file_name=f"Lubricacion_{opcion_elegida}.pdf",
+        mime="application/pdf",
+        on_click=limpiar_formulario # Limpia al descargar
+    )
                     
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -526,6 +529,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
