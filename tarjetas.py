@@ -88,9 +88,14 @@ def generar_pdf_reporte(datos, titulo_informe):
         pdf.cell(0, 8, " MEDICIONES ELÉCTRICAS", ln=True, fill=True)
         pdf.set_font("Arial", '', 10)
         # Campos de Alta
-        if "RT_TU" in datos:
-            pdf.cell(0, 7, f"Resistencias: {v('RT_TU')} / {v('RT_TV')} / {v('RT_TW')}", ln=True)
-            pdf.cell(0, 7, f"Aislamiento: {v('RB_UV')} / {v('RB_VW')} / {v('RB_UW')}", ln=True)
+       if "RT_TU" in datos:
+        pdf.ln(2)
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 8, " MEDICIONES ELÉCTRICAS INICIALES", ln=True, fill=True)
+        pdf.set_font("Arial", '', 10)
+        pdf.cell(0, 7, f"Aislamiento a Tierra: TU:{v('RT_TU')} | TV:{v('RT_TV')} | TW:{v('RT_TW')}", ln=True)
+        pdf.cell(0, 7, f"Aislamiento entre Bobinas: UV:{v('RB_UV')} | VW:{v('RB_VW')} | UW:{v('RB_UW')}", ln=True)
+        pdf.cell(0, 7, f"Resistencias Internas: U:{v('RI_U')} | V:{v('RI_V')} | W:{v('RI_W')}", ln=True)
         # Campos de Megado de campo
         if "RT_TV1" in datos:
             pdf.ln(2)
@@ -255,31 +260,30 @@ if modo == "Nuevo Registro":
     if btn_guardar:
             if t and resp:
                 # Armamos el diccionario con ABSOLUTAMENTE TODO
+                if btn_guardar:
+            if t and resp:
                 nueva = {
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
                     "Tag": t,
                     "N_Serie": sn,
                     "Responsable": resp,
-                    "Potencia": p,
-                    "Tension": v,
-                    "Corriente": cor,
-                    "RPM": r,
-                    "Carcasa": carc,
-                    "Rodamiento_LA": r_la,
-                    "Rodamiento_LOA": r_loa,
-                    "RT_TU": v_rt_tu, "RT_TV": v_rt_tv, "RT_TW": v_rt_tw,
-                    "RB_UV": v_rb_uv, "RB_VW": v_rb_vw, "RB_UW": v_rb_uw,
-                    "RI_U": v_ri_u, "RI_V": v_ri_v, "RI_W": v_ri_w,
+                    "Potencia": p, "Tension": v, "Corriente": cor,
+                    "RPM": r, "Carcasa": carc,
+                    "Rodamiento_LA": r_la, "Rodamiento_LOA": r_loa,
+                    
+                    # --- LAS 9 MEDICIONES DE ALTA ---
+                    "RT_TU": v_rt_tu, "RT_TV": v_rt_tv, "RT_TW": v_rt_tw, # Tierra
+                    "RB_UV": v_rb_uv, "RB_VW": v_rb_vw, "RB_UW": v_rb_uw, # Entre bobinas
+                    "RI_U": v_ri_u, "RI_V": v_ri_v, "RI_W": v_ri_w,      # Resistencias
+                    
                     "Descripcion": desc,
                     "Trabajos_Externos": ext
                 }
                 
-                # 1. Guardar en Google Sheets
+                # Guardar y generar...
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
-                
-                # 2. Generar el PDF usando el diccionario completo
-                st.session_state.pdf_a_descargar = generar_pdf_reporte(nueva, "PROTOCOLO DE ALTA")
+                st.session_state.pdf_buffer = generar_pdf_reporte(nueva, "PROTOCOLO DE ALTA Y REGISTRO")
                 st.session_state.tag_actual = t
                 
                 st.success(f"✅ Motor {t} registrado con éxito.")
@@ -579,6 +583,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
