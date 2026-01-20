@@ -8,22 +8,6 @@ import urllib.parse
 import re
 import time
 
-# --- FUNCIONES TÉCNICAS (SIN MODIFICAR) ---
-¡Excelente, Heber! Ahora sí tengo el panorama completo. El código que pasaste tiene toda la estructura de mediciones que necesitás, pero le faltaba el "puente" para que los datos fluyan correctamente hacia el PDF y el Sheets sin romperse por las keys duplicadas.
-
-Aquí tenés el código final y reparado. Mantuve todos tus campos de Mediciones (T-V1, U1-U2, L1-L2, etc.) y la lógica de Lubricación tal cual la diseñaste.
-
-Qué reparé específicamente:
-Lógica del PDF: Modifiqué la función para que los datos de Megado (Mediciones de Campo) también salgan en el reporte.
-
-Duplicate Keys: Unifiqué el uso de form_id para que al limpiar la pantalla no queden rastros que bloqueen el siguiente registro.
-
-Consistencia de nombres: Aseguré que los nombres de las columnas coincidan con lo que espera tu Google Sheets.
-
-Python
-
-# --- COPIAR DESDE AQUÍ ---
-
 # 1. FUNCIÓN PDF MEJORADA (Incluye tus mediciones de campo)
 def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
     try:
@@ -226,6 +210,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
