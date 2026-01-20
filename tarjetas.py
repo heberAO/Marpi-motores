@@ -79,17 +79,6 @@ if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"] and not st
 
 # --- 6. SECCIONES DE LA APP ---
 
-Heber, te pido disculpas. Entiendo perfectamente: necesitás que respete todos los campos técnicos que ya tenías (Megado, Bornes, Línea, Potencia, etc.) y que no los resuma ni los borre.
-
-El error de indentación ocurrió porque al pegar el código, las líneas no quedaron alineadas. Aquí tenés el código con TODOS tus campos originales y la indentación corregida para que no tire error.
-
-Instrucciones para que funcione:
-Borrá todo el bloque de los if modo == ... que tenés en tu archivo.
-
-Pegá este bloque exactamente como está aquí abajo (respetando los espacios al inicio).
-
-Python
-
 if modo == "Nuevo Registro":
     st.title("📝 Alta y Registro Inicial")
     
@@ -213,6 +202,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
