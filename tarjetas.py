@@ -413,10 +413,7 @@ if opcion_elegida != "":
                     "Observaciones": obs
                 }
 
-                # 2. GUARDADO (IMPORTANTE: Revisa si tu función se llama 'registrar_intervencion')
-                # Si el error 'registrar_intervencion is not defined' vuelve, 
-                # cambia esa palabra por el nombre que encuentres después de un 'def' más abajo.
-                registrar_intervencion(datos_para_historial) 
+                cargar_intervencion(datos_para_historial) 
 
                 st.success("✅ Registro guardado en la base de datos.")
                 
@@ -513,6 +510,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
