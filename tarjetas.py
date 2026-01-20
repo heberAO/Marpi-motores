@@ -42,8 +42,6 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
         from fpdf import FPDF
         pdf = FPDF(orientation='P', unit='mm', format='A4')
         pdf.add_page()
-        
-        # Logo (si existe)
         if os.path.exists("logo.png"):
             pdf.image("logo.png", 10, 8, 30)
         
@@ -52,29 +50,33 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
         pdf.cell(0, 15, f'{tipo_trabajo}', 0, 1, 'R')
         pdf.ln(10)
         
-        # Datos del equipo
+        # --- BLOQUE DATOS BÁSICOS ---
         pdf.set_fill_color(230, 233, 240)
         pdf.set_font("Arial", 'B', 12)
         pdf.cell(0, 10, f" DATOS DEL EQUIPO: {tag_motor}", 1, 1, 'L', True)
-        
         pdf.set_font("Arial", '', 10)
         pdf.set_text_color(0, 0, 0)
         pdf.cell(95, 8, f"Fecha: {datos.get('Fecha','-')}", 1, 0)
         pdf.cell(95, 8, f"Responsable: {datos.get('Responsable','-')}", 1, 1)
 
-        # SI ES LUBRICACIÓN
+        # --- SECCIÓN LUBRICACIÓN ---
         if "LUBRICACION" in tipo_trabajo.upper():
             pdf.ln(5)
             pdf.set_fill_color(245, 245, 245)
             pdf.set_font("Arial", 'B', 11)
             pdf.cell(0, 8, " DETALLES DE LUBRICACIÓN:", 1, 1, 'L', True)
             pdf.set_font("Arial", '', 10)
-            pdf.cell(95, 8, f"Rod. LA: {datos.get('Rodamiento_LA', datos.get('Rodamiento LA', '-'))}", 1, 0)
-            pdf.cell(95, 8, f"Gramos LA: {datos.get('Gramos_LA', datos.get('Gramos LA', '0'))} g", 1, 1)
-            pdf.cell(95, 8, f"Rod. LOA: {datos.get('Rodamiento_LOA', datos.get('Rodamiento LOA', '-'))}", 1, 0)
-            pdf.cell(95, 8, f"Gramos LOA: {datos.get('Gramos_LOA', datos.get('Gramos LOA', '0'))} g", 1, 1)
-        
-        # SI ES MEGADO
+            # Busca todas las variantes de nombres de columnas
+            r_la = datos.get('Rodamiento_LA') or datos.get('Rodamiento LA') or '-'
+            g_la = datos.get('Gramos_LA') or datos.get('Gramos LA') or '0'
+            r_loa = datos.get('Rodamiento_LOA') or datos.get('Rodamiento LOA') or '-'
+            g_loa = datos.get('Gramos_LOA') or datos.get('Gramos LOA') or '0'
+            pdf.cell(95, 8, f"Rod. LA: {r_la}", 1, 0)
+            pdf.cell(95, 8, f"Gramos LA: {g_la} g", 1, 1)
+            pdf.cell(95, 8, f"Rod. LOA: {r_loa}", 1, 0)
+            pdf.cell(95, 8, f"Gramos LOA: {g_loa} g", 1, 1)
+
+        # --- SECCIÓN MEGADO (AISLACIÓN) ---
         elif "MEGADO" in tipo_trabajo.upper() or "AISLACION" in tipo_trabajo.upper():
             pdf.ln(5)
             pdf.set_fill_color(0, 51, 102)
@@ -82,22 +84,39 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
             pdf.set_font("Arial", 'B', 11)
             pdf.cell(0, 8, " MEDICIONES DE AISLACIÓN (MOhms)", 1, 1, 'C', True)
             pdf.set_text_color(0, 0, 0)
-            pdf.cell(63, 10, f"U-GND: {datos.get('U_Gnd','-')}", 1, 0, 'C')
-            pdf.cell(63, 10, f"V-GND: {datos.get('V_Gnd','-')}", 1, 0, 'C')
-            pdf.cell(64, 10, f"W-GND: {datos.get('W_Gnd','-')}", 1, 1, 'C')
+            # Busca variantes como U_Gnd, U-Gnd, o Fase_U
+            u = datos.get('U_Gnd') or datos.get('U-Gnd') or datos.get('Fase_U') or '-'
+            v = datos.get('V_Gnd') or datos.get('V-Gnd') or datos.get('Fase_V') or '-'
+            w = datos.get('W_Gnd') or datos.get('W-Gnd') or datos.get('Fase_W') or '-'
+            pdf.cell(63, 12, f"U-GND: {u}", 1, 0, 'C')
+            pdf.cell(63, 12, f"V-GND: {v}", 1, 0, 'C')
+            pdf.cell(64, 12, f"W-GND: {w}", 1, 1, 'C')
 
-        # Comunes
+        # --- SECCIÓN REPARACIONES ---
+        elif "REPARACION" in tipo_trabajo.upper():
+            pdf.ln(5)
+            pdf.set_fill_color(245, 245, 245)
+            pdf.set_font("Arial", 'B', 11)
+            pdf.cell(0, 8, " DETALLE DE REPARACIÓN:", 1, 1, 'L', True)
+            pdf.set_font("Arial", '', 10)
+            falla = datos.get('Falla') or datos.get('Sintoma') or 'No especificado'
+            pdf.multi_cell(0, 8, f"Falla detectada: {falla}", border=1)
+
+        # --- TEXTOS FINALES (Siempre aparecen) ---
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "DESCRIPCIÓN:", 0, 1)
+        pdf.cell(0, 8, "DESCRIPCIÓN / TAREAS REALIZADAS:", 0, 1)
         pdf.set_font("Arial", '', 10)
-        pdf.multi_cell(0, 7, str(datos.get('Descripcion', datos.get('Intervencion', '-'))), border=1)
+        # Busca en 'Descripcion' o 'Detalle' o 'Intervencion'
+        desc = datos.get('Descripcion') or datos.get('Detalle') or datos.get('Intervencion') or '-'
+        pdf.multi_cell(0, 7, str(desc), border=1)
         
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "OBSERVACIONES:", 0, 1)
+        pdf.cell(0, 8, "OBSERVACIONES FINAL / ESTADO:", 0, 1)
         pdf.set_font("Arial", '', 10)
-        pdf.multi_cell(0, 7, str(datos.get('Taller_Externo', datos.get('Observaciones', '-'))), border=1)
+        obs = datos.get('Taller_Externo') or datos.get('Observaciones') or datos.get('Notas') or '-'
+        pdf.multi_cell(0, 7, str(obs), border=1)
 
         return pdf.output(dest='S').encode('latin-1', 'replace')
     except Exception as e:
@@ -508,6 +527,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
