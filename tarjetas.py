@@ -6,11 +6,7 @@ import os
 import re
 import time
 from io import BytesIO
-
-# Librerías para el PDF (Usaremos ReportLab que es mejor para logos)
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.units import inch
+from fpdf import FPDF
 
 if "form_id" not in st.session_state:
     st.session_state.form_id = 0
@@ -46,69 +42,46 @@ def calcular_grasa_avanzado(codigo):
 
 # --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
 def generar_pdf_reporte(datos, tag_motor):
-    buffer = BytesIO()
-    c = canvas.Canvas(buffer, pagesize=letter)
+    pdf = FPDF()
+    pdf.add_page()
     
-    # --- LOGO DE LA EMPRESA ---
+    # LOGO (Busca el archivo logo.png en tu carpeta)
     try:
-        # Posición: X=0.5 pulgada, Y=10 pulgadas (arriba a la izquierda)
-        # Tamaño: 1.5 pulgadas de ancho (el alto se ajusta solo)
-        c.drawImage("logo_empresa.png", 0.5*inch, 10*inch, width=1.5*inch, preserveAspectRatio=True, mask='auto')
+        pdf.image("logo.png", 10, 8, 33) # X=10, Y=8, Ancho=33
     except:
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(0.5*inch, 10.5*inch, "MARPI MOTORES") # Texto si no carga el logo
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, "MARPI MOTORES", ln=True)
 
-    # --- ENCABEZADO ---
-    c.setFont("Helvetica-Bold", 16)
-    c.drawCentredString(4.25*inch, 10.2*inch, f"PROTOCOLO DE ALTA - MOTOR {tag_motor}")
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, f"PROTOCOLO DE ALTA - MOTOR {tag_motor}", ln=True, align='C')
+    pdf.ln(10)
     
-    c.setFont("Helvetica", 10)
-    c.drawCentredString(4.25*inch, 10*inch, f"Fecha de Emisión: {datos.get('Fecha', 'N/A')}")
+    # DATOS PRINCIPALES
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "DATOS DE REGISTRO:", ln=True)
+    pdf.set_font("Arial", '', 11)
     
-    c.line(0.5*inch, 9.8*inch, 8*inch, 9.8*inch) # Línea divisoria
+    # Imprimimos los datos que me pasaste antes
+    columnas_interes = ["Fecha", "Responsable", "Potencia", "Tension", "RPM", "N_Serie", "Carcasa"]
+    for col in columnas_interes:
+        valor = datos.get(col, "N/A")
+        pdf.cell(0, 7, f"{col}: {valor}", ln=True)
 
-    # --- CUERPO DEL INFORME (Resumen de datos) ---
-    y = 9.4*inch
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(0.5*inch, y, "DATOS DE PLACA Y REGISTRO")
-    y -= 0.3*inch
+    pdf.ln(5)
     
-    c.setFont("Helvetica", 10)
-    # Lista de datos a imprimir
-    items = [
-        f"Responsable: {datos.get('Responsable', 'N/A')}",
-        f"N° de Serie: {datos.get('N_Serie', 'N/A')}",
-        f"Potencia: {datos.get('Potencia', 'N/A')} | RPM: {datos.get('RPM', 'N/A')}",
-        f"Carcasa/Frame: {datos.get('Carcasa', 'N/A')}",
-        f"Rodamiento LA: {datos.get('Rodamiento_LA', 'N/A')}",
-        f"Rodamiento LOA: {datos.get('Rodamiento_LOA', 'N/A')}"
-    ]
+    # MEDICIONES
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "MEDICIONES ELECTRICAS:", ln=True)
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(0, 7, f"Resistencia (RT): TU:{datos.get('RT_TU','-')} TV:{datos.get('RT_TV','-')} TW:{datos.get('RT_TW','-')}", ln=True)
     
-    for item in items:
-        c.drawString(0.7*inch, y, f"• {item}")
-        y -= 0.2*inch
-
-    # --- MEDICIONES ELÉCTRICAS ---
-    y -= 0.2*inch
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(0.5*inch, y, "MEDICIONES ELÉCTRICAS")
-    y -= 0.3*inch
-    c.setFont("Helvetica", 10)
-    c.drawString(0.7*inch, y, f"Resistencia (RT): TU: {datos.get('RT_TU', '-')} | TV: {datos.get('RT_TV', '-')} | TW: {datos.get('RT_TW', '-')}")
-    y -= 0.2*inch
-    c.drawString(0.7*inch, y, f"Aislamiento (RB): UV: {datos.get('RB_UV', '-')} | VW: {datos.get('RB_VW', '-')} | UW: {datos.get('RB_UW', '-')}")
-
-    # --- PIE DE PÁGINA (Propiedad de la empresa) ---
-    c.line(0.5*inch, 1*inch, 8*inch, 1*inch)
-    c.setFont("Helvetica-Oblique", 8)
-    # ACÁ VA TU LEYENDA
-    leyenda = "Este informe es propiedad de MARPI MOTORES. Prohibida su reproducción total o parcial sin autorización."
-    c.drawCentredString(4.25*inch, 0.8*inch, leyenda)
+    # PIE DE PÁGINA
+    pdf.set_y(-30)
+    pdf.set_font("Arial", 'I', 8)
+    pdf.cell(0, 10, "Este informe es propiedad de MARPI MOTORES - Confidencial.", align='C', ln=True)
     
-    c.showPage()
-    c.save()
-    buffer.seek(0)
-    return buffer
+    # Retornar como Bytes para Streamlit
+    return pdf.output(dest='S').encode('latin-1', 'replace')
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
@@ -518,6 +491,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
