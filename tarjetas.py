@@ -7,6 +7,7 @@ from fpdf import FPDF
 import urllib.parse  # Para el QR sin errores
 import re
 import time
+from reportlab.lib.units import inch
 
 if "form_id" not in st.session_state:
     st.session_state.form_id = 0
@@ -41,8 +42,6 @@ def calcular_grasa_avanzado(codigo):
         return 0.0
 
 # --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
-from reportlab.lib.units import inch
-
 def generar_pdf_reporte(datos, tag_motor):
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
@@ -516,6 +515,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
