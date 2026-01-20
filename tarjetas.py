@@ -307,55 +307,58 @@ elif modo == "Relubricacion":
     if "form_id" not in st.session_state:
         st.session_state.form_id = 0
 
-    # Aseguramos que Tag y N_Serie sean texto para que el buscador no falle
+    # 1. Preparamos los datos
     df_lista = df_completo.copy()
-    df_lista['Tag'] = df_lista['Tag'].astype(str).replace("nan", "")
-    df_lista['N_Serie'] = df_lista['N_Serie'].astype(str).replace("nan", "")
+    # Limpiamos nombres de columnas (espacios invisibles)
+    df_lista.columns = df_lista.columns.str.strip()
     
-    # Creamos una lista combinada de TAGs y Números de Serie para el buscador
-    lista_para_buscar = sorted(list(set(df_lista['Tag'].tolist() + df_lista['N_Serie'].tolist())))
-    lista_para_buscar = [x for x in lista_para_buscar if x.strip() != ""]
-
+    # Lista de TAGS únicos (solo los que tienen nombre)
+    tags_disponibles = sorted([str(x) for x in df_lista['Tag'].unique() if str(x) != 'nan' and str(x) != ''])
+    
     opcion_elegida = st.selectbox(
-        "Buscar por TAG o N° DE SERIE", 
-        options=[""] + lista_para_buscar,
+        "Seleccione el TAG del Motor", 
+        options=[""] + tags_disponibles,
         key=f"search_{st.session_state.form_id}"
     )
 
-    motor_encontrado = None
+    val_la, val_loa, n_serie_detectado = "", "", ""
+
     if opcion_elegida != "":
-        # Buscamos el motor por cualquiera de los dos campos
-        filtro = df_lista[(df_lista['Tag'] == opcion_elegida) | (df_lista['N_Serie'] == opcion_elegida)]
-        if not filtro.empty:
-            # Traemos la información del motor (la fila más completa)
-            motor_encontrado = filtro.iloc[-1]
-            st.success(f"✅ Motor: {motor_encontrado['Tag']} (Serie: {motor_encontrado['N_Serie']})")
+        # FILTRAR todas las filas de ese motor
+        historial_motor = df_lista[df_lista['Tag'] == opcion_elegida]
+        
+        if not historial_motor.empty:
+            # --- LA MAGIA ESTÁ AQUÍ ---
+            # Buscamos en el historial el valor más reciente que NO esté vacío
+            # Buscamos Rodamiento LA
+            las = historial_motor['Rodamiento_LA'].replace(['', 'nan', 'None', '0', 0], pd.NA).dropna()
+            val_la = str(las.iloc[-1]) if not las.empty else ""
+            
+            # Buscamos Rodamiento LOA
+            loas = historial_motor['Rodamiento_LOA'].replace(['', 'nan', 'None', '0', 0], pd.NA).dropna()
+            val_loa = str(loas.iloc[-1]) if not loas.empty else ""
+
+            # Buscamos N° de Serie
+            series = historial_motor['N_Serie'].replace(['', 'nan', 'None'], pd.NA).dropna()
+            n_serie_detectado = str(series.iloc[-1]) if not series.empty else ""
+            
+            st.success(f"✅ Datos recuperados de {opcion_elegida}")
 
     st.divider()
 
     col1, col2 = st.columns(2)
     with col1:
-        # Cargamos el rodamiento directamente de la columna 'Rodamiento_LA'
-        val_la = ""
-        if motor_encontrado is not None:
-            val_la = str(motor_encontrado.get('Rodamiento_LA', ""))
-        
-        rod_la = st.text_input("Rodamiento LA", value=val_la if val_la not in ["nan", "None", "0"] else "", key=f"la_{st.session_state.form_id}").upper()
+        rod_la = st.text_input("Rodamiento LA", value=val_la, key=f"la_{st.session_state.form_id}").upper()
         gr_la_sug = calcular_grasa_avanzado(rod_la)
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
-        # Cargamos el rodamiento directamente de la columna 'Rodamiento_LOA'
-        val_loa = ""
-        if motor_encontrado is not None:
-            val_loa = str(motor_encontrado.get('Rodamiento_LOA', ""))
-            
-        rod_loa = st.text_input("Rodamiento LOA", value=val_loa if val_loa not in ["nan", "None", "0"] else "", key=f"loa_{st.session_state.form_id}").upper()
+        rod_loa = st.text_input("Rodamiento LOA", value=val_loa, key=f"loa_{st.session_state.form_id}").upper()
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
     with st.form(key=f"form_main_{st.session_state.form_id}"):
-        serie_final = st.text_input("Confirmar N° de Serie", value=str(motor_encontrado['N_Serie']) if motor_encontrado is not None else "")
+        serie_final = st.text_input("Confirmar N° de Serie", value=n_serie_detectado)
         resp_r = st.text_input("Técnico Responsable")
         
         c1, c2 = st.columns(2)
@@ -364,43 +367,29 @@ elif modo == "Relubricacion":
         with c2:
             gr_f_loa = st.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
         
-        tipo_tarea_sel = st.radio(
-            "Tipo de Intervención",
-            ["Preventivo (planificado)", "Correctiva (Urgencia)"],
-            index=0
-        )
-            
-        grasa_sel = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus", "Otra"])
+        tipo_tarea_sel = st.radio("Tipo de Intervención", ["Preventivo", "Correctiva"])
+        grasa_sel = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus"])
         obs = st.text_area("Notas")
         
-        btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
-
-    if btn_guardar:
-        if not resp_r or not opcion_elegida:
-            st.error("⚠️ Falta completar datos.")
-        else:
-            try:
-                # CONFIGURACIÓN DE CELDAS INDIVIDUALES
+        if st.form_submit_button("💾 GUARDAR REGISTRO"):
+            if resp_r and opcion_elegida:
                 nueva_fila = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
-                    "Tag": str(opcion_elegida),
-                    "N_Serie": str(serie_final),
-                    "Responsable": str(resp_r),
-                    "Rodamiento_LA": str(rod_la),
-                    "Gramos_LA": float(gr_f_la),
-                    "Rodamiento_LOA": str(rod_loa),
-                    "Gramos_LOA": float(gr_f_loa),
-                    "Tipo_Grasa": str(grasa_sel),
-                    "Tipo_Tarea": str(tipo_tarea_sel),
-                    "Descripcion": "RELUBRICACIÓN DE CAMPO",
+                    "Tag": opcion_elegida,
+                    "N_Serie": serie_final,
+                    "Responsable": resp_r,
+                    "Rodamiento_LA": rod_la,
+                    "Gramos_LA": gr_f_la,
+                    "Rodamiento_LOA": rod_loa,
+                    "Gramos_LOA": gr_f_loa,
+                    "Tipo_Grasa": grasa_sel,
+                    "Tipo_Tarea": tipo_tarea_sel,
+                    "Descripcion": "RELUBRICACIÓN",
                     "Taller_Externo": obs
                 }
-                
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_final)
-                
-                st.success("✅ Datos guardados en sus celdas correspondientes.")
-                st.balloons()
+                st.success("✅ Guardado correctamente")
                 time.sleep(1)
                 st.session_state.form_id += 1 
                 st.rerun()
@@ -489,6 +478,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
