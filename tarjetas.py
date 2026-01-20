@@ -194,86 +194,65 @@ if modo == "Nuevo Registro":
     fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
 
     with st.form(key=f"alta_motor_{st.session_state.form_key}"):
-        # Fila 1: Datos de Identificación
+        # --- CAMPOS DE ENTRADA (Mismo diseño anterior) ---
         c1, c2, c3 = st.columns([2, 2, 1])
         t = c1.text_input("TAG/ID MOTOR").upper()
         sn = c2.text_input("N° de Serie").upper()
         resp = c3.text_input("Responsable")
 
-        # Fila 2: Datos de Placa
         c4, c5, c6, c7, c8 = st.columns(5)
-        p = c4.text_input("Potencia")
-        v = c5.text_input("Tensión")
-        cor = c6.text_input("Corriente")
+        p, v, cor = c4.text_input("Potencia"), c5.text_input("Tensión"), c6.text_input("Corriente")
         r = c7.selectbox("RPM", ["-", "750", "1000", "1500", "3000"])
         carc = c8.text_input("Carcasa/Frame")
 
-        # Fila 3: Rodamientos
         st.subheader("⚙️ Rodamientos de Placa")
         r1, r2 = st.columns(2)
-        r_la = r1.text_input("Rodamiento LA").upper()
-        r_loa = r2.text_input("Rodamiento LOA").upper()
+        r_la, r_loa = r1.text_input("Rodamiento LA").upper(), r2.text_input("Rodamiento LOA").upper()
 
-        # Fila 4: Mediciones Eléctricas (Mapeadas a tus columnas RT, RB y RI)
         st.subheader("⚡ Mediciones Eléctricas")
         m1, m2, m3 = st.columns(3)
-        with m1:
-            v_rt_tu = st.text_input("RT_TU (Resistencia)")
-            v_rt_tv = st.text_input("RT_TV")
-            v_rt_tw = st.text_input("RT_TW")
-        with m2:
-            v_rb_uv = st.text_input("RB_UV (Aislamiento)")
-            v_rb_vw = st.text_input("RB_VW")
-            v_rb_uw = st.text_input("RB_UW")
-        with m3:
-            v_ri_u = st.text_input("RI_U (Índice)")
-            v_ri_v = st.text_input("RI_V")
-            v_ri_w = st.text_input("RI_W")
+        with m1: v_rt_tu, v_rt_tv, v_rt_tw = st.text_input("RT_TU"), st.text_input("RT_TV"), st.text_input("RT_TW")
+        with m2: v_rb_uv, v_rb_vw, v_rb_uw = st.text_input("RB_UV"), st.text_input("RB_VW"), st.text_input("RB_UW")
+        with m3: v_ri_u, v_ri_v, v_ri_w = st.text_input("RI_U"), st.text_input("RI_V"), st.text_input("RI_W")
 
         desc = st.text_area("Descripción")
         ext = st.text_area("Trabajos Taller Externo")
         
-        if st.form_submit_button("💾 GUARDAR REGISTRO"):
-            if not t or not resp:
-                st.error("⚠️ El TAG y el Responsable son obligatorios.")
-            else:
-                # DICCIONARIO CON TUS ENCABEZADOS EXACTOS
-                nueva = {
-                    "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
-                    "Tag": t,
-                    "N_Serie": sn,
-                    "Responsable": resp,
-                    "Potencia": p,
-                    "Tension": v,
-                    "Corriente": cor,
-                    "RPM": r,
-                    "Carcasa": carc,
-                    "Frame": carc, # Guardamos en ambos por las dudas
-                    "Rodamiento_LA": r_la,
-                    "Rodamiento_LOA": r_loa,
-                    "RT_TU": v_rt_tu,
-                    "RT_TV": v_rt_tv,
-                    "RT_TW": v_rt_tw,
-                    "RB_UV": v_rb_uv,
-                    "RB_VW": v_rb_vw,
-                    "RB_UW": v_rb_uw,
-                    "RI_U": v_ri_u,
-                    "RI_V": v_ri_v,
-                    "RI_W": v_ri_w,
-                    "Descripcion": desc,
-                    "Trabajos_taller_externo": ext,
-                    "Taller_Externo": ext # Duplicado por si acaso
-                }
-                
-                # Unir y subir
-                df_act = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-                conn.update(data=df_act)
-                
-                st.session_state.form_key += 1
-                st.success(f"✅ Motor {t} guardado con éxito.")
+        btn_guardar = st.form_submit_button("💾 GUARDAR Y GENERAR PDF")
+
+    if btn_guardar:
+        if not t or not resp:
+            st.error("⚠️ El TAG y el Responsable son obligatorios.")
+        else:
+            # 1. ARMAMOS EL DICCIONARIO
+            nueva = {
+                "Fecha": fecha_hoy.strftime("%d/%m/%Y"), "Tag": t, "N_Serie": sn, "Responsable": resp,
+                "Potencia": p, "Tension": v, "Corriente": cor, "RPM": r, "Carcasa": carc, "Frame": carc,
+                "Rodamiento_LA": r_la, "Rodamiento_LOA": r_loa,
+                "RT_TU": v_rt_tu, "RT_TV": v_rt_tv, "RT_TW": v_rt_tw,
+                "RB_UV": v_rb_uv, "RB_VW": v_rb_vw, "RB_UW": v_rb_uw,
+                "RI_U": v_ri_u, "RI_V": v_ri_v, "RI_W": v_ri_w,
+                "Descripcion": f"ALTA INICIAL: {desc}", "Trabajos_taller_externo": ext, "Taller_Externo": ext
+            }
+            
+            # 2. GUARDAMOS EN EXCEL
+            df_act = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+            conn.update(data=df_act)
+            st.success("✅ Datos guardados en la nube.")
+
+            # 3. GENERAMOS EL PDF
+            pdf_bytes = generar_pdf_reporte(nueva, t)
+            
+            if pdf_bytes:
+                st.download_button(
+                    label="📥 DESCARGAR PROTOCOLO DE ALTA (PDF)",
+                    data=pdf_bytes,
+                    file_name=f"Alta_{t}_{nueva['Fecha']}.pdf",
+                    mime="application/pdf"
+                )
                 st.balloons()
-                time.sleep(1.5)
-                st.rerun()
+            else:
+                st.error("❌ El Excel se guardó pero hubo un problema con el PDF.")
   
 elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
@@ -538,6 +517,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
