@@ -399,8 +399,10 @@ elif modo == "Relubricacion":
                 }
                 df_act = pd.concat([df_completo, pd.DataFrame([nueva_f])], ignore_index=True)
                 conn.update(data=df_act)
+                st.session_state.form_id += 1
                 st.success("✅ Guardado con éxito")
-                time.sleep(1)
+                st.balloons()
+                time.sleep(1.5) # Damos tiempo para ver el mensaje
                 st.rerun()
                 
 elif modo == "Mediciones de Campo":
@@ -484,6 +486,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
