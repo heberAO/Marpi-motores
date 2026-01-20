@@ -398,11 +398,11 @@ elif modo == "Relubricacion":
                     "Tag": t,
                     "Responsable": resp,
                     "Descripcion": f"Se realizó lubricación con {grasa_tipo}. Cantidad: {grasa_cant} grs."
-                }
-                st.session_state.pdf_a_descargar = generar_pdf_reporte(nueva, "REPORTE DE LUBRICACIÓN")
+               }
+               st.session_state.pdf_a_descargar = generar_pdf_reporte(nueva, "REPORTE DE LUBRICACIÓN")
                 # Subir a Google Sheets
-                df_final = pd.concat([df_completo, pd.DataFrame([nueva_data])], ignore_index=True)
-                conn.update(data=df_final)
+               df_final = pd.concat([df_completo, pd.DataFrame([nueva_data])], ignore_index=True)
+               conn.update(data=df_final)
                 
                 # REINICIO Y LIMPIEZA
                 st.session_state.form_id += 1
@@ -510,6 +510,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
