@@ -416,7 +416,9 @@ elif modo == "Relubricacion":
         grasa_t = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus"])
         notas = st.text_area("Notas")
         
-        tag_actual = t if 't' in locals() else (tag_seleccionado if 'tag_seleccionado' in locals() else None)
+        if st.form_submit_button("💾 GUARDAR"):
+            # Buscamos el TAG y el Responsable sin importar cómo se llamen en el formulario
+            tag_actual = t if 't' in locals() else (tag_seleccionado if 'tag_seleccionado' in locals() else None)
             resp_actual = resp if 'resp' in locals() else (tecnico if 'tecnico' in locals() else None)
 
             if tag_actual and resp_actual:
@@ -602,6 +604,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
