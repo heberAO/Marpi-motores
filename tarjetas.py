@@ -49,6 +49,7 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
         pdf.cell(0, 15, f'{tipo_trabajo}', 0, 1, 'R')
         pdf.ln(10)
         
+        # Bloque de datos básicos del equipo
         pdf.set_fill_color(230, 233, 240)
         pdf.set_font("Arial", 'B', 12)
         pdf.cell(0, 10, f" DATOS DEL EQUIPO: {tag_motor}", 1, 1, 'L', True)
@@ -57,8 +58,8 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
         pdf.cell(95, 8, f"Fecha: {datos.get('Fecha','-')}", 1, 0)
         pdf.cell(95, 8, f"Responsable: {datos.get('Responsable','-')}", 1, 1)
 
-        # --- SECCIÓN NUEVA: Si es Lubricación, mostramos los rodamientos ---
-        if "Rodamiento_LA" in datos:
+        # --- OPCIÓN 1: FORMATO LUBRICACIÓN ---
+        if tipo_trabajo == "REPORTE DE LUBRICACIÓN":
             pdf.ln(5)
             pdf.set_fill_color(245, 245, 245)
             pdf.set_font("Arial", 'B', 11)
@@ -69,17 +70,37 @@ def generar_pdf_reporte(datos, tag_motor, tipo_trabajo="INFORME TÉCNICO"):
             pdf.cell(95, 8, f"Rod. LOA: {datos.get('Rodamiento_LOA','-')}", 1, 0)
             pdf.cell(95, 8, f"Gramos LOA: {datos.get('Gramos_LOA','0')} g", 1, 1)
             pdf.cell(190, 8, f"Grasa utilizada: {datos.get('Tipo_Grasa','-')}", 1, 1)
+
+        # --- OPCIÓN 2: FORMATO MEGADO (AISLACIÓN) ---
+        elif "Megado" in tipo_trabajo or "Aislacion" in tipo_trabajo:
+            pdf.ln(5)
+            pdf.set_fill_color(245, 245, 245)
+            pdf.set_font("Arial", 'B', 11)
+            pdf.cell(0, 8, " MEDICIONES DE AISLACIÓN (MOhms):", 1, 1, 'L', True)
+            pdf.set_font("Arial", '', 10)
+            pdf.cell(63, 8, f"U-GND: {datos.get('U_Gnd','-')}", 1, 0)
+            pdf.cell(63, 8, f"V-GND: {datos.get('V_Gnd','-')}", 1, 0)
+            pdf.cell(64, 8, f"W-GND: {datos.get('W_Gnd','-')}", 1, 1)
+
+        # --- OPCIÓN 3: FORMATO REPARACIÓN ---
+        elif "REPARACION" in tipo_trabajo:
+            pdf.ln(5)
+            pdf.set_fill_color(245, 245, 245)
+            pdf.set_font("Arial", 'B', 11)
+            pdf.cell(0, 8, " ESTADO TÉCNICO DE REPARACIÓN:", 1, 1, 'L', True)
+            pdf.set_font("Arial", '', 10)
+            pdf.cell(190, 8, f"Falla Detectada: {datos.get('Falla','-')}", 1, 1)
         
+        # Secciones comunes para todos los informes
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "TIPO DE INTERVENCIÓN / DESCRIPCIÓN:", 0, 1)
+        pdf.cell(0, 8, "DESCRIPCIÓN / TAREA REALIZADA:", 0, 1)
         pdf.set_font("Arial", '', 10)
-        # Aquí saldrá lo que elegiste en el st.radio (Preventiva/Correctiva)
         pdf.multi_cell(0, 7, str(datos.get('Descripcion','-')), border=1)
         
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "OBSERVACIONES FINAL:", 0, 1)
+        pdf.cell(0, 8, "OBSERVACIONES / ESTADO FINAL:", 0, 1)
         pdf.set_font("Arial", '', 10)
         pdf.multi_cell(0, 7, str(datos.get('Taller_Externo','-')), border=1)
 
@@ -496,6 +517,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
