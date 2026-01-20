@@ -115,7 +115,7 @@ if modo == "Nuevo Registro":
 
 elif modo == "Historial y QR":
     st.title("🔍 Consulta de Motores")
-    tags = [""] + sorted(df_completo['Tag'].unique().tolist())
+   tags = [""] + sorted([str(x) for x in df_completo['Tag'].dropna().unique()])
     sel = st.selectbox("Seleccione Motor", tags)
     if sel:
         url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={sel}"
@@ -178,6 +178,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
