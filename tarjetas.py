@@ -299,32 +299,19 @@ elif modo == "Historial y QR":
             
             st.divider()
 
-# --- HISTORIAL Y PDF ---
-            st.subheader("📜 Historial de Intervenciones")
-            hist_m = df_completo[df_completo['Tag'] == buscado].copy()
-            
-            # Corregido: le agregamos el ] al final
-            hist_m = hist_m.iloc[::-1] 
-
-            for idx, fila in hist_m.iterrows():
-                intervencion = str(fila.get('Descripcion', '-'))[:40]
-                with st.expander(f"📅 {fila.get('Fecha','-')} - {intervencion}..."):
-                    st.write(f"**Responsable:** {fila.get('Responsable','-')}")
-                    st.write(f"**Detalle completo:** {fila.get('Descripcion','-')}")
+# --- Generar PDF (CORREGIDO) ---
+                    # 1. Primero detectamos qué tipo de informe es para que el PDF sepa qué dibujar
+                    desc_para_filtro = str(fila.get('Descripcion', '')).upper()
                     
-                    # Generar PDF
-                    pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado)
-                    
-                    if pdf_archivo:
-                        st.download_button(
-                            label="📄 Descargar Informe PDF",
-                            data=pdf_archivo,
-                            file_name=f"Reporte_{buscado}_{idx}.pdf",
-                            key=f"btn_pdf_{idx}"
-                        )
+                    if "PREVENTIVA" in desc_para_filtro or "CORRECTIVA" in desc_para_filtro:
+                        tipo_de_informe = "REPORTE DE LUBRICACIÓN"
+                    elif "MEGADO" in desc_para_filtro or "AISLACION" in desc_para_filtro:
+                        tipo_de_informe = "INFORME DE MEGADO"
+                    else:
+                        tipo_de_informe = "INFORME TÉCNICO"
 
-elif modo == "Relubricacion":
-    st.title("🔍 Lubricación Inteligente MARPI")
+                    # Datos, Tag y el Tipo que acabamos de detectar
+                    pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado, tipo_de_informe)
 
     # Si este ID cambia, el formulario se vacía sí o sí
     if "form_id" not in st.session_state:
@@ -519,6 +506,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
