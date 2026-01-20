@@ -398,7 +398,8 @@ if opcion_elegida != "":
             st.error("⚠️ Falta completar datos.")
         else:
             try:
-                datos_para_pdf = {
+                # 1. Preparamos el diccionario con los nombres EXACTOS de tu Excel
+                datos_para_historial = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": opcion_elegida,
                     "N_Serie": serie_final,
@@ -408,32 +409,36 @@ if opcion_elegida != "":
                     "Gramos LA": gr_f_la,
                     "Gramos LOA": gr_f_loa,
                     "Grasa": grasa,
-                    "Intervencion": Tipo_tarea,  # <--- CAMBIÁ ESTO: Ponelo con "T" Mayúscula
+                    "Descripcion": Tipo_tarea, # Usamos 'Descripcion' porque así lo busca el historial
                     "Observaciones": obs
                 }
-                
-                # Usamos la función todoterreno que arreglamos recién
-                pdf_content = generar_pdf_reporte(datos_para_pdf, opcion_elegida, "REPORTE DE LUBRICACIÓN")
-    
-                # Y mostramos el botón de descarga
-                st.download_button(
-                    label="📥 Descargar Reporte PDF",
-                    data=pdf_content,
-                    file_name=f"Lubricacion_{opcion_elegida}.pdf",
-                    mime="application/pdf"
-                )
-                
-                # --- AQUÍ OCURRE LA MAGIA ---
-                st.session_state.form_id += 1  # Cambiamos el ID, esto "destruye" el form viejo y crea uno nuevo vacío
-                st.success("✅ ¡Guardado con éxito! Limpiando...")
-                st.balloons()
-                
-                import time
-                time.sleep(1)
-                st.rerun() # Recargamos con el nuevo ID
-                
+
+                # 2. GUARDAR EN EXCEL/GOOGLE SHEETS
+                # Reemplazá 'registrar_intervencion' por el nombre de tu función de guardado
+                exito = registrar_intervencion(datos_para_historial) 
+
+                if exito:
+                    # 3. GENERAR PDF PARA DESCARGAR
+                    pdf_content = generar_pdf_reporte(datos_para_historial, opcion_elegida, "REPORTE DE LUBRICACIÓN")
+                    
+                    if pdf_content:
+                        st.download_button(
+                            label="📥 Descargar Reporte PDF",
+                            data=pdf_content,
+                            file_name=f"Lubricacion_{opcion_elegida}.pdf",
+                            mime="application/pdf"
+                        )
+                    
+                    st.success("✅ ¡Registro guardado en la base de datos!")
+                    st.balloons()
+                    
+                    # Resetear formulario
+                    st.session_state.form_id += 1
+                    import time
+                    time.sleep(2)
+                    st.rerun()
             except Exception as e:
-                st.error(f"❌ Error: {e}")
+                st.error(f"❌ Error al guardar: {e}")
                     
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
@@ -516,6 +521,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
