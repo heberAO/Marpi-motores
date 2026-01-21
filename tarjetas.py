@@ -43,9 +43,16 @@ def calcular_grasa_avanzado(codigo):
         return 0.0
 
 # --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
-def generar_pdf_reporte(datos, titulo_informe):
+def generar_pdf_reporte(datos, titulo):
+    # 1. Crear el objeto PDF (Asegúrate de que el margen inferior sea chico)
     pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=10) # Reducimos el margen de 15 a 10
     pdf.add_page()
+    
+    # 2. Achicar un poco los espacios entre bloques
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, titulo, ln=True, align='C')
+    pdf.ln(5) # Espacio pequeño después del título
     
     # 1. LOGO Y ENCABEZADO
     try:
@@ -650,6 +657,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
