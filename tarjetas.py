@@ -253,13 +253,11 @@ if modo == "Nuevo Registro":
                     st.image("logo.png", use_container_width=True)
                     st.markdown("<h2 style='text-align: center; color: #007BFF;'>¡Registro Guardado en Marpi!</h2>", unsafe_allow_html=True)
                 
-                st.balloons() # Tiramos los globos de fondo para festejar
-                
-            time.sleep(3)  # Mantenemos el logo en pantalla 3 segundos
-            placeholder.empty()  # Limpiamos el logo
-            
-            # Ahora sí, reiniciamos la app
-            st.rerun()
+                    st.balloons() # Tiramos los globos de fondo para festejar
+                    time.sleep(3)  # Mantenemos el logo en pantalla 3 segundos
+                    placeholder.empty()  # Limpiamos el logo
+                    # Ahora sí, reiniciamos la app
+                    st.rerun()
             else:
                 st.error("⚠️ El TAG y el Responsable son obligatorios.")
   
@@ -647,6 +645,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
