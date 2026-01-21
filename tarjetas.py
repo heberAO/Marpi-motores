@@ -351,7 +351,7 @@ elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     
     if "cnt_lub" not in st.session_state:
-    st.session_state.cnt_lub = 0
+        st.session_state.cnt_lub = 0
     # 1. Asegurar que la variable exista
     if "form_id" not in st.session_state:
         st.session_state.form_id = 0
@@ -608,6 +608,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
