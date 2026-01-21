@@ -574,18 +574,18 @@ elif modo == "Mediciones de Campo":
                 # 2. ARMAMOS EL DICCIONARIO 'nueva' COMPLETO
                 nueva = {
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
-                    "Tag": t,
+                    "Tag": t,  # ¿En el Excel es "Tag" o "TAG"? Tiene que ser igual.
                     "N_Serie": n_serie,
                     "Responsable": resp,
-                    "Descripcion": f"MEGADO - Equipo: {equipo_megado} ({tension_prueba})",
                     "Potencia": info.get("Potencia", ""),
                     "Tension": info.get("Tension", ""),
                     "RPM": info.get("RPM", ""),
                     "Carcasa": info.get("Carcasa", ""),
                     "Rodamiento_LA": info.get("Rodamiento_LA", ""),
                     "Rodamiento_LOA": info.get("Rodamiento_LOA", ""),
+                    "Descripcion": f"MEGADO - Equipo: {equipo_megado} ({tension_prueba})",
                     
-                    # --- AQUÍ ESTÁ EL SECRETO: HAY QUE PASARLE LOS VALORES DEL FORMULARIO ---
+                    # Aquí van los valores de megado, asegurate que estas columnas existan en tu Excel
                     "RT_TV1": tv1, "RT_TU1": tu1, "RT_TW1": tw1,
                     "RB_WV1": wv1, "RB_WU1": wu1, "RB_VU1": vu1,
                     "RI_U1U2": u1u2, "RI_V1V2": v1v2, "RI_W1W2": w1w2,
@@ -613,6 +613,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
