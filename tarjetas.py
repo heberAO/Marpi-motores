@@ -8,6 +8,23 @@ import time
 from io import BytesIO
 from fpdf import FPDF
 
+def calcular_grasa_avanzado(rodamiento):
+    """Calcula gramos sugeridos según el modelo de rodamiento"""
+    if not rodamiento or pd.isna(rodamiento):
+        return 0
+    try:
+        # Extraer el diámetro exterior (D) del código del rodamiento (ej: 6314 -> 14)
+        # Esta es una fórmula simplificada: Gramos = D * Ancho * 0.005
+        # Para hacerlo simple, si es un rodamiento común:
+        modelo = str(rodamiento)
+        if "63" in modelo:
+            return 20  # Valor base ejemplo
+        elif "62" in modelo:
+            return 15
+        return 10 # Default
+    except:
+        return 0
+
 fecha_hoy = date.today()
 
 if 'pdf_listo' not in st.session_state:
@@ -616,6 +633,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
