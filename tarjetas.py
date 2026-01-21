@@ -13,86 +13,73 @@ fecha_hoy = date.today()
 if 'pdf_listo' not in st.session_state:
     st.session_state.pdf_listo = None
 
-def calcular_grasa_avanzado(codigo):
-    try:
-        s = str(codigo).split('.')[0] # Quitamos el .0 si existe
-        solo_numeros = re.sub(r'\D', '', s) 
-        
-        if len(solo_numeros) < 3: 
-            return 0.0
-        
-        serie_eje = int(solo_numeros[-2:])
-        d = serie_eje * 5
-        
-        serie_tipo = int(solo_numeros[-3])
-        
-        # 4. Cálculo de dimensiones (D=Exterior, B=Ancho)
-        if serie_tipo == 3: # Serie pesada (63xx)
-            D = d * 2.2
-            B = D * 0.25
-        else: # Serie liviana/media (62xx, 60xx)
-            D = d * 1.8
-            B = D * 0.22
-            
-        # 5. Fórmula SKF (G = D * B * 0.005)
-        gramos = D * B * 0.005
-        return round(gramos, 1)
-    except Exception as e:
-        # Esto nos va a ayudar a ver si hay un error escondido
-        print(f"Error en cálculo: {e}")
-        return 0.0
-
-# --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
 def generar_pdf_reporte(datos, titulo):
+    # 1. Configuración inicial compacta
     pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=10) # Margen inferior más chico
+    pdf.set_auto_page_break(auto=True, margin=10)
     pdf.add_page()
     
     # --- TÍTULO ---
     pdf.set_font("Arial", "B", 14)
-    # Cambié 'titulo_informe' por 'titulo' que es lo que recibe la función
-    pdf.cell(0, 10, f"{titulo}", ln=True, align='C') 
-    pdf.ln(3) # Espacio reducido
+    pdf.cell(0, 10, f"{titulo}", ln=True, align='C')
+    pdf.ln(2)
 
-    # --- DATOS DE PLACA (En dos columnas para ahorrar espacio) ---
+    # --- CUADRO DE DATOS DEL EQUIPO (Muy compacto) ---
     pdf.set_fill_color(230, 230, 230)
     pdf.set_font("Arial", "B", 10)
-    pdf.cell(0, 8, "DATOS DEL EQUIPO", ln=True, fill=True)
-    pdf.set_font("Arial", "", 10)
+    pdf.cell(0, 7, "DATOS DEL EQUIPO", ln=True, fill=True, border=1)
     
-    # Fila 1
-    pdf.cell(45, 8, f"TAG: {datos.get('Tag', '-')}", border=1)
-    pdf.cell(50, 8, f"N° Serie: {datos.get('N_Serie', '-')}", border=1)
-    pdf.cell(45, 8, f"Potencia: {datos.get('Potencia', '-')}", border=1)
-    pdf.cell(50, 8, f"RPM: {datos.get('RPM', '-')}", border=1, ln=True)
-    
-    # Fila 2
-    pdf.cell(95, 8, f"Responsable: {datos.get('Responsable', '-')}", border=1)
-    pdf.cell(95, 8, f"Fecha: {datos.get('Fecha', '-')}", border=1, ln=True)
+    pdf.set_font("Arial", "", 9)
+    # Fila 1: TAG y Serie
+    pdf.cell(95, 7, f" TAG: {datos.get('Tag', '-')}", border=1)
+    pdf.cell(95, 7, f" N° Serie: {datos.get('N_Serie', '-')}", border=1, ln=True)
+    # Fila 2: Potencia y RPM
+    pdf.cell(45, 7, f" Potencia: {datos.get('Potencia', '-')}", border=1)
+    pdf.cell(50, 7, f" RPM: {datos.get('RPM', '-')}", border=1)
+    pdf.cell(45, 7, f" Carcasa: {datos.get('Carcasa', '-')}", border=1)
+    pdf.cell(50, 7, f" Fecha: {datos.get('Fecha', '-')}", border=1, ln=True)
     pdf.ln(3)
 
-    # --- DESCRIPCIÓN ---
+    # --- CUADRO DE TAREA ---
     pdf.set_font("Arial", "B", 10)
-    pdf.cell(0, 8, "DESCRIPCIÓN DE LA TAREA", ln=True, fill=True)
-    pdf.set_font("Arial", "", 10)
-    pdf.multi_cell(0, 8, f"{datos.get('Descripcion', 'Sin descripción')}", border=1)
-    pdf.ln(3)
-
-    # --- SECCIÓN DE MEDICIONES (Si existen) ---
-    # Solo agregamos esto si hay datos de Megado para no ocupar espacio
-    if datos.get("RT_TV1"):
-        pdf.set_font("Arial", "B", 10)
-        pdf.cell(0, 8, "MEDICIONES TÉCNICAS", ln=True, fill=True)
-        pdf.set_font("Arial", "", 9) # Letra un poco más chica para que entre
-        
-        # Ejemplo de una tablita compacta de mediciones
-        pdf.cell(63, 7, f"T-V1: {datos.get('RT_TV1')} Gohm", border=1)
-        pdf.cell(63, 7, f"T-U1: {datos.get('RT_TU1')} Gohm", border=1)
-        pdf.cell(64, 7, f"T-W1: {datos.get('RT_TW1')} Gohm", border=1, ln=True)
-        # ... podés agregar más filas así ...
+    pdf.cell(0, 7, "DETALLE DE LA TAREA", ln=True, fill=True, border=1)
+    pdf.set_font("Arial", "", 9)
     
-    # --- PIE DE PÁGINA ---
-    # Forzamos a que se escriba 15mm antes del final de la hoja
+    # Usamos multi_cell para la descripción
+    descripcion = datos.get('Descripcion', 'Sin descripción')
+    pdf.multi_cell(0, 7, f" {descripcion}", border=1)
+    
+    # --- MOSTRAR NOTAS (Si existen) ---
+    # Buscamos en 'Notas' o 'Observaciones'
+    nota_texto = datos.get('Notas') or datos.get('Observaciones')
+    if nota_texto and str(nota_texto).strip() != "nan":
+        pdf.set_font("Arial", "B", 9)
+        pdf.cell(0, 7, " Notas adicionales:", ln=True)
+        pdf.set_font("Arial", "", 9)
+        pdf.multi_cell(0, 6, f" {nota_texto}", border=1)
+    
+    pdf.ln(2)
+
+    # --- LÓGICA: SOLO MOSTRAR MEDICIONES SI NO ES LUBRICACIÓN ---
+    # Si el título no contiene "LUBRICACIÓN", intentamos poner las mediciones
+    if "LUBRIC" not in titulo.upper():
+        # Verificamos si hay al menos una medición para mostrar el cuadro
+        if datos.get("RT_TV1") or datos.get("ML_L1"):
+            pdf.set_font("Arial", "B", 10)
+            pdf.cell(0, 7, "MEDICIONES ELÉCTRICAS", ln=True, fill=True, border=1)
+            pdf.set_font("Arial", "", 8)
+            
+            # Ejemplo de tabla de mediciones muy compacta (3 valores por fila)
+            pdf.cell(63, 6, f" T-V1: {datos.get('RT_TV1', '-')} Gohm", border=1)
+            pdf.cell(63, 6, f" T-U1: {datos.get('RT_TU1', '-')} Gohm", border=1)
+            pdf.cell(64, 6, f" T-W1: {datos.get('RT_TW1', '-')} Gohm", border=1, ln=True)
+            
+            pdf.cell(63, 6, f" U1-U2: {datos.get('RI_U1U2', '-')} Ohm", border=1)
+            pdf.cell(63, 6, f" V1-V2: {datos.get('RI_V1V2', '-')} Ohm", border=1)
+            pdf.cell(64, 6, f" W1-W2: {datos.get('RI_W1W2', '-')} Ohm", border=1, ln=True)
+
+    # --- PIE DE PÁGINA FIJO (Evita la 2da hoja) ---
+    # 'abs' asegura que se pegue al final de la página actual
     pdf.set_y(-15) 
     pdf.set_font("Arial", "I", 8)
     pdf.cell(0, 10, "Propiedad de MARPI - Documento Confidencial", align='C')
@@ -475,7 +462,7 @@ elif modo == "Relubricacion":
                 
                 if modo == "Relubricacion":
                     nueva["Descripcion"] = f"LUBRICACIÓN: {grasa_t}. LA: {gr_real_la}g, LOA: {gr_real_loa}g."
-
+                    nueva["notas"] = notas
                 # 4. GUARDAR Y GENERAR PDF
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
@@ -592,6 +579,7 @@ elif modo == "Mediciones de Campo":
                     "Tag": t,  # ¿En el Excel es "Tag" o "TAG"? Tiene que ser igual.
                     "N_Serie": n_serie,
                     "Responsable": resp,
+                    "Notas": notas
                     "Potencia": info.get("Potencia", ""),
                     "Tension": info.get("Tension", ""),
                     "RPM": info.get("RPM", ""),
@@ -628,6 +616,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
