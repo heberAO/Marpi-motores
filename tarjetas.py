@@ -117,7 +117,7 @@ def generar_pdf_reporte(datos, titulo_informe):
     # 7. PIE DE PÁGINA
     pdf.set_y(-25)
     pdf.set_font("Arial", 'I', 8)
-    pdf.cell(0, 10, "ESTE INFORME ES PROPIEDAD DE MARPI MOTORES.", align='C', ln=True)
+    pdf.cell(0, 10, "ESTE INFORME ES PROPIEDAD DE MARPI ELECTRICIDAD.", align='C', ln=True)
     
     return pdf.output(dest='S').encode('latin-1', 'replace')
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
@@ -464,6 +464,7 @@ elif modo == "Relubricacion":
                 st.session_state.pdf_buffer = generar_pdf_reporte(nueva, f"REPORTE DE {modo.upper()}")
                 st.session_state.tag_buffer = tag_actual
                 st.success(f"✅ Registro de {tag_actual} guardado con éxito")
+                st.balloons()
             else:
                 st.error("⚠️ Error: No se encontró el TAG o el Responsable. Verifique los campos.")
 
@@ -599,6 +600,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
