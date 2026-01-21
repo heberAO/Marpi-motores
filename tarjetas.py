@@ -245,22 +245,22 @@ if modo == "Nuevo Registro":
                 if t and resp:  # Este es tu IF principal
             # ... (aquí va todo tu código de guardado en Excel y PDF) ...
             
-            st.success(f"✅ Motor {t} registrado con éxito.")
+                    st.success(f"✅ Motor {t} registrado con éxito.")
             
             # --- EFECTO DE ÉXITO CON LOGO DE MARPI ---
-            placeholder = st.empty() 
-            with placeholder.container():
-                col1, col2, col3 = st.columns([1, 2, 1])
-                with col2:
-                    st.image("logo.png", use_container_width=True)
-                    st.markdown("<h2 style='text-align: center; color: #007BFF;'>¡Registro Guardado en Marpi!</h2>", unsafe_allow_html=True)
+                    placeholder = st.empty() 
+                    with placeholder.container():
+                        col1, col2, col3 = st.columns([1, 2, 1])
+                        with col2:
+                            st.image("logo.png", use_container_width=True)
+                            st.markdown("<h2 style='text-align: center; color: #007BFF;'>¡Registro Guardado en Marpi!</h2>", unsafe_allow_html=True)
                 
-                st.balloons()
-                time.sleep(3)
-                placeholder.empty()
-            
-            # El rerun va afuera del placeholder pero adentro del IF
-            st.rerun()
+                        st.balloons()
+                        time.sleep(3)
+                        placeholder.empty()
+                    
+                    # El rerun va afuera del placeholder pero adentro del IF
+                    st.rerun()
 
         else: # <--- IMPORTANTE: Este ELSE ahora está alineado con el IF de arriba
             st.error("⚠️ El TAG y el Responsable son obligatorios.")
@@ -649,6 +649,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
