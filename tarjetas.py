@@ -258,8 +258,8 @@ if modo == "Nuevo Registro":
                     placeholder.empty()  # Limpiamos el logo
                     # Ahora sí, reiniciamos la app
                     st.rerun()
-            else:
-                st.error("⚠️ El TAG y el Responsable son obligatorios.")
+                else:
+                    st.error("⚠️ El TAG y el Responsable son obligatorios.")
   
 elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
@@ -645,6 +645,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
