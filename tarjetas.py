@@ -262,7 +262,7 @@ if modo == "Nuevo Registro":
                     # El rerun va afuera del placeholder pero adentro del IF
                     st.rerun()
 
-               else: # <--- IMPORTANTE: Este ELSE ahora está alineado con el IF de arriba
+               else: 
                    st.error("⚠️ El TAG y el Responsable son obligatorios.")
   
 elif modo == "Historial y QR":
@@ -649,6 +649,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
