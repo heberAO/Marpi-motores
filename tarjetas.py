@@ -44,89 +44,60 @@ def calcular_grasa_avanzado(codigo):
 
 # --- 1. FUNCIÓN PDF (Mantiene tus campos) ---
 def generar_pdf_reporte(datos, titulo):
-    # 1. Crear el objeto PDF (Asegúrate de que el margen inferior sea chico)
     pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=10) # Reducimos el margen de 15 a 10
+    pdf.set_auto_page_break(auto=True, margin=10) # Margen inferior más chico
     pdf.add_page()
     
-    # 2. Achicar un poco los espacios entre bloques
+    # --- TÍTULO ---
     pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 10, titulo, ln=True, align='C')
-    pdf.ln(5) # Espacio pequeño después del título
-    
-    # 1. LOGO Y ENCABEZADO
-    try:
-        pdf.image("logo.png", 10, 8, 33)
-    except:
-        pdf.set_font("Arial", 'B', 14)
-        pdf.cell(0, 10, "MARPI MOTORES", ln=True)
+    # Cambié 'titulo_informe' por 'titulo' que es lo que recibe la función
+    pdf.cell(0, 10, f"{titulo}", ln=True, align='C') 
+    pdf.ln(3) # Espacio reducido
 
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"{titulo_informe}", ln=True, align='C')
-    pdf.ln(5)
-    
-    def v(clave):
-        val = datos.get(clave, "")
-        # Convertimos a string y verificamos si es vacío, None o NaN
-        val_str = str(val).strip().lower()
-        if val_str in ["nan", "none", "", "n/a", "null"]:
-            return "---"  # Esto reemplaza el "nan" feo por rayitas
-        return str(val)
-
-    # 2. INFORMACIÓN BÁSICA
-    pdf.set_font("Arial", 'B', 11)
+    # --- DATOS DE PLACA (En dos columnas para ahorrar espacio) ---
     pdf.set_fill_color(230, 230, 230)
-    pdf.cell(0, 8, " INFORMACIÓN DEL EQUIPO", ln=True, fill=True)
-    pdf.set_font("Arial", '', 10)
-    pdf.cell(0, 7, f"Fecha: {v('Fecha')} | Responsable: {v('Responsable')}", ln=True)
-    pdf.cell(0, 7, f"TAG: {v('Tag')} | N° Serie: {v('N_Serie')}", ln=True)
+    pdf.set_font("Arial", "B", 10)
+    pdf.cell(0, 8, "DATOS DEL EQUIPO", ln=True, fill=True)
+    pdf.set_font("Arial", "", 10)
+    
+    # Fila 1
+    pdf.cell(45, 8, f"TAG: {datos.get('Tag', '-')}", border=1)
+    pdf.cell(50, 8, f"N° Serie: {datos.get('N_Serie', '-')}", border=1)
+    pdf.cell(45, 8, f"Potencia: {datos.get('Potencia', '-')}", border=1)
+    pdf.cell(50, 8, f"RPM: {datos.get('RPM', '-')}", border=1, ln=True)
+    
+    # Fila 2
+    pdf.cell(95, 8, f"Responsable: {datos.get('Responsable', '-')}", border=1)
+    pdf.cell(95, 8, f"Fecha: {datos.get('Fecha', '-')}", border=1, ln=True)
     pdf.ln(3)
 
-    # 3. DATOS DE PLACA (SOLO SI ES ALTA)
-    if "Potencia" in datos:
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, " DATOS DE PLACA", ln=True, fill=True)
-        pdf.set_font("Arial", '', 10)
-        pdf.cell(0, 7, f"Potencia: {v('Potencia')} | Tension: {v('Tension')} | Corriente: {v('Corriente')}", ln=True)
-        pdf.cell(0, 7, f"RPM: {v('RPM')} | Carcasa: {v('Carcasa')}", ln=True)
-        pdf.cell(0, 7, f"Rodamiento LA: {v('Rodamiento_LA')} | Rodamiento LOA: {v('Rodamiento_LOA')}", ln=True)
-        pdf.ln(3)
+    # --- DESCRIPCIÓN ---
+    pdf.set_font("Arial", "B", 10)
+    pdf.cell(0, 8, "DESCRIPCIÓN DE LA TAREA", ln=True, fill=True)
+    pdf.set_font("Arial", "", 10)
+    pdf.multi_cell(0, 8, f"{datos.get('Descripcion', 'Sin descripción')}", border=1)
+    pdf.ln(3)
 
-    # 4. MEDICIONES INICIALES (ALTA)
-    if "RT_TU" in datos:
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, " MEDICIONES ELÉCTRICAS INICIALES", ln=True, fill=True)
-        pdf.set_font("Arial", '', 10)
-        pdf.cell(0, 7, f"Aislamiento Tierra: TU:{v('RT_TU')} | TV:{v('RT_TV')} | TW:{v('RT_TW')}", ln=True)
-        pdf.cell(0, 7, f"Aislamiento Bobinas: UV:{v('RB_UV')} | VW:{v('RB_VW')} | UW:{v('RB_UW')}", ln=True)
-        pdf.cell(0, 7, f"Resistencias Internas: U:{v('RI_U')} | V:{v('RI_V')} | W:{v('RI_W')}", ln=True)
-        pdf.ln(3)
-
-    # 5. MEDICIONES DE CAMPO (MEGADO 15 DATOS)
-    if "RT_TV1" in datos:
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, " MEDICIONES DE CAMPO (MEGADO)", ln=True, fill=True)
-        pdf.set_font("Arial", '', 10)
-        pdf.cell(0, 7, f"Tierra: V1:{v('RT_TV1')} | U1:{v('RT_TU1')} | W1:{v('RT_TW1')}", ln=True)
-        pdf.cell(0, 7, f"Bobinas: WV1:{v('RB_WV1')} | WU1:{v('RB_WU1')} | VU1:{v('RB_VU1')}", ln=True)
-        pdf.cell(0, 7, f"Internas: U1U2:{v('RI_U1U2')} | V1V2:{v('RI_V1V2')} | W1W2:{v('RI_W1W2')}", ln=True)
-        pdf.cell(0, 7, f"Linea-T: L1:{v('ML_L1')} | L2:{v('ML_L2')} | L3:{v('ML_L3')}", ln=True)
-        pdf.cell(0, 7, f"Linea-Linea: L1L2:{v('ML_L1L2')} | L1L3:{v('ML_L1L3')} | L2L3:{v('ML_L2L3')}", ln=True)
-        pdf.ln(3)
-
-    # 6. DESCRIPCIÓN O NOTAS
-    if "Descripcion" in datos:
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, " DETALLE DE LA TAREA / OBSERVACIONES", ln=True, fill=True)
-        pdf.set_font("Arial", '', 10)
-        pdf.multi_cell(0, 7, v("Descripcion"))
-
-    # 7. PIE DE PÁGINA
-    pdf.set_y(-25)
-    pdf.set_font("Arial", 'I', 8)
-    pdf.cell(0, 10, "ESTE INFORME ES PROPIEDAD DE MARPI ELECTRICIDAD.", align='C', ln=True)
+    # --- SECCIÓN DE MEDICIONES (Si existen) ---
+    # Solo agregamos esto si hay datos de Megado para no ocupar espacio
+    if datos.get("RT_TV1"):
+        pdf.set_font("Arial", "B", 10)
+        pdf.cell(0, 8, "MEDICIONES TÉCNICAS", ln=True, fill=True)
+        pdf.set_font("Arial", "", 9) # Letra un poco más chica para que entre
+        
+        # Ejemplo de una tablita compacta de mediciones
+        pdf.cell(63, 7, f"T-V1: {datos.get('RT_TV1')} Gohm", border=1)
+        pdf.cell(63, 7, f"T-U1: {datos.get('RT_TU1')} Gohm", border=1)
+        pdf.cell(64, 7, f"T-W1: {datos.get('RT_TW1')} Gohm", border=1, ln=True)
+        # ... podés agregar más filas así ...
     
-    return pdf.output(dest='S').encode('latin-1', 'replace')
+    # --- PIE DE PÁGINA ---
+    # Forzamos a que se escriba 15mm antes del final de la hoja
+    pdf.set_y(-15) 
+    pdf.set_font("Arial", "I", 8)
+    pdf.cell(0, 10, "Propiedad de MARPI - Documento Confidencial", align='C')
+
+    return pdf.output(dest='S').encode('latin-1')
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
@@ -657,6 +628,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
