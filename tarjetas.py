@@ -248,8 +248,7 @@ if modo == "Nuevo Registro":
                     conn.update(data=df_final)
                     st.session_state.pdf_buffer = generar_pdf_reporte(nueva, "PROTOCOLO DE ALTA Y REGISTRO")
                     st.session_state.tag_actual = t
-                    st.session_state.form_key += 1. (aquí va todo tu código de guardado en Excel y PDF) ...
-            
+                    st.session_state.form_key += 1.
                     st.success(f"✅ Motor {t} registrado con éxito.")
             
             # --- EFECTO DE ÉXITO CON LOGO DE MARPI ---
@@ -654,6 +653,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
