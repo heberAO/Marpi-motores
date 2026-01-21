@@ -317,9 +317,9 @@ elif modo == "Historial y QR":
         # Mostramos una tabla con el resumen de qué se le hizo y cuándo
         st.table(linea_tiempo[["Fecha", "Responsable", "Descripcion"]])
             
-           # --- BOTONES DE ACCIÓN RÁPIDA ---
-            st.subheader("➕ ¿Qué deseas cargar para este motor?")
-            c1, c2, c3 = st.columns(3)
+        # --- BOTONES DE ACCIÓN RÁPIDA ---
+        st.subheader("➕ ¿Qué deseas cargar para este motor?")
+        c1, c2, c3 = st.columns(3)
             
             with c1:
                 if st.button("🛠️ Nueva Reparación"):
@@ -636,6 +636,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
