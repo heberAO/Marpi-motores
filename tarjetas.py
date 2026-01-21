@@ -289,37 +289,37 @@ elif modo == "Historial y QR":
         
         seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
 
-    if seleccion:
-        # 1. Extraemos el TAG puro
-        buscado = seleccion.split(" | ")[0].strip()
-        st.session_state.tag_fijo = buscado
-        # 2. FILTRAMOS TODO LO QUE EXISTE DE ESE MOTOR
-        historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
+        if seleccion:
+            # 1. Extraemos el TAG puro
+            buscado = seleccion.split(" | ")[0].strip()
+            st.session_state.tag_fijo = buscado
+            # 2. FILTRAMOS TODO LO QUE EXISTE DE ESE MOTOR
+            historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
+                    
+            # 3. FICHA TÉCNICA (Agarramos los datos de placa del primer registro - Alta)
+            # Usamos .first() para asegurarnos de traer los datos originales de placa
+            datos_placa = historial_motor.sort_values("Fecha").iloc[0]
+                    
+            st.header(f"📋 Ficha Técnica: {buscado}")
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Potencia", datos_placa.get("Potencia", "S/D"))
+            c2.metric("Tensión", datos_placa.get("Tension", "S/D"))
+            c3.metric("N° Serie", datos_placa.get("N_Serie", "S/D"))
+                    
+            st.divider()
+        
+            # 4. LÍNEA DE TIEMPO (Aquí aparece TODO: Reparación, Lube y Megado juntos)
+            st.subheader("🕒 Historial de Intervenciones")
+                    
+            # Ordenamos por fecha para que lo más nuevo aparezca arriba
+            linea_tiempo = historial_motor.sort_values("Fecha", ascending=False)
+                    
+            # Mostramos una tabla con el resumen de qué se le hizo y cuándo
+            st.table(linea_tiempo[["Fecha", "Responsable", "Descripcion"]])
                 
-        # 3. FICHA TÉCNICA (Agarramos los datos de placa del primer registro - Alta)
-        # Usamos .first() para asegurarnos de traer los datos originales de placa
-        datos_placa = historial_motor.sort_values("Fecha").iloc[0]
-                
-        st.header(f"📋 Ficha Técnica: {buscado}")
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Potencia", datos_placa.get("Potencia", "S/D"))
-        c2.metric("Tensión", datos_placa.get("Tension", "S/D"))
-        c3.metric("N° Serie", datos_placa.get("N_Serie", "S/D"))
-                
-        st.divider()
-    
-        # 4. LÍNEA DE TIEMPO (Aquí aparece TODO: Reparación, Lube y Megado juntos)
-        st.subheader("🕒 Historial de Intervenciones")
-                
-        # Ordenamos por fecha para que lo más nuevo aparezca arriba
-        linea_tiempo = historial_motor.sort_values("Fecha", ascending=False)
-                
-        # Mostramos una tabla con el resumen de qué se le hizo y cuándo
-        st.table(linea_tiempo[["Fecha", "Responsable", "Descripcion"]])
-            
-        # --- BOTONES DE ACCIÓN RÁPIDA ---
-        st.subheader("➕ ¿Qué deseas cargar para este motor?")
-        c1, c2, c3 = st.columns(3)
+            # --- BOTONES DE ACCIÓN RÁPIDA ---
+            st.subheader("➕ ¿Qué deseas cargar para este motor?")
+            c1, c2, c3 = st.columns(3)
             
             with c1:
                 if st.button("🛠️ Nueva Reparación"):
@@ -636,6 +636,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
