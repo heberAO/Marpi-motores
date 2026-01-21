@@ -598,9 +598,11 @@ elif modo == "Mediciones de Campo":
                 conn.update(data=df_final)
                 st.session_state.pdf_buffer = generar_pdf_reporte(nueva, "REPORTE DE MEGADO")
                 st.session_state.tag_buffer = f"{t}_MEGADO"
-                st.session_state.form_id += 1
+                st.session_state.cnt_meg += 1
                 
                 # --- EL DETALLITO: AVISO DE ÉXITO ---
+                if 'tag_fijo' in st.session_state:
+                    st.session_state.tag_fijo = ""
                 st.success(f"✅ ¡Excelente! Las mediciones del motor {t} se guardaron correctamente.")
                 st.balloons()
                 import time
@@ -611,6 +613,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
