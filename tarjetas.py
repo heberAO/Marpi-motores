@@ -293,29 +293,43 @@ elif modo == "Historial y QR":
             # 1. Extraemos el TAG puro
             buscado = seleccion.split(" | ")[0].strip()
             st.session_state.tag_fijo = buscado
-            # 2. FILTRAMOS TODO LO QUE EXISTE DE ESE MOTOR
+            
+            # 2. Filtramos el historial
             historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
-                    
-            # 3. FICHA TÉCNICA (Agarramos los datos de placa del primer registro - Alta)
-            # Usamos .first() para asegurarnos de traer los datos originales de placa
-            datos_placa = historial_motor.sort_values("Fecha").iloc[0]
-                    
-            st.header(f"📋 Ficha Técnica: {buscado}")
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Potencia", datos_placa.get("Potencia", "S/D"))
-            c2.metric("Tensión", datos_placa.get("Tension", "S/D"))
-            c3.metric("N° Serie", datos_placa.get("N_Serie", "S/D"))
-                    
-            st.divider()
-        
-            # 4. LÍNEA DE TIEMPO (Aquí aparece TODO: Reparación, Lube y Megado juntos)
-            st.subheader("🕒 Historial de Intervenciones")
-                    
-            # Ordenamos por fecha para que lo más nuevo aparezca arriba
-            linea_tiempo = historial_motor.sort_values("Fecha", ascending=False)
-                    
-            # Mostramos una tabla con el resumen de qué se le hizo y cuándo
-            st.table(linea_tiempo[["Fecha", "Responsable", "Descripcion"]])
+            
+            # --- AGREGAMOS ESTA VERIFICACIÓN PARA EVITAR EL ERROR ---
+            if not historial_motor.empty:
+                # 3. FICHA TÉCNICA (Datos de placa)
+                # Ordenamos y tomamos la primera fila con seguridad
+                datos_placa = historial_motor.sort_values("Fecha").iloc[0]
+                
+                st.markdown(f"### 📋 Ficha Técnica: {buscado}")
+                c1, c2, c3, c4 = st.columns(4)
+                
+                # Usamos .get() para que si no existe la columna no explote
+                c1.metric("Potencia", datos_placa.get("Potencia", "-"))
+                c2.metric("RPM", datos_placa.get("RPM", "-"))
+                c3.metric("Serie", datos_placa.get("N_Serie", "-"))
+                c4.metric("Carcasa", datos_placa.get("Carcasa", "-"))
+                
+                st.divider()
+
+                # 4. LÍNEA DE TIEMPO
+                st.subheader("🕒 Historial de Intervenciones")
+                cronologia = historial_motor.sort_values("Fecha", ascending=False)
+                
+                # Mostramos solo las columnas que existan para evitar más errores
+                columnas_visibles = ["Fecha", "Responsable", "Descripcion"]
+                # Filtramos solo las que realmente están en el Excel
+                columnas_reales = [c for c in columnas_visibles if c in cronologia.columns]
+                
+                st.table(cronologia[columnas_reales])
+
+                with st.expander("🔍 Ver todos los datos técnicos"):
+                    st.dataframe(cronologia)
+            else:
+                # Si historial_motor está vacío, mostramos un aviso en vez de un error
+                st.warning(f"⚠️ No se encontraron registros exactos para el motor '{buscado}'.")
                 
             # --- BOTONES DE ACCIÓN RÁPIDA ---
             st.subheader("➕ ¿Qué deseas cargar para este motor?")
@@ -636,6 +650,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
