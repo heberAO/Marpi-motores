@@ -458,6 +458,7 @@ elif modo == "Relubricacion":
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": tag_actual,
                     "Responsable": resp_actual,
+                    "Notas": notas,
                     "N_Serie": info.get("N_Serie", ""),
                     "Potencia": info.get("Potencia", ""),
                     "Tension": info.get("Tension", ""),
@@ -633,6 +634,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
