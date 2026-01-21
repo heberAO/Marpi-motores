@@ -349,7 +349,9 @@ elif modo == "Historial y QR":
 
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
-
+    
+    if "cnt_lub" not in st.session_state:
+    st.session_state.cnt_lub = 0
     # 1. Asegurar que la variable exista
     if "form_id" not in st.session_state:
         st.session_state.form_id = 0
@@ -465,8 +467,12 @@ elif modo == "Relubricacion":
                 
                 st.session_state.pdf_buffer = generar_pdf_reporte(nueva, f"REPORTE DE {modo.upper()}")
                 st.session_state.tag_buffer = tag_actual
+                st.session_state.form_id += 1
                 st.success(f"✅ Registro de {tag_actual} guardado con éxito")
                 st.balloons()
+                import time
+                time.sleep(1.5) # Para que lleguen a ver el mensaje de éxito
+                st.rerun()
             else:
                 st.error("⚠️ Error: No se encontró el TAG o el Responsable. Verifique los campos.")
 
@@ -602,6 +608,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
