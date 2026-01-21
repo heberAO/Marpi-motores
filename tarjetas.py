@@ -310,7 +310,7 @@ elif modo == "Historial y QR":
                 c1.metric("Potencia", datos_placa.get("Potencia", "-"))
                 c2.metric("RPM", datos_placa.get("RPM", "-"))
                 c3.metric("Serie", datos_placa.get("N_Serie", "-"))
-                c4.metric("Carcasa", datos_placa.get("Carcasa", "-"))
+                c4.metric("Carcasa", datos_placa.get("Frame", "-"))
                 
                 st.divider()
 
@@ -650,6 +650,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
