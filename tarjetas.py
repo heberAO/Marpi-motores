@@ -196,7 +196,6 @@ if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
         st.stop() # Detiene la ejecución para que no se vea el resto
 
 # --- 5. SECCIONES (CON TUS CAMPOS ORIGINALES) ---
-
 if modo == "Nuevo Registro":
     st.title("📝 Alta y Registro Inicial")
     
@@ -204,7 +203,6 @@ if modo == "Nuevo Registro":
         st.session_state.form_key = 0
 
     fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
-
     with st.form(key=f"alta_motor_{st.session_state.form_key}"):
         # --- CAMPOS DE ENTRADA (Mismo diseño anterior) ---
         c1, c2, c3 = st.columns([2, 2, 1])
@@ -263,6 +261,9 @@ if modo == "Nuevo Registro":
                 
                 st.success(f"✅ Motor {t} registrado con éxito.")
                 st.balloons()
+                import time
+                time.sleep(1.5)
+                st.rerun()
             else:
                 st.error("⚠️ El TAG y el Responsable son obligatorios.")
   
@@ -600,6 +601,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
