@@ -579,7 +579,7 @@ elif modo == "Mediciones de Campo":
                     "Tag": t,  # ¿En el Excel es "Tag" o "TAG"? Tiene que ser igual.
                     "N_Serie": n_serie,
                     "Responsable": resp,
-                    "Notas": notas
+                    "Notas": notas,
                     "Potencia": info.get("Potencia", ""),
                     "Tension": info.get("Tension", ""),
                     "RPM": info.get("RPM", ""),
@@ -616,6 +616,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
