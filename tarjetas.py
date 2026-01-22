@@ -6,8 +6,7 @@ import os
 import re
 import time
 from io import BytesIO
-from fpdf 
-import FPDF
+from fpdf import FPDF
 
 def calcular_grasa_avanzado(rodamiento):
     """Calcula gramos sugeridos según el modelo de rodamiento"""
@@ -654,6 +653,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
