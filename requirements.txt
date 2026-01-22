@@ -3,3 +3,4 @@ qrcode
 reportlab
 st-gsheets-connection
 pandas
+fpdf
