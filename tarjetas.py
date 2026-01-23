@@ -302,40 +302,34 @@ elif modo == "Historial y QR":
             historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
             
             # --- VISTA DE HISTORIAL OPTIMIZADA PARA MÓVIL ---
-    if not resultado.empty:
-        st.write(f"### Historial de Intervenciones ({len(resultado)})")
+            if not resultado.empty:
+                st.write(f"### Historial de Intervenciones ({len(resultado)})")
+                
+                for i, fila in resultado.iterrows():
+                    # Creamos un contenedor con borde para cada registro
+                    with st.container(border=True):
+                        fecha = fila.get('Fecha', 'S/D')
+                        trabajo = fila.get('Tipo_Tarea', 'Mantenimiento')
+                        
+                        col_a, col_b = st.columns([1, 1])
+                        col_a.markdown(f"**📅 Fecha:** {fecha}")
+                        col_b.markdown(f"**🔧 Tarea:** {trabajo}")
+                        
+                        st.markdown("---")
+                        
+                        st.markdown(f"**Responsable:** {fila.get('Responsable', 'N/A')}")
+                        st.markdown(f"**Observaciones:** {fila.get('Observaciones', 'Sin comentarios')}")
+                        
+                        if 'Grasa' in fila:
+                            st.markdown(f"🧪 **Grasa:** {fila.get('Grasa', '-')}")
         
-        for i, fila in resultado.iterrows():
-            # Creamos un contenedor con borde para cada registro
-            with st.container(border=True):
-                # Encabezado de la tarjeta con la fecha y el tipo de trabajo
-                # Ajustá 'Fecha' y 'Tipo_Trabajo' a los nombres de tus columnas
-                fecha = fila.get('Fecha', 'S/D')
-                trabajo = fila.get('Tipo_Tarea', 'Mantenimiento')
-                
-                col_a, col_b = st.columns([1, 1])
-                col_a.markdown(f"**📅 Fecha:** {fecha}")
-                col_b.markdown(f"**🔧 Tarea:** {trabajo}")
-                
-                st.markdown("---")
-                
-                # Cuerpo de la tarjeta: Información técnica principal
-                # Aquí ponés las columnas más importantes de tu Excel
-                st.markdown(f"**Responsable:** {fila.get('Responsable', 'N/A')}")
-                st.markdown(f"**Observaciones:** {fila.get('Observaciones', 'Sin comentarios')}")
-                
-                # Si es de lubricación, mostramos datos específicos
-                if 'Grasa' in fila:
-                    st.markdown(f"🧪 **Grasa:** {fila.get('Grasa', '-')}")
-                
-                # Opcional: un botón para ver el PDF de esa intervención si lo tenés guardado
-                # st.button(f"Ver Reporte {i}", key=f"btn_{i}")
-
-    else:
-        st.info("No se encontraron registros para este motor.")
-                # --- BOTONES DE ACCIÓN RÁPIDA ---
-    st.subheader("➕ ¿Qué deseas cargar para este motor?")
-    c1, c2, c3 = st.columns(3)
+            else:
+                st.info("No se encontraron registros para este motor.")
+        
+            # --- BOTONES DE ACCIÓN RÁPIDA (Alineados fuera del IF anterior) ---
+            st.markdown("---")
+            st.subheader("➕ ¿Qué deseas cargar para este motor?")
+            c1, c2, c3 = st.columns(3)
             
             with c1:
                 if st.button("🛠️ Nueva Reparación"):
@@ -691,6 +685,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
