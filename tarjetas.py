@@ -334,9 +334,9 @@ elif modo == "Historial y QR":
     else:
         st.info("No se encontraron registros para este motor.")
                 
-            # --- BOTONES DE ACCIÓN RÁPIDA ---
-            st.subheader("➕ ¿Qué deseas cargar para este motor?")
-            c1, c2, c3 = st.columns(3)
+                # --- BOTONES DE ACCIÓN RÁPIDA ---
+                st.subheader("➕ ¿Qué deseas cargar para este motor?")
+                c1, c2, c3 = st.columns(3)
             
             with c1:
                 if st.button("🛠️ Nueva Reparación"):
@@ -692,6 +692,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
