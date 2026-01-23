@@ -302,29 +302,29 @@ elif modo == "Historial y QR":
             historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
             
             # --- VISTA DE HISTORIAL OPTIMIZADA PARA MÓVIL ---
-            if not resultado.empty:
-                st.write(f"### Historial de Intervenciones ({len(resultado)})")
-                
-                for i, fila in resultado.iterrows():
-                    # Creamos un contenedor con borde para cada registro
-                    with st.container(border=True):
-                        fecha = fila.get('Fecha', 'S/D')
-                        trabajo = fila.get('Tipo_Tarea', 'Mantenimiento')
-                        
-                        col_a, col_b = st.columns([1, 1])
-                        col_a.markdown(f"**📅 Fecha:** {fecha}")
-                        col_b.markdown(f"**🔧 Tarea:** {trabajo}")
-                        
-                        st.markdown("---")
-                        
-                        st.markdown(f"**Responsable:** {fila.get('Responsable', 'N/A')}")
-                        st.markdown(f"**Observaciones:** {fila.get('Observaciones', 'Sin comentarios')}")
-                        
-                        if 'Grasa' in fila:
-                            st.markdown(f"🧪 **Grasa:** {fila.get('Grasa', '-')}")
-        
-            else:
-                st.info("No se encontraron registros para este motor.")
+        if not historial_motor.empty:  # <--- CAMBIADO AQUÍ
+            st.write(f"### Historial de Intervenciones ({len(historial_motor)})")
+            
+            for i, fila in historial_motor.iterrows(): # <--- CAMBIADO AQUÍ
+                # Creamos un contenedor con borde para cada registro
+                with st.container(border=True):
+                    fecha = fila.get('Fecha', 'S/D')
+                    trabajo = fila.get('Tipo_Tarea', 'Mantenimiento')
+                    
+                    col_a, col_b = st.columns([1, 1])
+                    col_a.markdown(f"**📅 Fecha:** {fecha}")
+                    col_b.markdown(f"**🔧 Tarea:** {trabajo}")
+                    
+                    st.markdown("---")
+                    
+                    st.markdown(f"**Responsable:** {fila.get('Responsable', 'N/A')}")
+                    st.markdown(f"**Observaciones:** {fila.get('Observaciones', 'Sin comentarios')}")
+                    
+                    if 'Grasa' in fila:
+                        st.markdown(f"🧪 **Grasa:** {fila.get('Grasa', '-')}")
+
+        else:
+            st.info("No se encontraron registros para este motor.")
         
             # --- BOTONES DE ACCIÓN RÁPIDA (Alineados fuera del IF anterior) ---
             st.markdown("---")
@@ -685,6 +685,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
