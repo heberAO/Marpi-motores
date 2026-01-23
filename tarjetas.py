@@ -564,7 +564,7 @@ elif modo == "Mediciones de Campo":
         col_eq1, col_eq2 = st.columns(2)
         with col_eq1:
             # Lista de tus equipos de megado (puedes agregar los que quieras)
-            lista_equipos = ["Megger MIT410", "Fluke 1507", "Hipot Tester", "Otro"]
+            lista_equipos = ["Megger MTR 105", "Fluke 1507", "Hipot Tester", "Otro"]
             equipo_megado = st.selectbox("Equipo de Megado utilizado:", lista_equipos)
         with col_eq2:
             tension_prueba = st.selectbox("Tensión de Prueba:", ["500V", "1000V", "2500V", "5000V"])
@@ -653,6 +653,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
