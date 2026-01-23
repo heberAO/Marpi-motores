@@ -293,14 +293,17 @@ elif modo == "Historial y QR":
         
         seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
 
+        # --- PASO CLAVE: Inicializar la variable para que no de NameError ---
+        historial_motor = pd.DataFrame() 
+
         if seleccion:
             # 1. Extraemos el TAG puro
             buscado = seleccion.split(" | ")[0].strip()
             st.session_state.tag_fijo = buscado
             
-            # 2. Filtramos el historial
+            # 2. Filtramos el historial (Aquí se llena la variable)
             historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
-            
+                
             # --- VISTA DE HISTORIAL OPTIMIZADA PARA MÓVIL ---
         if not historial_motor.empty:  # <--- CAMBIADO AQUÍ
             st.write(f"### Historial de Intervenciones ({len(historial_motor)})")
@@ -685,6 +688,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
