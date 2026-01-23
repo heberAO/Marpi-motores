@@ -305,14 +305,13 @@ elif modo == "Historial y QR":
             historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
                 
             # --- VISTA DE HISTORIAL OPTIMIZADA PARA MÓVIL ---
-        if not historial_motor.empty:  # <--- CAMBIADO AQUÍ
+        if not historial_motor.empty:
             st.write(f"### Historial de Intervenciones ({len(historial_motor)})")
             
-            for i, fila in historial_motor.iterrows(): # <--- CAMBIADO AQUÍ
-                # Creamos un contenedor con borde para cada registro
+            for i, fila in historial_motor.iterrows():
                 with st.container(border=True):
-                    fecha = fila.get('Fecha', 'S/D')
-                    trabajo = fila.get('Tipo_Tarea', 'Mantenimiento')
+                    # ... todo tu código de las tarjetas que pusimos antes ...
+                    st.markdown(f"**📅 Fecha:** {fila.get('Fecha', 'S/D')}")
                     
                     col_a, col_b = st.columns([1, 1])
                     col_a.markdown(f"**📅 Fecha:** {fecha}")
@@ -688,6 +687,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
