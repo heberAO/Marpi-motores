@@ -408,28 +408,42 @@ elif modo == "Relubricacion":
         options=[""] + lista_tags,
         key=f"busqueda_{st.session_state.form_id}"
     )
-    # --- LÓGICA DE AVISO DE RODAMIENTOS ---
+    # --- LÓGICA DE AVISO DE RODAMIENTOS (Rodamiento_LA y Rodamiento_LOA) ---
     if tag_seleccionado != "":
-        # Buscamos la fila del motor seleccionado
+        # Extraemos la fila del motor
         info_motor = df_lista[df_lista['Tag'] == tag_seleccionado].iloc[0]
         
-        # Obtenemos el tipo de rodamiento (Asegurate que la columna se llame 'Rodamientos')
-        # Usamos .get() o verificamos si existe para evitar errores
-        rod_actual = str(info_motor.get('Rodamientos', 'No especificado')).upper()
+        # Leemos los valores y los pasamos a mayúsculas para no fallar en la comparación
+        rod_la = str(info_motor.get('Rodamiento_LA', 'NO DEFINIDO')).upper()
+        rod_loa = str(info_motor.get('Rodamiento_LOA', 'NO DEFINIDO')).upper()
 
-        st.markdown("---") # Una línea divisoria para separar la búsqueda del aviso
+        st.markdown("---")
+        st.markdown(f"### ⚙️ Configuración de Rodamientos")
         
-        if "2RS" in rod_actual or "ZZ" in rod_actual:
-            st.error(f"🚫 **NO LUBRICAR:** Este motor tiene rodamientos **{rod_actual}**.")
-            st.info("💡 Son rodamientos sellados/blindados. No permiten el ingreso de grasa nueva.")
-        elif "RS" in rod_actual:
-            st.warning(f"⚠️ **ATENCIÓN:** Rodamiento **{rod_actual}** (Sello de un solo lado).")
-            st.write("Verificar si el lado abierto permite la lubricación antes de proceder.")
-        elif "ABIERTO" in rod_actual or "C3" in rod_actual:
-            st.success(f"✅ Rodamiento **{rod_actual}**: Proceder con la lubricación estándar.")
+        # Mostramos los datos actuales al técnico
+        col_la, col_loa = st.columns(2)
+        col_la.metric("Lado Acople (LA)", rod_la)
+        col_loa.metric("Lado Opuesto (LOA)", rod_loa)
+
+        # Analizamos si alguno es sellado (2RS o ZZ)
+        es_sellado_la = any(x in rod_la for x in ["2RS", "ZZ"])
+        es_sellado_loa = any(x in rod_loa for x in ["2RS", "ZZ"])
+
+        if es_sellado_la or es_sellado_loa:
+            st.error("🚫 **AVISO DE SEGURIDAD: NO LUBRICAR**")
+            if es_sellado_la and es_sellado_loa:
+                st.write("Ambos rodamientos son **sellados de por vida**. Intentar lubricarlos puede dañar los sellos.")
+            else:
+                st.write(f"Al menos uno de los rodamientos ({rod_la if es_sellado_la else rod_loa}) es sellado.")
+        
+        elif "RS" in rod_la or "RS" in rod_loa:
+            st.warning("⚠️ **ATENCIÓN: RODAMIENTO RS**")
+            st.write("Sello de goma de un solo lado. Verifique si el punto de engrase está habilitado.")
+        
         else:
-            st.info(f"📋 Tipo de rodamiento registrado: **{rod_actual}**. Proceder según plan de mantenimiento.")
-        
+            st.success("✅ **EQUIPO APTO PARA LUBRICACIÓN**")
+            st.write("Los rodamientos registrados permiten el ingreso de grasa nueva.")
+            
         st.markdown("---")
 
     # Variables de carga
@@ -679,6 +693,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
