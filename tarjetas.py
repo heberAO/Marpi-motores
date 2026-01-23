@@ -200,6 +200,11 @@ if modo == "Nuevo Registro":
         st.subheader("⚙️ Rodamientos de Placa")
         r1, r2 = st.columns(2)
         r_la, r_loa = r1.text_input("Rodamiento LA").upper(), r2.text_input("Rodamiento LOA").upper()
+        # Dentro del formulario de Reparación
+        tipo_rodamiento = st.selectbox(
+            "Tipo de rodamientos instalados:",
+            ["2RS (Sello de Goma - Hermético)", "ZZ (Blindaje Metálico)", "Abierto (Sin sellos)"]
+        )    
 
         st.subheader("⚡ Mediciones Eléctricas")
         m1, m2, m3 = st.columns(3)
@@ -653,6 +658,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
