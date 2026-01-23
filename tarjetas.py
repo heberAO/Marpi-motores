@@ -408,6 +408,29 @@ elif modo == "Relubricacion":
         options=[""] + lista_tags,
         key=f"busqueda_{st.session_state.form_id}"
     )
+    # --- LÓGICA DE AVISO DE RODAMIENTOS ---
+    if tag_seleccionado != "":
+        # Buscamos la fila del motor seleccionado
+        info_motor = df_lista[df_lista['Tag'] == tag_seleccionado].iloc[0]
+        
+        # Obtenemos el tipo de rodamiento (Asegurate que la columna se llame 'Rodamientos')
+        # Usamos .get() o verificamos si existe para evitar errores
+        rod_actual = str(info_motor.get('Rodamientos', 'No especificado')).upper()
+
+        st.markdown("---") # Una línea divisoria para separar la búsqueda del aviso
+        
+        if "2RS" in rod_actual or "ZZ" in rod_actual:
+            st.error(f"🚫 **NO LUBRICAR:** Este motor tiene rodamientos **{rod_actual}**.")
+            st.info("💡 Son rodamientos sellados/blindados. No permiten el ingreso de grasa nueva.")
+        elif "RS" in rod_actual:
+            st.warning(f"⚠️ **ATENCIÓN:** Rodamiento **{rod_actual}** (Sello de un solo lado).")
+            st.write("Verificar si el lado abierto permite la lubricación antes de proceder.")
+        elif "ABIERTO" in rod_actual or "C3" in rod_actual:
+            st.success(f"✅ Rodamiento **{rod_actual}**: Proceder con la lubricación estándar.")
+        else:
+            st.info(f"📋 Tipo de rodamiento registrado: **{rod_actual}**. Proceder según plan de mantenimiento.")
+        
+        st.markdown("---")
 
     # Variables de carga
     v_la, v_loa, v_serie = "", "", ""
@@ -656,6 +679,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
