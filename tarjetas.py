@@ -301,39 +301,38 @@ elif modo == "Historial y QR":
             # 2. Filtramos el historial
             historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
             
-            # --- AGREGAMOS ESTA VERIFICACIÓN PARA EVITAR EL ERROR ---
-            if not historial_motor.empty:
-                # 3. FICHA TÉCNICA (Datos de placa)
-                # Ordenamos y tomamos la primera fila con seguridad
-                datos_placa = historial_motor.sort_values("Fecha").iloc[0]
+            # --- VISTA DE HISTORIAL OPTIMIZADA PARA MÓVIL ---
+    if not resultado.empty:
+        st.write(f"### Historial de Intervenciones ({len(resultado)})")
+        
+        for i, fila in resultado.iterrows():
+            # Creamos un contenedor con borde para cada registro
+            with st.container(border=True):
+                # Encabezado de la tarjeta con la fecha y el tipo de trabajo
+                # Ajustá 'Fecha' y 'Tipo_Trabajo' a los nombres de tus columnas
+                fecha = fila.get('Fecha', 'S/D')
+                trabajo = fila.get('Tipo_Tarea', 'Mantenimiento')
                 
-                st.markdown(f"### 📋 Ficha Técnica: {buscado}")
-                c1, c2, c3, c4 = st.columns(4)
+                col_a, col_b = st.columns([1, 1])
+                col_a.markdown(f"**📅 Fecha:** {fecha}")
+                col_b.markdown(f"**🔧 Tarea:** {trabajo}")
                 
-                # Usamos .get() para que si no existe la columna no explote
-                c1.metric("Potencia", datos_placa.get("Potencia", "-"))
-                c2.metric("RPM", datos_placa.get("RPM", "-"))
-                c3.metric("Serie", datos_placa.get("N_Serie", "-"))
-                c4.metric("Carcasa", datos_placa.get("Frame", "-"))
+                st.markdown("---")
                 
-                st.divider()
+                # Cuerpo de la tarjeta: Información técnica principal
+                # Aquí ponés las columnas más importantes de tu Excel
+                st.markdown(f"**Responsable:** {fila.get('Responsable', 'N/A')}")
+                st.markdown(f"**Observaciones:** {fila.get('Observaciones', 'Sin comentarios')}")
+                
+                # Si es de lubricación, mostramos datos específicos
+                if 'Grasa' in fila:
+                    st.markdown(f"🧪 **Grasa:** {fila.get('Grasa', '-')}")
+                
+                # Opcional: un botón para ver el PDF de esa intervención si lo tenés guardado
+                # st.button(f"Ver Reporte {i}", key=f"btn_{i}")
 
-                # 4. LÍNEA DE TIEMPO
-                st.subheader("🕒 Historial de Intervenciones")
-                cronologia = historial_motor.sort_values("Fecha", ascending=False)
-                
-                # Mostramos solo las columnas que existan para evitar más errores
-                columnas_visibles = ["Fecha", "Responsable", "Descripcion"]
-                # Filtramos solo las que realmente están en el Excel
-                columnas_reales = [c for c in columnas_visibles if c in cronologia.columns]
-                
-                st.table(cronologia[columnas_reales])
-
-                with st.expander("🔍 Ver todos los datos técnicos"):
-                    st.dataframe(cronologia)
-            else:
-                # Si historial_motor está vacío, mostramos un aviso en vez de un error
-                st.warning(f"⚠️ No se encontraron registros exactos para el motor '{buscado}'.")
+    else:
+        st.info("No se encontraron registros para este motor.")
                 
             # --- BOTONES DE ACCIÓN RÁPIDA ---
             st.subheader("➕ ¿Qué deseas cargar para este motor?")
@@ -693,6 +692,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
