@@ -45,57 +45,47 @@ from fpdf import FPDF
 from fpdf import FPDF
 
 # 1. REPARACIÓN (Usa Descripción y Trabajos Taller Externo)
-def generar_pdf_reparacion(datos, buscado):
+def generar_pdf_final(datos, tag_equipo):
+    from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
+    
+    # Configuración de Título
+    tarea = str(datos.get('Tipo_Tarea', 'REPORTE')).upper()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"REPORTE DE REPARACIÓN - {buscado}", ln=True, align='C')
+    pdf.cell(0, 10, f"{tarea} - {tag_equipo}", ln=True, align='C')
     pdf.ln(10)
     
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "Descripción del Problema:", ln=True)
-    pdf.set_font("Arial", '', 11)
-    pdf.multi_cell(0, 7, str(datos.get('Descripcion', 'Sin descripción')))
-    
+    pdf.set_font("Arial", '', 12)
+    # 1. Datos comunes que siempre están
+    pdf.cell(0, 10, f"Fecha: {datos.get('Fecha', '-')}", ln=True)
+    pdf.cell(0, 10, f"Responsable: {datos.get('Responsable', '-')}", ln=True)
     pdf.ln(5)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "Trabajos Taller Externo:", ln=True)
-    pdf.set_font("Arial", '', 11)
-    pdf.multi_cell(0, 7, str(datos.get('Trabajos Taller Externo', 'No aplica')))
-    return pdf.output(dest='S').encode('latin-1', 'replace')
 
-# 2. LUBRICACIÓN (Usa Notas y Gramos)
-def generar_pdf_lubricacion(datos, buscado):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"REPORTE DE LUBRICACIÓN - {buscado}", ln=True, align='C')
-    pdf.ln(10)
-    
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "Detalles de Grasa:", ln=True)
-    pdf.set_font("Arial", '', 11)
-    pdf.cell(0, 10, f"Gramos LA: {datos.get('Gramos_LA', '0')} | LOA: {datos.get('Gramos_LOA', '0')}", ln=True)
-    
-    pdf.ln(5)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "Notas:", ln=True)
-    pdf.set_font("Arial", '', 11)
-    pdf.multi_cell(0, 7, str(datos.get('notas', 'Sin notas')))
-    return pdf.output(dest='S').encode('latin-1', 'replace')
+    # 2. Lógica por tipo de reporte (Aquí separamos los campos)
+    if "LUBRICACION" in tarea or "RELUBRICACION" in tarea:
+        # Solo busca Notas y Gramos
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, "Detalles de Lubricación:", ln=True)
+        pdf.set_font("Arial", '', 12)
+        pdf.cell(0, 10, f"Grasa LA: {datos.get('Gramos_LA', '0')}g | LOA: {datos.get('Gramos_LOA', '0')}g", ln=True)
+        pdf.multi_cell(0, 10, f"Notas: {datos.get('Notas', 'Sin notas adicionales.')}")
 
-# 3. MEGADO (Usa Descripción)
-def generar_pdf_megado(datos, buscado):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"REPORTE DE MEGADO - {buscado}", ln=True, align='C')
-    pdf.ln(10)
-    
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "Resultado de Medición (Descripción):", ln=True)
-    pdf.set_font("Arial", '', 11)
-    pdf.multi_cell(0, 7, str(datos.get('Descripcion', 'Sin datos de megado')))
+    elif "MEGADO" in tarea or "CAMPO" in tarea:
+        # Solo busca Descripción
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, "Mediciones de Aislamiento:", ln=True)
+        pdf.set_font("Arial", '', 12)
+        pdf.multi_cell(0, 10, f"Descripción/Resultado: {datos.get('Descripcion', 'S/D')}")
+
+    else:
+        # REPORTE TÉCNICO / REPARACIÓN (Descripción y Taller)
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, "Detalles de Reparación:", ln=True)
+        pdf.set_font("Arial", '', 12)
+        pdf.multi_cell(0, 10, f"Descripción: {datos.get('Descripcion', 'S/D')}")
+        pdf.multi_cell(0, 10, f"Trabajos Taller Externo: {datos.get('Trabajos Taller Externo', 'N/A')}")
+
     return pdf.output(dest='S').encode('latin-1', 'replace')
     
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
@@ -664,7 +654,7 @@ elif modo == "Mediciones de Campo":
                 # 3. GUARDAR Y PDF
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
-                st.session_state.pdf_buffer = generar_pdf_reporte(nueva, "REPORTE DE MEGADO")
+                st.session_state.pdf_buffer = generar_pdf_final(nueva, buscado)
                 st.session_state.tag_buffer = f"{t}_MEGADO"
                 st.session_state.cnt_meg += 1
                 
@@ -681,6 +671,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
