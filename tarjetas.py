@@ -44,35 +44,29 @@ def generar_pdf_tecnico(datos, buscado):
     from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"REPORTE TÉCNICO: {buscado}", ln=True, align='C')
-    # ... Aquí pones TODO tu código original de mediciones eléctricas (RT, RB, RI)
-    # Este código no se mueve de aquí para que nunca se dañe.
+    # ... (Tu código original de mediciones aquí) ...
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, f"REPORTE TÉCNICO - {buscado}", ln=True)
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
-# --- 2. REPORTE DE LUBRICACIÓN ---
 def generar_pdf_lubricacion(datos, buscado):
     from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"REPORTE DE LUBRICACIÓN: {buscado}", ln=True, align='C')
-    pdf.ln(10)
-    # Diseño de tablas de rodamientos y grasas
-    # Aquí mapeamos los nombres del Excel para que el historial funcione:
-    rod_la = datos.get('Rodamiento_LA', datos.get('Rodamiento_LAG', 'S/D'))
-    gr_la = datos.get('Gramos_LA', datos.get('gr_real_la', '0'))
-    pdf.cell(0, 10, f"Rodamiento LA: {rod_la} - Grasa: {gr_la}g", ln=True)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, f"REPORTE LUBRICACIÓN - {buscado}", ln=True)
+    # Aquí usamos Gramos_LA / Gramos_LOA que están en tu Excel
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(0, 10, f"Grasa LA: {datos.get('Gramos_LA', '0')}g | LOA: {datos.get('Gramos_LOA', '0')}g", ln=True)
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
-# --- 3. REPORTE DE MEGADO (Mediciones de Campo) ---
 def generar_pdf_megado(datos, buscado):
     from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"REPORTE DE MEGADO: {buscado}", ln=True, align='C')
-    # Aquí va el diseño específico para las mediciones de aislamiento/campo
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, f"REPORTE MEGADO - {buscado}", ln=True)
+    # Aquí pones las columnas de aislamiento
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
     except Exception as e:
@@ -337,36 +331,33 @@ elif modo == "Historial y QR":
                     if str(fila.get('Tipo_Grasa')) != 'nan':
                         st.write(f"🧪 **Grasa:** {fila.get('Tipo_Grasa')} ({fila.get('Gramos_LA', '0')}g / {fila.get('Gramos_LOA', '0')}g)")
 
-                    # --- ESTE BLOQUE DEBE ESTAR AQUÍ ADENTRO (CON ESTA SANGRÍA) ---
+                    # --- LÓGICA DE DESCARGA EN EL HISTORIAL ---
                     try:
-                        # --- DENTRO DEL BUCLE DEL HISTORIAL ---
                         datos_fila = fila.to_dict()
-                        tarea = str(datos_fila.get('Tipo_Tarea', '')).upper()
+                        tipo_t = str(datos_fila.get('Tipo_Tarea', '')).upper()
                         
-                        if "RELUBRICACION" in tarea or "LUBRICACION" in tarea:
+                        # Decidimos qué función llamar según la planilla
+                        if "RELUBRICACION" in tipo_t or "LUBRICACION" in tipo_t:
                             pdf_archivo = generar_pdf_lubricacion(datos_fila, buscado)
-                            nombre_archivo = f"Lubricacion_{buscado}.pdf"
-                        
-                        elif "MEDICIONES" in tarea or "MEGADO" in tarea:
+                            nombre_f = f"Lubricacion_{buscado}.pdf"
+                        elif "MEDICIONES" in tipo_t or "MEGADO" in tipo_t:
                             pdf_archivo = generar_pdf_megado(datos_fila, buscado)
-                            nombre_archivo = f"Megado_{buscado}.pdf"
-                        
+                            nombre_f = f"Megado_{buscado}.pdf"
                         else:
-                            # Por defecto, si es Ingreso o Reparación, usa el Técnico
+                            # Por defecto el técnico (ingreso/reparación)
                             pdf_archivo = generar_pdf_tecnico(datos_fila, buscado)
-                            nombre_archivo = f"Reporte_Tecnico_{buscado}.pdf"
-                        
-                        # Botón único que descarga el PDF que se haya generado arriba
+                            nombre_f = f"Reporte_Tecnico_{buscado}.pdf"
+
                         if pdf_archivo:
                             st.download_button(
-                                label=f"📥 Descargar {nombre_archivo}",
+                                label=f"📄 Descargar {nombre_f}",
                                 data=pdf_archivo,
-                                file_name=nombre_archivo,
-                                key=f"btn_{idx}",
+                                file_name=nombre_f,
+                                key=f"btn_pdf_{idx}",
                                 use_container_width=True
                             )
                     except Exception as e:
-                        st.error(f"Error al generar PDF: {e}")
+                        st.error(f"Error al procesar el PDF: {e}")
         else:
             st.warning("No hay intervenciones registradas para este motor.")
 
@@ -684,6 +675,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
