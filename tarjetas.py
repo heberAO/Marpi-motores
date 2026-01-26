@@ -293,41 +293,52 @@ elif modo == "Historial y QR":
                     st.rerun()
 
             st.divider()
-
             # --- HISTORIAL (Vista de Acordeón para Celular) ---
-            st.subheader("📜 Historial de Intervenciones")
-            
-            if not historial_motor.empty:
-                # Mostramos lo más nuevo primero
-                hist_m = historial_motor.iloc[::-1] 
+        st.subheader("📜 Historial de Intervenciones")
+        if not historial_motor.empty:
+            # Mostramos lo más nuevo primero
+            hist_m = historial_motor.iloc[::-1] 
 
-                for idx, fila in hist_m.iterrows():
-                    fecha = fila.get('Fecha','-')
-                    tarea = fila.get('Tipo_Tarea', 'General')
+            for idx, fila in hist_m.iterrows():
+                # Usamos tus nombres: Fecha y Tipo_Tarea
+                fecha = fila.get('Fecha','-')
+                tarea = fila.get('Tipo_Tarea', 'General')
+                responsable = fila.get('Responsable', 'S/D')
+                # Usamos Descripcion (sin acento como en tu lista)
+                desc_completa = str(fila.get('Descripcion', '-'))
+                desc_corta = desc_completa[:30]
+                
+                with st.expander(f"📅 {fecha} - {tarea} ({desc_corta}...)"):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.write(f"**👤 Responsable:** {responsable}")
+                        st.write(f"**🏷️ Tag:** {fila.get('Tag','-')}")
+                    with col2:
+                        st.write(f"**⚙️ Rod. LA:** {fila.get('Rodamiento_LA','-')}")
+                        st.write(f"**⚙️ Rod. LOA:** {fila.get('Rodamiento_LOA','-')}")
+
+                    st.write(f"**📝 Descripción:** {desc_completa}")
+                    st.write(f"**🗒️ Notas:** {fila.get('notas','-')}")
                     
-                    # El expansor ahorra mucho espacio en la pantalla del celular
-                    with st.expander(f"📅 {fecha} - {tarea}"):
-                        st.write(f"**Responsable:** {fila.get('Responsable','-')}")
-                        st.write(f"**Descripción:** {fila.get('Descripcion','-')}")
-                        
-                        if 'Grasa' in fila and str(fila.get('Grasa')) != 'nan':
-                            st.write(f"🧪 **Grasa utilizada:** {fila.get('Grasa')}")
-                        
-                        # Generación de PDF
-                        try:
-                            pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado)
-                            if pdf_archivo:
-                                st.download_button(
-                                    label="📄 Descargar PDF",
-                                    data=pdf_archivo,
-                                    file_name=f"Reporte_{buscado}_{fecha}.pdf",
-                                    key=f"pdf_{idx}",
-                                    use_container_width=True
-                                )
-                        except Exception as e:
-                            st.error("No se pudo generar el PDF de este registro.")
-            else:
-                st.warning("No hay intervenciones registradas para este TAG.")
+                    if str(fila.get('Tipo_Grasa')) != 'nan':
+                        st.write(f"🧪 **Grasa:** {fila.get('Tipo_Grasa')} ({fila.get('Gramos_LA', '0')}g / {fila.get('Gramos_LOA', '0')}g)")
+
+                    # --- BOTÓN PARA EL PDF ---
+                    try:
+                        # Le pasamos la fila completa a la función del PDF
+                        pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado)
+                        if pdf_archivo:
+                            st.download_button(
+                                label="📄 Descargar Informe PDF",
+                                data=pdf_archivo,
+                                file_name=f"Reporte_{buscado}_{fecha}.pdf",
+                                key=f"pdf_{idx}",
+                                use_container_width=True
+                            )
+                    except Exception as e:
+                        st.error("No se pudo generar el PDF.")
+        else:
+            st.warning("No hay intervenciones registradas para este motor.")
 
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -634,6 +645,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
