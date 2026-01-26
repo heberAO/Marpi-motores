@@ -8,33 +8,26 @@ import time
 from io import BytesIO
 from fpdf import FPDF
 
-def calcular_grasa(rodamiento):
+def calcular_grasa_avanzado(rod_texto):
     try:
-        # Ejemplo: Rodamiento "6318"
-        # Extraemos los últimos dos dígitos (18) y multiplicamos por 5 
-        # para obtener el diámetro interior (90mm)
-        codigo_eje = int(str(rodamiento)[2:4])
-        d_interior = codigo_eje * 5
+        import re
+        match = re.search(r'(\d{4})', str(rod_texto))
+        if not match: return 15
         
-        # Estimación de diámetro exterior (D) y ancho (B) simplificada
-        # Esta es una aproximación, lo ideal es que la placa mande.
-        gramos = (d_interior * 0.5) # Una regla de pulgar común para motores
+        codigo = match.group(1)
+        serie = int(codigo[1]) # 2 o 3
+        eje_cod = int(codigo[2:])
+        D_exterior = eje_cod * 5
         
-        return round(gramos, 1)
+        # AJUSTE PARA LLEGAR A 60G:
+        # Si es serie 3 (ej. 6318), usamos un factor de 0.016
+        factor = 0.006 if serie == 2 else 0.016 
+        ancho_est = 25 if serie == 2 else 45 
+        
+        gramos = (D_exterior * ancho_est * factor)
+        return int(round(gramos))
     except:
-        return 0
-
-# --- En la sección de Lubricación ---
-if tag_seleccionado:
-    rod_la = str(datos_motor.get('Rodamiento_LA', ''))
-    
-    # Si el Excel está vacío (NaN o 0), aplicamos la fórmula
-    if not motor_info.get('Gramos_LA') or pd.isna(motor_info.get('Gramos_LA')):
-        # AQUÍ DEBE ESTAR TU FÓRMULA ACTUAL
-        # Si quieres que de más, ajusta el multiplicador
-        calculo_la = 60 # Aquí deberías poner la lógica que usemos
-    else:
-        calculo_la = motor_info.get('Gramos_LA')
+        return 20
         
 fecha_hoy = date.today()
 
@@ -455,6 +448,44 @@ elif modo == "Relubricacion":
         else:
             st.success("✅ **EQUIPO APTO PARA LUBRICACIÓN**")
             st.write("Los rodamientos registrados permiten el ingreso de grasa nueva.")
+            # --- CÁLCULO DE GRASA BASADO EN EL RODAMIENTO ---
+            def calcular_gramos_grasa(rod_texto):
+                try:
+                    # Extraemos los números (ej: de "6318 C3" saca "6318")
+                    import re
+                    match = re.search(r'(\d{4})', rod_texto)
+                    if not match: return 15 # Valor mínimo de seguridad
+                    
+                    codigo = match.group(1)
+                    serie = int(codigo[1]) # El segundo dígito (2 o 3)
+                    eje_cod = int(codigo[2:]) # Los últimos dos (ej: 18)
+                    D_exterior = eje_cod * 5 # Diámetro aproximado
+                    
+                    # FÓRMULA MEJORADA: (Diámetro * Ancho * 0.005)
+                    # Para serie 3 (más pesada), multiplicamos por un factor mayor
+                    factor = 0.005 if serie == 2 else 0.008
+                    # Estimación de ancho B basada en serie
+                    ancho_est = 20 if serie == 2 else 40 
+                    
+                    # Cálculo final
+                    gramos = (D_exterior * ancho_est * factor)
+                    return round(gramos)
+                except:
+                    return 20 # Si falla, devuelve un estándar bajo
+
+            # Calculamos para ambos lados
+            g_la_calc = calcular_gramos_grasa(rod_la)
+            g_loa_calc = calcular_gramos_grasa(rod_loa)
+
+            # --- MOSTRAR RESULTADOS AL TÉCNICO ---
+            st.info(f"📋 **Cálculo según Rodamiento:**")
+            c1, c2 = st.columns(2)
+            c1.write(f"Sugerido LA: **{g_la_calc} g**")
+            c2.write(f"Sugerido LOA: **{g_loa_calc} g**")
+            
+            # Formulario para que el técnico ingrese lo que cargó
+            cantidad_la = st.number_input("Gramos reales cargados (LA):", value=float(g_la_calc))
+            cantidad_loa = st.number_input("Gramos reales cargados (LOA):", value=float(g_loa_calc))
             
         st.markdown("---")
 
@@ -705,6 +736,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
