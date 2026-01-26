@@ -306,15 +306,16 @@ elif modo == "Historial y QR":
                 
                 if 'Grasa' in fila:
                     st.markdown(f"🧪 **Grasa:** {fila.get('Grasa', '-')}")
+
+    elif seleccion: # Si hay selección pero no hay historial
+        st.info("No se encontraron registros previos para este motor.")
+
+    # --- LÍNEA 350 CORREGIDA (Solo aparece si hay un TAG) ---
+    if buscado:
+        st.markdown("---")
+        url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
+        st.info(f"🔗 **Link directo para QR:** {url_app}")
     
-        # --- LÍNEA 350 CORREGIDA (Solo aparece si hay un TAG) ---
-        if buscado:
-            st.markdown("---")
-            url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
-            st.info(f"🔗 **Link directo para QR:** {url_app}")
-        else:
-            st.info("No se encontraron registros para este motor.")
-        
             # --- BOTONES DE ACCIÓN RÁPIDA (Alineados fuera del IF anterior) ---
             st.markdown("---")
             st.subheader("➕ ¿Qué deseas cargar para este motor?")
@@ -674,6 +675,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
