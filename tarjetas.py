@@ -41,32 +41,33 @@ if 'pdf_listo' not in st.session_state:
 
 # --- 1. REPORTE TÉCNICO (Ingreso/Reparación) ---
 def generar_pdf_tecnico(datos, buscado):
+    # AQUÍ VA TU CÓDIGO ORIGINAL QUE YA FUNCIONA
     from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
-    # ... (Tu código original de mediciones aquí) ...
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, f"REPORTE TÉCNICO - {buscado}", ln=True)
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
 def generar_pdf_lubricacion(datos, buscado):
+    # DISEÑO EXCLUSIVO PARA LUBRICACIÓN
     from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, f"REPORTE LUBRICACIÓN - {buscado}", ln=True)
-    # Aquí usamos Gramos_LA / Gramos_LOA que están en tu Excel
+    # Usa Gramos_LA / Gramos_LOA del Excel
     pdf.set_font("Arial", '', 11)
     pdf.cell(0, 10, f"Grasa LA: {datos.get('Gramos_LA', '0')}g | LOA: {datos.get('Gramos_LOA', '0')}g", ln=True)
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
 def generar_pdf_megado(datos, buscado):
+    # DISEÑO EXCLUSIVO PARA MEGADO
     from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, f"REPORTE MEGADO - {buscado}", ln=True)
-    # Aquí pones las columnas de aislamiento
+    pdf.cell(0, 10, f"REPORTE MEGADO (AISLAMIENTO) - {buscado}", ln=True)
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
     except Exception as e:
@@ -331,21 +332,21 @@ elif modo == "Historial y QR":
                     if str(fila.get('Tipo_Grasa')) != 'nan':
                         st.write(f"🧪 **Grasa:** {fila.get('Tipo_Grasa')} ({fila.get('Gramos_LA', '0')}g / {fila.get('Gramos_LOA', '0')}g)")
 
-                    # --- LÓGICA DE DESCARGA EN EL HISTORIAL ---
+                    # --- BLOQUE DE DESCARGA SEGURO ---
                     try:
-                        datos_fila = fila.to_dict()
-                        tipo_t = str(datos_fila.get('Tipo_Tarea', '')).upper()
+                        datos_h = fila.to_dict()
+                        t_tarea = str(datos_h.get('Tipo_Tarea', '')).upper()
                         
-                        # Decidimos qué función llamar según la planilla
-                        if "RELUBRICACION" in tipo_t or "LUBRICACION" in tipo_t:
-                            pdf_archivo = generar_pdf_lubricacion(datos_fila, buscado)
+                        # Seleccionamos el molde según la tarea
+                        if "RELUBRICACION" in t_tarea or "LUBRICACION" in t_tarea:
+                            pdf_archivo = generar_pdf_lubricacion(datos_h, buscado)
                             nombre_f = f"Lubricacion_{buscado}.pdf"
-                        elif "MEDICIONES" in tipo_t or "MEGADO" in tipo_t:
-                            pdf_archivo = generar_pdf_megado(datos_fila, buscado)
+                        elif "MEDICIONES" in t_tarea or "MEGADO" in t_tarea:
+                            pdf_archivo = generar_pdf_megado(datos_h, buscado)
                             nombre_f = f"Megado_{buscado}.pdf"
                         else:
-                            # Por defecto el técnico (ingreso/reparación)
-                            pdf_archivo = generar_pdf_tecnico(datos_fila, buscado)
+                            # Si es ingreso o reparación, usa el técnico de siempre
+                            pdf_archivo = generar_pdf_tecnico(datos_h, buscado)
                             nombre_f = f"Reporte_Tecnico_{buscado}.pdf"
 
                         if pdf_archivo:
@@ -353,11 +354,11 @@ elif modo == "Historial y QR":
                                 label=f"📄 Descargar {nombre_f}",
                                 data=pdf_archivo,
                                 file_name=nombre_f,
-                                key=f"btn_pdf_{idx}",
+                                key=f"pdf_btn_{idx}",
                                 use_container_width=True
                             )
                     except Exception as e:
-                        st.error(f"Error al procesar el PDF: {e}")
+                        st.error(f"Error: {e}")
         else:
             st.warning("No hay intervenciones registradas para este motor.")
 
@@ -675,6 +676,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
