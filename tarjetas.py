@@ -33,34 +33,63 @@ if 'pdf_listo' not in st.session_state:
 def generar_pdf_reporte(datos, buscado):
     try:
         from fpdf import FPDF
+        import io
+
         pdf = FPDF()
         pdf.add_page()
         
-        # --- Encabezado ---
+        # --- Encabezado Marpi ---
         pdf.set_font("Arial", 'B', 16)
-        pdf.cell(0, 10, f"REPORTE DE INTERVENCIÓN - {buscado}", ln=True, align='C')
-        pdf.ln(5)
-        
-        # --- Datos Principales ---
+        pdf.cell(0, 10, f"REPORTE TÉCNICO: {buscado}", ln=True, align='C')
+        pdf.set_font("Arial", '', 10)
+        pdf.cell(0, 5, f"Generado desde App Marpi Motores", ln=True, align='C')
+        pdf.ln(10)
+
+        # --- Información del Motor ---
         pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, f"Fecha: {datos.get('Fecha', 'S/D')}", ln=True)
-        pdf.cell(0, 10, f"Tarea: {datos.get('Tipo_Tarea', 'Mantenimiento')}", ln=True)
+        pdf.set_fill_color(240, 240, 240)
+        pdf.cell(0, 10, " DATOS DEL EQUIPO", ln=True, fill=True)
+        pdf.set_font("Arial", '', 11)
+        
+        # Usamos tus columnas: Potencia, Tension, RPM, N_Serie
+        pdf.cell(95, 10, f"Potencia: {datos.get('Potencia', 'S/D')}")
+        pdf.cell(95, 10, f"Tensión: {datos.get('Tension', 'S/D')}", ln=True)
+        pdf.cell(95, 10, f"RPM: {datos.get('RPM', 'S/D')}")
+        pdf.cell(95, 10, f"N° Serie: {datos.get('N_Serie', 'S/D')}", ln=True)
+        pdf.ln(5)
+
+        # --- Datos de la Intervención ---
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, " DETALLE DE LA TAREA", ln=True, fill=True)
+        pdf.set_font("Arial", '', 11)
+        
+        # Usamos: Fecha, Tipo_Tarea, Responsable
+        pdf.cell(95, 10, f"Fecha: {datos.get('Fecha', 'S/D')}")
+        pdf.cell(95, 10, f"Tarea: {datos.get('Tipo_Tarea', 'S/D')}", ln=True)
         pdf.cell(0, 10, f"Responsable: {datos.get('Responsable', 'S/D')}", ln=True)
         
         pdf.ln(5)
-        pdf.line(10, pdf.get_y(), 200, pdf.get_y()) # Línea divisoria
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 10, "Descripción y Observaciones:", ln=True)
+        pdf.set_font("Arial", '', 10)
+        # Usamos 'Descripcion' (sin acento) y 'Observaciones'
+        texto_desc = f"{datos.get('Descripcion', '')} \n{datos.get('Observaciones', '')}"
+        pdf.multi_cell(0, 7, texto_desc)
+
+        # --- Rodamientos y Lubricación ---
         pdf.ln(5)
-        
-        # --- Detalle / Observaciones ---
         pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, "Observaciones Técnicas:", ln=True)
+        pdf.cell(0, 10, " RODAMIENTOS Y LUBRICACIÓN", ln=True, fill=True)
         pdf.set_font("Arial", '', 11)
-        # multi_cell es clave para que el texto largo no se corte
-        pdf.multi_cell(0, 10, str(datos.get('Observaciones', 'Sin comentarios.')))
-        
-        return pdf.output(dest='S').encode('latin-1')
+        pdf.cell(95, 10, f"Rod. LA: {datos.get('Rodamiento_LA', 'S/D')}")
+        pdf.cell(95, 10, f"Rod. LOA: {datos.get('Rodamiento_LOA', 'S/D')}", ln=True)
+        pdf.cell(0, 10, f"Grasa: {datos.get('Tipo_Grasa', 'S/D')} ({datos.get('Gramos_LA','0')}g / {datos.get('Gramos_LOA','0')}g)", ln=True)
+
+        # Generar salida
+        return pdf.output(dest='S').encode('latin-1', 'replace')
+
     except Exception as e:
-        print(f"Error generando PDF: {e}")
+        print(f"Error en PDF: {e}")
         return None
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
@@ -645,6 +674,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
