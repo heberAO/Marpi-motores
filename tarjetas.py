@@ -45,46 +45,33 @@ from fpdf import FPDF
 from fpdf import FPDF
 
 # 1. REPARACIÓN (Usa Descripción y Trabajos Taller Externo)
-def generar_pdf_final(datos, tag_equipo):
+def generar_pdf_universal(datos):
     from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
-    
-    # Configuración de Título
-    tarea = str(datos.get('Tipo_Tarea', 'REPORTE')).upper()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"{tarea} - {tag_equipo}", ln=True, align='C')
-    pdf.ln(10)
     
+    # Usamos solo lo que viene DENTRO del diccionario 'datos'
+    tag = datos.get('Tag', 'S/T')
+    tarea = str(datos.get('Tipo_Tarea', 'REPORTE')).upper()
+    
+    pdf.cell(0, 10, f"{tarea} - TAG: {tag}", ln=True, align='C')
+    pdf.ln(10)
     pdf.set_font("Arial", '', 12)
-    # 1. Datos comunes que siempre están
-    pdf.cell(0, 10, f"Fecha: {datos.get('Fecha', '-')}", ln=True)
-    pdf.cell(0, 10, f"Responsable: {datos.get('Responsable', '-')}", ln=True)
-    pdf.ln(5)
-
-    # 2. Lógica por tipo de reporte (Aquí separamos los campos)
+    
+    # 1. Si es LUBRICACIÓN (Usa Notas)
     if "LUBRICACION" in tarea or "RELUBRICACION" in tarea:
-        # Solo busca Notas y Gramos
-        pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, "Detalles de Lubricación:", ln=True)
-        pdf.set_font("Arial", '', 12)
         pdf.cell(0, 10, f"Grasa LA: {datos.get('Gramos_LA', '0')}g | LOA: {datos.get('Gramos_LOA', '0')}g", ln=True)
-        pdf.multi_cell(0, 10, f"Notas: {datos.get('Notas', 'Sin notas adicionales.')}")
-
-    elif "MEGADO" in tarea or "CAMPO" in tarea:
-        # Solo busca Descripción
-        pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, "Mediciones de Aislamiento:", ln=True)
-        pdf.set_font("Arial", '', 12)
-        pdf.multi_cell(0, 10, f"Descripción/Resultado: {datos.get('Descripcion', 'S/D')}")
-
+        pdf.multi_cell(0, 10, f"Notas: {datos.get('Notas', 'Sin notas')}")
+    
+    # 2. Si es MEGADO (Usa Descripción)
+    elif "MEGADO" in tarea:
+        pdf.multi_cell(0, 10, f"Resultado Megado: {datos.get('Descripcion', 'Sin datos')}")
+    
+    # 3. Si es REPARACIÓN (Usa Descripción y Taller)
     else:
-        # REPORTE TÉCNICO / REPARACIÓN (Descripción y Taller)
-        pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, "Detalles de Reparación:", ln=True)
-        pdf.set_font("Arial", '', 12)
         pdf.multi_cell(0, 10, f"Descripción: {datos.get('Descripcion', 'S/D')}")
-        pdf.multi_cell(0, 10, f"Trabajos Taller Externo: {datos.get('Trabajos Taller Externo', 'N/A')}")
+        pdf.multi_cell(0, 10, f"Trabajos Taller: {datos.get('Trabajos Taller Externo', 'N/A')}")
 
     return pdf.output(dest='S').encode('latin-1', 'replace')
     
@@ -671,6 +658,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
