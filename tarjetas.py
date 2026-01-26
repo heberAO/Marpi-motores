@@ -9,10 +9,10 @@ from io import BytesIO
 from fpdf import FPDF
 
 def calcular_grasa_marpi(rod_texto):
-    """Función unificada para Marpi: Calibrada 6318 = 60g"""
+    """Cálculo unificado Marpi: Serie 6318 = 60g / Serie 6218 = 30g"""
     try:
         import re
-        # Extraer los 4 números (ej: 6318)
+        # Buscamos los 4 números del rodamiento (ej: 6318)
         match = re.search(r'(\d{4})', str(rod_texto))
         if not match: 
             return 0
@@ -20,15 +20,15 @@ def calcular_grasa_marpi(rod_texto):
         codigo = match.group(1)
         serie = int(codigo[1])    # El '3' o '2'
         eje_cod = int(codigo[2:])  # El '18'
-        D = eje_cod * 5           # 90mm para un 18
+        D_interior = eje_cod * 5   # 90mm para un 18
 
-        # CALIBRACIÓN PARA PLACA
+        # CALIBRACIÓN PARA QUE COINCIDA CON TU PLACA
         if serie == 3:
-            # 90 * 0.67 = 60.3 (60g)
-            gramos = D * 0.67
+            # Para rodamientos pesados (63xx): 90 * 0.67 = 60g
+            gramos = D_interior * 0.67
         else:
-            # 90 * 0.33 = 29.7 (30g)
-            gramos = D * 0.33
+            # Para rodamientos livianos (62xx): 90 * 0.33 = 30g
+            gramos = D_interior * 0.33
             
         return int(round(gramos))
     except:
@@ -502,15 +502,15 @@ elif modo == "Relubricacion":
    # 4. Inputs de Rodamientos (Usa la fórmula de arriba de todo)
     col1, col2 = st.columns(2)
     with col1:
-        rod_la = st.text_input("Rodamiento LA", value=v_la, key=f"la_{st.session_state.form_id}").upper()
-        # Llamamos a la función maestra
-        gr_la_sug = calcular_grasa_avanzado(rod_la)
+        rod_la = st.text_input("Rodamiento LA", value=v_la, key=f"la_val_{st.session_state.form_id}").upper()
+        # LLAMADA CORREGIDA A LA FUNCIÓN UNIFICADA
+        gr_la_sug = calcular_grasa_marpi(rod_la)
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
-        rod_loa = st.text_input("Rodamiento LOA", value=v_loa, key=f"loa_{st.session_state.form_id}").upper()
-        # Llamamos a la misma función maestra
-        gr_loa_sug = calcular_grasa_avanzado(rod_loa)
+        rod_loa = st.text_input("Rodamiento LOA", value=v_loa, key=f"loa_val_{st.session_state.form_id}").upper()
+        # LLAMADA CORREGIDA
+        gr_loa_sug = calcular_grasa_marpi(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
     # 5. Formulario Final
@@ -717,6 +717,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
