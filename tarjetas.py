@@ -8,27 +8,27 @@ import time
 from io import BytesIO
 from fpdf import FPDF
 
-def calcular_grasa_marpi(rod_texto):
-    """Función unificada para cálculo de grasa según rodamiento"""
+def calcular_grasa_avanzado(rod_texto):
+    """Cálculo unificado para Marpi: Serie 6318 = 60g / Serie 6218 = 30g"""
     try:
         import re
-        # Busca 4 números seguidos (ej: 6318)
+        # Extraer el número de 4 dígitos (ej: 6318)
         match = re.search(r'(\d{4})', str(rod_texto))
         if not match: 
             return 0
         
         codigo = match.group(1)
-        serie = int(codigo[1])    # El '3' en 6318 o '2' en 6218
+        serie = int(codigo[1])    # El '3' o el '2'
         eje_cod = int(codigo[2:])  # El '18'
-        D = eje_cod * 5           # Diámetro interior aprox.
+        D_interior = eje_cod * 5   # Diámetro eje (90mm para 18)
 
-        # CALIBRACIÓN PARA PLACA: 6318 -> 60g
+        # CALIBRACIÓN EXACTA PARA TUS PLACAS
         if serie == 3:
-            # Serie pesada (63xx)
-            gramos = D * 0.66  # Ejemplo: 90 * 0.66 = 59.4 (60g)
+            # Para serie 63xx (Pesada): 90 * 0.67 = 60.3g
+            gramos = D_interior * 0.67
         else:
-            # Serie ligera (62xx)
-            gramos = D * 0.33  # Ejemplo: 90 * 0.33 = 29.7 (30g)
+            # Para serie 62xx (Ligera): 90 * 0.33 = 29.7g
+            gramos = D_interior * 0.33
             
         return int(round(gramos))
     except:
@@ -717,6 +717,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
