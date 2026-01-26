@@ -45,43 +45,73 @@ def generar_pdf_reporte(datos, buscado):
         pdf = FPDF()
         pdf.add_page()
         
-        # --- ENCABEZADO Y PLACA (Siempre igual) ---
+        # --- ENCABEZADO MARPI ---
         pdf.set_font("Arial", 'B', 16)
-        pdf.cell(0, 10, f"INFORME: {buscado}", ln=True, align='C')
-        pdf.ln(5)
-        
+        pdf.set_text_color(0, 51, 102) # Azul oscuro
+        pdf.cell(0, 10, f"INFORME TÉCNICO: {buscado}", ln=True, align='C')
+        pdf.set_font("Arial", 'I', 10)
+        pdf.set_text_color(100)
+        pdf.cell(0, 5, "Marpi Motores - Sistema de Gestión", ln=True, align='C')
+        pdf.ln(10)
+
+        # --- SECCIÓN 1: DATOS DE PLACA (Igual para todos) ---
         pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, " 1. DATOS DE PLACA", ln=True, fill=False)
+        pdf.set_text_color(0)
+        pdf.set_fill_color(230, 230, 230)
+        pdf.cell(0, 10, " 1. DATOS DE PLACA DEL MOTOR", ln=True, fill=True)
         pdf.set_font("Arial", '', 10)
-        pdf.cell(0, 7, f"Tag: {datos.get('Tag')} | Serie: {datos.get('N_Serie')}", ln=True)
-        pdf.cell(0, 7, f"Potencia: {datos.get('Potencia')} | RPM: {datos.get('RPM')}", ln=True)
+        
+        # Cuadrícula de datos [cite: 1, 2, 3, 5, 6, 7]
+        pdf.cell(90, 8, f"TAG: {datos.get('Tag', 'S/D')}", 1)
+        pdf.cell(90, 8, f"N SERIE: {datos.get('N_Serie', 'S/D')}", 1, ln=True)
+        pdf.cell(60, 8, f"Potencia: {datos.get('Potencia', 'S/D')}", 1)
+        pdf.cell(60, 8, f"Tensión: {datos.get('Tension', 'S/D')}", 1)
+        pdf.cell(60, 8, f"RPM: {datos.get('RPM', 'S/D')}", 1, ln=True)
         pdf.ln(5)
 
-        # --- SECCIÓN 2: DATOS ESPECÍFICOS ---
-        # Si el título dice "MEDICIONES" o "MEGADO"
-        if "MEDICIONES" in buscado.upper() or "MEGADO" in buscado.upper():
+        # --- SECCIÓN 2: DETALLES SEGÚN EL TIPO DE REPORTE ---
+        tipo = str(buscado).upper()
+
+        if "MEGADO" in tipo or "CAMPO" in tipo:
+            # --- DISEÑO PARA MEGADO ---
             pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " 2. MEDICIONES ELÉCTRICAS (Gohm / Ohm)", ln=True)
+            pdf.cell(0, 10, " 2. MEDICIONES ELÉCTRICAS", ln=True, fill=True)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Resistencia de Aislamiento (Gohm):", ln=True)
             pdf.set_font("Arial", '', 10)
-            # Tabla Megado Tierra
             pdf.cell(60, 8, f"T-V1: {datos.get('RT_TV1', '-')}", 1)
             pdf.cell(60, 8, f"T-U1: {datos.get('RT_TU1', '-')}", 1)
             pdf.cell(60, 8, f"T-W1: {datos.get('RT_TW1', '-')}", 1, ln=True)
-            # Tabla Resistencias
+            
+            pdf.ln(3)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Resistencia Interna de Bobinados (Ohm):", ln=True)
+            pdf.set_font("Arial", '', 10)
             pdf.cell(60, 8, f"U1-U2: {datos.get('RI_U1U2', '-')}", 1)
             pdf.cell(60, 8, f"V1-V2: {datos.get('RI_V1V2', '-')}", 1)
             pdf.cell(60, 8, f"W1-W2: {datos.get('RI_W1W2', '-')}", 1, ln=True)
-            pdf.ln(5)
-            pdf.multi_cell(0, 7, f"Detalle Equipo: {datos.get('Descripcion')}")
 
-        # Si el título dice "LUBRICACION"
-        elif "LUBRICACION" in buscado.upper():
+        elif "LUBRICACION" in tipo or "RELUBRICACION" in tipo:
+            # --- DISEÑO PARA LUBRICACIÓN ---
             pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " 2. DETALLE DE LUBRICACIÓN", ln=True)
+            pdf.cell(0, 10, " 2. DETALLE DE RELUBRICACIÓN", ln=True, fill=True)
             pdf.set_font("Arial", '', 10)
-            pdf.cell(90, 8, f"Grasa LA: {datos.get('gr_real_la', '0')} g", 1)
-            pdf.cell(90, 8, f"Grasa LOA: {datos.get('gr_real_loa', '0')} g", 1, ln=True)
-            pdf.multi_cell(0, 7, f"Notas: {datos.get('Notas', 'Sin observaciones')}")
+            pdf.cell(90, 10, f"Rodamiento LA: {datos.get('Rodamiento_LA')}", 1)
+            pdf.cell(90, 10, f"Grasa aplicada: {datos.get('Gramos_LA', '0')} g", 1, ln=True)
+            pdf.cell(90, 10, f"Rodamiento LOA: {datos.get('Rodamiento_LOA')}", 1)
+            pdf.cell(90, 10, f"Grasa aplicada: {datos.get('Gramos_LOA', '0')} g", 1, ln=True)
+            pdf.ln(5)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Notas de campo:", ln=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.multi_cell(0, 6, str(datos.get('Notas', 'Sin observaciones.')))
+
+        else:
+            # --- DISEÑO REPARACIÓN / ALTA ---
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, " 2. DESCRIPCIÓN DEL TRABAJO", ln=True, fill=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.multi_cell(0, 8, str(datos.get('Descripcion', 'Registro de equipo.')))
 
         return pdf.output(dest='S').encode('latin-1', 'replace')
     except:
@@ -649,21 +679,22 @@ elif modo == "Mediciones de Campo":
                 info = busqueda.iloc[0].to_dict() if not busqueda.empty else {}
 
                 # 2. ARMAMOS EL DICCIONARIO 'nueva' COMPLETO
+                # --- DICCIONARIO PARA MEGADO (Sin la variable 'notas') ---
                 nueva = {
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
                     "Tag": t,
                     "N_Serie": n_serie,
                     "Responsable": resp,
                     "Tipo_Tarea": "Mediciones de Campo",
-                    "Notas": "", # <--- SOLUCIÓN: En Megado guardamos vacío, no usamos la variable
+                    "Notas": "",  # Enviamos vacío manualmente para no romper el Excel
                     "Potencia": info.get("Potencia", ""),
                     "Tension": info.get("Tension", ""),
                     "RPM": info.get("RPM", ""),
                     "Carcasa": info.get("Carcasa", ""),
                     "Rodamiento_LA": info.get("Rodamiento_LA", ""),
                     "Rodamiento_LOA": info.get("Rodamiento_LOA", ""),
-                    "Descripcion": f"EQUIPO: {equipo_megado} ({tension_prueba})",
-                    # Guardamos los valores técnicos para el historial
+                    "Descripcion": f"Equipo: {equipo_megado} ({tension_prueba})",
+                    # Guardamos los valores técnicos
                     "RT_TV1": tv1, "RT_TU1": tu1, "RT_TW1": tw1,
                     "RB_WV1": wv1, "RB_WU1": wu1, "RB_VU1": vu1,
                     "RI_U1U2": u1u2, "RI_V1V2": v1v2, "RI_W1W2": w1w2
@@ -689,6 +720,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
