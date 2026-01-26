@@ -30,78 +30,38 @@ fecha_hoy = date.today()
 if 'pdf_listo' not in st.session_state:
     st.session_state.pdf_listo = None
 
-def generar_pdf_reporte(datos, titulo):
-    # 1. Configuración inicial compacta
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=10)
-    pdf.add_page()
-    
-    # --- TÍTULO ---
-    pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 10, f"{titulo}", ln=True, align='C')
-    pdf.ln(2)
-
-    # --- CUADRO DE DATOS DEL EQUIPO (Muy compacto) ---
-    pdf.set_fill_color(230, 230, 230)
-    pdf.set_font("Arial", "B", 10)
-    pdf.cell(0, 7, "DATOS DEL EQUIPO", ln=True, fill=True, border=1)
-    
-    pdf.set_font("Arial", "", 9)
-    # Fila 1: TAG y Serie
-    pdf.cell(95, 7, f" TAG: {datos.get('Tag', '-')}", border=1)
-    pdf.cell(95, 7, f" N° Serie: {datos.get('N_Serie', '-')}", border=1, ln=True)
-    # Fila 2: Potencia y RPM
-    pdf.cell(45, 7, f" Potencia: {datos.get('Potencia', '-')}", border=1)
-    pdf.cell(50, 7, f" RPM: {datos.get('RPM', '-')}", border=1)
-    pdf.cell(45, 7, f" Carcasa: {datos.get('Carcasa', '-')}", border=1)
-    pdf.cell(50, 7, f" Fecha: {datos.get('Fecha', '-')}", border=1, ln=True)
-    pdf.ln(3)
-
-    # --- CUADRO DE TAREA ---
-    pdf.set_font("Arial", "B", 10)
-    pdf.cell(0, 7, "DETALLE DE LA TAREA", ln=True, fill=True, border=1)
-    pdf.set_font("Arial", "", 9)
-    
-    # Usamos multi_cell para la descripción
-    descripcion = datos.get('Descripcion', 'Sin descripción')
-    pdf.multi_cell(0, 7, f" {descripcion}", border=1)
-    
-    # --- MOSTRAR NOTAS (Si existen) ---
-    # Buscamos en 'Notas' o 'Observaciones'
-    nota_texto = datos.get('Notas') or datos.get('Observaciones')
-    if nota_texto and str(nota_texto).strip() != "nan":
-        pdf.set_font("Arial", "B", 9)
-        pdf.cell(0, 7, " Notas adicionales:", ln=True)
-        pdf.set_font("Arial", "", 9)
-        pdf.multi_cell(0, 6, f" {nota_texto}", border=1)
-    
-    pdf.ln(2)
-
-    # --- LÓGICA: SOLO MOSTRAR MEDICIONES SI NO ES LUBRICACIÓN ---
-    # Si el título no contiene "LUBRICACIÓN", intentamos poner las mediciones
-    if "LUBRIC" not in titulo.upper():
-        # Verificamos si hay al menos una medición para mostrar el cuadro
-        if datos.get("RT_TV1") or datos.get("ML_L1"):
-            pdf.set_font("Arial", "B", 10)
-            pdf.cell(0, 7, "MEDICIONES ELÉCTRICAS", ln=True, fill=True, border=1)
-            pdf.set_font("Arial", "", 8)
-            
-            # Ejemplo de tabla de mediciones muy compacta (3 valores por fila)
-            pdf.cell(63, 6, f" T-V1: {datos.get('RT_TV1', '-')} Gohm", border=1)
-            pdf.cell(63, 6, f" T-U1: {datos.get('RT_TU1', '-')} Gohm", border=1)
-            pdf.cell(64, 6, f" T-W1: {datos.get('RT_TW1', '-')} Gohm", border=1, ln=True)
-            
-            pdf.cell(63, 6, f" U1-U2: {datos.get('RI_U1U2', '-')} Ohm", border=1)
-            pdf.cell(63, 6, f" V1-V2: {datos.get('RI_V1V2', '-')} Ohm", border=1)
-            pdf.cell(64, 6, f" W1-W2: {datos.get('RI_W1W2', '-')} Ohm", border=1, ln=True)
-
-    # --- PIE DE PÁGINA FIJO (Evita la 2da hoja) ---
-    # 'abs' asegura que se pegue al final de la página actual
-    pdf.set_y(-15) 
-    pdf.set_font("Arial", "I", 8)
-    pdf.cell(0, 10, "Propiedad de MARPI - Documento Confidencial", align='C')
-
-    return pdf.output(dest='S').encode('latin-1')
+def generar_pdf_reporte(datos, buscado):
+    try:
+        from fpdf import FPDF
+        pdf = FPDF()
+        pdf.add_page()
+        
+        # --- Encabezado ---
+        pdf.set_font("Arial", 'B', 16)
+        pdf.cell(0, 10, f"REPORTE DE INTERVENCIÓN - {buscado}", ln=True, align='C')
+        pdf.ln(5)
+        
+        # --- Datos Principales ---
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, f"Fecha: {datos.get('Fecha', 'S/D')}", ln=True)
+        pdf.cell(0, 10, f"Tarea: {datos.get('Tipo_Tarea', 'Mantenimiento')}", ln=True)
+        pdf.cell(0, 10, f"Responsable: {datos.get('Responsable', 'S/D')}", ln=True)
+        
+        pdf.ln(5)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y()) # Línea divisoria
+        pdf.ln(5)
+        
+        # --- Detalle / Observaciones ---
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, "Observaciones Técnicas:", ln=True)
+        pdf.set_font("Arial", '', 11)
+        # multi_cell es clave para que el texto largo no se corte
+        pdf.multi_cell(0, 10, str(datos.get('Observaciones', 'Sin comentarios.')))
+        
+        return pdf.output(dest='S').encode('latin-1')
+    except Exception as e:
+        print(f"Error generando PDF: {e}")
+        return None
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
@@ -674,6 +634,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
