@@ -42,43 +42,60 @@ if 'pdf_listo' not in st.session_state:
 # --- 1. FUNCIÓN REPORTE TÉCNICO (Mantenla tal cual la tenías) ---
 from fpdf import FPDF
 
-def generar_pdf_tecnico(datos, buscado):
+from fpdf import FPDF
+
+# 1. REPARACIÓN (Usa Descripción y Trabajos Taller Externo)
+def generar_pdf_reparacion(datos, buscado):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"REPORTE TECNICO - {buscado}", ln=True, align='C')
+    pdf.cell(0, 10, f"REPORTE DE REPARACIÓN - {buscado}", ln=True, align='C')
     pdf.ln(10)
-    pdf.set_font("Arial", '', 12)
-    # Lista de datos básicos que casi siempre están
-    for k, v in datos.items():
-        if k in ['Fecha', 'Responsable', 'Descripcion', 'Tag']:
-            pdf.cell(0, 10, f"{k}: {v}", ln=True)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "Descripción del Problema:", ln=True)
+    pdf.set_font("Arial", '', 11)
+    pdf.multi_cell(0, 7, str(datos.get('Descripcion', 'Sin descripción')))
+    
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "Trabajos Taller Externo:", ln=True)
+    pdf.set_font("Arial", '', 11)
+    pdf.multi_cell(0, 7, str(datos.get('Trabajos Taller Externo', 'No aplica')))
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
+# 2. LUBRICACIÓN (Usa Notas y Gramos)
 def generar_pdf_lubricacion(datos, buscado):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, "REPORTE DE LUBRICACION", ln=True, align='C')
+    pdf.cell(0, 10, f"REPORTE DE LUBRICACIÓN - {buscado}", ln=True, align='C')
     pdf.ln(10)
-    pdf.set_font("Arial", '', 12)
-    # Buscamos Gramos LA o LOA sin importar mayúsculas
-    for k, v in datos.items():
-        if "GRAMOS" in str(k).upper() or "RODAMIENTO" in str(k).upper():
-            pdf.cell(0, 10, f"{k}: {v}", ln=True)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "Detalles de Grasa:", ln=True)
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(0, 10, f"Gramos LA: {datos.get('Gramos_LA', '0')} | LOA: {datos.get('Gramos_LOA', '0')}", ln=True)
+    
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "Notas:", ln=True)
+    pdf.set_font("Arial", '', 11)
+    pdf.multi_cell(0, 7, str(datos.get('notas', 'Sin notas')))
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
+# 3. MEGADO (Usa Descripción)
 def generar_pdf_megado(datos, buscado):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, "REPORTE DE MEGADO", ln=True, align='C')
+    pdf.cell(0, 10, f"REPORTE DE MEGADO - {buscado}", ln=True, align='C')
     pdf.ln(10)
-    pdf.set_font("Arial", '', 12)
-    # Buscamos valores de aislamiento
-    for k, v in datos.items():
-        if "MEG" in str(k).upper() or "AISLA" in str(k).upper():
-            pdf.cell(0, 10, f"{k}: {v}", ln=True)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "Resultado de Medición (Descripción):", ln=True)
+    pdf.set_font("Arial", '', 11)
+    pdf.multi_cell(0, 7, str(datos.get('Descripcion', 'Sin datos de megado')))
     return pdf.output(dest='S').encode('latin-1', 'replace')
     
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
@@ -665,6 +682,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
