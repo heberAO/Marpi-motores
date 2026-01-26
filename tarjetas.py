@@ -390,21 +390,25 @@ elif modo == "Relubricacion":
     
     if "cnt_lub" not in st.session_state:
         st.session_state.cnt_lub = 0
-    # 1. Asegurar que la variable exista
     if "form_id" not in st.session_state:
         st.session_state.form_id = 0
 
     df_lista = df_completo.copy()
-    
-    # 2. Buscador Simple por TAG
-    # Limpiamos la lista de Tags para que no haya errores
-    lista_tags = sorted([str(x) for x in df_lista['Tag'].unique() if str(x) not in ['nan', 'None', '']])
-    
-    tag_seleccionado = st.selectbox(
-        "Seleccione el TAG del Motor", 
-        options=[""] + lista_tags,
+    # 1. Creamos la lista combinando TAG y N_Serie (tal como en Historial)
+    df_lista['Busqueda_Combo'] = (
+        df_lista['Tag'].astype(str) + " | SN: " + df_lista['N_Serie'].astype(str)
+    )
+    # 2. Generamos las opciones para el selectbox
+    opciones_combo = [""] + sorted(df_lista['Busqueda_Combo'].unique().tolist())
+    # 3. Buscador mejorado
+    seleccion_full = st.selectbox(
+        "Seleccione el Motor (busque por TAG o N° de Serie)", 
+        options=opciones_combo,
         key=f"busqueda_{st.session_state.form_id}"
     )
+    # 4. Extraemos el TAG puro para que el resto de tu código siga funcionando igual
+    tag_seleccionado = seleccion_full.split(" | ")[0].strip() if seleccion_full else ""
+    
     # --- LÓGICA DE AVISO DE RODAMIENTOS (Rodamiento_LA y Rodamiento_LOA) ---
     if tag_seleccionado != "":
         # Extraemos la fila del motor
@@ -690,6 +694,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
