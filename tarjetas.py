@@ -46,38 +46,39 @@ def generar_pdf_tecnico(datos, buscado):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"REPORTE TÉCNICO: {buscado}", ln=True, align='C')
-    pdf.ln(5)
+    pdf.cell(0, 10, f"REPORTE TECNICO - {buscado}", ln=True, align='C')
+    pdf.ln(10)
     pdf.set_font("Arial", '', 12)
-    pdf.cell(0, 10, f"Responsable: {datos.get('Responsable', 'S/D')}", ln=True)
-    pdf.cell(0, 10, f"Fecha: {datos.get('Fecha', 'S/D')}", ln=True)
-    # Aquí puedes seguir agregando tus campos de Reparación
+    # Lista de datos básicos que casi siempre están
+    for k, v in datos.items():
+        if k in ['Fecha', 'Responsable', 'Descripcion', 'Tag']:
+            pdf.cell(0, 10, f"{k}: {v}", ln=True)
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
 def generar_pdf_lubricacion(datos, buscado):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"REPORTE DE LUBRICACIÓN: {buscado}", ln=True, align='C')
+    pdf.cell(0, 10, "REPORTE DE LUBRICACION", ln=True, align='C')
     pdf.ln(10)
-    # Datos específicos de lubricación
     pdf.set_font("Arial", '', 12)
-    g_la = datos.get('Gramos_LA', datos.get('gr_real_la', '0'))
-    g_loa = datos.get('Gramos_LOA', datos.get('gr_real_loa', '0'))
-    pdf.cell(0, 10, f"Grasa Lado Acople (LA): {g_la} g", ln=True)
-    pdf.cell(0, 10, f"Grasa Lado Opuesto (LOA): {g_loa} g", ln=True)
-    pdf.cell(0, 10, f"Tipo de Grasa: {datos.get('Tipo_Grasa', 'S/D')}", ln=True)
+    # Buscamos Gramos LA o LOA sin importar mayúsculas
+    for k, v in datos.items():
+        if "GRAMOS" in str(k).upper() or "RODAMIENTO" in str(k).upper():
+            pdf.cell(0, 10, f"{k}: {v}", ln=True)
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
 def generar_pdf_megado(datos, buscado):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"REPORTE DE MEGADO: {buscado}", ln=True, align='C')
+    pdf.cell(0, 10, "REPORTE DE MEGADO", ln=True, align='C')
     pdf.ln(10)
     pdf.set_font("Arial", '', 12)
-    # Ajusta 'Megado' al nombre real de tu columna de aislamiento
-    pdf.cell(0, 10, f"Valor de Aislamiento: {datos.get('Megado', 'S/D')}", ln=True)
+    # Buscamos valores de aislamiento
+    for k, v in datos.items():
+        if "MEG" in str(k).upper() or "AISLA" in str(k).upper():
+            pdf.cell(0, 10, f"{k}: {v}", ln=True)
     return pdf.output(dest='S').encode('latin-1', 'replace')
     
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
@@ -306,38 +307,34 @@ elif modo == "Historial y QR":
                 hist_m = historial_motor.iloc[::-1] 
 
                 for idx, fila in hist_m.iterrows():
-                    fecha = fila.get('Fecha','-')
-                    tarea = str(fila.get('Tipo_Tarea', 'General'))
+                    datos_h = fila.to_dict()
+                    tarea_nom = str(datos_h.get('Tipo_Tarea', '')).upper()
                     
-                    with st.expander(f"📅 {fecha} - {tarea}"):
-                        st.write(f"**👤 Responsable:** {fila.get('Responsable', 'S/D')}")
-                        st.write(f"**📝 Descripción:** {fila.get('Descripcion', '-')}")
-                        
-                        # --- LÓGICA DE PDF INDIVIDUAL ---
+                    with st.expander(f"📋 {fecha} - {tarea}"):
+                        # ESTO ES PARA DIAGNÓSTICO: Borralo cuando funcione
+                        # st.write("Columnas detectadas:", list(datos_h.keys())) 
+                
+                        if "LUBRICACION" in tarea_nom or "RELUBRICACION" in tarea_nom:
+                            f_pdf = generar_pdf_lubricacion
+                            n_archivo = f"Lubricacion_{buscado}.pdf"
+                        elif "MEGADO" in tarea_nom or "MEDICIONES" in tarea_nom:
+                            f_pdf = generar_pdf_megado
+                            n_archivo = f"Megado_{buscado}.pdf"
+                        else:
+                            f_pdf = generar_pdf_tecnico
+                            n_archivo = f"Tecnico_{buscado}.pdf"
+                
                         try:
-                            datos_para_pdf = fila.to_dict()
-                            t_limpia = tarea.upper()
-                            
-                            if "LUBRICACION" in t_limpia or "RELUBRICACION" in t_limpia:
-                                archivo_pdf = generar_pdf_lubricacion(datos_para_pdf, buscado)
-                                nombre_f = f"Lubricacion_{buscado}_{fecha}.pdf"
-                            elif "MEGADO" in t_limpia or "MEDICIONES" in t_limpia:
-                                archivo_pdf = generar_pdf_megado(datos_para_pdf, buscado)
-                                nombre_f = f"Megado_{buscado}_{fecha}.pdf"
-                            else:
-                                archivo_pdf = generar_pdf_tecnico(datos_para_pdf, buscado)
-                                nombre_f = f"Reporte_Tecnico_{buscado}_{fecha}.pdf"
-
-                            if archivo_pdf:
-                                st.download_button(
-                                    label=f"📥 Descargar {nombre_f}",
-                                    data=archivo_pdf,
-                                    file_name=nombre_f,
-                                    key=f"btn_{idx}",
-                                    use_container_width=True
-                                )
+                            archivo = f_pdf(datos_h, buscado)
+                            st.download_button(
+                                label=f"📥 Descargar {n_archivo}",
+                                data=archivo,
+                                file_name=n_archivo,
+                                key=f"btn_{idx}",
+                                use_container_width=True
+                            )
                         except Exception as e:
-                            st.error(f"Error en PDF: {e}")
+                            st.error(f"Error: {e}")
             else:
                 st.warning("No hay intervenciones registradas.")
 
@@ -655,6 +652,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
