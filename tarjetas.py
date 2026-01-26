@@ -462,10 +462,6 @@ elif modo == "Relubricacion":
             c1.metric("Sugerido LA", f"{g_la_calc} g")
             c2.metric("Sugerido LOA", f"{g_loa_calc} g")
             
-            # Formulario de carga real
-            cantidad_la = st.number_input("Gramos reales LA:", value=float(g_la_calc))
-            cantidad_loa = st.number_input("Gramos reales LOA:", value=float(g_loa_calc))
-            
         st.markdown("---")
 
     # Variables de carga
@@ -717,6 +713,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
