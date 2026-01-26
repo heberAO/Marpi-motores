@@ -273,58 +273,48 @@ if modo == "Nuevo Registro":
                     st.error("⚠️ El TAG y el Responsable son obligatorios.")
   
 elif modo == "Historial y QR":
-    st.title("🔍 Consulta y Gestión de Motores")
-    
-    if not df_completo.empty:
-        # 1. Lista para el buscador (TAG + Serie)
-        df_completo['Busqueda_Combo'] = (
-            df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
-        )
-        opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
-        
-        # 2. Detección de QR
-        query_tag = st.query_params.get("tag", "").upper()
-        idx_q = 0
-        if query_tag:
-            for i, op in enumerate(opciones):
-                if op.startswith(query_tag + " |"):
-                    idx_q = i
-                    break
-        
-        seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
+    # --- PASO CLAVE: Inicializar variables para evitar NameError ---
+    historial_motor = pd.DataFrame() 
+    buscado = "" # <--- Esto evita que la URL falle
 
-        # --- PASO CLAVE: Inicializar la variable para que no de NameError ---
-        historial_motor = pd.DataFrame() 
+    if seleccion:
+        # 1. Extraemos el TAG puro
+        buscado = seleccion.split(" | ")[0].strip()
+        st.session_state.tag_fijo = buscado
+        
+        # 2. Filtramos el historial
+        historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
 
-        if seleccion:
-            # 1. Extraemos el TAG puro
-            buscado = seleccion.split(" | ")[0].strip()
-            st.session_state.tag_fijo = buscado
-            
-            # 2. Filtramos el historial (Aquí se llena la variable)
-            historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
+    # --- VISTA DE HISTORIAL OPTIMIZADA PARA MÓVIL ---
+    if not historial_motor.empty:
+        st.write(f"### Historial de Intervenciones ({len(historial_motor)})")
+        
+        for i, fila in historial_motor.iterrows():
+            with st.container(border=True):
+                # Extraemos datos para las tarjetas
+                fecha = fila.get('Fecha', 'S/D')
+                trabajo = fila.get('Tipo_Tarea', 'Mantenimiento')
                 
-            # --- VISTA DE HISTORIAL OPTIMIZADA PARA MÓVIL ---
-        if not historial_motor.empty:
-            st.write(f"### Historial de Intervenciones ({len(historial_motor)})")
-            
-            for i, fila in historial_motor.iterrows():
-                with st.container(border=True):
-                    # ... todo tu código de las tarjetas que pusimos antes ...
-                    st.markdown(f"**📅 Fecha:** {fila.get('Fecha', 'S/D')}")
-                    
-                    col_a, col_b = st.columns([1, 1])
-                    col_a.markdown(f"**📅 Fecha:** {fecha}")
-                    col_b.markdown(f"**🔧 Tarea:** {trabajo}")
-                    
-                    st.markdown("---")
-                    
-                    st.markdown(f"**Responsable:** {fila.get('Responsable', 'N/A')}")
-                    st.markdown(f"**Observaciones:** {fila.get('Observaciones', 'Sin comentarios')}")
-                    
-                    if 'Grasa' in fila:
-                        st.markdown(f"🧪 **Grasa:** {fila.get('Grasa', '-')}")
+                col_a, col_b = st.columns([1, 1])
+                col_a.markdown(f"**📅 Fecha:** {fecha}")
+                col_b.markdown(f"**🔧 Tarea:** {trabajo}")
+                
+                st.markdown("---")
+                
+                st.markdown(f"**Responsable:** {fila.get('Responsable', 'N/A')}")
+                st.markdown(f"**Observaciones:** {fila.get('Observaciones', 'Sin comentarios')}")
+                
+                if 'Grasa' in fila:
+                    st.markdown(f"🧪 **Grasa:** {fila.get('Grasa', '-')}")
 
+    elif seleccion: # Si hay selección pero no hay historial
+        st.info("No se encontraron registros previos para este motor.")
+
+    # --- LÍNEA 350 CORREGIDA (Solo aparece si hay un TAG) ---
+    if buscado:
+        st.markdown("---")
+        url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
+        st.info(f"🔗 **Link directo para QR:** {url_app}")
         else:
             st.info("No se encontraron registros para este motor.")
         
@@ -687,6 +677,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
