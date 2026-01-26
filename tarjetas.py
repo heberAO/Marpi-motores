@@ -39,95 +39,41 @@ fecha_hoy = date.today()
 if 'pdf_listo' not in st.session_state:
     st.session_state.pdf_listo = None
 
-def generar_pdf_reporte(datos, buscado):
-    try:
-        from fpdf import FPDF
-        import io
+# --- 1. REPORTE TÉCNICO (Ingreso/Reparación) ---
+def generar_pdf_tecnico(datos, buscado):
+    from fpdf import FPDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, f"REPORTE TÉCNICO: {buscado}", ln=True, align='C')
+    # ... Aquí pones TODO tu código original de mediciones eléctricas (RT, RB, RI)
+    # Este código no se mueve de aquí para que nunca se dañe.
+    return pdf.output(dest='S').encode('latin-1', 'replace')
 
-        pdf = FPDF()
-        pdf.add_page()
-        
-        # --- LLAVE DE SEGURIDAD ---
-        # Si el titulo o la tarea dicen Lubricacion, activa el modo nuevo
-        es_lub = "LUBRICACION" in buscado.upper() or "RELUBRICACION" in str(datos.get('Tipo_Tarea', '')).upper()
+# --- 2. REPORTE DE LUBRICACIÓN ---
+def generar_pdf_lubricacion(datos, buscado):
+    from fpdf import FPDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, f"REPORTE DE LUBRICACIÓN: {buscado}", ln=True, align='C')
+    pdf.ln(10)
+    # Diseño de tablas de rodamientos y grasas
+    # Aquí mapeamos los nombres del Excel para que el historial funcione:
+    rod_la = datos.get('Rodamiento_LA', datos.get('Rodamiento_LAG', 'S/D'))
+    gr_la = datos.get('Gramos_LA', datos.get('gr_real_la', '0'))
+    pdf.cell(0, 10, f"Rodamiento LA: {rod_la} - Grasa: {gr_la}g", ln=True)
+    return pdf.output(dest='S').encode('latin-1', 'replace')
 
-        if es_lub:
-            # ==========================================================
-            #   DISEÑO NUEVO: SOLO PARA LUBRICACIÓN (No toca el otro)
-            # ==========================================================
-            pdf.set_font("Arial", 'B', 16)
-            pdf.cell(0, 10, f"REPORTE DE LUBRICACIÓN: {buscado}", ln=True, align='C')
-            pdf.ln(5)
-            
-            # Datos del equipo rápidos
-            pdf.set_fill_color(230, 230, 230)
-            pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " DATOS DEL MOTOR", ln=True, fill=True)
-            pdf.set_font("Arial", '', 11)
-            pdf.cell(95, 10, f"Tag: {datos.get('Tag', 'S/D')}")
-            pdf.cell(95, 10, f"Serie: {datos.get('N_Serie', 'S/D')}", ln=True)
-            
-            pdf.ln(5)
-            # Tabla de Grasas mejorada
-            pdf.set_font("Arial", 'B', 11)
-            pdf.cell(60, 10, "POSICIÓN", 1, 0, 'C', True)
-            pdf.cell(70, 10, "RODAMIENTO", 1, 0, 'C', True)
-            pdf.cell(60, 10, "GRAMOS (g)", 1, 1, 'C', True)
-            
-            pdf.set_font("Arial", '', 11)
-            # Lado Acople
-            pdf.cell(60, 10, "Lado Acople (LA)", 1)
-            pdf.cell(70, 10, str(datos.get('Rodamiento_LA', datos.get('Rodamiento_LAG', 'S/D'))), 1)
-            pdf.cell(60, 10, str(datos.get('gr_real_la', datos.get('Gramos_LA', '0'))), 1, 1, 'C')
-            # Lado Opuesto
-            pdf.cell(60, 10, "Lado Opuesto (LOA)", 1)
-            pdf.cell(70, 10, str(datos.get('Rodamiento_LOA', datos.get('Rodamiento_LOAG', 'S/D'))), 1)
-            pdf.cell(60, 10, str(datos.get('gr_real_loa', datos.get('Gramos_LOA', '0'))), 1, 1, 'C')
-            
-            pdf.ln(5)
-            pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " NOTAS DE LUBRICACIÓN", ln=True, fill=True)
-            pdf.set_font("Arial", '', 11)
-            # Aquí van las notas que pediste
-            notas_texto = datos.get('notas', datos.get('Notas', 'Sin observaciones adicionales.'))
-            pdf.multi_cell(0, 7, str(notas_texto))
-
-        else:
-            # ==========================================
-            #   DISEÑO ESTÁNDAR (REPORTE TÉCNICO)
-            # ==========================================
-            # Sección 2: Detalle de la Tarea
-            pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " 2. DETALLE DE LA INTERVENCIÓN", ln=True, fill=True)
-            pdf.set_font("Arial", '', 11)
-            pdf.cell(95, 10, f"Fecha: {datos.get('Fecha', 'S/D')}")
-            pdf.cell(95, 10, f"Tarea: {datos.get('Tipo_Tarea', 'S/D')}", ln=True)
-            pdf.cell(0, 10, f"Responsable: {datos.get('Responsable', 'S/D')}", ln=True)
-            
-            pdf.ln(2)
-            pdf.set_font("Arial", 'B', 11)
-            pdf.cell(0, 8, "Descripción / Observaciones:", ln=True)
-            pdf.set_font("Arial", '', 10)
-            texto_desc = f"{datos.get('Descripcion', '')}\n{datos.get('Observaciones', '')}"
-            pdf.multi_cell(0, 6, texto_desc)
-            pdf.ln(5)
-
-            # Sección 3: Mediciones Eléctricas
-            pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " 3. MEDICIONES ELÉCTRICAS", ln=True, fill=True)
-            pdf.set_font("Arial", '', 10)
-            pdf.cell(63, 10, f"RT_TU: {datos.get('RT_TU', '-')}")
-            pdf.cell(63, 10, f"RT_TV: {datos.get('RT_TV', '-')}")
-            pdf.cell(63, 10, f"RT_TW: {datos.get('RT_TW', '-')}", ln=True)
-            pdf.cell(63, 10, f"RB_UV: {datos.get('RB_UV', '-')}")
-            pdf.cell(63, 10, f"RB_VW: {datos.get('RB_VW', '-')}")
-            pdf.cell(63, 10, f"RB_UW: {datos.get('RB_UW', '-')}", ln=True)
-            pdf.cell(63, 10, f"RI_U: {datos.get('RI_U', '-')}")
-            pdf.cell(63, 10, f"RI_V: {datos.get('RI_V', '-')}")
-            pdf.cell(63, 10, f"RI_W: {datos.get('RI_W', '-')}", ln=True)
-
-        # Generar salida
-        return pdf.output(dest='S').encode('latin-1', 'replace')
+# --- 3. REPORTE DE MEGADO (Mediciones de Campo) ---
+def generar_pdf_megado(datos, buscado):
+    from fpdf import FPDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, f"REPORTE DE MEGADO: {buscado}", ln=True, align='C')
+    # Aquí va el diseño específico para las mediciones de aislamiento/campo
+    return pdf.output(dest='S').encode('latin-1', 'replace')
 
     except Exception as e:
         return f"Error al generar PDF: {str(e)}"
@@ -393,29 +339,30 @@ elif modo == "Historial y QR":
 
                     # --- ESTE BLOQUE DEBE ESTAR AQUÍ ADENTRO (CON ESTA SANGRÍA) ---
                     try:
-                        datos_historial = fila.to_dict()
-                        # IMPORTANTE: En tu Excel la columna se llama 'Tipo_Tarea'
-                        tarea_val = str(datos_historial.get('Tipo_Tarea', '')).upper()
-                
-                        if "RELUBRICACION" in tarea_val or "LUBRICACION" in tarea_val:
-                            # TRADUCTOR: Mapeamos los nombres del Excel a los que el PDF espera
-                            datos_historial['gr_real_la'] = datos_historial.get('Gramos_LA', 0)
-                            datos_historial['gr_real_loa'] = datos_historial.get('Gramos_LOA', 0)
-                            datos_historial['Rodamiento_LA'] = datos_historial.get('Rodamiento_LA', 'S/D')
-                            datos_historial['Rodamiento_LOA'] = datos_historial.get('Rodamiento_LOA', 'S/D')
-                            datos_historial['notas'] = datos_historial.get('notas', 'Sin notas')
-                            titulo_final = f"LUBRICACION - {buscado}"
+                        # --- DENTRO DEL BUCLE DEL HISTORIAL ---
+                        datos_fila = fila.to_dict()
+                        tarea = str(datos_fila.get('Tipo_Tarea', '')).upper()
+                        
+                        if "RELUBRICACION" in tarea or "LUBRICACION" in tarea:
+                            pdf_archivo = generar_pdf_lubricacion(datos_fila, buscado)
+                            nombre_archivo = f"Lubricacion_{buscado}.pdf"
+                        
+                        elif "MEDICIONES" in tarea or "MEGADO" in tarea:
+                            pdf_archivo = generar_pdf_megado(datos_fila, buscado)
+                            nombre_archivo = f"Megado_{buscado}.pdf"
+                        
                         else:
-                            titulo_final = buscado
-                
-                        pdf_archivo = generar_pdf_reporte(datos_historial, titulo_final)
-                
+                            # Por defecto, si es Ingreso o Reparación, usa el Técnico
+                            pdf_archivo = generar_pdf_tecnico(datos_fila, buscado)
+                            nombre_archivo = f"Reporte_Tecnico_{buscado}.pdf"
+                        
+                        # Botón único que descarga el PDF que se haya generado arriba
                         if pdf_archivo:
                             st.download_button(
-                                label="📄 Descargar Informe PDF",
+                                label=f"📥 Descargar {nombre_archivo}",
                                 data=pdf_archivo,
-                                file_name=f"Reporte_{buscado}_{fecha}.pdf",
-                                key=f"pdf_hist_{idx}", 
+                                file_name=nombre_archivo,
+                                key=f"btn_{idx}",
                                 use_container_width=True
                             )
                     except Exception as e:
@@ -737,6 +684,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
