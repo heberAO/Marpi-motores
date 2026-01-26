@@ -8,23 +8,34 @@ import time
 from io import BytesIO
 from fpdf import FPDF
 
-def calcular_grasa_avanzado(rodamiento):
-    """Calcula gramos sugeridos según el modelo de rodamiento"""
-    if not rodamiento or pd.isna(rodamiento):
-        return 0
+def calcular_grasa(rodamiento):
     try:
-        # Extraer el diámetro exterior (D) del código del rodamiento (ej: 6314 -> 14)
-        # Esta es una fórmula simplificada: Gramos = D * Ancho * 0.005
-        # Para hacerlo simple, si es un rodamiento común:
-        modelo = str(rodamiento)
-        if "63" in modelo:
-            return 20  # Valor base ejemplo
-        elif "62" in modelo:
-            return 15
-        return 10 # Default
+        # Ejemplo: Rodamiento "6318"
+        # Extraemos los últimos dos dígitos (18) y multiplicamos por 5 
+        # para obtener el diámetro interior (90mm)
+        codigo_eje = int(str(rodamiento)[2:4])
+        d_interior = codigo_eje * 5
+        
+        # Estimación de diámetro exterior (D) y ancho (B) simplificada
+        # Esta es una aproximación, lo ideal es que la placa mande.
+        gramos = (d_interior * 0.5) # Una regla de pulgar común para motores
+        
+        return round(gramos, 1)
     except:
         return 0
 
+# --- En la sección de Lubricación ---
+if tag_seleccionado:
+    rod_la = str(datos_motor.get('Rodamiento_LA', ''))
+    
+    # Si el Excel está vacío (NaN o 0), aplicamos la fórmula
+    if not motor_info.get('Gramos_LA') or pd.isna(motor_info.get('Gramos_LA')):
+        # AQUÍ DEBE ESTAR TU FÓRMULA ACTUAL
+        # Si quieres que de más, ajusta el multiplicador
+        calculo_la = 60 # Aquí deberías poner la lógica que usemos
+    else:
+        calculo_la = motor_info.get('Gramos_LA')
+        
 fecha_hoy = date.today()
 
 if 'pdf_listo' not in st.session_state:
@@ -694,6 +705,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
