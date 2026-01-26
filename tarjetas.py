@@ -41,12 +41,13 @@ if 'pdf_listo' not in st.session_state:
 
 # --- 1. REPORTE TÉCNICO (Ingreso/Reparación) ---
 def generar_pdf_tecnico(datos, buscado):
-    # AQUÍ VA TU CÓDIGO ORIGINAL QUE YA FUNCIONA
+    # AQUÍ VA TU CÓDIGO ORIGINAL (RT, RB, RI)
     from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, f"REPORTE TÉCNICO - {buscado}", ln=True)
+    # ... (Tu código de mediciones eléctricas) ...
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
 def generar_pdf_lubricacion(datos, buscado):
@@ -55,10 +56,11 @@ def generar_pdf_lubricacion(datos, buscado):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, f"REPORTE LUBRICACIÓN - {buscado}", ln=True)
-    # Usa Gramos_LA / Gramos_LOA del Excel
+    pdf.cell(0, 10, f"REPORTE DE LUBRICACIÓN - {buscado}", ln=True)
+    # Busca columnas de la planilla de lubricación
     pdf.set_font("Arial", '', 11)
-    pdf.cell(0, 10, f"Grasa LA: {datos.get('Gramos_LA', '0')}g | LOA: {datos.get('Gramos_LOA', '0')}g", ln=True)
+    pdf.cell(0, 10, f"Grasa LA: {datos.get('Gramos_LA', '0')}g", ln=True)
+    pdf.cell(0, 10, f"Grasa LOA: {datos.get('Gramos_LOA', '0')}g", ln=True)
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
 def generar_pdf_megado(datos, buscado):
@@ -67,7 +69,8 @@ def generar_pdf_megado(datos, buscado):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, f"REPORTE MEGADO (AISLAMIENTO) - {buscado}", ln=True)
+    pdf.cell(0, 10, f"REPORTE DE MEGADO (AISLAMIENTO) - {buscado}", ln=True)
+    # Busca columnas de la planilla de megado
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
     except Exception as e:
@@ -676,6 +679,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
