@@ -11,23 +11,30 @@ from fpdf import FPDF
 def calcular_grasa_avanzado(rod_texto):
     try:
         import re
+        # Limpiamos el texto y buscamos los 4 números (ej: 6318)
         match = re.search(r'(\d{4})', str(rod_texto))
         if not match: return 0
         
         codigo = match.group(1)
-        serie = int(codigo[1]) # 2 o 3
-        eje_cod = int(codigo[2:])
-        D_exterior = eje_cod * 5
+        serie = int(codigo[1])   # El '3' en 6318
+        eje_cod = int(codigo[2:]) # El '18' en 6318
         
-        # AJUSTE PARA LLEGAR A 60G:
-        # Si es serie 3 (ej. 6318), usamos un factor de 0.016
-        factor = 0.006 if serie == 2 else 0.016 
-        ancho_est = 25 if serie == 2 else 45 
+        # Diámetro exterior (D) aproximado en mm
+        D = eje_cod * 5 
         
-        gramos = (D_exterior * ancho_est * factor)
+        # Ajuste de factores para que coincida con placa MARPI
+        # Para serie 3 (63xx), usamos factor 0.011 y ancho de 60mm
+        if serie == 3:
+            ancho = 60
+            factor = 0.011
+        else:
+            ancho = 30
+            factor = 0.008
+            
+        gramos = D * ancho * factor
         return int(round(gramos))
     except:
-        return 20
+        return 0
         
 fecha_hoy = date.today()
 
@@ -449,29 +456,6 @@ elif modo == "Relubricacion":
             st.success("✅ **EQUIPO APTO PARA LUBRICACIÓN**")
             st.write("Los rodamientos registrados permiten el ingreso de grasa nueva.")
             # --- CÁLCULO DE GRASA BASADO EN EL RODAMIENTO ---
-            def calcular_gramos_grasa(rod_texto):
-                try:
-                    # Extraemos los números (ej: de "6318 C3" saca "6318")
-                    import re
-                    match = re.search(r'(\d{4})', rod_texto)
-                    if not match: return 15 # Valor mínimo de seguridad
-                    
-                    codigo = match.group(1)
-                    serie = int(codigo[1]) # El segundo dígito (2 o 3)
-                    eje_cod = int(codigo[2:]) # Los últimos dos (ej: 18)
-                    D_exterior = eje_cod * 5 # Diámetro aproximado
-                    
-                    # FÓRMULA MEJORADA: (Diámetro * Ancho * 0.005)
-                    # Para serie 3 (más pesada), multiplicamos por un factor mayor
-                    factor = 0.005 if serie == 2 else 0.008
-                    # Estimación de ancho B basada en serie
-                    ancho_est = 20 if serie == 2 else 40 
-                    
-                    # Cálculo final
-                    gramos = (D_exterior * ancho_est * factor)
-                    return round(gramos)
-                except:
-                    return 20 # Si falla, devuelve un estándar bajo
 
             # Calculamos para ambos lados
             g_la_calc = calcular_gramos_grasa(rod_la)
@@ -520,15 +504,17 @@ elif modo == "Relubricacion":
 
     st.divider()
 
-    # 4. Inputs de Rodamientos
+   # 4. Inputs de Rodamientos (Usa la fórmula de arriba de todo)
     col1, col2 = st.columns(2)
     with col1:
-        rod_la = st.text_input("Rodamiento LA", value=v_la, key=f"la_val_{st.session_state.form_id}").upper()
+        rod_la = st.text_input("Rodamiento LA", value=v_la, key=f"la_{st.session_state.form_id}").upper()
+        # Llamamos a la función maestra
         gr_la_sug = calcular_grasa_avanzado(rod_la)
         st.metric("Sugerido LA", f"{gr_la_sug} g")
 
     with col2:
-        rod_loa = st.text_input("Rodamiento LOA", value=v_loa, key=f"loa_val_{st.session_state.form_id}").upper()
+        rod_loa = st.text_input("Rodamiento LOA", value=v_loa, key=f"loa_{st.session_state.form_id}").upper()
+        # Llamamos a la misma función maestra
         gr_loa_sug = calcular_grasa_avanzado(rod_loa)
         st.metric("Sugerido LOA", f"{gr_loa_sug} g")
 
@@ -736,6 +722,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
