@@ -286,35 +286,36 @@ elif modo == "Historial y QR":
         historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
 
     # --- VISTA DE HISTORIAL OPTIMIZADA PARA MÓVIL ---
-    if not historial_motor.empty:
-        st.write(f"### Historial de Intervenciones ({len(historial_motor)})")
-        
-        for i, fila in historial_motor.iterrows():
-            with st.container(border=True):
-                # Extraemos datos para las tarjetas
-                fecha = fila.get('Fecha', 'S/D')
-                trabajo = fila.get('Tipo_Tarea', 'Mantenimiento')
-                
-                col_a, col_b = st.columns([1, 1])
-                col_a.markdown(f"**📅 Fecha:** {fecha}")
-                col_b.markdown(f"**🔧 Tarea:** {trabajo}")
-                
-                st.markdown("---")
-                
-                st.markdown(f"**Responsable:** {fila.get('Responsable', 'N/A')}")
-                st.markdown(f"**Observaciones:** {fila.get('Observaciones', 'Sin comentarios')}")
-                
-                if 'Grasa' in fila:
-                    st.markdown(f"🧪 **Grasa:** {fila.get('Grasa', '-')}")
+        if not historial_motor.empty:
+            st.write(f"### Historial de Intervenciones ({len(historial_motor)})")
+            
+            for i, fila in historial_motor.iterrows():
+                # Cada intervención se muestra en una tarjeta individual
+                with st.container(border=True):
+                    fecha = fila.get('Fecha', 'S/D')
+                    trabajo = fila.get('Tipo_Tarea', 'Mantenimiento')
+                    
+                    col_a, col_b = st.columns([1, 1])
+                    col_a.markdown(f"**📅 Fecha:** {fecha}")
+                    col_b.markdown(f"**🔧 Tarea:** {trabajo}")
+                    
+                    st.markdown("---")
+                    
+                    st.markdown(f"**Responsable:** {fila.get('Responsable', 'N/A')}")
+                    st.markdown(f"**Observaciones:** {fila.get('Observaciones', 'Sin comentarios')}")
+                    
+                    if 'Grasa' in fila:
+                        st.markdown(f"🧪 **Grasa:** {fila.get('Grasa', '-')}")
 
-    elif seleccion: # Si hay selección pero no hay historial
-        st.info("No se encontraron registros previos para este motor.")
+        elif seleccion: 
+            # Este bloque se ejecuta si seleccionaste un motor pero el Excel de historial está vacío
+            st.info("No se encontraron registros previos para este motor.")
 
-    # --- LÍNEA 350 CORREGIDA (Solo aparece si hay un TAG) ---
-    if buscado:
-        st.markdown("---")
-        url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
-        st.info(f"🔗 **Link directo para QR:** {url_app}")
+        # --- SECCIÓN FINAL: LINK Y QR (Fuera del bloque de historial) ---
+        if buscado:
+            st.markdown("---")
+            url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
+            st.info(f"🔗 **Link directo para QR:** {url_app}")
     
             # --- BOTONES DE ACCIÓN RÁPIDA (Alineados fuera del IF anterior) ---
             st.markdown("---")
@@ -675,6 +676,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
