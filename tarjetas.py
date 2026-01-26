@@ -306,9 +306,6 @@ elif modo == "Historial y QR":
                 
                 if 'Grasa' in fila:
                     st.markdown(f"🧪 **Grasa:** {fila.get('Grasa', '-')}")
-
-        elif seleccion: # Si hay selección pero no hay historial
-            st.info("No se encontraron registros previos para este motor.")
     
         # --- LÍNEA 350 CORREGIDA (Solo aparece si hay un TAG) ---
         if buscado:
@@ -677,6 +674,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
