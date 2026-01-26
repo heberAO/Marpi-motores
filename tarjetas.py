@@ -39,42 +39,120 @@ fecha_hoy = date.today()
 if 'pdf_listo' not in st.session_state:
     st.session_state.pdf_listo = None
 
-# --- 1. FUNCIÓN REPORTE TÉCNICO (Mantenla tal cual la tenías) ---
-from fpdf import FPDF
+def generar_pdf_reporte(datos, buscado):
+    try:
+        from fpdf import FPDF
+        import io
 
-from fpdf import FPDF
+        pdf = FPDF()
+        pdf.add_page()
+        
+        # --- 1. ENCABEZADO UNIFICADO ---
+        pdf.set_font("Arial", 'B', 16)
+        # Usamos el tipo de tarea como título si existe
+        titulo = str(datos.get('Tipo_Tarea', buscado)).upper()
+        pdf.cell(0, 10, f"INFORME TÉCNICO: {titulo}", ln=True, align='C')
+        pdf.set_font("Arial", '', 10)
+        pdf.cell(0, 5, f"TAG: {datos.get('Tag', 'S/D')} | Fecha: {datos.get('Fecha', '-')}", ln=True, align='C')
+        pdf.ln(8)
 
-# 1. REPARACIÓN (Usa Descripción y Trabajos Taller Externo)
-def generar_pdf_universal(datos):
-    from fpdf import FPDF
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    
-    # Usamos solo lo que viene DENTRO del diccionario 'datos'
-    tag = datos.get('Tag', 'S/T')
-    tarea = str(datos.get('Tipo_Tarea', 'REPORTE')).upper()
-    
-    pdf.cell(0, 10, f"{tarea} - TAG: {tag}", ln=True, align='C')
-    pdf.ln(10)
-    pdf.set_font("Arial", '', 12)
-    
-    # 1. Si es LUBRICACIÓN (Usa Notas)
-    if "LUBRICACION" in tarea or "RELUBRICACION" in tarea:
-        pdf.cell(0, 10, f"Grasa LA: {datos.get('Gramos_LA', '0')}g | LOA: {datos.get('Gramos_LOA', '0')}g", ln=True)
-        pdf.multi_cell(0, 10, f"Notas: {datos.get('Notas', 'Sin notas')}")
-    
-    # 2. Si es MEGADO (Usa Descripción)
-    elif "MEGADO" in tarea:
-        pdf.multi_cell(0, 10, f"Resultado Megado: {datos.get('Descripcion', 'Sin datos')}")
-    
-    # 3. Si es REPARACIÓN (Usa Descripción y Taller)
-    else:
-        pdf.multi_cell(0, 10, f"Descripción: {datos.get('Descripcion', 'S/D')}")
-        pdf.multi_cell(0, 10, f"Trabajos Taller: {datos.get('Trabajos Taller Externo', 'N/A')}")
+        # --- 2. DATOS DE PLACA (Siempre se muestran) ---
+        pdf.set_font("Arial", 'B', 12)
+        pdf.set_fill_color(230, 230, 230)
+        pdf.cell(0, 10, " DATOS DE PLACA DEL EQUIPO", ln=True, fill=True)
+        pdf.set_font("Arial", '', 10)
+        
+        # Fila 1 placa
+        pdf.cell(63, 8, f"Potencia: {datos.get('Potencia', 'S/D')}", 1)
+        pdf.cell(63, 8, f"Tensión: {datos.get('Tension', 'S/D')}", 1)
+        pdf.cell(64, 8, f"RPM: {datos.get('RPM', 'S/D')}", 1, ln=True)
+        # Fila 2 placa
+        pdf.cell(63, 8, f"N° Serie: {datos.get('N_Serie', 'S/D')}", 1)
+        pdf.cell(63, 8, f"Carcasa: {datos.get('Carcasa', 'S/D')}", 1)
+        pdf.cell(64, 8, f"Responsable: {datos.get('Responsable', 'S/D')}", 1, ln=True)
+        pdf.ln(5)
 
-    return pdf.output(dest='S').encode('latin-1', 'replace')
-    
+        # --- 3. LÓGICA DE DETALLE INDIVIDUAL SEGÚN LA TAREA ---
+        tarea_actual = str(datos.get('Tipo_Tarea', buscado)).upper()
+
+        # A. CASO: LUBRICACIÓN
+        if "LUBRICACION" in tarea_actual or "RELUBRICACION" in tarea_actual:
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, " DETALLE DE LUBRICACIÓN", ln=True, fill=True)
+            pdf.set_font("Arial", '', 10)
+            
+            # Tabla de Grasas
+            pdf.cell(60, 8, "UBICACION", 1)
+            pdf.cell(60, 8, "RODAMIENTO", 1)
+            pdf.cell(60, 8, "CANT. GRASA", 1, ln=True)
+            
+            pdf.cell(60, 8, "Lado Acople (LA)", 1)
+            pdf.cell(60, 8, f"{datos.get('Rodamiento_LA', 'S/D')}", 1)
+            pdf.cell(60, 8, f"{datos.get('Gramos_LA', datos.get('gr_real_la', '0'))} g", 1, ln=True)
+            
+            pdf.cell(60, 8, "Lado Opuesto (LOA)", 1)
+            pdf.cell(60, 8, f"{datos.get('Rodamiento_LOA', 'S/D')}", 1)
+            pdf.cell(60, 8, f"{datos.get('Gramos_LOA', datos.get('gr_real_loa', '0'))} g", 1, ln=True)
+            
+            pdf.ln(3)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Notas de Lubricación:", ln=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.multi_cell(0, 6, str(datos.get('notas', datos.get('Notas', 'Sin observaciones'))))
+
+        # B. CASO: MEGADO / MEDICIONES DE CAMPO
+        elif "MEGADO" in tarea_actual or "CAMPO" in tarea_actual:
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, " MEDICIONES DE CAMPO / MEGADO", ln=True, fill=True)
+            pdf.set_font("Arial", '', 10)
+            
+            # Bloque de Resistencia a Tierra
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Resistencia de Aislamiento (a Tierra):", ln=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.cell(63, 8, f"T-U1: {datos.get('RT_TU1', datos.get('RT_TU', '-'))} Gohm", 1)
+            pdf.cell(63, 8, f"T-V1: {datos.get('RT_TV1', datos.get('RT_TV', '-'))} Gohm", 1)
+            pdf.cell(64, 8, f"T-W1: {datos.get('RT_TW1', datos.get('RT_TW', '-'))} Gohm", 1, ln=True)
+            
+            # Bloque de Bobinas
+            pdf.ln(2)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Resistencia entre Bobinas:", ln=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.cell(63, 8, f"W1-V1: {datos.get('RB_WV1', '-')}", 1)
+            pdf.cell(63, 8, f"W1-U1: {datos.get('RB_WU1', '-')}", 1)
+            pdf.cell(64, 8, f"V1-U1: {datos.get('RB_VU1', '-')}", 1, ln=True)
+
+            pdf.ln(3)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Observaciones:", ln=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.multi_cell(0, 6, str(datos.get('Descripcion', 'Sin observaciones adicionales')))
+
+        # C. CASO: REPORTE TÉCNICO / ALTA / REPARACIÓN
+        else:
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, " DETALLE DE INTERVENCIÓN TÉCNICA", ln=True, fill=True)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Descripción del Trabajo:", ln=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.multi_cell(0, 6, str(datos.get('Descripcion', 'S/D')))
+            
+            pdf.ln(2)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Trabajos Taller Externo:", ln=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.multi_cell(0, 6, str(datos.get('Trabajos_Externos', 'N/A')))
+
+        # --- PIE DE PÁGINA ---
+        pdf.ln(10)
+        pdf.set_font("Arial", 'I', 8)
+        pdf.cell(0, 10, "Este documento es un reporte oficial de MARPI MOTORES.", 0, 0, 'C')
+
+        return pdf.output(dest='S').encode('latin-1', 'replace')
+
+    except Exception as e:
+        return None
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
@@ -249,10 +327,13 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Búsqueda y Filtros
-        df_completo['Busqueda_Combo'] = df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
+        # 1. Preparamos la lista de búsqueda
+        df_completo['Busqueda_Combo'] = (
+            df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
+        )
         opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
         
+        # 2. Detección automática por QR (lectura de URL)
         query_tag = st.query_params.get("tag", "").upper()
         idx_q = 0
         if query_tag:
@@ -262,89 +343,107 @@ elif modo == "Historial y QR":
                     break
         
         seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
+
+        # Inicializamos variables para que la App no explote si no hay selección
         buscado = "" 
         historial_motor = pd.DataFrame()
 
         if seleccion:
+            # Extraemos el TAG y filtramos los datos
             buscado = seleccion.split(" | ")[0].strip()
             st.session_state.tag_fijo = buscado
             historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
 
-            # --- PANEL QR ---
+            # --- PANEL SUPERIOR: QR Y DATOS DEL MOTOR ---
             with st.container(border=True):
                 col_qr, col_info = st.columns([1, 2])
                 url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
                 qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
-                with col_qr: st.image(qr_api, width=150)
+                
+                with col_qr:
+                    st.image(qr_api, width=150)
                 with col_info:
                     st.subheader(f"🚜 {buscado}")
+                    st.caption(f"Número de Serie: {seleccion.split('SN: ')[1] if 'SN: ' in seleccion else 'S/D'}")
                     st.info(f"Link: {url_app}")
 
-            # --- BOTONES DE CARGA ---
+            # --- BOTONES DE ACCIÓN (Optimizado para Celular) ---
             st.subheader("➕ Cargar Nueva Tarea")
             c1, c2, c3 = st.columns(3)
             with c1:
                 if st.button("🛠️ Reparar", use_container_width=True):
-                    st.session_state.seleccion_manual = "Nuevo Registro"; st.rerun()
+                    st.session_state.seleccion_manual = "Nuevo Registro"
+                    st.rerun()
             with c2:
                 if st.button("🛢️ Engrasar", use_container_width=True):
-                    st.session_state.seleccion_manual = "Relubricacion"; st.rerun()
+                    st.session_state.seleccion_manual = "Relubricacion"
+                    st.rerun()
             with c3:
                 if st.button("⚡ Megar", use_container_width=True):
-                    st.session_state.seleccion_manual = "Mediciones de Campo"; st.rerun()
+                    st.session_state.seleccion_manual = "Mediciones de Campo"
+                    st.rerun()
 
             st.divider()
+            # --- HISTORIAL (Vista de Acordeón para Celular) ---
+        st.subheader("📜 Historial de Intervenciones")
+        if not historial_motor.empty:
+            # Mostramos lo más nuevo primero
+            hist_m = historial_motor.iloc[::-1] 
 
-            # --- HISTORIAL (Vista de Acordeón) ---
-            st.subheader("📜 Historial de Intervenciones")
-            if not historial_motor.empty:
-                # Mostramos lo más nuevo primero
-                hist_m = historial_motor.iloc[::-1] 
-    
-                for idx, fila in hist_m.iterrows():
-                    # DEFINICIÓN DE VARIABLES (Esto evita el error de la línea 313)
-                    fecha = fila.get('Fecha', '-')
-                    tarea = fila.get('Tipo_Tarea', 'General')
-                    tarea_nom = str(tarea).upper()
-                    responsable = fila.get('Responsable', 'S/D')
-                    
-                    # Usamos un expander para cada fila del historial
-                    with st.expander(f"📅 {fecha} - {tarea}"):
+            for idx, fila in hist_m.iterrows():
+                fecha = fila.get('Fecha','-')
+                tarea = fila.get('Tipo_Tarea', 'General')
+                responsable = fila.get('Responsable', 'S/D')
+                desc_completa = str(fila.get('Descripcion', '-'))
+                desc_corta = desc_completa[:30]
+                
+                with st.expander(f"📅 {fecha} - {tarea} ({desc_corta}...)"):
+                    col1, col2 = st.columns(2)
+                    with col1:
                         st.write(f"**👤 Responsable:** {responsable}")
-                        st.write(f"**📝 Descripción:** {fila.get('Descripcion', '-')}")
-                        st.write(f"**🗒️ Notas:** {fila.get('notas', '-')}")
-    
-                        # --- DENTRO DEL EXPANDER DEL HISTORIAL ---
-                        datos_h = fila.to_dict()
-                        tipo_tarea = str(datos_h.get('Tipo_Tarea', '')).upper()
-                        
-                        # Este es el tráfico que decide qué reporte usar
-                        try:
-                            if "RELUBRICACION" in tipo_tarea:
-                                pdf_archivo = generar_pdf_lubricacion(datos_h, buscado)
-                                nombre_pdf = f"Lubricacion_{buscado}.pdf"
-                                
-                            elif "MEGADO" in tipo_tarea or "CAMPO" in tipo_tarea:
-                                pdf_archivo = generar_pdf_megado(datos_h, buscado)
-                                nombre_pdf = f"Megado_{buscado}.pdf"
-                                
-                            else:
-                                # Aquí entra tu Reporte Técnico/Reparación original
-                                pdf_archivo = generar_pdf_reparacion(datos_h, buscado)
-                                nombre_pdf = f"Reparacion_{buscado}.pdf"
-                        
-                            if pdf_archivo:
-                                st.download_button(
-                                    label=f"📄 Descargar {nombre_pdf}",
-                                    data=pdf_archivo,
-                                    file_name=nombre_pdf,
-                                    key=f"btn_{idx}"
-                                )
-                        except Exception as e:
-                            st.error(f"Error al generar este PDF: {e}")
+                        st.write(f"**🏷️ Tag:** {fila.get('Tag','-')}")
+                    with col2:
+                        st.write(f"**⚙️ Rod. LA:** {fila.get('Rodamiento_LA','-')}")
+                        st.write(f"**⚙️ Rod. LOA:** {fila.get('Rodamiento_LOA','-')}")
+
+                    st.write(f"**📝 Descripción:** {desc_completa}")
+                    st.write(f"**🗒️ Notas:** {fila.get('notas','-')}")
+                    
+                    if str(fila.get('Tipo_Grasa')) != 'nan':
+                        st.write(f"🧪 **Grasa:** {fila.get('Tipo_Grasa')} ({fila.get('Gramos_LA', '0')}g / {fila.get('Gramos_LOA', '0')}g)")
+
+                    # --- ESTE BLOQUE DEBE ESTAR AQUÍ ADENTRO (CON ESTA SANGRÍA) ---
+                    try:
+                        datos_historial = fila.to_dict()
+                        # IMPORTANTE: En tu Excel la columna se llama 'Tipo_Tarea'
+                        tarea_val = str(datos_historial.get('Tipo_Tarea', '')).upper()
+                
+                        if "RELUBRICACION" in tarea_val or "LUBRICACION" in tarea_val:
+                            # TRADUCTOR: Mapeamos los nombres del Excel a los que el PDF espera
+                            datos_historial['gr_real_la'] = datos_historial.get('Gramos_LA', 0)
+                            datos_historial['gr_real_loa'] = datos_historial.get('Gramos_LOA', 0)
+                            datos_historial['Rodamiento_LA'] = datos_historial.get('Rodamiento_LA', 'S/D')
+                            datos_historial['Rodamiento_LOA'] = datos_historial.get('Rodamiento_LOA', 'S/D')
+                            datos_historial['notas'] = datos_historial.get('notas', 'Sin notas')
+                            titulo_final = f"LUBRICACION - {buscado}"
+                        else:
+                            titulo_final = buscado
+                
+                        pdf_archivo = generar_pdf_reporte(datos_historial, titulo_final)
+                
+                        if pdf_archivo:
+                            st.download_button(
+                                label="📄 Descargar Informe PDF",
+                                data=pdf_archivo,
+                                file_name=f"Reporte_{buscado}_{fecha}.pdf",
+                                key=f"pdf_hist_{idx}", 
+                                use_container_width=True
+                            )
+                    except Exception as e:
+                        st.error(f"Error al generar PDF: {e}")
         else:
             st.warning("No hay intervenciones registradas para este motor.")
-            
+
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     
@@ -622,6 +721,7 @@ elif modo == "Mediciones de Campo":
                     "Tag": t,  # ¿En el Excel es "Tag" o "TAG"? Tiene que ser igual.
                     "N_Serie": n_serie,
                     "Responsable": resp,
+                    "Notas": notas,
                     "Potencia": info.get("Potencia", ""),
                     "Tension": info.get("Tension", ""),
                     "RPM": info.get("RPM", ""),
@@ -641,7 +741,7 @@ elif modo == "Mediciones de Campo":
                 # 3. GUARDAR Y PDF
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
-                st.session_state.pdf_buffer = generar_pdf_final(nueva, buscado)
+                st.session_state.pdf_buffer = generar_pdf_reporte(nueva, "REPORTE DE MEGADO")
                 st.session_state.tag_buffer = f"{t}_MEGADO"
                 st.session_state.cnt_meg += 1
                 
@@ -653,10 +753,8 @@ elif modo == "Mediciones de Campo":
                 import time
                 time.sleep(1.5)
                 st.rerun()
-            try:
-                st.session_state.pdf_buffer = generar_pdf_universal(nueva)
-            except Exception as e:
-                st.error(f"Error al generar vista previa: {e}")
+            else:
+                st.error("⚠️ El TAG y el Responsable son obligatorios.")
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
