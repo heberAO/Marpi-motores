@@ -452,22 +452,19 @@ elif modo == "Relubricacion":
         
         else:
             st.success("✅ **EQUIPO APTO PARA LUBRICACIÓN**")
-            st.write("Los rodamientos registrados permiten el ingreso de grasa nueva.")
-            # --- CÁLCULO DE GRASA BASADO EN EL RODAMIENTO ---
+            
+            # Usamos la función maestra definida arriba
+            g_la_calc = calcular_grasa_marpi(rod_la)
+            g_loa_calc = calcular_grasa_marpi(rod_loa)
 
-            # Calculamos para ambos lados
-            g_la_calc = calcular_gramos_grasa(rod_la)
-            g_loa_calc = calcular_gramos_grasa(rod_loa)
-
-            # --- MOSTRAR RESULTADOS AL TÉCNICO ---
             st.info(f"📋 **Cálculo según Rodamiento:**")
             c1, c2 = st.columns(2)
-            c1.write(f"Sugerido LA: **{g_la_calc} g**")
-            c2.write(f"Sugerido LOA: **{g_loa_calc} g**")
+            c1.metric("Sugerido LA", f"{g_la_calc} g")
+            c2.metric("Sugerido LOA", f"{g_loa_calc} g")
             
-            # Formulario para que el técnico ingrese lo que cargó
-            cantidad_la = st.number_input("Gramos reales cargados (LA):", value=float(g_la_calc))
-            cantidad_loa = st.number_input("Gramos reales cargados (LOA):", value=float(g_loa_calc))
+            # Formulario de carga real
+            cantidad_la = st.number_input("Gramos reales LA:", value=float(g_la_calc))
+            cantidad_loa = st.number_input("Gramos reales LOA:", value=float(g_loa_calc))
             
         st.markdown("---")
 
@@ -720,6 +717,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
