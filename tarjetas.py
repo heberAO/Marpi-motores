@@ -404,23 +404,22 @@ elif modo == "Historial y QR":
                         st.write(f"🧪 **Grasa:** {fila.get('Tipo_Grasa')} ({fila.get('Gramos_LA', '0')}g / {fila.get('Gramos_LOA', '0')}g)")
 
                    # --- BUSCADOR / HISTORIAL ---
-        # Asegúrate de que este bloque esté dentro de tu bucle for del historial
         try:
-            # 1. Convertimos la fila del historial a un diccionario
-            datos_historial = row.to_dict() 
+            datos_historial = fila.to_dict()
             tarea_nom = str(datos_historial.get('Tarea', '')).upper()
         
             # 2. TRADUCTOR: Igualamos los datos del Excel a los de la carga viva
             if "LUBRICACION" in tarea_nom:
-                # Pasamos los nombres del Excel a los nombres que espera tu PDF nuevo
+                # Mapeamos los datos del Excel a los que el PDF nuevo espera recibir
                 datos_historial['gr_real_la'] = datos_historial.get('Gramos_LA', 0)
                 datos_historial['gr_real_loa'] = datos_historial.get('Gramos_LOA', 0)
                 datos_historial['Rodamiento_LA'] = datos_historial.get('Rodamiento_LAG', 'S/D')
                 datos_historial['Rodamiento_LOA'] = datos_historial.get('Rodamiento_LOAG', 'S/D')
-                # Obligamos a que el título active el formato de lubricación
+                datos_historial['notas'] = datos_historial.get('Notas', 'Sin notas')
+                # Título clave para activar el diseño de lubricación en el PDF
                 titulo_final = f"LUBRICACION - {buscado}"
-            else:
-                # Si es ingreso, se mantiene el Reporte Técnico original
+           else:
+                # Mantiene el diseño original para el Reporte Técnico
                 titulo_final = buscado
         
             # 3. Llamamos a la función (Ahora sí serán idénticos)
@@ -431,7 +430,7 @@ elif modo == "Historial y QR":
                     label="📄 Descargar Informe PDF",
                     data=pdf_archivo,
                     file_name=f"Reporte_{buscado}_{fecha}.pdf",
-                    key=f"pdf_hist_{idx}", 
+                    key=f"pdf_hist_{idx}", # 'idx' debe ser el índice de tu bucle for
                     use_container_width=True
                 )
         except Exception as e:
@@ -753,6 +752,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
