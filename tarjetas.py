@@ -406,34 +406,36 @@ elif modo == "Historial y QR":
                    # --- BUSCADOR / HISTORIAL ---
         # Asegúrate de que este bloque esté dentro de tu bucle for del historial
         try:
-            datos_fila = fila.to_dict()
-            tarea_nom = str(datos_fila.get('Tarea', '')).upper()
+            # 1. Convertimos la fila del historial a un diccionario
+            datos_historial = row.to_dict() 
+            tarea_nom = str(datos_historial.get('Tarea', '')).upper()
         
-            # Si es Lubricación, "disfrazamos" los datos del Excel 
-            # para que la función del PDF crea que es una carga nueva
+            # 2. TRADUCTOR: Igualamos los datos del Excel a los de la carga viva
             if "LUBRICACION" in tarea_nom:
-                datos_fila['gr_real_la'] = datos_fila.get('Gramos_LA', 0)
-                datos_fila['gr_real_loa'] = datos_fila.get('Gramos_LOA', 0)
-                datos_fila['Rodamiento_LA'] = datos_fila.get('Rodamiento_LAG', 'S/D')
-                datos_fila['Rodamiento_LOA'] = datos_fila.get('Rodamiento_LOAG', 'S/D')
-                # Usamos el nombre que espera tu PDF nuevo
-                titulo_para_pdf = f"LUBRICACION - {buscado}"
+                # Pasamos los nombres del Excel a los nombres que espera tu PDF nuevo
+                datos_historial['gr_real_la'] = datos_historial.get('Gramos_LA', 0)
+                datos_historial['gr_real_loa'] = datos_historial.get('Gramos_LOA', 0)
+                datos_historial['Rodamiento_LA'] = datos_historial.get('Rodamiento_LAG', 'S/D')
+                datos_historial['Rodamiento_LOA'] = datos_historial.get('Rodamiento_LOAG', 'S/D')
+                # Obligamos a que el título active el formato de lubricación
+                titulo_final = f"LUBRICACION - {buscado}"
             else:
-                titulo_para_pdf = buscado
+                # Si es ingreso, se mantiene el Reporte Técnico original
+                titulo_final = buscado
         
-            # Llamada a la función (La misma que usas en la carga)
-            pdf_archivo = generar_pdf_reporte(datos_fila, titulo_para_pdf)
+            # 3. Llamamos a la función (Ahora sí serán idénticos)
+            pdf_archivo = generar_pdf_reporte(datos_historial, titulo_final)
         
             if pdf_archivo:
                 st.download_button(
                     label="📄 Descargar Informe PDF",
                     data=pdf_archivo,
                     file_name=f"Reporte_{buscado}_{fecha}.pdf",
-                    key=f"pdf_hist_{idx}", # Key única para evitar errores
+                    key=f"pdf_hist_{idx}", 
                     use_container_width=True
                 )
         except Exception as e:
-            st.error(f"Error al generar PDF: {e}")
+            st.error(f"Error en el historial: {e}")
         else:
             st.warning("No hay intervenciones registradas para este motor.")
 
@@ -751,6 +753,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
