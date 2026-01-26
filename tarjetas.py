@@ -653,11 +653,14 @@ elif modo == "Mediciones de Campo":
                 import time
                 time.sleep(1.5)
                 st.rerun()
-            else:
-                st.error("⚠️ El TAG y el Responsable son obligatorios.")
+            try:
+                st.session_state.pdf_buffer = generar_pdf_universal(nueva)
+            except Exception as e:
+                st.error(f"Error al generar vista previa: {e}")
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
