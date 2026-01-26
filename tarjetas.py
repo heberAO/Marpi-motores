@@ -45,47 +45,63 @@ def generar_pdf_reporte(datos, buscado):
         pdf.cell(0, 5, f"Generado desde App Marpi Motores", ln=True, align='C')
         pdf.ln(10)
 
-        # --- Información del Motor ---
+        # --- Sección 1: Datos del Equipo ---
         pdf.set_font("Arial", 'B', 12)
         pdf.set_fill_color(240, 240, 240)
-        pdf.cell(0, 10, " DATOS DEL EQUIPO", ln=True, fill=True)
+        pdf.cell(0, 10, " 1. DATOS DEL EQUIPO", ln=True, fill=True)
         pdf.set_font("Arial", '', 11)
-        
-        # Usamos tus columnas: Potencia, Tension, RPM, N_Serie
         pdf.cell(95, 10, f"Potencia: {datos.get('Potencia', 'S/D')}")
         pdf.cell(95, 10, f"Tensión: {datos.get('Tension', 'S/D')}", ln=True)
         pdf.cell(95, 10, f"RPM: {datos.get('RPM', 'S/D')}")
         pdf.cell(95, 10, f"N° Serie: {datos.get('N_Serie', 'S/D')}", ln=True)
         pdf.ln(5)
 
-        # --- Datos de la Intervención ---
+        # --- Sección 2: Detalle de la Tarea ---
         pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, " DETALLE DE LA TAREA", ln=True, fill=True)
+        pdf.cell(0, 10, " 2. DETALLE DE LA INTERVENCIÓN", ln=True, fill=True)
         pdf.set_font("Arial", '', 11)
-        
-        # Usamos: Fecha, Tipo_Tarea, Responsable
         pdf.cell(95, 10, f"Fecha: {datos.get('Fecha', 'S/D')}")
         pdf.cell(95, 10, f"Tarea: {datos.get('Tipo_Tarea', 'S/D')}", ln=True)
         pdf.cell(0, 10, f"Responsable: {datos.get('Responsable', 'S/D')}", ln=True)
         
-        pdf.ln(5)
+        pdf.ln(2)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 10, "Descripción y Observaciones:", ln=True)
+        pdf.cell(0, 8, "Descripción / Observaciones:", ln=True)
         pdf.set_font("Arial", '', 10)
-        # Usamos 'Descripcion' (sin acento) y 'Observaciones'
-        texto_desc = f"{datos.get('Descripcion', '')} \n{datos.get('Observaciones', '')}"
-        pdf.multi_cell(0, 7, texto_desc)
-
-        # --- Rodamientos y Lubricación ---
+        texto_desc = f"{datos.get('Descripcion', '')}\n{datos.get('Observaciones', '')}"
+        pdf.multi_cell(0, 6, texto_desc)
         pdf.ln(5)
+
+        # --- Sección 3: Mediciones Eléctricas (NUEVO) ---
         pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, " RODAMIENTOS Y LUBRICACIÓN", ln=True, fill=True)
+        pdf.cell(0, 10, " 3. MEDICIONES ELÉCTRICAS", ln=True, fill=True)
+        pdf.set_font("Arial", '', 10)
+        
+        # Fila 1: RT (Resistencias de Tierra / Fase)
+        pdf.cell(63, 10, f"RT_TU: {datos.get('RT_TU', '-')}")
+        pdf.cell(63, 10, f"RT_TV: {datos.get('RT_TV', '-')}")
+        pdf.cell(63, 10, f"RT_TW: {datos.get('RT_TW', '-')}", ln=True)
+        
+        # Fila 2: RB (Resistencias de Bobinado)
+        pdf.cell(63, 10, f"RB_UV: {datos.get('RB_UV', '-')}")
+        pdf.cell(63, 10, f"RB_VW: {datos.get('RB_VW', '-')}")
+        pdf.cell(63, 10, f"RB_UW: {datos.get('RB_UW', '-')}", ln=True)
+        
+        # Fila 3: RI (Aislamiento)
+        pdf.cell(63, 10, f"RI_U: {datos.get('RI_U', '-')}")
+        pdf.cell(63, 10, f"RI_V: {datos.get('RI_V', '-')}")
+        pdf.cell(63, 10, f"RI_W: {datos.get('RI_W', '-')}", ln=True)
+        pdf.ln(5)
+
+        # --- Sección 4: Rodamientos ---
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, " 4. RODAMIENTOS Y LUBRICACIÓN", ln=True, fill=True)
         pdf.set_font("Arial", '', 11)
-        pdf.cell(95, 10, f"Rod. LA: {datos.get('Rodamiento_LA', 'S/D')}")
-        pdf.cell(95, 10, f"Rod. LOA: {datos.get('Rodamiento_LOA', 'S/D')}", ln=True)
+        pdf.cell(95, 10, f"Rod. LA: {datos.get('Rodamiento_LAG', 'S/D')}")
+        pdf.cell(95, 10, f"Rod. LOA: {datos.get('Rodamiento_LOAG', 'S/D')}", ln=True)
         pdf.cell(0, 10, f"Grasa: {datos.get('Tipo_Grasa', 'S/D')} ({datos.get('Gramos_LA','0')}g / {datos.get('Gramos_LOA','0')}g)", ln=True)
 
-        # Generar salida
+        # Generar salida (S) para Streamlit
         return pdf.output(dest='S').encode('latin-1', 'replace')
 
     except Exception as e:
@@ -674,6 +690,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
