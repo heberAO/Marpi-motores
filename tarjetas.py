@@ -45,40 +45,44 @@ def generar_pdf_reporte(datos, buscado):
         pdf = FPDF()
         pdf.add_page()
         
-        # 1. ENCABEZADO Y DATOS DE PLACA (Igual para todos)
+        # --- ENCABEZADO Y PLACA (Siempre igual) ---
         pdf.set_font("Arial", 'B', 16)
         pdf.cell(0, 10, f"INFORME: {buscado}", ln=True, align='C')
         pdf.ln(5)
         
         pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, "DATOS DEL MOTOR", ln=True, fill=False)
+        pdf.cell(0, 10, " 1. DATOS DE PLACA", ln=True, fill=False)
         pdf.set_font("Arial", '', 10)
         pdf.cell(0, 7, f"Tag: {datos.get('Tag')} | Serie: {datos.get('N_Serie')}", ln=True)
         pdf.cell(0, 7, f"Potencia: {datos.get('Potencia')} | RPM: {datos.get('RPM')}", ln=True)
         pdf.ln(5)
 
-        # 2. SECCIÓN VARIABLE (Aquí se divide por tipo)
-        tarea = str(buscado).upper()
-
-        if "MEGADO" in tarea or "CAMPO" in tarea:
-            # --- TABLA DE MEGADO ---
+        # --- SECCIÓN 2: DATOS ESPECÍFICOS ---
+        # Si el título dice "MEDICIONES" o "MEGADO"
+        if "MEDICIONES" in buscado.upper() or "MEGADO" in buscado.upper():
             pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, "RESULTADOS DE MEGADO (Gohm)", ln=True)
+            pdf.cell(0, 10, " 2. MEDICIONES ELÉCTRICAS (Gohm / Ohm)", ln=True)
             pdf.set_font("Arial", '', 10)
+            # Tabla Megado Tierra
             pdf.cell(60, 8, f"T-V1: {datos.get('RT_TV1', '-')}", 1)
             pdf.cell(60, 8, f"T-U1: {datos.get('RT_TU1', '-')}", 1)
             pdf.cell(60, 8, f"T-W1: {datos.get('RT_TW1', '-')}", 1, ln=True)
-            pdf.multi_cell(0, 10, f"Descripción: {datos.get('Descripcion')}")
+            # Tabla Resistencias
+            pdf.cell(60, 8, f"U1-U2: {datos.get('RI_U1U2', '-')}", 1)
+            pdf.cell(60, 8, f"V1-V2: {datos.get('RI_V1V2', '-')}", 1)
+            pdf.cell(60, 8, f"W1-W2: {datos.get('RI_W1W2', '-')}", 1, ln=True)
+            pdf.ln(5)
+            pdf.multi_cell(0, 7, f"Detalle Equipo: {datos.get('Descripcion')}")
 
-        elif "LUBRICACION" in tarea or "RELUBRICACION" in tarea:
-            # --- TABLA DE LUBRICACIÓN ---
+        # Si el título dice "LUBRICACION"
+        elif "LUBRICACION" in buscado.upper():
             pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, "DETALLE DE LUBRICACIÓN", ln=True)
+            pdf.cell(0, 10, " 2. DETALLE DE LUBRICACIÓN", ln=True)
             pdf.set_font("Arial", '', 10)
             pdf.cell(90, 8, f"Grasa LA: {datos.get('gr_real_la', '0')} g", 1)
             pdf.cell(90, 8, f"Grasa LOA: {datos.get('gr_real_loa', '0')} g", 1, ln=True)
-            pdf.multi_cell(0, 10, f"Notas: {datos.get('Notas', 'Sin notas')}")
-            
+            pdf.multi_cell(0, 7, f"Notas: {datos.get('Notas', 'Sin observaciones')}")
+
         return pdf.output(dest='S').encode('latin-1', 'replace')
     except:
         return None
@@ -647,24 +651,22 @@ elif modo == "Mediciones de Campo":
                 # 2. ARMAMOS EL DICCIONARIO 'nueva' COMPLETO
                 nueva = {
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
-                    "Tag": t,  # ¿En el Excel es "Tag" o "TAG"? Tiene que ser igual.
+                    "Tag": t,
                     "N_Serie": n_serie,
                     "Responsable": resp,
-                    "Notas": notas,
+                    "Tipo_Tarea": "Mediciones de Campo",
+                    "Notas": "", # <--- SOLUCIÓN: En Megado guardamos vacío, no usamos la variable
                     "Potencia": info.get("Potencia", ""),
                     "Tension": info.get("Tension", ""),
                     "RPM": info.get("RPM", ""),
                     "Carcasa": info.get("Carcasa", ""),
                     "Rodamiento_LA": info.get("Rodamiento_LA", ""),
                     "Rodamiento_LOA": info.get("Rodamiento_LOA", ""),
-                    "Descripcion": f"MEGADO - Equipo: {equipo_megado} ({tension_prueba})",
-                    
-                    # Aquí van los valores de megado, asegurate que estas columnas existan en tu Excel
+                    "Descripcion": f"EQUIPO: {equipo_megado} ({tension_prueba})",
+                    # Guardamos los valores técnicos para el historial
                     "RT_TV1": tv1, "RT_TU1": tu1, "RT_TW1": tw1,
                     "RB_WV1": wv1, "RB_WU1": wu1, "RB_VU1": vu1,
-                    "RI_U1U2": u1u2, "RI_V1V2": v1v2, "RI_W1W2": w1w2,
-                    "ML_L1": tl1, "ML_L2": tl2, "ML_L3": tl3,
-                    "ML_L1L2": l1l2, "ML_L1L3": l1l3, "ML_L2L3": l2l3
+                    "RI_U1U2": u1u2, "RI_V1V2": v1v2, "RI_W1W2": w1w2
                 }
 
                 # 3. GUARDAR Y PDF
@@ -687,6 +689,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
