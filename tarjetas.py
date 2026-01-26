@@ -273,103 +273,101 @@ if modo == "Nuevo Registro":
                     st.error("⚠️ El TAG y el Responsable son obligatorios.")
   
 elif modo == "Historial y QR":
-    # --- PASO CLAVE: Inicializar variables para evitar NameError ---
-    historial_motor = pd.DataFrame() 
-    buscado = "" # <--- Esto evita que la URL falle
-
-    if seleccion:
-        # 1. Extraemos el TAG puro
-        buscado = seleccion.split(" | ")[0].strip()
-        st.session_state.tag_fijo = buscado
-        
-        # 2. Filtramos el historial
-        historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
-
-    # --- VISTA DE HISTORIAL OPTIMIZADA PARA MÓVIL ---
-        if not historial_motor.empty:
-            st.write(f"### Historial de Intervenciones ({len(historial_motor)})")
-            
-            for i, fila in historial_motor.iterrows():
-                # Cada intervención se muestra en una tarjeta individual
-                with st.container(border=True):
-                    fecha = fila.get('Fecha', 'S/D')
-                    trabajo = fila.get('Tipo_Tarea', 'Mantenimiento')
-                    
-                    col_a, col_b = st.columns([1, 1])
-                    col_a.markdown(f"**📅 Fecha:** {fecha}")
-                    col_b.markdown(f"**🔧 Tarea:** {trabajo}")
-                    
-                    st.markdown("---")
-                    
-                    st.markdown(f"**Responsable:** {fila.get('Responsable', 'N/A')}")
-                    st.markdown(f"**Observaciones:** {fila.get('Observaciones', 'Sin comentarios')}")
-                    
-                    if 'Grasa' in fila:
-                        st.markdown(f"🧪 **Grasa:** {fila.get('Grasa', '-')}")
-
-        elif seleccion: 
-            # Este bloque se ejecuta si seleccionaste un motor pero el Excel de historial está vacío
-            st.info("No se encontraron registros previos para este motor.")
-
-        # --- SECCIÓN FINAL: LINK Y QR (Fuera del bloque de historial) ---
-        if buscado:
-            st.markdown("---")
-            url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
-            st.info(f"🔗 **Link directo para QR:** {url_app}")
+    st.title("🔍 Consulta y Gestión de Motores")
     
-            # --- BOTONES DE ACCIÓN RÁPIDA (Alineados fuera del IF anterior) ---
-            st.markdown("---")
-            st.subheader("➕ ¿Qué deseas cargar para este motor?")
+    if not df_completo.empty:
+        # 1. Preparamos la lista de búsqueda
+        df_completo['Busqueda_Combo'] = (
+            df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
+        )
+        opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
+        
+        # 2. Detección automática por QR (lectura de URL)
+        query_tag = st.query_params.get("tag", "").upper()
+        idx_q = 0
+        if query_tag:
+            for i, op in enumerate(opciones):
+                if op.startswith(query_tag + " |"):
+                    idx_q = i
+                    break
+        
+        seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
+
+        # Inicializamos variables para que la App no explote si no hay selección
+        buscado = "" 
+        historial_motor = pd.DataFrame()
+
+        if seleccion:
+            # Extraemos el TAG y filtramos los datos
+            buscado = seleccion.split(" | ")[0].strip()
+            st.session_state.tag_fijo = buscado
+            historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
+
+            # --- PANEL SUPERIOR: QR Y DATOS DEL MOTOR ---
+            with st.container(border=True):
+                col_qr, col_info = st.columns([1, 2])
+                url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
+                qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
+                
+                with col_qr:
+                    st.image(qr_api, width=150)
+                with col_info:
+                    st.subheader(f"🚜 {buscado}")
+                    st.caption(f"Número de Serie: {seleccion.split('SN: ')[1] if 'SN: ' in seleccion else 'S/D'}")
+                    st.info(f"Link: {url_app}")
+
+            # --- BOTONES DE ACCIÓN (Optimizado para Celular) ---
+            st.subheader("➕ Cargar Nueva Tarea")
             c1, c2, c3 = st.columns(3)
-            
             with c1:
-                if st.button("🛠️ Nueva Reparación"):
+                if st.button("🛠️ Reparar", use_container_width=True):
                     st.session_state.seleccion_manual = "Nuevo Registro"
                     st.rerun()
             with c2:
-                if st.button("🛢️ Nueva Lubricación"):
+                if st.button("🛢️ Engrasar", use_container_width=True):
                     st.session_state.seleccion_manual = "Relubricacion"
                     st.rerun()
             with c3:
-                if st.button("⚡ Nuevo Megado"):
+                if st.button("⚡ Megar", use_container_width=True):
                     st.session_state.seleccion_manual = "Mediciones de Campo"
                     st.rerun()
-            # --- QR Y DATOS ---
-            col_qr, col_info = st.columns([1, 2])
-            url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
-            qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
-            
-            with col_qr:
-                st.image(qr_api, caption=f"QR de {buscado}")
-            with col_info:
-                st.subheader(f"🚜 Equipo seleccionado: {buscado}")
-                st.write(f"**Link directo:** {url_app}")
-            
+
             st.divider()
 
-# --- HISTORIAL Y PDF ---
+            # --- HISTORIAL (Vista de Acordeón para Celular) ---
             st.subheader("📜 Historial de Intervenciones")
-            hist_m = df_completo[df_completo['Tag'] == buscado].copy()
             
-            # Corregido: le agregamos el ] al final
-            hist_m = hist_m.iloc[::-1] 
+            if not historial_motor.empty:
+                # Mostramos lo más nuevo primero
+                hist_m = historial_motor.iloc[::-1] 
 
-            for idx, fila in hist_m.iterrows():
-                intervencion = str(fila.get('Descripcion', '-'))[:40]
-                with st.expander(f"📅 {fila.get('Fecha','-')} - {intervencion}..."):
-                    st.write(f"**Responsable:** {fila.get('Responsable','-')}")
-                    st.write(f"**Detalle completo:** {fila.get('Descripcion','-')}")
+                for idx, fila in hist_m.iterrows():
+                    fecha = fila.get('Fecha','-')
+                    tarea = fila.get('Tipo_Tarea', 'General')
                     
-                    # Generar PDF
-                    pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado)
-                    
-                    if pdf_archivo:
-                        st.download_button(
-                            label="📄 Descargar Informe PDF",
-                            data=pdf_archivo,
-                            file_name=f"Reporte_{buscado}_{idx}.pdf",
-                            key=f"btn_pdf_{idx}"
-                        )
+                    # El expansor ahorra mucho espacio en la pantalla del celular
+                    with st.expander(f"📅 {fecha} - {tarea}"):
+                        st.write(f"**Responsable:** {fila.get('Responsable','-')}")
+                        st.write(f"**Descripción:** {fila.get('Descripcion','-')}")
+                        
+                        if 'Grasa' in fila and str(fila.get('Grasa')) != 'nan':
+                            st.write(f"🧪 **Grasa utilizada:** {fila.get('Grasa')}")
+                        
+                        # Generación de PDF
+                        try:
+                            pdf_archivo = generar_pdf_reporte(fila.to_dict(), buscado)
+                            if pdf_archivo:
+                                st.download_button(
+                                    label="📄 Descargar PDF",
+                                    data=pdf_archivo,
+                                    file_name=f"Reporte_{buscado}_{fecha}.pdf",
+                                    key=f"pdf_{idx}",
+                                    use_container_width=True
+                                )
+                        except Exception as e:
+                            st.error("No se pudo generar el PDF de este registro.")
+            else:
+                st.warning("No hay intervenciones registradas para este TAG.")
 
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -676,6 +674,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
