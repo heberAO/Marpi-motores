@@ -12,7 +12,7 @@ def calcular_grasa_avanzado(rod_texto):
     try:
         import re
         match = re.search(r'(\d{4})', str(rod_texto))
-        if not match: return 15
+        if not match: return 0
         
         codigo = match.group(1)
         serie = int(codigo[1]) # 2 o 3
@@ -736,6 +736,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
