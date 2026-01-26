@@ -47,60 +47,50 @@ def generar_pdf_reporte(datos, buscado):
         pdf = FPDF()
         pdf.add_page()
         
-        # Detectamos si es un reporte de lubricación
-        # (Esto asume que el modo o la descripción indica lubricación)
-        es_lub = "LUBRICACION" in buscado.upper() or "LUB" in buscado.upper()
-
-        # --- Encabezado Marpi ---
-        pdf.set_font("Arial", 'B', 16)
-        pdf.cell(0, 10, f"REPORTE TÉCNICO: {buscado}", ln=True, align='C')
-        pdf.set_font("Arial", '', 10)
-        pdf.cell(0, 5, f"Generado desde App Marpi Motores", ln=True, align='C')
-        pdf.ln(10)
-
-        # --- Sección 1: Datos del Equipo (Igual para todos) ---
-        pdf.set_font("Arial", 'B', 12)
-        pdf.set_fill_color(240, 240, 240)
-        pdf.cell(0, 10, " 1. DATOS DEL EQUIPO", ln=True, fill=True)
-        pdf.set_font("Arial", '', 11)
-        pdf.cell(95, 10, f"Potencia: {datos.get('Potencia', 'S/D')}")
-        pdf.cell(95, 10, f"Tensión: {datos.get('Tension', 'S/D')}", ln=True)
-        pdf.cell(95, 10, f"RPM: {datos.get('RPM', 'S/D')}")
-        pdf.cell(95, 10, f"N° Serie: {datos.get('N_Serie', 'S/D')}", ln=True)
-        pdf.ln(5)
+        # --- LLAVE DE SEGURIDAD ---
+        # Si el titulo o la tarea dicen Lubricacion, activa el modo nuevo
+        es_lub = "LUBRICACION" in buscado.upper() or "RELUBRICACION" in str(datos.get('Tipo_Tarea', '')).upper()
 
         if es_lub:
-            # ==========================================
-            #   DISEÑO ESPECIAL PARA LUBRICACIÓN
-            # ==========================================
+            # ==========================================================
+            #   DISEÑO NUEVO: SOLO PARA LUBRICACIÓN (No toca el otro)
+            # ==========================================================
+            pdf.set_font("Arial", 'B', 16)
+            pdf.cell(0, 10, f"REPORTE DE LUBRICACIÓN: {buscado}", ln=True, align='C')
+            pdf.ln(5)
+            
+            # Datos del equipo rápidos
+            pdf.set_fill_color(230, 230, 230)
             pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " 2. DETALLE DE LUBRICACIÓN", ln=True, fill=True)
+            pdf.cell(0, 10, " DATOS DEL MOTOR", ln=True, fill=True)
             pdf.set_font("Arial", '', 11)
-            pdf.cell(95, 10, f"Fecha: {datos.get('Fecha', 'S/D')}")
-            pdf.cell(95, 10, f"Responsable: {datos.get('Responsable', 'S/D')}", ln=True)
-            
-            pdf.ln(2)
-            # Tabla de Grasas
-            pdf.set_font("Arial", 'B', 10)
-            pdf.cell(60, 8, "UBICACION", 1)
-            pdf.cell(60, 8, "RODAMIENTO", 1)
-            pdf.cell(60, 8, "CANT. GRASA", 1, ln=True)
-            
-            pdf.set_font("Arial", '', 10)
-            pdf.cell(60, 8, "Lado Acople (LA)", 1)
-            pdf.cell(60, 8, f"{datos.get('Rodamiento_LA', 'S/D')}", 1)
-            pdf.cell(60, 8, f"{datos.get('gr_real_la', '0')} g", 1, ln=True)
-            
-            pdf.cell(60, 8, "Lado Opuesto (LOA)", 1)
-            pdf.cell(60, 8, f"{datos.get('Rodamiento_LOA', 'S/D')}", 1)
-            pdf.cell(60, 8, f"{datos.get('gr_real_loa', '0')} g", 1, ln=True)
+            pdf.cell(95, 10, f"Tag: {datos.get('Tag', 'S/D')}")
+            pdf.cell(95, 10, f"Serie: {datos.get('N_Serie', 'S/D')}", ln=True)
             
             pdf.ln(5)
+            # Tabla de Grasas mejorada
             pdf.set_font("Arial", 'B', 11)
-            pdf.cell(0, 8, "Notas de Lubricación:", ln=True)
-            pdf.set_font("Arial", '', 10)
-            # Usamos 'notas' porque así lo llamaste en el formulario
-            pdf.multi_cell(0, 6, str(datos.get('notas', 'Sin observaciones específicas.')))
+            pdf.cell(60, 10, "POSICIÓN", 1, 0, 'C', True)
+            pdf.cell(70, 10, "RODAMIENTO", 1, 0, 'C', True)
+            pdf.cell(60, 10, "GRAMOS (g)", 1, 1, 'C', True)
+            
+            pdf.set_font("Arial", '', 11)
+            # Lado Acople
+            pdf.cell(60, 10, "Lado Acople (LA)", 1)
+            pdf.cell(70, 10, str(datos.get('Rodamiento_LA', datos.get('Rodamiento_LAG', 'S/D'))), 1)
+            pdf.cell(60, 10, str(datos.get('gr_real_la', datos.get('Gramos_LA', '0'))), 1, 1, 'C')
+            # Lado Opuesto
+            pdf.cell(60, 10, "Lado Opuesto (LOA)", 1)
+            pdf.cell(70, 10, str(datos.get('Rodamiento_LOA', datos.get('Rodamiento_LOAG', 'S/D'))), 1)
+            pdf.cell(60, 10, str(datos.get('gr_real_loa', datos.get('Gramos_LOA', '0'))), 1, 1, 'C')
+            
+            pdf.ln(5)
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, " NOTAS DE LUBRICACIÓN", ln=True, fill=True)
+            pdf.set_font("Arial", '', 11)
+            # Aquí van las notas que pediste
+            notas_texto = datos.get('notas', datos.get('Notas', 'Sin observaciones adicionales.'))
+            pdf.multi_cell(0, 7, str(notas_texto))
 
         else:
             # ==========================================
@@ -747,6 +737,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
