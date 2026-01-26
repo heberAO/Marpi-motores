@@ -301,43 +301,56 @@ elif modo == "Historial y QR":
 
             st.divider()
 
-            # --- HISTORIAL CON SELECTOR DE PDF ---
+            # --- HISTORIAL (Vista de Acordeón) ---
             st.subheader("📜 Historial de Intervenciones")
             if not historial_motor.empty:
+                # Mostramos lo más nuevo primero
                 hist_m = historial_motor.iloc[::-1] 
-
+    
                 for idx, fila in hist_m.iterrows():
-                    datos_h = fila.to_dict()
-                    tarea_nom = str(datos_h.get('Tipo_Tarea', '')).upper()
+                    # DEFINICIÓN DE VARIABLES (Esto evita el error de la línea 313)
+                    fecha = fila.get('Fecha', '-')
+                    tarea = fila.get('Tipo_Tarea', 'General')
+                    tarea_nom = str(tarea).upper()
+                    responsable = fila.get('Responsable', 'S/D')
                     
-                    with st.expander(f"📋 {fecha} - {tarea}"):
-                        # ESTO ES PARA DIAGNÓSTICO: Borralo cuando funcione
-                        # st.write("Columnas detectadas:", list(datos_h.keys())) 
-                
-                        if "LUBRICACION" in tarea_nom or "RELUBRICACION" in tarea_nom:
-                            f_pdf = generar_pdf_lubricacion
-                            n_archivo = f"Lubricacion_{buscado}.pdf"
-                        elif "MEGADO" in tarea_nom or "MEDICIONES" in tarea_nom:
-                            f_pdf = generar_pdf_megado
-                            n_archivo = f"Megado_{buscado}.pdf"
-                        else:
-                            f_pdf = generar_pdf_tecnico
-                            n_archivo = f"Tecnico_{buscado}.pdf"
-                
+                    # Usamos un expander para cada fila del historial
+                    with st.expander(f"📅 {fecha} - {tarea}"):
+                        st.write(f"**👤 Responsable:** {responsable}")
+                        st.write(f"**📝 Descripción:** {fila.get('Descripcion', '-')}")
+                        st.write(f"**🗒️ Notas:** {fila.get('notas', '-')}")
+    
+                        # --- LÓGICA DE SELECCIÓN DE PDF ---
                         try:
-                            archivo = f_pdf(datos_h, buscado)
-                            st.download_button(
-                                label=f"📥 Descargar {n_archivo}",
-                                data=archivo,
-                                file_name=n_archivo,
-                                key=f"btn_{idx}",
-                                use_container_width=True
-                            )
+                            datos_h = fila.to_dict()
+                            
+                            # Decidimos qué función llamar según el nombre de la tarea
+                            if "LUBRICACION" in tarea_nom or "RELUBRICACION" in tarea_nom:
+                                # Aquí debes tener definida la función generar_pdf_lubricacion
+                                archivo_pdf = generar_pdf_lubricacion(datos_h, buscado)
+                                nombre_f = f"Lubricacion_{buscado}_{fecha}.pdf"
+                            elif "MEGADO" in tarea_nom or "MEDICIONES" in tarea_nom:
+                                # Aquí debes tener definida la función generar_pdf_megado
+                                archivo_pdf = generar_pdf_megado(datos_h, buscado)
+                                nombre_f = f"Megado_{buscado}_{fecha}.pdf"
+                            else:
+                                # Por defecto el Reporte Técnico original
+                                archivo_pdf = generar_pdf_tecnico(datos_h, buscado)
+                                nombre_f = f"Reporte_Tecnico_{buscado}_{fecha}.pdf"
+    
+                            if archivo_pdf:
+                                st.download_button(
+                                    label=f"📥 Descargar {nombre_f}",
+                                    data=archivo_pdf,
+                                    file_name=nombre_f,
+                                    key=f"btn_hist_{idx}", # Key única para no chocar
+                                    use_container_width=True
+                                )
                         except Exception as e:
-                            st.error(f"Error: {e}")
-            else:
-                st.warning("No hay intervenciones registradas.")
-
+                            st.error(f"Error al generar este PDF: {e}")
+        else:
+            st.warning("No hay intervenciones registradas para este motor.")
+            
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     
@@ -652,6 +665,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
