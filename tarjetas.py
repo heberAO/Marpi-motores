@@ -418,7 +418,7 @@ elif modo == "Historial y QR":
                 datos_historial['notas'] = datos_historial.get('Notas', 'Sin notas')
                 # Título clave para activar el diseño de lubricación en el PDF
                 titulo_final = f"LUBRICACION - {buscado}"
-           else:
+            else:
                 # Mantiene el diseño original para el Reporte Técnico
                 titulo_final = buscado
         
@@ -752,6 +752,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
