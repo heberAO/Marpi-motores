@@ -403,41 +403,37 @@ elif modo == "Historial y QR":
                     if str(fila.get('Tipo_Grasa')) != 'nan':
                         st.write(f"🧪 **Grasa:** {fila.get('Tipo_Grasa')} ({fila.get('Gramos_LA', '0')}g / {fila.get('Gramos_LOA', '0')}g)")
 
-                    # --- BUSCADOR / HISTORIAL ---
-                        datos_historial = fila.to_dict()
-                        tarea_actual = str(datos_historial.get('Tarea', '')).upper()
-                        
-                        # 1. EL TRADUCTOR (Preparamos los datos para que el PDF los entienda)
-                        if "LUBRICACION" in tarea_actual:
-                            # Mapeamos lo que el Excel tiene a lo que el PDF nuevo espera
-                            datos_historial['gr_real_la'] = datos_historial.get('Gramos_LA', '0')
-                            datos_historial['gr_real_loa'] = datos_historial.get('Gramos_LOA', '0')
-                            datos_historial['Rodamiento_LA'] = datos_historial.get('Rodamiento_LAG', 'S/D')
-                            datos_historial['Rodamiento_LOA'] = datos_historial.get('Rodamiento_LOAG', 'S/D')
-                            datos_historial['notas'] = datos_historial.get('Notas', 'Sin notas')
-                            
-                            # IMPORTANTE: El título debe decir LUBRICACION para activar el diseño nuevo
-                            titulo_pdf = f"LUBRICACION - {buscado}"
-                        else:
-                            # Si no es lubricación, se queda como estaba (Reporte Técnico)
-                            titulo_pdf = buscado
-                        
-                        # 2. LLAMAMOS A LA MISMA FUNCIÓN (Ahora sí va a salir igual)
-                        pdf_archivo = generar_pdf_reporte(datos_historial, titulo_pdf)
-
-                        # 3. Le pasamos los datos ya 'traducidos' a la función
-                        pdf_archivo = generar_pdf_reporte(datos_para_pdf, titulo_final)
-                        
-                        if pdf_archivo:
-                            st.download_button(
-                                label="📄 Descargar Informe PDF",
-                                data=pdf_archivo,
-                                file_name=f"Reporte_{buscado}_{fecha}.pdf",
-                                key=f"pdf_{idx}",
-                                use_container_width=True
-                            )
-                    except Exception as e:
-                        st.error("No se pudo generar el PDF.")
+                   # --- BUSCADOR / HISTORIAL ---
+        # Asegúrate de que este bloque esté dentro de tu bucle for del historial
+        try:
+            datos_fila = fila.to_dict()
+            tarea_nom = str(datos_fila.get('Tarea', '')).upper()
+        
+            # Si es Lubricación, "disfrazamos" los datos del Excel 
+            # para que la función del PDF crea que es una carga nueva
+            if "LUBRICACION" in tarea_nom:
+                datos_fila['gr_real_la'] = datos_fila.get('Gramos_LA', 0)
+                datos_fila['gr_real_loa'] = datos_fila.get('Gramos_LOA', 0)
+                datos_fila['Rodamiento_LA'] = datos_fila.get('Rodamiento_LAG', 'S/D')
+                datos_fila['Rodamiento_LOA'] = datos_fila.get('Rodamiento_LOAG', 'S/D')
+                # Usamos el nombre que espera tu PDF nuevo
+                titulo_para_pdf = f"LUBRICACION - {buscado}"
+            else:
+                titulo_para_pdf = buscado
+        
+            # Llamada a la función (La misma que usas en la carga)
+            pdf_archivo = generar_pdf_reporte(datos_fila, titulo_para_pdf)
+        
+            if pdf_archivo:
+                st.download_button(
+                    label="📄 Descargar Informe PDF",
+                    data=pdf_archivo,
+                    file_name=f"Reporte_{buscado}_{fecha}.pdf",
+                    key=f"pdf_hist_{idx}", # Key única para evitar errores
+                    use_container_width=True
+                )
+        except Exception as e:
+            st.error(f"Error al generar PDF: {e}")
         else:
             st.warning("No hay intervenciones registradas para este motor.")
 
@@ -755,6 +751,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
