@@ -403,29 +403,27 @@ elif modo == "Historial y QR":
                     if str(fila.get('Tipo_Grasa')) != 'nan':
                         st.write(f"🧪 **Grasa:** {fila.get('Tipo_Grasa')} ({fila.get('Gramos_LA', '0')}g / {fila.get('Gramos_LOA', '0')}g)")
 
-                    # --- BOTÓN PARA EL PDF (CON TRADUCTOR) ---
-                    try:
-                        # 1. Convertimos la fila a diccionario
-                        datos_para_pdf = fila.to_dict()
+                    # --- BUSCADOR / HISTORIAL ---
+                        datos_historial = fila.to_dict()
+                        tarea_actual = str(datos_historial.get('Tarea', '')).upper()
                         
-                        # 2. Si es una Lubricación, extraemos los datos ocultos en la descripción
-                        # Esto asegura que el PDF 'nuevo' encuentre los gramos
-                        desc = str(datos_para_pdf.get('Descripcion', '')).upper()
-                        
-                        if "LUBRICACION" in desc or "LUB" in buscado.upper():
-                            import re
-                            # Buscamos los gramos con expresiones regulares en el texto
-                            # Busca números seguidos de 'g' (ej: 60g)
-                            gramos = re.findall(r'(\d+)\s*G', desc)
+                        # 1. EL TRADUCTOR (Preparamos los datos para que el PDF los entienda)
+                        if "LUBRICACION" in tarea_actual:
+                            # Mapeamos lo que el Excel tiene a lo que el PDF nuevo espera
+                            datos_historial['gr_real_la'] = datos_historial.get('Gramos_LA', '0')
+                            datos_historial['gr_real_loa'] = datos_historial.get('Gramos_LOA', '0')
+                            datos_historial['Rodamiento_LA'] = datos_historial.get('Rodamiento_LAG', 'S/D')
+                            datos_historial['Rodamiento_LOA'] = datos_historial.get('Rodamiento_LOAG', 'S/D')
+                            datos_historial['notas'] = datos_historial.get('Notas', 'Sin notas')
                             
-                            if len(gramos) >= 2:
-                                datos_para_pdf['gr_real_la'] = gramos[0]
-                                datos_para_pdf['gr_real_loa'] = gramos[1]
-                            
-                            # Forzamos que el título tenga la palabra clave
-                            titulo_final = f"LUBRICACION - {buscado}"
+                            # IMPORTANTE: El título debe decir LUBRICACION para activar el diseño nuevo
+                            titulo_pdf = f"LUBRICACION - {buscado}"
                         else:
-                            titulo_final = buscado
+                            # Si no es lubricación, se queda como estaba (Reporte Técnico)
+                            titulo_pdf = buscado
+                        
+                        # 2. LLAMAMOS A LA MISMA FUNCIÓN (Ahora sí va a salir igual)
+                        pdf_archivo = generar_pdf_reporte(datos_historial, titulo_pdf)
 
                         # 3. Le pasamos los datos ya 'traducidos' a la función
                         pdf_archivo = generar_pdf_reporte(datos_para_pdf, titulo_final)
@@ -757,6 +755,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
