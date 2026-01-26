@@ -40,47 +40,44 @@ if 'pdf_listo' not in st.session_state:
     st.session_state.pdf_listo = None
 
 # --- 1. FUNCIÓN REPORTE TÉCNICO (Mantenla tal cual la tenías) ---
+from fpdf import FPDF
+
 def generar_pdf_tecnico(datos, buscado):
-    from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"REPORTE TÉCNICO - {buscado}", ln=True, align='C')
-    # Aquí va tu código de RT, RB, RI...
+    pdf.cell(0, 10, f"REPORTE TÉCNICO: {buscado}", ln=True, align='C')
+    pdf.ln(5)
     pdf.set_font("Arial", '', 12)
-    pdf.cell(0, 10, f"Fecha: {datos.get('Fecha', 'S/D')}", ln=True)
     pdf.cell(0, 10, f"Responsable: {datos.get('Responsable', 'S/D')}", ln=True)
+    pdf.cell(0, 10, f"Fecha: {datos.get('Fecha', 'S/D')}", ln=True)
+    # Aquí puedes seguir agregando tus campos de Reparación
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
 def generar_pdf_lubricacion(datos, buscado):
-    from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.set_text_color(0, 50, 100)
-    pdf.cell(0, 10, f"REPORTE DE LUBRICACIÓN - {buscado}", ln=True, align='C')
+    pdf.cell(0, 10, f"REPORTE DE LUBRICACIÓN: {buscado}", ln=True, align='C')
     pdf.ln(10)
-    pdf.set_text_color(0, 0, 0)
-    # Datos de lubricación (Excel usa Gramos_LA, Carga usa gr_real_la)
+    # Datos específicos de lubricación
+    pdf.set_font("Arial", '', 12)
     g_la = datos.get('Gramos_LA', datos.get('gr_real_la', '0'))
     g_loa = datos.get('Gramos_LOA', datos.get('gr_real_loa', '0'))
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "DETALLE DE GRASA:", ln=True)
-    pdf.set_font("Arial", '', 11)
-    pdf.cell(0, 10, f"Lado Acople (LA): {g_la} gramos", ln=True)
-    pdf.cell(0, 10, f"Lado Opuesto (LOA): {g_loa} gramos", ln=True)
+    pdf.cell(0, 10, f"Grasa Lado Acople (LA): {g_la} g", ln=True)
+    pdf.cell(0, 10, f"Grasa Lado Opuesto (LOA): {g_loa} g", ln=True)
+    pdf.cell(0, 10, f"Tipo de Grasa: {datos.get('Tipo_Grasa', 'S/D')}", ln=True)
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
 def generar_pdf_megado(datos, buscado):
-    from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"REPORTE DE MEGADO - {buscado}", ln=True, align='C')
-    # Aquí usas las columnas de tu planilla de megado
+    pdf.cell(0, 10, f"REPORTE DE MEGADO: {buscado}", ln=True, align='C')
     pdf.ln(10)
     pdf.set_font("Arial", '', 12)
-    pdf.cell(0, 10, f"Medición de Aislamiento: {datos.get('Megado', 'S/D')}", ln=True)
+    # Ajusta 'Megado' al nombre real de tu columna de aislamiento
+    pdf.cell(0, 10, f"Valor de Aislamiento: {datos.get('Megado', 'S/D')}", ln=True)
     return pdf.output(dest='S').encode('latin-1', 'replace')
     
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
@@ -257,13 +254,10 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Preparamos la lista de búsqueda
-        df_completo['Busqueda_Combo'] = (
-            df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
-        )
+        # 1. Búsqueda y Filtros
+        df_completo['Busqueda_Combo'] = df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
         opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
         
-        # 2. Detección automática por QR (lectura de URL)
         query_tag = st.query_params.get("tag", "").upper()
         idx_q = 0
         if query_tag:
@@ -273,108 +267,79 @@ elif modo == "Historial y QR":
                     break
         
         seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
-
-        # Inicializamos variables para que la App no explote si no hay selección
         buscado = "" 
         historial_motor = pd.DataFrame()
 
         if seleccion:
-            # Extraemos el TAG y filtramos los datos
             buscado = seleccion.split(" | ")[0].strip()
             st.session_state.tag_fijo = buscado
             historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
 
-            # --- PANEL SUPERIOR: QR Y DATOS DEL MOTOR ---
+            # --- PANEL QR ---
             with st.container(border=True):
                 col_qr, col_info = st.columns([1, 2])
                 url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
                 qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
-                
-                with col_qr:
-                    st.image(qr_api, width=150)
+                with col_qr: st.image(qr_api, width=150)
                 with col_info:
                     st.subheader(f"🚜 {buscado}")
-                    st.caption(f"Número de Serie: {seleccion.split('SN: ')[1] if 'SN: ' in seleccion else 'S/D'}")
                     st.info(f"Link: {url_app}")
 
-            # --- BOTONES DE ACCIÓN (Optimizado para Celular) ---
+            # --- BOTONES DE CARGA ---
             st.subheader("➕ Cargar Nueva Tarea")
             c1, c2, c3 = st.columns(3)
             with c1:
                 if st.button("🛠️ Reparar", use_container_width=True):
-                    st.session_state.seleccion_manual = "Nuevo Registro"
-                    st.rerun()
+                    st.session_state.seleccion_manual = "Nuevo Registro"; st.rerun()
             with c2:
                 if st.button("🛢️ Engrasar", use_container_width=True):
-                    st.session_state.seleccion_manual = "Relubricacion"
-                    st.rerun()
+                    st.session_state.seleccion_manual = "Relubricacion"; st.rerun()
             with c3:
                 if st.button("⚡ Megar", use_container_width=True):
-                    st.session_state.seleccion_manual = "Mediciones de Campo"
-                    st.rerun()
+                    st.session_state.seleccion_manual = "Mediciones de Campo"; st.rerun()
 
             st.divider()
-            # --- HISTORIAL (Vista de Acordeón para Celular) ---
-        st.subheader("📜 Historial de Intervenciones")
-        if not historial_motor.empty:
-            # Mostramos lo más nuevo primero
-            hist_m = historial_motor.iloc[::-1] 
 
-            for idx, fila in hist_m.iterrows():
-                fecha = fila.get('Fecha','-')
-                tarea = fila.get('Tipo_Tarea', 'General')
-                responsable = fila.get('Responsable', 'S/D')
-                desc_completa = str(fila.get('Descripcion', '-'))
-                desc_corta = desc_completa[:30]
-                
-                with st.expander(f"📅 {fecha} - {tarea} ({desc_corta}...)"):
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.write(f"**👤 Responsable:** {responsable}")
-                        st.write(f"**🏷️ Tag:** {fila.get('Tag','-')}")
-                    with col2:
-                        st.write(f"**⚙️ Rod. LA:** {fila.get('Rodamiento_LA','-')}")
-                        st.write(f"**⚙️ Rod. LOA:** {fila.get('Rodamiento_LOA','-')}")
+            # --- HISTORIAL CON SELECTOR DE PDF ---
+            st.subheader("📜 Historial de Intervenciones")
+            if not historial_motor.empty:
+                hist_m = historial_motor.iloc[::-1] 
 
-                    st.write(f"**📝 Descripción:** {desc_completa}")
-                    st.write(f"**🗒️ Notas:** {fila.get('notas','-')}")
+                for idx, fila in hist_m.iterrows():
+                    fecha = fila.get('Fecha','-')
+                    tarea = str(fila.get('Tipo_Tarea', 'General'))
                     
-                    if str(fila.get('Tipo_Grasa')) != 'nan':
-                        st.write(f"🧪 **Grasa:** {fila.get('Tipo_Grasa')} ({fila.get('Gramos_LA', '0')}g / {fila.get('Gramos_LOA', '0')}g)")
-
-                   # --- DENTRO DE TU BUCLE FOR EN EL HISTORIAL ---
-                    try:
-                        datos_para_pdf = fila.to_dict()
-                        # Limpiamos el texto de la tarea para no errar
-                        tipo_tarea_limpio = str(datos_para_pdf.get('Tipo_Tarea', '')).upper()
+                    with st.expander(f"📅 {fecha} - {tarea}"):
+                        st.write(f"**👤 Responsable:** {fila.get('Responsable', 'S/D')}")
+                        st.write(f"**📝 Descripción:** {fila.get('Descripcion', '-')}")
                         
-                        # 1. Decidimos qué función llamar
-                        if "LUBRICACION" in tipo_tarea_limpio or "RELUBRICACION" in tipo_tarea_limpio:
-                            archivo_pdf = generar_pdf_lubricacion(datos_para_pdf, buscado)
-                            nombre_file = f"Lubricacion_{buscado}.pdf"
+                        # --- LÓGICA DE PDF INDIVIDUAL ---
+                        try:
+                            datos_para_pdf = fila.to_dict()
+                            t_limpia = tarea.upper()
                             
-                        elif "MEGADO" in tipo_tarea_limpio or "MEDICIONES" in tipo_tarea_limpio:
-                            archivo_pdf = generar_pdf_megado(datos_para_pdf, buscado)
-                            nombre_file = f"Megado_{buscado}.pdf"
-                            
-                        else:
-                            # SIEMPRE por defecto el Reporte Técnico para no romper nada
-                            archivo_pdf = generar_pdf_tecnico(datos_para_pdf, buscado)
-                            nombre_file = f"Reporte_Tecnico_{buscado}.pdf"
-                    
-                        # 2. El botón de descarga
-                        if archivo_pdf:
-                            st.download_button(
-                                label=f"📥 Descargar {nombre_file}",
-                                data=archivo_pdf,
-                                file_name=nombre_file,
-                                key=f"btn_descarga_{idx}",
-                                use_container_width=True
-                            )
-                    except Exception as e:
-                        st.error(f"Error generando el PDF: {e}")
-        else:
-            st.warning("No hay intervenciones registradas para este motor.")
+                            if "LUBRICACION" in t_limpia or "RELUBRICACION" in t_limpia:
+                                archivo_pdf = generar_pdf_lubricacion(datos_para_pdf, buscado)
+                                nombre_f = f"Lubricacion_{buscado}_{fecha}.pdf"
+                            elif "MEGADO" in t_limpia or "MEDICIONES" in t_limpia:
+                                archivo_pdf = generar_pdf_megado(datos_para_pdf, buscado)
+                                nombre_f = f"Megado_{buscado}_{fecha}.pdf"
+                            else:
+                                archivo_pdf = generar_pdf_tecnico(datos_para_pdf, buscado)
+                                nombre_f = f"Reporte_Tecnico_{buscado}_{fecha}.pdf"
+
+                            if archivo_pdf:
+                                st.download_button(
+                                    label=f"📥 Descargar {nombre_f}",
+                                    data=archivo_pdf,
+                                    file_name=nombre_f,
+                                    key=f"btn_{idx}",
+                                    use_container_width=True
+                                )
+                        except Exception as e:
+                            st.error(f"Error en PDF: {e}")
+            else:
+                st.warning("No hay intervenciones registradas.")
 
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -690,6 +655,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
