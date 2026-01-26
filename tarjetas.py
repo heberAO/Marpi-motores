@@ -380,11 +380,9 @@ elif modo == "Historial y QR":
             hist_m = historial_motor.iloc[::-1] 
 
             for idx, fila in hist_m.iterrows():
-                # Usamos tus nombres: Fecha y Tipo_Tarea
                 fecha = fila.get('Fecha','-')
                 tarea = fila.get('Tipo_Tarea', 'General')
                 responsable = fila.get('Responsable', 'S/D')
-                # Usamos Descripcion (sin acento como en tu lista)
                 desc_completa = str(fila.get('Descripcion', '-'))
                 desc_corta = desc_completa[:30]
                 
@@ -403,38 +401,35 @@ elif modo == "Historial y QR":
                     if str(fila.get('Tipo_Grasa')) != 'nan':
                         st.write(f"🧪 **Grasa:** {fila.get('Tipo_Grasa')} ({fila.get('Gramos_LA', '0')}g / {fila.get('Gramos_LOA', '0')}g)")
 
-                   # --- BUSCADOR / HISTORIAL ---
-        try:
-            datos_historial = fila.to_dict()
-            tarea_nom = str(datos_historial.get('Tarea', '')).upper()
-        
-            # 2. TRADUCTOR: Igualamos los datos del Excel a los de la carga viva
-            if "LUBRICACION" in tarea_nom:
-                # Mapeamos los datos del Excel a los que el PDF nuevo espera recibir
-                datos_historial['gr_real_la'] = datos_historial.get('Gramos_LA', 0)
-                datos_historial['gr_real_loa'] = datos_historial.get('Gramos_LOA', 0)
-                datos_historial['Rodamiento_LA'] = datos_historial.get('Rodamiento_LAG', 'S/D')
-                datos_historial['Rodamiento_LOA'] = datos_historial.get('Rodamiento_LOAG', 'S/D')
-                datos_historial['notas'] = datos_historial.get('Notas', 'Sin notas')
-                # Título clave para activar el diseño de lubricación en el PDF
-                titulo_final = f"LUBRICACION - {buscado}"
-            else:
-                # Mantiene el diseño original para el Reporte Técnico
-                titulo_final = buscado
-        
-            # 3. Llamamos a la función (Ahora sí serán idénticos)
-            pdf_archivo = generar_pdf_reporte(datos_historial, titulo_final)
-        
-            if pdf_archivo:
-                st.download_button(
-                    label="📄 Descargar Informe PDF",
-                    data=pdf_archivo,
-                    file_name=f"Reporte_{buscado}_{fecha}.pdf",
-                    key=f"pdf_hist_{idx}", # 'idx' debe ser el índice de tu bucle for
-                    use_container_width=True
-                )
-        except Exception as e:
-            st.error(f"Error en el historial: {e}")
+                    # --- ESTE BLOQUE DEBE ESTAR AQUÍ ADENTRO (CON ESTA SANGRÍA) ---
+                    try:
+                        datos_historial = fila.to_dict()
+                        # IMPORTANTE: En tu Excel la columna se llama 'Tipo_Tarea'
+                        tarea_val = str(datos_historial.get('Tipo_Tarea', '')).upper()
+                
+                        if "RELUBRICACION" in tarea_val or "LUBRICACION" in tarea_val:
+                            # TRADUCTOR: Mapeamos los nombres del Excel a los que el PDF espera
+                            datos_historial['gr_real_la'] = datos_historial.get('Gramos_LA', 0)
+                            datos_historial['gr_real_loa'] = datos_historial.get('Gramos_LOA', 0)
+                            datos_historial['Rodamiento_LA'] = datos_historial.get('Rodamiento_LA', 'S/D')
+                            datos_historial['Rodamiento_LOA'] = datos_historial.get('Rodamiento_LOA', 'S/D')
+                            datos_historial['notas'] = datos_historial.get('notas', 'Sin notas')
+                            titulo_final = f"LUBRICACION - {buscado}"
+                        else:
+                            titulo_final = buscado
+                
+                        pdf_archivo = generar_pdf_reporte(datos_historial, titulo_final)
+                
+                        if pdf_archivo:
+                            st.download_button(
+                                label="📄 Descargar Informe PDF",
+                                data=pdf_archivo,
+                                file_name=f"Reporte_{buscado}_{fecha}.pdf",
+                                key=f"pdf_hist_{idx}", 
+                                use_container_width=True
+                            )
+                    except Exception as e:
+                        st.error(f"Error al generar PDF: {e}")
         else:
             st.warning("No hay intervenciones registradas para este motor.")
 
@@ -752,6 +747,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
