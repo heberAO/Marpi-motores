@@ -456,11 +456,6 @@ elif modo == "Relubricacion":
             # Usamos la función maestra definida arriba
             g_la_calc = calcular_grasa_marpi(rod_la)
             g_loa_calc = calcular_grasa_marpi(rod_loa)
-
-            st.info(f"📋 **Cálculo según Rodamiento:**")
-            c1, c2 = st.columns(2)
-            c1.metric("Sugerido LA", f"{g_la_calc} g")
-            c2.metric("Sugerido LOA", f"{g_loa_calc} g")
             
         st.markdown("---")
 
@@ -713,6 +708,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
