@@ -72,10 +72,7 @@ def generar_pdf_megado(datos, buscado):
     pdf.cell(0, 10, f"REPORTE DE MEGADO (AISLAMIENTO) - {buscado}", ln=True)
     # Busca columnas de la planilla de megado
     return pdf.output(dest='S').encode('latin-1', 'replace')
-
-    except Exception as e:
-        return f"Error al generar PDF: {str(e)}"
-        return None
+    
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
@@ -679,6 +676,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
