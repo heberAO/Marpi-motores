@@ -39,28 +39,65 @@ fecha_hoy = date.today()
 if 'pdf_listo' not in st.session_state:
     st.session_state.pdf_listo = None
 
-# --- 1. REPORTE TÉCNICO (Ingreso/Reparación) ---
+# --- 1. FUNCIÓN REPORTE TÉCNICO (Mantenla tal cual la tenías) ---
 def generar_pdf_tecnico(datos, buscado):
-    # AQUÍ VA TU CÓDIGO ORIGINAL (RT, RB, RI)
     from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, f"REPORTE TÉCNICO - {buscado}", ln=True)
-    # ... (Tu código de mediciones eléctricas) ...
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, f"REPORTE TÉCNICO: {buscado}", ln=True, align='C')
+    pdf.ln(5)
+    
+    # Ejemplo de cómo debe leer datos (Asegúrate de usar tus nombres reales)
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(0, 10, f"Potencia: {datos.get('Potencia', 'S/D')}", ln=True)
+    pdf.cell(0, 10, f"RT_TU: {datos.get('RT_TU', '-')}", ln=True) # Datos de tu planilla técnico
+    
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
+# --- 2. FUNCIÓN LUBRICACIÓN (Corregida para que no salga en blanco) ---
 def generar_pdf_lubricacion(datos, buscado):
-    # DISEÑO EXCLUSIVO PARA LUBRICACIÓN
     from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, f"REPORTE DE LUBRICACIÓN - {buscado}", ln=True)
-    # Busca columnas de la planilla de lubricación
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, "INFORME DE LUBRICACIÓN", ln=True, align='C')
+    pdf.ln(10)
+    
+    # Buscamos los datos usando ambos nombres posibles (Carga vs Excel)
+    rod_la = datos.get('Rodamiento_LA', datos.get('Rodamiento_LAG', 'S/D'))
+    gr_la = datos.get('Gramos_LA', datos.get('gr_real_la', '0'))
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, f"Equipo: {buscado}", ln=True)
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(0, 10, f"Rodamiento LA: {rod_la}", ln=True)
+    pdf.cell(0, 10, f"Cantidad de Grasa: {gr_la} gramos", ln=True)
+    
+    # Notas
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "Observaciones:", ln=True)
     pdf.set_font("Arial", '', 11)
-    pdf.cell(0, 10, f"Grasa LA: {datos.get('Gramos_LA', '0')}g", ln=True)
-    pdf.cell(0, 10, f"Grasa LOA: {datos.get('Gramos_LOA', '0')}g", ln=True)
+    nota = datos.get('Notas', datos.get('notas', 'Sin notas'))
+    pdf.multi_cell(0, 7, str(nota))
+    
+    return pdf.output(dest='S').encode('latin-1', 'replace')
+
+# --- 3. FUNCIÓN MEGADO (Específica para aislamiento) ---
+def generar_pdf_megado(datos, buscado):
+    from fpdf import FPDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, "REPORTE DE MEGADO Y AISLAMIENTO", ln=True, align='C')
+    pdf.ln(10)
+    
+    # Aquí pones las columnas que usas en tu planilla de Megado
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(0, 10, f"Voltaje aplicado: {datos.get('Voltaje_Prueba', 'S/D')}", ln=True)
+    pdf.cell(0, 10, f"Resistencia Aislamiento: {datos.get('Valor_Mega', 'S/D')}", ln=True)
+    
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
 def generar_pdf_megado(datos, buscado):
@@ -676,6 +713,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
