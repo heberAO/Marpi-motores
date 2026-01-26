@@ -337,31 +337,31 @@ elif modo == "Historial y QR":
                         st.write(f"**📝 Descripción:** {fila.get('Descripcion', '-')}")
                         st.write(f"**🗒️ Notas:** {fila.get('notas', '-')}")
     
-                        # --- LÓGICA DE SELECCIÓN DE PDF ---
+                        # --- DENTRO DEL EXPANDER DEL HISTORIAL ---
+                        datos_h = fila.to_dict()
+                        tipo_tarea = str(datos_h.get('Tipo_Tarea', '')).upper()
+                        
+                        # Este es el tráfico que decide qué reporte usar
                         try:
-                            datos_h = fila.to_dict()
-                            
-                            # Decidimos qué función llamar según el nombre de la tarea
-                            if "LUBRICACION" in tarea_nom or "RELUBRICACION" in tarea_nom:
-                                # Aquí debes tener definida la función generar_pdf_lubricacion
-                                archivo_pdf = generar_pdf_lubricacion(datos_h, buscado)
-                                nombre_f = f"Lubricacion_{buscado}_{fecha}.pdf"
-                            elif "MEGADO" in tarea_nom or "MEDICIONES" in tarea_nom:
-                                # Aquí debes tener definida la función generar_pdf_megado
-                                archivo_pdf = generar_pdf_megado(datos_h, buscado)
-                                nombre_f = f"Megado_{buscado}_{fecha}.pdf"
+                            if "RELUBRICACION" in tipo_tarea:
+                                pdf_archivo = generar_pdf_lubricacion(datos_h, buscado)
+                                nombre_pdf = f"Lubricacion_{buscado}.pdf"
+                                
+                            elif "MEGADO" in tipo_tarea or "CAMPO" in tipo_tarea:
+                                pdf_archivo = generar_pdf_megado(datos_h, buscado)
+                                nombre_pdf = f"Megado_{buscado}.pdf"
+                                
                             else:
-                                # Por defecto el Reporte Técnico original
-                                archivo_pdf = generar_pdf_tecnico(datos_h, buscado)
-                                nombre_f = f"Reporte_Tecnico_{buscado}_{fecha}.pdf"
-    
-                            if archivo_pdf:
+                                # Aquí entra tu Reporte Técnico/Reparación original
+                                pdf_archivo = generar_pdf_reparacion(datos_h, buscado)
+                                nombre_pdf = f"Reparacion_{buscado}.pdf"
+                        
+                            if pdf_archivo:
                                 st.download_button(
-                                    label=f"📥 Descargar {nombre_f}",
-                                    data=archivo_pdf,
-                                    file_name=nombre_f,
-                                    key=f"btn_hist_{idx}", # Key única para no chocar
-                                    use_container_width=True
+                                    label=f"📄 Descargar {nombre_pdf}",
+                                    data=pdf_archivo,
+                                    file_name=nombre_pdf,
+                                    key=f"btn_{idx}"
                                 )
                         except Exception as e:
                             st.error(f"Error al generar este PDF: {e}")
@@ -682,6 +682,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
