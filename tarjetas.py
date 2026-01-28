@@ -384,23 +384,23 @@ elif modo == "Historial y QR":
                         else:
                             titulo_final = f"REPORTE TÉCNICO - {buscado}"
                     
-                        # 4. Generamos el PDF usando la función profesional
-                        # Usamos datos_historial que contiene la fila del Excel
-                       pdf_archivo = generar_pdf_tecnico(fila.to_dict())
-
-                       if pdf_archivo:
-                            st.download_button(
-                                label="📥 Descargar Informe Técnico",
-                                data=pdf_archivo,
-                                file_name=f"Informe_Tecnico_{idx}.pdf",
-                                mime="application/pdf",
-                                key=f"btn_tec_{idx}"
-                            )
-                        else:
-                            st.warning(f"No se pudo generar el PDF para {buscado}")
-                    
-                    except Exception as e:
-                        st.error(f"Error al procesar el registro: {e}")
+                        # --- DENTRO DE TU BUCLE DE HISTORIAL ---
+                        # Asegúrate de que todas estas líneas tengan la MISMA sangría
+                        try:
+                            datos_para_pdf = fila.to_dict()
+                            pdf_archivo = generar_pdf_tecnico(datos_para_pdf)
+                            
+                            if pdf_archivo:
+                                st.download_button(
+                                    label="📥 Descargar Informe Técnico",
+                                    data=pdf_archivo,
+                                    file_name=f"Informe_Tecnico_{idx}.pdf",
+                                    mime="application/pdf",
+                                    key=f"btn_tec_{idx}",
+                                    use_container_width=True
+                                )
+                        except Exception as e:
+                            st.error(f"Error en fila {idx}: {e}")
 
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -713,6 +713,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
