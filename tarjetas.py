@@ -326,7 +326,7 @@ elif modo == "Historial y QR":
                 with col_qr:
                     st.image(qr_api, width=150)
                 with col_info:
-                    st.subheader(f"🚜 {buscado}")
+                    st.subheader(f" Ⓜ {buscado}")
                     st.caption(f"Número de Serie: {seleccion.split('SN: ')[1] if 'SN: ' in seleccion else 'S/D'}")
                     st.info(f"Link: {url_app}")
 
@@ -344,7 +344,7 @@ elif modo == "Historial y QR":
             with c3:
                 if st.button("⚡ Megar", use_container_width=True):
                     st.session_state.seleccion_manual = "Mediciones de Campo"
-                    st.rerun()
+                    st.rerun() 
 
             st.divider()
             # --- HISTORIAL (Vista de Acordeón para Celular) ---
@@ -720,6 +720,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
