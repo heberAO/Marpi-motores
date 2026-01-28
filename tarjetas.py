@@ -39,82 +39,108 @@ fecha_hoy = date.today()
 if 'pdf_listo' not in st.session_state:
     st.session_state.pdf_listo = None
 
-def generar_pdf_reporte(datos, buscado):
+def generar_pdf_reporte(datos, titulo_reporte):
     try:
         from fpdf import FPDF
         pdf = FPDF()
         pdf.add_page()
         
-        # --- ENCABEZADO MARPI ---
-        pdf.set_font("Arial", 'B', 16)
-        pdf.set_text_color(0, 51, 102) # Azul oscuro
-        pdf.cell(0, 10, f"INFORME TÉCNICO: {buscado}", ln=True, align='C')
-        pdf.set_font("Arial", 'I', 10)
-        pdf.set_text_color(100)
-        pdf.cell(0, 5, "Marpi Motores - Sistema de Gestión", ln=True, align='C')
-        pdf.ln(10)
+        # --- ENCABEZADO PROFESIONAL ---
+        pdf.set_fill_color(0, 51, 102) # Azul Marpi
+        pdf.rect(0, 0, 210, 40, 'F')
+        pdf.set_font("Arial", 'B', 20)
+        pdf.set_text_color(255, 255, 255)
+        pdf.cell(0, 20, "MARPI MOTORES", ln=True, align='C')
+        pdf.set_font("Arial", 'B', 14)
+        pdf.cell(0, 10, f"INFORME TÉCNICO: {titulo_reporte}", ln=True, align='C')
+        pdf.ln(15)
 
-        # --- SECCIÓN 1: DATOS DE PLACA (Igual para todos) ---
-        pdf.set_font("Arial", 'B', 12)
+        # --- SECCIÓN 1: DATOS DE PLACA (SIEMPRE VISIBLES) ---
         pdf.set_text_color(0)
+        pdf.set_font("Arial", 'B', 12)
         pdf.set_fill_color(230, 230, 230)
-        pdf.cell(0, 10, " 1. DATOS DE PLACA DEL MOTOR", ln=True, fill=True)
+        pdf.cell(0, 10, " 1. INFORMACIÓN DEL EQUIPO", ln=True, fill=True)
         pdf.set_font("Arial", '', 10)
         
-        # Cuadrícula de datos [cite: 1, 2, 3, 5, 6, 7]
-        pdf.cell(90, 8, f"TAG: {datos.get('Tag', 'S/D')}", 1)
-        pdf.cell(90, 8, f"N SERIE: {datos.get('N_Serie', 'S/D')}", 1, ln=True)
-        pdf.cell(60, 8, f"Potencia: {datos.get('Potencia', 'S/D')}", 1)
-        pdf.cell(60, 8, f"Tensión: {datos.get('Tension', 'S/D')}", 1)
-        pdf.cell(60, 8, f"RPM: {datos.get('RPM', 'S/D')}", 1, ln=True)
-        pdf.ln(5)
+        # Tabla de datos generales
+        pdf.cell(45, 8, "TAG:", 1, 0, 'L', True); pdf.cell(50, 8, f"{datos.get('Tag', 'S/D')}", 1)
+        pdf.cell(45, 8, "N° SERIE:", 1, 0, 'L', True); pdf.cell(50, 8, f"{datos.get('N_Serie', 'S/D')}", 1, 1)
+        
+        pdf.cell(45, 8, "POTENCIA:", 1, 0, 'L', True); pdf.cell(50, 8, f"{datos.get('Potencia', 'S/D')}", 1)
+        pdf.cell(45, 8, "TENSIÓN:", 1, 0, 'L', True); pdf.cell(50, 8, f"{datos.get('Tension', 'S/D')}", 1, 1)
+        
+        pdf.cell(45, 8, "RPM:", 1, 0, 'L', True); pdf.cell(50, 8, f"{datos.get('RPM', 'S/D')}", 1)
+        pdf.cell(45, 8, "CARCASA:", 1, 0, 'L', True); pdf.cell(50, 8, f"{datos.get('Carcasa', 'S/D')}", 1, 1)
+        pdf.ln(10)
 
-        # --- SECCIÓN 2: DETALLES SEGÚN EL TIPO DE REPORTE ---
-        tipo = str(buscado).upper()
+        # --- SECCIÓN 2: DETALLES ESPECÍFICOS (Lógica de Selección) ---
+        modo = str(titulo_reporte).upper()
 
-        if "MEGADO" in tipo or "CAMPO" in tipo:
-            # --- DISEÑO PARA MEGADO ---
+        if "MEGADO" in modo or "CAMPO" in modo:
+            # --- DISEÑO PARA MEDICIONES ELÉCTRICAS ---
             pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " 2. MEDICIONES ELÉCTRICAS", ln=True, fill=True)
-            pdf.set_font("Arial", 'B', 10)
-            pdf.cell(0, 8, "Resistencia de Aislamiento (Gohm):", ln=True)
-            pdf.set_font("Arial", '', 10)
-            pdf.cell(60, 8, f"T-V1: {datos.get('RT_TV1', '-')}", 1)
-            pdf.cell(60, 8, f"T-U1: {datos.get('RT_TU1', '-')}", 1)
-            pdf.cell(60, 8, f"T-W1: {datos.get('RT_TW1', '-')}", 1, ln=True)
+            pdf.cell(0, 10, " 2. ENSAYOS ELÉCTRICOS", ln=True, fill=True)
             
-            pdf.ln(3)
             pdf.set_font("Arial", 'B', 10)
-            pdf.cell(0, 8, "Resistencia Interna de Bobinados (Ohm):", ln=True)
+            pdf.cell(0, 8, "Resistencia de Aislamiento a Tierra (Gohm):", ln=True)
             pdf.set_font("Arial", '', 10)
-            pdf.cell(60, 8, f"U1-U2: {datos.get('RI_U1U2', '-')}", 1)
-            pdf.cell(60, 8, f"V1-V2: {datos.get('RI_V1V2', '-')}", 1)
-            pdf.cell(60, 8, f"W1-W2: {datos.get('RI_W1W2', '-')}", 1, ln=True)
-
-        elif "LUBRICACION" in tipo or "RELUBRICACION" in tipo:
-            # --- DISEÑO PARA LUBRICACIÓN ---
-            pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " 2. DETALLE DE RELUBRICACIÓN", ln=True, fill=True)
+            pdf.cell(63, 8, f"T - V1: {datos.get('RT_TV1', '-')}", 1, 0, 'C')
+            pdf.cell(63, 8, f"T - U1: {datos.get('RT_TU1', '-')}", 1, 0, 'C')
+            pdf.cell(64, 8, f"T - W1: {datos.get('RT_TW1', '-')}", 1, 1, 'C')
+            
+            pdf.ln(4)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Resistencia Óhmica entre Fases (Ohm):", ln=True)
             pdf.set_font("Arial", '', 10)
-            pdf.cell(90, 10, f"Rodamiento LA: {datos.get('Rodamiento_LA')}", 1)
-            pdf.cell(90, 10, f"Grasa aplicada: {datos.get('Gramos_LA', '0')} g", 1, ln=True)
-            pdf.cell(90, 10, f"Rodamiento LOA: {datos.get('Rodamiento_LOA')}", 1)
-            pdf.cell(90, 10, f"Grasa aplicada: {datos.get('Gramos_LOA', '0')} g", 1, ln=True)
+            pdf.cell(63, 8, f"U1 - U2: {datos.get('RI_U1U2', '-')}", 1, 0, 'C')
+            pdf.cell(63, 8, f"V1 - V2: {datos.get('RI_V1V2', '-')}", 1, 0, 'C')
+            pdf.cell(64, 8, f"W1 - W2: {datos.get('RI_W1W2', '-')}", 1, 1, 'C')
+            
             pdf.ln(5)
             pdf.set_font("Arial", 'B', 10)
-            pdf.cell(0, 8, "Notas de campo:", ln=True)
+            pdf.cell(0, 8, "Observaciones Técnicas:", ln=True)
             pdf.set_font("Arial", '', 10)
-            pdf.multi_cell(0, 6, str(datos.get('Notas', 'Sin observaciones.')))
+            pdf.multi_cell(0, 8, str(datos.get('Descripcion', 'Sin observaciones adicionales.')))
+
+        elif "LUBRICACION" in modo or "RELUBRICACION" in modo:
+            # --- DISEÑO PARA LUBRICACIÓN ---
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, " 2. REPORTE DE RELUBRICACIÓN", ln=True, fill=True)
+            
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(95, 8, "LADO ACOPLE (LA)", 1, 0, 'C', True)
+            pdf.cell(95, 8, "LADO OP. ACOPLE (LOA)", 1, 1, 'C', True)
+            
+            pdf.set_font("Arial", '', 10)
+            pdf.cell(95, 10, f"Rodamiento: {datos.get('Rodamiento_LA', 'S/D')}", 1, 0, 'C')
+            pdf.cell(95, 10, f"Rodamiento: {datos.get('Rodamiento_LOA', 'S/D')}", 1, 1, 'C')
+            pdf.cell(95, 10, f"Grasa Aplicada: {datos.get('Gramos_LA', '0')} g", 1, 0, 'C')
+            pdf.cell(95, 10, f"Grasa Aplicada: {datos.get('Gramos_LOA', '0')} g", 1, 1, 'C')
+            
+            pdf.ln(5)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Notas de Lubricación:", ln=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.multi_cell(0, 8, str(datos.get('Notas', 'Procedimiento de engrase realizado según norma.')))
 
         else:
-            # --- DISEÑO REPARACIÓN / ALTA ---
+            # --- DISEÑO PARA ALTA / REPARACIÓN ---
             pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " 2. DESCRIPCIÓN DEL TRABAJO", ln=True, fill=True)
+            pdf.cell(0, 10, " 2. DETALLE DE TRABAJOS", ln=True, fill=True)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Descripción del servicio:", ln=True)
             pdf.set_font("Arial", '', 10)
-            pdf.multi_cell(0, 8, str(datos.get('Descripcion', 'Registro de equipo.')))
+            pdf.multi_cell(0, 8, str(datos.get('Descripcion', 'Registro de ingreso de equipo.')))
+
+        # --- PIE DE PÁGINA ---
+        pdf.set_y(-30)
+        pdf.set_font("Arial", 'I', 8)
+        pdf.set_text_color(128)
+        pdf.cell(0, 10, f"Generado por: {datos.get('Responsable', 'Sistema')} - Marpi Motores", 0, 0, 'C')
 
         return pdf.output(dest='S').encode('latin-1', 'replace')
-    except:
+    except Exception as e:
+        print(f"Error PDF: {e}")
         return None
 # --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
 st.set_page_config(page_title="Marpi Motores", layout="wide")
@@ -720,6 +746,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
