@@ -329,7 +329,6 @@ elif modo == "Historial y QR":
                 with col_info:
                     st.subheader(f" Ⓜ {buscado}")
                     st.caption(f"Número de Serie: {seleccion.split('SN: ')[1] if 'SN: ' in seleccion else 'S/D'}")
-                    st.info(f"Link: {url_app}")
 
             # --- BOTONES DE ACCIÓN (Optimizado para Celular) ---
             st.subheader("➕ Cargar Nueva Tarea")
@@ -678,9 +677,7 @@ elif modo == "Mediciones de Campo":
                 # 1. RESCATE DE DATOS PARA EL PDF
                 busqueda = df_completo[df_completo['Tag'] == t].tail(1)
                 info = busqueda.iloc[0].to_dict() if not busqueda.empty else {}
-
-                # 2. ARMAMOS EL DICCIONARIO 'nueva' COMPLETO
-                # --- DICCIONARIO PARA MEGADO (Sin la variable 'notas') ---
+                # --- DICCIONARIO PARA MEGADO
                 nueva = {
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
                     "Tag": t,
@@ -721,6 +718,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
