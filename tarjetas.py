@@ -12,58 +12,67 @@ from PIL import Image, ImageDraw
 
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
-        # Tamaño para 50x25mm
+        # Tamaño 400x200 (proporción limpia para la PC42)
         ancho, alto = 400, 200 
         etiqueta = Image.new('1', (ancho, alto), 1) 
         draw = ImageDraw.Draw(etiqueta)
 
-        # 1. GENERAR QR CON LOGO
+        # 1. GENERAR QR CON LOGO CLARO
         url = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={tag}"
         qr = qrcode.QRCode(
             version=None,
-            error_correction=qrcode.constants.ERROR_CORRECT_H, # Máxima resistencia
-            box_size=3,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
+            box_size=4, # Un poco más grande para que sea legible
             border=1,
         )
         qr.add_data(url)
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
 
-        # Intentar cargar el logo para el centro del QR
+        # Lógica del Logo con "Parche Blanco" para que se vea bien
         try:
-            logo = Image.open("logo.png") # Asegurate de que el nombre coincida
-            # Calcular tamaño del logo (25% del QR)
-            pos = ((img_qr.size[0] - 30) // 2, (img_qr.size[1] - 30) // 2)
-            logo = logo.resize((30, 30))
-            img_qr.paste(logo, pos)
+            logo = Image.open("logo.png").convert("RGBA")
+            # El logo va a ocupar el 30% del QR
+            qr_w, qr_h = img_qr.size
+            logo_size = int(qr_w * 0.3)
+            logo = logo.resize((logo_size, logo_size), Image.LANCZOS)
+            
+            # Crear un cuadrado blanco detrás del logo para que no se mezcle
+            pos = ((qr_w - logo_size) // 2, (qr_h - logo_size) // 2)
+            parche_blanco = Image.new("RGBA", (logo_size, logo_size), "white")
+            img_qr.paste(parche_blanco, pos)
+            img_qr.paste(logo, pos, logo)
         except:
-            pass # Si no encuentra el logo, genera el QR normal
+            pass 
 
-        # Convertir QR de nuevo a Blanco y Negro para la Honeywell
+        # 2. POSICIONAMIENTO Y DISEÑO
         img_qr = img_qr.convert('1')
-        etiqueta.paste(img_qr, (15, 45))
+        # Centramos el QR verticalmente a la izquierda con más margen
+        etiqueta.paste(img_qr, (10, 25))
 
-        # --- DISEÑO DE LA ETIQUETA ---
-        draw.rectangle([2, 2, 397, 197], outline=0, width=2)
-        draw.line([135, 10, 135, 190], fill=0, width=2)
+        # Línea divisoria más a la derecha para dar espacio al QR
+        draw.line([165, 15, 165, 185], fill=0, width=2)
 
-        # Textos
-        draw.text((150, 15), "MARPI MOTORES S.R.L.", fill=0)
-        draw.line([150, 32, 380, 32], fill=0, width=1)
+        # 3. TEXTOS ORDENADOS
+        # Título centrado en su columna
+        draw.text((180, 20), "MARPI MOTORES S.R.L.", fill=0)
+        draw.line([180, 35, 380, 35], fill=0, width=1)
         
-        draw.text((150, 50), f"IDENTIFICACIÓN:", fill=0)
-        draw.text((150, 70), f"> TAG: {tag}", fill=0)
+        # Datos con más espacio entre líneas
+        draw.text((180, 55), f"TAG:", fill=0)
+        draw.text((180, 70), f"{tag}", fill=0) # El valor del TAG solo
         
-        draw.text((150, 110), f"DATOS TÉCNICOS:", fill=0)
-        draw.text((150, 130), f"N° SERIE: {serie}", fill=0)
-        draw.text((150, 155), f"POTENCIA: {potencia}", fill=0)
-        draw.text((280, 180), "SERVICE OFICIAL", fill=0)
+        draw.text((180, 100), f"N° SERIE:", fill=0)
+        draw.text((180, 115), f"{serie}", fill=0)
+        
+        draw.text((180, 145), f"POTENCIA:", fill=0)
+        draw.text((180, 160), f"{potencia}", fill=0)
 
         buf = BytesIO()
         etiqueta.save(buf, format="PNG")
         return buf.getvalue()
     except Exception as e:
-        st.error(f"Error en etiqueta: {e}")
+        st.error(f"Error en diseño: {e}")
         return None
 
 st.set_page_config(page_title="Marpi Motores", layout="wide")
@@ -887,6 +896,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
