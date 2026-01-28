@@ -114,9 +114,6 @@ def generar_pdf_reporte(datos, titulo_reporte):
             
             pdf.ln(5)
             pdf.set_font("Arial", 'B', 10)
-# --- 2. CONFIGURACIÓN INICIAL (DEBE IR AQUÍ ARRIBA) ---
-st.set_page_config(page_title="Marpi Motores", layout="wide")
-
 # Inicializamos variables de estado
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
 if "modo_manual" not in st.session_state: st.session_state.modo_manual = False
@@ -718,6 +715,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
