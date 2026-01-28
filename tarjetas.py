@@ -43,24 +43,23 @@ if 'pdf_listo' not in st.session_state:
 
 def generar_pdf_reporte(datos, titulo_reporte):
     try:
-        from fpdf import FPDF
         pdf = FPDF()
         pdf.add_page()
         
-        # --- 1. ENCABEZADO: LOGO, TÍTULO Y FECHA ---
-        try:
-            pdf.image("logo.png", x=10, y=8, w=40)
-            pdf.ln(5)
-        except:
-            pdf.ln(10)
-
+        # --- ENCABEZADO PROFESIONAL ---
         pdf.set_font("Arial", 'B', 16)
         pdf.set_text_color(0, 51, 102)
         pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='R')
         
+        # Datos de Cabecera (Fecha y Responsable)
         pdf.set_font("Arial", '', 10)
         pdf.set_text_color(0)
-        pdf.cell(0, 5, f"Fecha de Informe: {datos.get('Fecha', 'S/D')}", ln=True, align='R')
+        # Busca 'Fecha' o 'fecha'
+        f_val = datos.get('Fecha') or datos.get('fecha') or "S/D"
+        pdf.cell(0, 5, f"Fecha de Informe: {f_val}", ln=True, align='R')
+        # Busca 'Responsable' o 'responsable'
+        r_val = datos.get('Responsable') or datos.get('responsable') or "Depto. Técnico"
+        pdf.cell(0, 5, f"Responsable: {r_val}", ln=True, align='R')
         pdf.ln(10)
 
         # Franja de Título
@@ -70,52 +69,83 @@ def generar_pdf_reporte(datos, titulo_reporte):
         pdf.cell(0, 12, f"INFORME TÉCNICO: {titulo_reporte}", ln=True, align='C', fill=True)
         pdf.ln(5)
 
-        # --- 2. SECCIÓN: DATOS DE PLACA (COMPLETA) ---
+        # --- 1. DATOS DE PLACA (Mapeo flexible) ---
         pdf.set_text_color(0)
         pdf.set_font("Arial", 'B', 12)
         pdf.set_fill_color(230, 230, 230)
         pdf.cell(0, 10, " 1. DATOS DE PLACA DEL EQUIPO", ln=True, fill=True)
         pdf.set_font("Arial", '', 10)
         
-        col1, col2 = 45, 50
-        pdf.cell(col1, 8, "TAG:", 1, 0, 'L', True); pdf.cell(col2, 8, f"{datos.get('Tag', 'S/D')}", 1)
-        pdf.cell(col1, 8, "N° SERIE:", 1, 0, 'L', True); pdf.cell(50, 8, f"{datos.get('N_Serie', 'S/D')}", 1, 1)
-        
-        pdf.cell(col1, 8, "POTENCIA:", 1, 0, 'L', True); pdf.cell(col2, 8, f"{datos.get('Potencia', 'S/D')}", 1)
-        pdf.cell(col1, 8, "TENSIÓN:", 1, 0, 'L', True); pdf.cell(50, 8, f"{datos.get('Tension', 'S/D')}", 1, 1)
-        
-        pdf.cell(col1, 8, "RPM:", 1, 0, 'L', True); pdf.cell(col2, 8, f"{datos.get('RPM', 'S/D')}", 1)
-        pdf.cell(col1, 8, "CARCASA:", 1, 0, 'L', True); pdf.cell(50, 8, f"{datos.get('Carcasa', 'S/D')}", 1, 1)
+        # Intentamos obtener los datos sin importar si son Mayúsculas o Minúsculas
+        tag = datos.get('Tag') or datos.get('tag') or "S/D"
+        serie = datos.get('N_Serie') or datos.get('n_serie') or datos.get('Serie') or "S/D"
+        pot = datos.get('Potencia') or datos.get('potencia') or "S/D"
+        tens = datos.get('Tension') or datos.get('tension') or "S/D"
+        rpm = datos.get('RPM') or datos.get('rpm') or "S/D"
+
+        pdf.cell(45, 8, "TAG:", 1, 0, 'L', True); pdf.cell(50, 8, f"{tag}", 1)
+        pdf.cell(45, 8, "N° SERIE:", 1, 0, 'L', True); pdf.cell(50, 8, f"{serie}", 1, 1)
+        pdf.cell(45, 8, "POTENCIA:", 1, 0, 'L', True); pdf.cell(50, 8, f"{pot}", 1)
+        pdf.cell(45, 8, "TENSIÓN:", 1, 0, 'L', True); pdf.cell(50, 8, f"{tens}", 1, 1)
         pdf.ln(8)
 
-        # --- 3. SECCIÓN: DETALLES TÉCNICOS ESPECÍFICOS ---
+        # --- 2. DETALLES TÉCNICOS ---
         modo = str(titulo_reporte).upper()
-        # Si el título contiene algo relacionado a electricidad/megado
-        if any(palabra in modo for palabra in ["MEGADO", "CAMPO", "MEDICIONES"]):
+
+        # SECCIÓN ELÉCTRICA (MEGADO)
+        if any(x in modo for x in ["MEGADO", "CAMPO", "ELECTRICO"]):
             pdf.set_font("Arial", 'B', 12)
             pdf.cell(0, 10, " 2. ENSAYOS ELÉCTRICOS REALIZADOS", ln=True, fill=True)
+            
+            # Resistencia de Aislamiento (Gohm)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Resistencia de Aislamiento a Tierra (Gohm):", ln=True)
             pdf.set_font("Arial", '', 10)
             pdf.cell(63, 8, f"T - V1: {datos.get('RT_TV1', '-')}", 1, 0, 'C')
             pdf.cell(63, 8, f"T - U1: {datos.get('RT_TU1', '-')}", 1, 0, 'C')
             pdf.cell(64, 8, f"T - W1: {datos.get('RT_TW1', '-')}", 1, 1, 'C')
-        # Si el título contiene algo relacionado a grasa/lubricación
-        elif any(palabra in modo for palabra in ["LUBRICACION", "LUBRICACIÓN", "GRASA", "RELUBRICACION"]):
+            
+            # Resistencia Óhmica (Ohm)
+            pdf.ln(3)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Resistencia de Bobinados / Continuidad (Ohm):", ln=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.cell(63, 8, f"U1-U2: {datos.get('RI_U1U2', '-')}", 1, 0, 'C')
+            pdf.cell(63, 8, f"V1-V2: {datos.get('RI_V1V2', '-')}", 1, 0, 'C')
+            pdf.cell(64, 8, f"W1-W2: {datos.get('RI_W1W2', '-')}", 1, 1, 'C')
+
+        # SECCIÓN LUBRICACIÓN
+        elif any(x in modo for x in ["LUBRI", "GRASA", "ENGRASE"]):
             pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " 2. REPORTE DE LUBRICACIÓN / ENGRASE", ln=True, fill=True)
+            pdf.cell(0, 10, " 2. REPORTE DE LUBRICACIÓN", ln=True, fill=True)
+            
             pdf.set_font("Arial", 'B', 10)
             pdf.cell(95, 8, "LADO ACOPLE (LA)", 1, 0, 'C', True)
             pdf.cell(95, 8, "LADO OP. ACOPLE (LOA)", 1, 1, 'C', True)
-            pdf.set_font("Arial", '', 10)
-            # Usamos los nombres de columnas que tienes en el Excel
-            pdf.cell(95, 10, f"Rodamiento: {datos.get('Rodamiento_LA', 'S/D')}", 1, 0, 'C')
-            pdf.cell(95, 10, f"Rodamiento: {datos.get('Rodamiento_LOA', 'S/D')}", 1, 1, 'C')
-            pdf.cell(95, 10, f"Grasa: {datos.get('Gramos_LA', '0')} g", 1, 0, 'C')
-            pdf.cell(95, 10, f"Grasa: {datos.get('Gramos_LOA', '0')} g", 1, 1, 'C')
-            return pdf.output(dest='S').encode('latin-1', 'replace')
+            
+            # Mapeo flexible para lubricación
+            rod_la = datos.get('Rodamiento_LA') or datos.get('rodamiento_la') or "S/D"
+            rod_loa = datos.get('Rodamiento_LOA') or datos.get('rodamiento_loa') or "S/D"
+            gr_la = datos.get('Gramos_LA') or datos.get('gramos_la') or "0"
+            gr_loa = datos.get('Gramos_LOA') or datos.get('gramos_loa') or "0"
 
+            pdf.set_font("Arial", '', 10)
+            pdf.cell(95, 10, f"Rodamiento: {rod_la}", 1, 0, 'C')
+            pdf.cell(95, 10, f"Rodamiento: {rod_loa}", 1, 1, 'C')
+            pdf.cell(95, 10, f"Grasa: {gr_la} g", 1, 0, 'C')
+            pdf.cell(95, 10, f"Grasa: {gr_loa} g", 1, 1, 'C')
+
+        # Pie de firma
+        pdf.set_y(-40)
+        pdf.set_font("Arial", 'B', 10)
+        pdf.cell(110)
+        pdf.cell(70, 0, "", "T", ln=True)
+        pdf.cell(110)
+        pdf.cell(70, 8, f"Firma Responsable: {r_val}", 0, 0, 'C')
+
+        return pdf.output(dest='S').encode('latin-1', 'replace')
     except Exception as e:
-        # ESTE ES EL BLOQUE QUE TE FALTA Y CAUSA EL SYNTAX ERROR
-        print(f"Error en PDF: {e}")
+        print(f"Error: {e}")
         return None
 # Inicializamos variables de estado
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
@@ -724,6 +754,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
