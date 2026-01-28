@@ -17,56 +17,60 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         etiqueta = Image.new('L', (ancho, alto), 255)
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. QR compacto (box_size=5 es el límite para que no invada)
+        # 2. QR compacto (box_size=4 es el más seguro para este papel)
         url = f"https://marpi-motores.streamlit.app/?tag={tag}"
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
-            box_size=5, 
+            box_size=4, 
             border=2
         )
         qr.add_data(url)
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('L')
 
-        # 3. Logo MARPI con parche blanco más grande para que respire
+        # 3. Logo MARPI con parche blanco
         if os.path.exists("logo.png"):
             logo = Image.open("logo.png").convert("L")
-            logo_dim = 60 # Tamaño nítido
+            logo_dim = 45 # Tamaño nítido para un QR de box_size 4
             logo = logo.resize((logo_dim, logo_dim), Image.Resampling.LANCZOS)
             
             qr_w, qr_h = img_qr.size
             pos = ((qr_w - logo_dim) // 2, (qr_h - logo_dim) // 2)
             
-            # Parche blanco amplio (12px extra) para limpiar los puntos del QR
-            parche = Image.new('L', (logo_dim + 12, logo_dim + 12), 255)
-            img_qr.paste(parche, (pos[0]-6, pos[1]-6))
+            # Parche blanco amplio para limpiar los puntos del QR
+            parche = Image.new('L', (logo_dim + 10, logo_dim + 10), 255)
+            img_qr.paste(parche, (pos[0]-5, pos[1]-5))
             img_qr.paste(logo, pos)
 
         # 4. Posicionamiento (QR a la izquierda, Texto a la derecha)
         # Pegamos el QR centrado verticalmente
-        etiqueta.paste(img_qr, (15, (alto - img_qr.size[1]) // 2))
+        etiqueta.paste(img_qr, (25, (alto - img_qr.size[1]) // 2))
 
-        # Línea divisoria en píxel 235 (justo después del QR)
-        draw.line([235, 40, 235, 310], fill=0, width=4)
+        # Línea divisoria en píxel 220
+        draw.line([220, 40, 220, 310], fill=0, width=4)
 
-        # 5. Textos - Movidos a la derecha (x=250) para que no se pisen
-        draw.text((250, 50), "MARPI MOTORES S.R.L.", fill=0)
-        draw.line([250, 70, 460, 70], fill=0, width=2)
+        # 5. Textos - Movidos a la derecha (x=240)
+        draw.text((240, 50), "MARPI MOTORES S.R.L.", fill=0)
+        draw.line([240, 70, 450, 70], fill=0, width=2)
 
-        draw.text((250, 100), "IDENTIFICACIÓN:", fill=0)
-        draw.text((250, 125), f"TAG: {tag}", fill=0)
+        draw.text((240, 100), "IDENTIFICACIÓN:", fill=0)
+        draw.text((240, 125), f"TAG: {tag}", fill=0)
         
-        draw.text((250, 180), "DATOS TÉCNICOS:", fill=0)
-        draw.text((250, 205), f"SERIE: {serie}", fill=0)
-        draw.text((250, 235), f"POT: {potencia}", fill=0)
+        draw.text((240, 180), "DATOS TÉCNICOS:", fill=0)
+        draw.text((240, 205), f"SERIE: {serie}", fill=0)
+        draw.text((240, 235), f"POT: {potencia}", fill=0)
 
-        draw.text((320, 315), "SERVICE OFICIAL", fill=0)
+        draw.text((310, 315), "SERVICE OFICIAL", fill=0)
 
-        # Marco exterior
+        # Marco exterior tipo placa
         draw.rectangle([10, 10, ancho-10, alto-10], outline=0, width=4)
 
-        return self_finalizar_etiqueta(etiqueta)
+        # 6. Finalizar (Sin el error del self)
+        final_bw = etiqueta.convert('1')
+        buf = BytesIO()
+        final_bw.save(buf, format="PNG")
+        return buf.getvalue()
 
     except Exception as e:
         st.error(f"Error: {e}")
@@ -892,6 +896,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
