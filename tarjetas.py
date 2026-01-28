@@ -12,68 +12,67 @@ from PIL import Image, ImageDraw
 
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
-        # 1. Tamaño 60x44mm (480x350 px)
-        ancho, alto = 480, 350
+        # 1. Tamaño exacto para 60x40mm (480x320 px @ 203 DPI)
+        ancho, alto = 480, 320
         etiqueta = Image.new('L', (ancho, alto), 255)
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. QR compacto (box_size=4 es el más seguro para este papel)
-        url = f"https://marpi-motores.streamlit.app/?tag={tag}"
+        # 2. QR - Tamaño seguro para 40mm de alto
+        url = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={tag}"
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
-            box_size=4, 
+            box_size=4, # Mantiene el QR en un tamaño manejable
             border=2
         )
         qr.add_data(url)
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('L')
 
-        # 3. Logo MARPI con parche blanco
+        # 3. Logo con parche de seguridad
         if os.path.exists("logo.png"):
             logo = Image.open("logo.png").convert("L")
-            logo_dim = 45 # Tamaño nítido para un QR de box_size 4
+            logo_dim = 45 
             logo = logo.resize((logo_dim, logo_dim), Image.Resampling.LANCZOS)
-            
             qr_w, qr_h = img_qr.size
             pos = ((qr_w - logo_dim) // 2, (qr_h - logo_dim) // 2)
-            
-            # Parche blanco amplio para limpiar los puntos del QR
+            # Limpiamos el centro del QR para el logo
             parche = Image.new('L', (logo_dim + 10, logo_dim + 10), 255)
             img_qr.paste(parche, (pos[0]-5, pos[1]-5))
             img_qr.paste(logo, pos)
 
-        # 4. Posicionamiento (QR a la izquierda, Texto a la derecha)
-        # Pegamos el QR centrado verticalmente
-        etiqueta.paste(img_qr, (25, (alto - img_qr.size[1]) // 2))
+        # 4. Distribución en el papel
+        # Pegamos el QR a la izquierda con un margen de 20px
+        etiqueta.paste(img_qr, (20, (alto - img_qr.size[1]) // 2))
 
-        # Línea divisoria en píxel 220
-        draw.line([220, 40, 220, 310], fill=0, width=4)
+        # Línea divisoria central
+        draw.line([225, 30, 225, 290], fill=0, width=3)
 
-        # 5. Textos - Movidos a la derecha (x=240)
-        draw.text((240, 50), "MARPI MOTORES S.R.L.", fill=0)
-        draw.line([240, 70, 450, 70], fill=0, width=2)
+        # 5. Textos (Alineados a la derecha de la línea)
+        x_texto = 245
+        draw.text((x_texto, 40), "MARPI MOTORES S.R.L.", fill=0)
+        draw.line([x_texto, 58, 450, 58], fill=0, width=2)
 
-        draw.text((240, 100), "IDENTIFICACIÓN:", fill=0)
-        draw.text((240, 125), f"TAG: {tag}", fill=0)
+        draw.text((x_texto, 80), "IDENTIFICACIÓN:", fill=0)
+        draw.text((x_texto, 105), f"TAG: {tag}", fill=0)
         
-        draw.text((240, 180), "DATOS TÉCNICOS:", fill=0)
-        draw.text((240, 205), f"SERIE: {serie}", fill=0)
-        draw.text((240, 235), f"POT: {potencia}", fill=0)
+        draw.text((x_texto, 155), "DATOS TÉCNICOS:", fill=0)
+        draw.text((x_texto, 180), f"SERIE: {serie}", fill=0)
+        draw.text((x_texto, 210), f"POT: {potencia}", fill=0)
 
-        draw.text((310, 315), "SERVICE OFICIAL", fill=0)
+        draw.text((310, 285), "SERVICE OFICIAL", fill=0)
 
-        # Marco exterior tipo placa
-        draw.rectangle([10, 10, ancho-10, alto-10], outline=0, width=4)
+        # Marco exterior estético (a 5px del borde del papel)
+        draw.rectangle([5, 5, ancho-5, alto-5], outline=0, width=3)
 
-        # 6. Finalizar (Sin el error del self)
+        # 6. Conversión a 1-bit para la Honeywell
         final_bw = etiqueta.convert('1')
         buf = BytesIO()
         final_bw.save(buf, format="PNG")
         return buf.getvalue()
 
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Error en diseño 60x40: {e}")
         return None
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
@@ -896,6 +895,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
