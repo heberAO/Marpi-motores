@@ -12,35 +12,49 @@ from PIL import Image, ImageDraw
 
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
-        # Configuración de tamaño (aprox. 400x200 píxeles para 203 DPI)
+        # Tamaño para 50x25mm a 203 DPI
         ancho, alto = 400, 200 
-        # Creamos imagen en modo '1' (blanco y negro puro para térmica)
         etiqueta = Image.new('1', (ancho, alto), 1) 
         draw = ImageDraw.Draw(etiqueta)
 
-        # Generar QR
-        url = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={tag}"
-        qr = qrcode.QRCode(box_size=4, border=1)
+        # --- DISEÑO ESTÉTICO ---
+        # Marco exterior fino
+        draw.rectangle([2, 2, 397, 197], outline=0, width=2)
+        
+        # Generar QR (un poco más pequeño para que entre el diseño)
+        url = f"https://marpi-motores.streamlit.app/?tag={tag}"
+        qr = qrcode.QRCode(box_size=3, border=1) # Box_size 3 para que sea más fino
         qr.add_data(url)
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('1')
         
-        # Pegar QR a la izquierda
-        etiqueta.paste(img_qr, (10, 20))
+        # Pegar QR centrado verticalmente a la izquierda
+        etiqueta.paste(img_qr, (15, 45))
 
-        # Texto de la etiqueta
-        # Usamos texto simple si no hay fuentes cargadas en el servidor
-        draw.text((160, 30), f"TAG: {tag}", fill=0)
-        draw.text((160, 70), f"SERIE: {serie}", fill=0)
-        draw.text((160, 110), f"POT: {potencia}", fill=0)
-        draw.text((160, 160), "MARPI MOTORES S.R.L.", fill=0)
+        # Línea vertical separadora
+        draw.line([135, 10, 135, 190], fill=0, width=2)
 
-        # Convertir a bytes para que Streamlit pueda mostrarlo/descargarlo
+        # --- TEXTOS ---
+        # Encabezado Empresa
+        draw.text((150, 15), "MARPI MOTORES S.R.L.", fill=0)
+        draw.line([150, 32, 380, 32], fill=0, width=1) # Subrayado título
+
+        # Datos con etiquetas
+        draw.text((150, 50), f"IDENTIFICACIÓN:", fill=0)
+        draw.text((150, 70), f"> TAG: {tag}", fill=0) # El '>' le da toque técnico
+        
+        draw.text((150, 110), f"DATOS TÉCNICOS:", fill=0)
+        draw.text((150, 130), f"N° SERIE: {serie}", fill=0)
+        draw.text((150, 155), f"POTENCIA: {potencia}", fill=0)
+
+        # Pie de etiqueta pequeño
+        draw.text((280, 180), "SERVICE OFICIAL", fill=0)
+
         buf = BytesIO()
         etiqueta.save(buf, format="PNG")
         return buf.getvalue()
     except Exception as e:
-        st.error(f"Error en QR: {e}")
+        st.error(f"Error estético: {e}")
         return None
 
 st.set_page_config(page_title="Marpi Motores", layout="wide")
@@ -864,6 +878,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
