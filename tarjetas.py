@@ -341,7 +341,7 @@ if modo == "Nuevo Registro":
                     st.success(f"✅ Motor {t} registrado con éxito.")
                     # --- GENERACIÓN DE ETIQUETA QR ---
                     # Usamos las variables que ya tenés en tu formulario
-                    etiqueta_img = generar_etiqueta_honeywell(t, N_Serie, pot)
+                    etiqueta_img = generar_etiqueta_honeywell(t, sn, p)
             
                     if etiqueta_img:
                         st.info("📋 Etiqueta lista para Honeywell PC42")
@@ -826,6 +826,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
