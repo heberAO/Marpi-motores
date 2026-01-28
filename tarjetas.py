@@ -8,6 +8,8 @@ import time
 from io import BytesIO
 from fpdf import FPDF
 
+st.set_page_config(page_title="Marpi Motores", layout="wide")
+
 def calcular_grasa_marpi(rod_texto):
     """Cálculo unificado Marpi: Serie 6318 = 60g / Serie 6218 = 30g"""
     try:
@@ -47,7 +49,7 @@ def generar_pdf_reporte(datos, titulo_reporte):
         
         # --- 1. ENCABEZADO: LOGO, TÍTULO Y FECHA ---
         try:
-            # pdf.image("logo_marpi.png", x=10, y=8, w=40) # Ajusta el nombre de tu archivo
+            pdf.image("logo.png", x=10, y=8, w=40)
             pdf.ln(5)
         except:
             pdf.ln(10)
@@ -716,6 +718,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
