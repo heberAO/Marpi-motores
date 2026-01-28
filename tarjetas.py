@@ -114,6 +114,12 @@ def generar_pdf_reporte(datos, titulo_reporte):
             
             pdf.ln(5)
             pdf.set_font("Arial", 'B', 10)
+            return pdf.output(dest='S').encode('latin-1', 'replace')
+
+    except Exception as e:
+        # ESTE ES EL BLOQUE QUE TE FALTA Y CAUSA EL SYNTAX ERROR
+        print(f"Error en PDF: {e}")
+        return None
 # Inicializamos variables de estado
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
 if "modo_manual" not in st.session_state: st.session_state.modo_manual = False
@@ -715,6 +721,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
