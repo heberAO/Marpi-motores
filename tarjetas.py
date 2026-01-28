@@ -66,7 +66,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         # Marco exterior
         draw.rectangle([10, 10, ancho-10, alto-10], outline=0, width=4)
 
-        return self._finalizar_etiqueta(etiqueta)
+        return self_finalizar_etiqueta(etiqueta)
 
     except Exception as e:
         st.error(f"Error: {e}")
@@ -892,6 +892,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
