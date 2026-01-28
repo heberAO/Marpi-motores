@@ -90,30 +90,27 @@ def generar_pdf_reporte(datos, titulo_reporte):
 
         # --- 3. SECCIÓN: DETALLES TÉCNICOS ESPECÍFICOS ---
         modo = str(titulo_reporte).upper()
-
-        if "MEGADO" in modo or "CAMPO" in modo:
+        # Si el título contiene algo relacionado a electricidad/megado
+        if any(palabra in modo for palabra in ["MEGADO", "CAMPO", "MEDICIONES"]):
             pdf.set_font("Arial", 'B', 12)
             pdf.cell(0, 10, " 2. ENSAYOS ELÉCTRICOS REALIZADOS", ln=True, fill=True)
-            
-            # Resistencia de Aislamiento
-            pdf.set_font("Arial", 'B', 10)
-            pdf.cell(0, 8, "Resistencia de Aislamiento a Tierra (Gohm):", ln=True)
             pdf.set_font("Arial", '', 10)
             pdf.cell(63, 8, f"T - V1: {datos.get('RT_TV1', '-')}", 1, 0, 'C')
             pdf.cell(63, 8, f"T - U1: {datos.get('RT_TU1', '-')}", 1, 0, 'C')
             pdf.cell(64, 8, f"T - W1: {datos.get('RT_TW1', '-')}", 1, 1, 'C')
-            
-            # Resistencia Óhmica
-            pdf.ln(3)
+        # Si el título contiene algo relacionado a grasa/lubricación
+        elif any(palabra in modo for palabra in ["LUBRICACION", "LUBRICACIÓN", "GRASA", "RELUBRICACION"]):
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, " 2. REPORTE DE LUBRICACIÓN / ENGRASE", ln=True, fill=True)
             pdf.set_font("Arial", 'B', 10)
-            pdf.cell(0, 8, "Resistencia de Bobinados / Continuidad (Ohm):", ln=True)
+            pdf.cell(95, 8, "LADO ACOPLE (LA)", 1, 0, 'C', True)
+            pdf.cell(95, 8, "LADO OP. ACOPLE (LOA)", 1, 1, 'C', True)
             pdf.set_font("Arial", '', 10)
-            pdf.cell(63, 8, f"U1 - U2: {datos.get('RI_U1U2', '-')}", 1, 0, 'C')
-            pdf.cell(63, 8, f"V1 - V2: {datos.get('RI_V1V2', '-')}", 1, 0, 'C')
-            pdf.cell(64, 8, f"W1 - W2: {datos.get('RI_W1W2', '-')}", 1, 1, 'C')
-            
-            pdf.ln(5)
-            pdf.set_font("Arial", 'B', 10)
+            # Usamos los nombres de columnas que tienes en el Excel
+            pdf.cell(95, 10, f"Rodamiento: {datos.get('Rodamiento_LA', 'S/D')}", 1, 0, 'C')
+            pdf.cell(95, 10, f"Rodamiento: {datos.get('Rodamiento_LOA', 'S/D')}", 1, 1, 'C')
+            pdf.cell(95, 10, f"Grasa: {datos.get('Gramos_LA', '0')} g", 1, 0, 'C')
+            pdf.cell(95, 10, f"Grasa: {datos.get('Gramos_LOA', '0')} g", 1, 1, 'C')
             return pdf.output(dest='S').encode('latin-1', 'replace')
 
     except Exception as e:
@@ -727,6 +724,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
