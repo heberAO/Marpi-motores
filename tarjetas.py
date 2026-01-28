@@ -12,66 +12,69 @@ from PIL import Image, ImageDraw
 
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
-        # 1. Lienzo para 60x44mm (aprox 480x350 píxeles)
+        # 1. Lienzo para 60x44mm (480x350 píxeles aprox)
         ancho, alto = 480, 350
         etiqueta = Image.new('L', (ancho, alto), 255)
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. Generar QR más grande y robusto
+        # 2. QR Potenciado
         url = f"https://marpi-motores.streamlit.app/?tag={tag}"
         qr = qrcode.QRCode(
             version=None,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
-            box_size=6, # Aumentamos el tamaño de los puntos
+            box_size=7, # Más grande para aprovechar los 44mm de alto
             border=1
         )
         qr.add_data(url)
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('L')
 
-        # 3. Insertar el Logo en el centro
+        # 3. Logo en el centro con parche de protección
         if os.path.exists("logo.png"):
             logo = Image.open("logo.png").convert("L")
-            logo_dim = 60 # Logo más grande
+            logo_dim = 55 
             logo = logo.resize((logo_dim, logo_dim), Image.Resampling.LANCZOS)
-            
             qr_w, qr_h = img_qr.size
             pos = ((qr_w - logo_dim) // 2, (qr_h - logo_dim) // 2)
-            
-            # Parche blanco protector
-            parche = Image.new('L', (logo_dim + 10, logo_dim + 10), 255)
-            img_qr.paste(parche, (pos[0]-5, pos[1]-5))
+            # Parche blanco
+            parche = Image.new('L', (logo_dim + 8, logo_dim + 8), 255)
+            img_qr.paste(parche, (pos[0]-4, pos[1]-4))
             img_qr.paste(logo, pos)
 
-        # 4. Armado de la Etiqueta (Distribución Vertical)
-        # Pegamos el QR arriba al centro
-        qr_x = (ancho - img_qr.size[0]) // 2
-        etiqueta.paste(img_qr, (qr_x, 15))
+        # 4. Posicionamiento Horizontal
+        # QR centrado verticalmente a la izquierda
+        etiqueta.paste(img_qr, (15, (alto - img_qr.size[1]) // 2))
 
-        # Línea divisoria horizontal
-        y_separador = 15 + img_qr.size[1] + 15
-        draw.line([20, y_separador, 460, y_separador], fill=0, width=3)
+        # Línea divisoria gruesa (píxel 210)
+        draw.line([210, 30, 210, 320], fill=0, width=4)
+
+        # 5. Textos con fuente más grande y espaciada
+        # Título
+        draw.text((230, 40), "MARPI MOTORES S.R.L.", fill=0)
+        draw.line([230, 60, 450, 60], fill=0, width=2)
+
+        # Datos
+        draw.text((230, 85), "IDENTIFICACIÓN:", fill=0)
+        draw.text((230, 110), f"TAG: {tag}", fill=0)
         
-        # 5. Textos Grandes (Aprovechando la altura)
-        # Título de Empresa
-        draw.text((20, y_separador + 10), "MARPI MOTORES S.R.L.", fill=0)
-        
-        # Información del Motor
-        draw.text((20, y_separador + 40), f"TAG: {tag}", fill=0)
-        draw.text((20, y_separador + 70), f"SERIE: {serie}", fill=0)
-        draw.text((20, y_separador + 100), f"POTENCIA: {potencia}", fill=0)
+        draw.text((230, 160), "DATOS TÉCNICOS:", fill=0)
+        draw.text((230, 185), f"SERIE: {serie}", fill=0)
+        draw.text((230, 215), f"POTENCIA: {potencia}", fill=0)
 
-        # Pie de página
-        draw.text((320, alto - 30), "SERVICE OFICIAL", fill=0)
+        # Pie de etiqueta
+        draw.text((320, 310), "SERVICE OFICIAL", fill=0)
 
-        # 6. Conversión final
+        # Marco exterior para que quede tipo placa
+        draw.rectangle([5, 5, ancho-5, alto-5], outline=0, width=3)
+
+        # 6. Salida final
         final_bw = etiqueta.convert('1')
         buf = BytesIO()
         final_bw.save(buf, format="PNG")
         return buf.getvalue()
 
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Error en formato 60x44: {e}")
         return None
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
@@ -894,6 +897,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
