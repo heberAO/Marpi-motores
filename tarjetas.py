@@ -709,13 +709,6 @@ elif modo == "Mediciones de Campo":
                 if 'tag_fijo' in st.session_state:
                     st.session_state.tag_fijo = ""
                 st.success(f"✅ ¡Excelente! Las mediciones del motor {t} se guardaron correctamente.")
-                st.download_button(
-                    label="📥 DESCARGAR INFORME TÉCNICO",
-                    data=st.session_state.pdf_buffer,
-                    file_name=f"Informe_{t}.pdf",
-                    mime="application/pdf",
-                    key="download_megado_final" # Clave única para que no choque con otros botones
-                )
                 st.balloons()
                 import time
                 time.sleep(1.5)
@@ -725,6 +718,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
