@@ -377,35 +377,44 @@ elif modo == "Historial y QR":
 
                     # --- ESTE BLOQUE DEBE ESTAR AQUÍ ADENTRO (CON ESTA SANGRÍA) ---
                     try:
+                        # 1. Convertimos la fila del historial a un diccionario
                         datos_historial = fila.to_dict()
-                        # IMPORTANTE: En tu Excel la columna se llama 'Tipo_Tarea'
+                        
+                        # 2. Identificamos el tipo de tarea
                         tarea_val = str(datos_historial.get('Tipo_Tarea', '')).upper()
-                
-                        if "RELUBRICACION" in tarea_val or "LUBRICACION" in tarea_val:
-                            # TRADUCTOR: Mapeamos los nombres del Excel a los que el PDF espera
-                            datos_historial['gr_real_la'] = datos_historial.get('Gramos_LA', 0)
-                            datos_historial['gr_real_loa'] = datos_historial.get('Gramos_LOA', 0)
-                            datos_historial['Rodamiento_LA'] = datos_historial.get('Rodamiento_LA', 'S/D')
-                            datos_historial['Rodamiento_LOA'] = datos_historial.get('Rodamiento_LOA', 'S/D')
-                            datos_historial['notas'] = datos_historial.get('notas', 'Sin notas')
-                            titulo_final = f"LUBRICACION - {buscado}"
+                        buscado = datos_historial.get('Tag', 'S_TAG')
+                        fecha = datos_historial.get('Fecha', 'S_F').replace("/", "_")
+                    
+                        # 3. "Traductor": Aseguramos que los nombres coincidan con lo que el PDF espera
+                        if "LUBRICACION" in tarea_val or "RELUBRICACION" in tarea_val:
+                            titulo_final = f"LUBRICACIÓN - {buscado}"
+                            # Mapeo de campos para el diseño de lubricación
+                            datos_historial['Gramos_LA'] = datos_historial.get('Gramos_LA', 0)
+                            datos_historial['Gramos_LOA'] = datos_historial.get('Gramos_LOA', 0)
+                        elif "MEGADO" in tarea_val or "CAMPO" in tarea_val:
+                            titulo_final = f"MEDICIONES DE CAMPO - {buscado}"
                         else:
-                            titulo_final = buscado
-                
+                            titulo_final = f"REPORTE TÉCNICO - {buscado}"
+                    
+                        # 4. Generamos el PDF usando la función profesional
+                        # Usamos datos_historial que contiene la fila del Excel
                         pdf_archivo = generar_pdf_reporte(datos_historial, titulo_final)
-                
+                    
+                        # 5. Botón de descarga (Verificamos que pdf_archivo no sea None)
                         if pdf_archivo:
                             st.download_button(
                                 label="📄 Descargar Informe PDF",
                                 data=pdf_archivo,
                                 file_name=f"Reporte_{buscado}_{fecha}.pdf",
                                 key=f"pdf_hist_{idx}", 
-                                use_container_width=True
+                                use_container_width=True,
+                                mime="application/pdf"
                             )
+                        else:
+                            st.warning(f"No se pudo generar el PDF para {buscado}")
+                    
                     except Exception as e:
-                        st.error(f"Error al generar PDF: {e}")
-        else:
-            st.warning("No hay intervenciones registradas para este motor.")
+                        st.error(f"Error al procesar el registro: {e}")
 
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -718,6 +727,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
