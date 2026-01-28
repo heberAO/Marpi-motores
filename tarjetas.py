@@ -7,6 +7,41 @@ import re
 import time
 from io import BytesIO
 from fpdf import FPDF
+import qrcode
+from PIL import Image, ImageDraw
+
+def generar_etiqueta_honeywell(tag, serie, potencia):
+    try:
+        # Configuración de tamaño (aprox. 400x200 píxeles para 203 DPI)
+        ancho, alto = 400, 200 
+        # Creamos imagen en modo '1' (blanco y negro puro para térmica)
+        etiqueta = Image.new('1', (ancho, alto), 1) 
+        draw = ImageDraw.Draw(etiqueta)
+
+        # Generar QR
+        url = f"https://marpi-motores.streamlit.app/?tag={tag}"
+        qr = qrcode.QRCode(box_size=4, border=1)
+        qr.add_data(url)
+        qr.make(fit=True)
+        img_qr = qr.make_image(fill_color="black", back_color="white").convert('1')
+        
+        # Pegar QR a la izquierda
+        etiqueta.paste(img_qr, (10, 20))
+
+        # Texto de la etiqueta
+        # Usamos texto simple si no hay fuentes cargadas en el servidor
+        draw.text((160, 30), f"TAG: {tag}", fill=0)
+        draw.text((160, 70), f"SERIE: {serie}", fill=0)
+        draw.text((160, 110), f"POT: {potencia}", fill=0)
+        draw.text((160, 160), "MARPI MOTORES S.R.L.", fill=0)
+
+        # Convertir a bytes para que Streamlit pueda mostrarlo/descargarlo
+        buf = BytesIO()
+        etiqueta.save(buf, format="PNG")
+        return buf.getvalue()
+    except Exception as e:
+        st.error(f"Error en QR: {e}")
+        return None
 
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
@@ -304,6 +339,23 @@ if modo == "Nuevo Registro":
                     st.session_state.tag_actual = t
                     st.session_state.form_key += 1.
                     st.success(f"✅ Motor {t} registrado con éxito.")
+                    # --- GENERACIÓN DE ETIQUETA QR ---
+                    # Usamos las variables que ya tenés en tu formulario
+                    etiqueta_img = generar_etiqueta_honeywell(t, n_serie, pot)
+            
+                    if etiqueta_img:
+                        st.info("📋 Etiqueta lista para Honeywell PC42")
+                        # Mostramos la vista previa pequeña
+                        st.image(etiqueta_img, width=300)
+                        
+                        # Botón para descargar e imprimir
+                        st.download_button(
+                            label="💾 Descargar Etiqueta (PNG)",
+                            data=etiqueta_img,
+                            file_name=f"Etiqueta_{t}.png",
+                            mime="image/png",
+                            use_container_width=True
+                        )
             
             # --- EFECTO DE ÉXITO CON LOGO DE MARPI ---
                     placeholder = st.empty() 
@@ -774,6 +826,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
