@@ -402,7 +402,7 @@ elif modo == "Historial y QR":
                         except Exception as e:
                             st.error(f"Error en fila {idx}: {e}")        
         else:
-             st.warning("No hay intervenciones registradas para este motor.")
+            st.warning("No hay intervenciones registradas para este motor.")
 
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -715,6 +715,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
