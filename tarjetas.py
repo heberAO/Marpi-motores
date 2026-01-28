@@ -398,34 +398,47 @@ elif modo == "Historial y QR":
                         st.write(f"🧪 **Grasa:** {fila.get('Tipo_Grasa')} ({fila.get('Gramos_LA', '0')}g / {fila.get('Gramos_LOA', '0')}g)")
 
                     # --- ESTE BLOQUE DEBE ESTAR AQUÍ ADENTRO (CON ESTA SANGRÍA) ---
+                    # --- DENTRO DE TU BUCLE DE HISTORIAL ---
                     try:
-                        datos_historial = fila.to_dict()
-                        # IMPORTANTE: En tu Excel la columna se llama 'Tipo_Tarea'
-                        tarea_val = str(datos_historial.get('Tipo_Tarea', '')).upper()
-                
-                        if "RELUBRICACION" in tarea_val or "LUBRICACION" in tarea_val:
-                            # TRADUCTOR: Mapeamos los nombres del Excel a los que el PDF espera
-                            datos_historial['gr_real_la'] = datos_historial.get('Gramos_LA', 0)
-                            datos_historial['gr_real_loa'] = datos_historial.get('Gramos_LOA', 0)
-                            datos_historial['Rodamiento_LA'] = datos_historial.get('Rodamiento_LA', 'S/D')
-                            datos_historial['Rodamiento_LOA'] = datos_historial.get('Rodamiento_LOA', 'S/D')
-                            datos_historial['notas'] = datos_historial.get('notas', 'Sin notas')
-                            titulo_final = f"LUBRICACION - {buscado}"
-                        else:
-                            titulo_final = buscado
-                
-                        pdf_archivo = generar_pdf_reporte(datos_historial, titulo_final)
-                
+                        # 1. Convertimos la fila a diccionario
+                        raw_data = fila.to_dict()
+                        
+                        # 2. TRADUCTOR: Forzamos que los datos estén donde el PDF los busca
+                        datos_limpios = {
+                            "Fecha": raw_data.get('Fecha') or raw_data.get('fecha') or "S/D",
+                            "Tag": raw_data.get('Tag') or raw_data.get('tag') or "S/D",
+                            "Responsable": raw_data.get('Responsable') or raw_data.get('responsable') or "Marpi Motores",
+                            "N_Serie": raw_data.get('N_Serie') or raw_data.get('Serie') or "S/D",
+                            "Potencia": raw_data.get('Potencia') or "S/D",
+                            "Tension": raw_data.get('Tension') or raw_data.get('Tensión') or "S/D",
+                            "RPM": raw_data.get('RPM') or "S/D",
+                            "Carcasa": raw_data.get('Carcasa') or "S/D",
+                            # Datos Megado
+                            "RT_TV1": raw_data.get('RT_TV1', '-'), "RT_TU1": raw_data.get('RT_TU1', '-'), "RT_TW1": raw_data.get('RT_TW1', '-'),
+                            "RI_U1U2": raw_data.get('RI_U1U2', '-'), "RI_V1V2": raw_data.get('RI_V1V2', '-'), "RI_W1W2": raw_data.get('RI_W1W2', '-'),
+                            # Datos Lubricación
+                            "Rodamiento_LA": raw_data.get('Rodamiento_LA') or raw_data.get('rod_la') or "S/D",
+                            "Rodamiento_LOA": raw_data.get('Rodamiento_LOA') or raw_data.get('rod_loa') or "S/D",
+                            "Gramos_LA": raw_data.get('Gramos_LA') or raw_data.get('gr_la') or "0",
+                            "Gramos_LOA": raw_data.get('Gramos_LOA') or raw_data.get('gr_loa') or "0",
+                            # Datos Informe Técnico
+                            "Descripcion": raw_data.get('Descripcion') or raw_data.get('descripcion') or raw_data.get('Observaciones') or "S/D"
+                        }
+                    
+                        # 3. LLAMADA AL PDF
+                        tipo_t = str(raw_data.get('Tipo_Tarea', 'Informe Tecnico'))
+                        pdf_archivo = generar_pdf_reporte(datos_limpios, tipo_t)
+                    
                         if pdf_archivo:
                             st.download_button(
-                                label="📄 Descargar Informe PDF",
+                                label=f"📄 Descargar {tipo_t}",
                                 data=pdf_archivo,
-                                file_name=f"Reporte_{buscado}_{fecha}.pdf",
-                                key=f"pdf_hist_{idx}", 
-                                use_container_width=True
+                                file_name=f"Reporte_{datos_limpios['Tag']}.pdf",
+                                mime="application/pdf",
+                                key=f"btn_pdf_{idx}"
                             )
                     except Exception as e:
-                        st.error(f"Error al generar PDF: {e}")
+                        st.error(f"Error en datos de fila {idx}: {e}")
         else:
             st.warning("No hay intervenciones registradas para este motor.")
 
@@ -747,6 +760,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
