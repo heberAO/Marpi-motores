@@ -12,69 +12,62 @@ from PIL import Image, ImageDraw
 
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
-        # Tamaño 400x200 (proporción limpia para la PC42)
-        ancho, alto = 400, 200 
-        etiqueta = Image.new('1', (ancho, alto), 1) 
+        # 1. Crear lienzo blanco (400x200 es el estándar para PC42)
+        etiqueta = Image.new('L', (400, 200), 255) # Usamos 'L' para mejor calidad de pegado
         draw = ImageDraw.Draw(etiqueta)
 
-        # 1. GENERAR QR CON LOGO CLARO
-        url = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={tag}"
+        # 2. Generar el QR
+        url = f"https://marpi-motores.streamlit.app/?tag={tag}"
         qr = qrcode.QRCode(
-            version=None,
+            version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
-            box_size=4, # Un poco más grande para que sea legible
-            border=1,
+            box_size=4,
+            border=1
         )
         qr.add_data(url)
         qr.make(fit=True)
-        img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
+        img_qr = qr.make_image(fill_color="black", back_color="white").convert('L')
 
-        # Lógica del Logo con "Parche Blanco" para que se vea bien
-        try:
-            logo = Image.open("logo.png").convert("RGBA")
-            # El logo va a ocupar el 30% del QR
+        # 3. Intentar poner el logo (si falla, sigue de largo)
+        if os.path.exists("logo.png"):
+            logo = Image.open("logo.png").convert("L")
+            # Redimensionar logo a un tamaño fijo de 40x40 píxeles
+            logo = logo.resize((45, 45), Image.Resampling.LANCZOS)
+            # Calcular centro del QR
             qr_w, qr_h = img_qr.size
-            logo_size = int(qr_w * 0.3)
-            logo = logo.resize((logo_size, logo_size), Image.LANCZOS)
-            
-            # Crear un cuadrado blanco detrás del logo para que no se mezcle
-            pos = ((qr_w - logo_size) // 2, (qr_h - logo_size) // 2)
-            parche_blanco = Image.new("RGBA", (logo_size, logo_size), "white")
-            img_qr.paste(parche_blanco, pos)
-            img_qr.paste(logo, pos, logo)
-        except:
-            pass 
+            pos = ((qr_w - 45) // 2, (qr_h - 45) // 2)
+            # Pegar logo
+            img_qr.paste(logo, pos)
 
-        # 2. POSICIONAMIENTO Y DISEÑO
-        img_qr = img_qr.convert('1')
-        # Centramos el QR verticalmente a la izquierda con más margen
-        etiqueta.paste(img_qr, (10, 25))
+        # 4. Pegar el QR en la etiqueta (Coordenada X=10, Y=20)
+        etiqueta.paste(img_qr, (10, 20))
 
-        # Línea divisoria más a la derecha para dar espacio al QR
-        draw.line([165, 15, 165, 185], fill=0, width=2)
-
-        # 3. TEXTOS ORDENADOS
-        # Título centrado en su columna
-        draw.text((180, 20), "MARPI MOTORES S.R.L.", fill=0)
-        draw.line([180, 35, 380, 35], fill=0, width=1)
+        # 5. Dibujar Estética y Textos
+        draw.line([160, 20, 160, 180], fill=0, width=3) # Línea divisoria gruesa
         
-        # Datos con más espacio entre líneas
-        draw.text((180, 55), f"TAG:", fill=0)
-        draw.text((180, 70), f"{tag}", fill=0) # El valor del TAG solo
-        
-        draw.text((180, 100), f"N° SERIE:", fill=0)
-        draw.text((180, 115), f"{serie}", fill=0)
-        
-        draw.text((180, 145), f"POTENCIA:", fill=0)
-        draw.text((180, 160), f"{potencia}", fill=0)
+        # Título
+        draw.text((175, 20), "MARPI MOTORES S.R.L.", fill=0)
+        draw.line([175, 35, 380, 35], fill=0, width=1)
 
+        # Datos (ajustados para que no se pisen)
+        draw.text((175, 55), f"TAG:", fill=0)
+        draw.text((175, 75), f"{tag}", fill=0)
+        
+        draw.text((175, 105), f"SERIE:", fill=0)
+        draw.text((175, 125), f"{serie}", fill=0)
+        
+        draw.text((175, 155), f"POTENCIA: {potencia}", fill=0)
+
+        # Convertir a formato final para la Honeywell
+        final_png = etiqueta.convert('1')
         buf = BytesIO()
-        etiqueta.save(buf, format="PNG")
+        final_png.save(buf, format="PNG")
         return buf.getvalue()
-    except Exception as e:
-        st.error(f"Error en diseño: {e}")
-        return None
 
+    except Exception as e:
+        # Esto nos dirá exactamente qué falla si no sale nada
+        st.error(f"Error técnico en etiqueta: {e}")
+        return None
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
 def calcular_grasa_marpi(rod_texto):
@@ -896,6 +889,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
