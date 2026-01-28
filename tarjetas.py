@@ -12,59 +12,73 @@ from PIL import Image, ImageDraw
 
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
-        # 1. Tamaño 60x40mm (480x320 px)
+        # 1. Tamaño exacto 60x40mm (480x320 px)
         ancho, alto = 480, 320
         etiqueta = Image.new('L', (ancho, alto), 255)
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. QR Robusto
+        # 2. Generar QR
         url = f"https://marpi-motores.streamlit.app/?tag={tag}"
-        qr = qrcode.QRCode(version=1, box_size=5, border=1)
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
+            box_size=5, 
+            border=1
+        )
         qr.add_data(url)
         qr.make(fit=True)
-        img_qr = qr.make_image().convert('L')
-        img_qr = img_qr.resize((190, 190), Image.NEAREST)
-        etiqueta.paste(img_qr, (20, 65))
+        img_qr = qr.make_image(fill_color="black", back_color="white").convert('L')
 
-        # 3. Línea divisoria muy gruesa (5 píxeles)
-        draw.rectangle([220, 30, 225, 290], fill=0)
+        # 3. Reinsertar el Logo MARPI (Asegurate que logo.png esté en la carpeta)
+        if os.path.exists("logo.png"):
+            logo = Image.open("logo.png").convert("L")
+            logo_dim = 55 # Tamaño para que se vea bien la M
+            logo = logo.resize((logo_dim, logo_dim), Image.Resampling.LANCZOS)
+            
+            qr_w, qr_h = img_qr.size
+            pos = ((qr_w - logo_dim) // 2, (qr_h - logo_dim) // 2)
+            
+            # Parche blanco para que el logo resalte
+            parche = Image.new('L', (logo_dim + 10, logo_dim + 10), 255)
+            img_qr.paste(parche, (pos[0]-5, pos[1]-5))
+            img_qr.paste(logo, pos)
 
-        # 4. Función interna para texto extra-grueso (Legibilidad Industrial)
-        def draw_ultra_bold(pos, text):
-            x, y = pos
-            # Escribimos el texto 3 veces con leve desplazamiento para engrosarlo
-            txt_str = str(text).upper()
-            draw.text((x, y), txt_str, fill=0)
-            draw.text((x+1, y), txt_str, fill=0)
-            draw.text((x, y+1), txt_str, fill=0)
+        # 4. Posicionamiento
+        # Pegamos el QR a la izquierda
+        etiqueta.paste(img_qr, (20, (alto - img_qr.size[1]) // 2))
 
-        # 5. TEXTOS (Ubicación derecha)
-        x_col2 = 240
+        # Línea divisoria central
+        draw.line([230, 35, 230, 285], fill=0, width=4)
+
+        # 5. Textos (Convertidos a string para evitar errores)
+        x_text = 250
         
-        draw_ultra_bold((x_col2, 40), "MARPI MOTORES")
-        draw.text((x_col2, 60), "SERVICE OFICIAL", fill=0)
-        draw.line([x_col2, 78, 450, 78], fill=0, width=3)
+        # Título
+        draw.text((x_text, 40), "MARPI MOTORES S.R.L.", fill=0)
+        draw.line([x_text, 58, 450, 58], fill=0, width=2)
 
-        # Datos del motor (Convertidos a string para evitar el error anterior)
-        draw_ultra_bold((x_col2, 100), "TAG:")
-        draw.text((x_col2, 120), str(tag).upper(), fill=0)
+        # Datos - Usamos str() para que no falle con números
+        draw.text((x_text, 80), "IDENTIFICACIÓN:", fill=0)
+        draw.text((x_text, 100), f"TAG: {str(tag).upper()}", fill=0)
         
-        draw_ultra_bold((x_col2, 160), "SERIE:")
-        draw.text((x_col2, 180), str(serie).upper(), fill=0)
-        
-        draw_ultra_bold((x_col2, 220), "POTENCIA:")
-        draw.text((x_col2, 240), str(potencia).upper(), fill=0)
+        draw.text((x_text, 150), "DATOS TÉCNICOS:", fill=0)
+        draw.text((x_text, 175), f"SERIE: {str(serie).upper()}", fill=0)
+        draw.text((x_text, 205), f"POTENCIA: {str(potencia).upper()}", fill=0)
+
+        draw.text((320, 285), "SERVICE OFICIAL", fill=0)
 
         # Marco exterior
-        draw.rectangle([5, 5, ancho-5, alto-5], outline=0, width=4)
+        draw.rectangle([5, 5, ancho-5, alto-5], outline=0, width=3)
 
-        # 6. Conversión limpia a Blanco y Negro
-        final_bw = etiqueta.point(lambda x: 0 if x < 128 else 255, '1')
-        
+        # 6. Conversión final
+        final_bw = etiqueta.convert('1')
         buf = BytesIO()
         final_bw.save(buf, format="PNG")
         return buf.getvalue()
 
+    except Exception as e:
+        st.error(f"Error en diseño: {e}")
+        return None
     except Exception as e:
         st.error(f"Error de legibilidad: {e}")
         return None
@@ -889,6 +903,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
