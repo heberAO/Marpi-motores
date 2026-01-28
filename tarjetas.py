@@ -41,111 +41,72 @@ fecha_hoy = date.today()
 if 'pdf_listo' not in st.session_state:
     st.session_state.pdf_listo = None
 
-def generar_pdf_reporte(datos, titulo_reporte):
+def generar_pdf_tecnico(datos):
     try:
+        from fpdf import FPDF
         pdf = FPDF()
         pdf.add_page()
         
-        # --- ENCABEZADO PROFESIONAL ---
+        # --- ENCABEZADO ---
         pdf.set_font("Arial", 'B', 16)
         pdf.set_text_color(0, 51, 102)
-        pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='R')
+        pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='L')
         
-        # Datos de Cabecera (Fecha y Responsable)
         pdf.set_font("Arial", '', 10)
         pdf.set_text_color(0)
-        # Busca 'Fecha' o 'fecha'
-        f_val = datos.get('Fecha') or datos.get('fecha') or "S/D"
-        pdf.cell(0, 5, f"Fecha de Informe: {f_val}", ln=True, align='R')
-        # Busca 'Responsable' o 'responsable'
-        r_val = datos.get('Responsable') or datos.get('responsable') or "Depto. Técnico"
-        pdf.cell(0, 5, f"Responsable: {r_val}", ln=True, align='R')
-        pdf.ln(10)
-
-        # Franja de Título
+        # Buscamos fecha y responsable de forma flexible
+        fecha = datos.get('Fecha') or datos.get('fecha') or "___/___/___"
+        resp = datos.get('Responsable') or datos.get('responsable') or "Depto. Técnico"
+        
+        pdf.set_y(10)
+        pdf.cell(0, 5, f"Fecha: {fecha}", ln=True, align='R')
+        pdf.cell(0, 5, f"Responsable: {resp}", ln=True, align='R')
+        
+        pdf.ln(15)
         pdf.set_fill_color(0, 51, 102)
         pdf.set_text_color(255, 255, 255)
         pdf.set_font("Arial", 'B', 14)
-        pdf.cell(0, 12, f"INFORME TÉCNICO: {titulo_reporte}", ln=True, align='C', fill=True)
+        pdf.cell(0, 12, "INFORME TÉCNICO GENERAL", ln=True, align='C', fill=True)
         pdf.ln(5)
 
-        # --- 1. DATOS DE PLACA (Mapeo flexible) ---
+        # --- SECCIÓN 1: DATOS DE PLACA ---
         pdf.set_text_color(0)
         pdf.set_font("Arial", 'B', 12)
-        pdf.set_fill_color(230, 230, 230)
-        pdf.cell(0, 10, " 1. DATOS DE PLACA DEL EQUIPO", ln=True, fill=True)
-        pdf.set_font("Arial", '', 10)
+        pdf.cell(0, 10, "1. IDENTIFICACIÓN DEL EQUIPO", ln=True)
         
-        # Intentamos obtener los datos sin importar si son Mayúsculas o Minúsculas
+        pdf.set_font("Arial", 'B', 10)
+        pdf.set_fill_color(240, 240, 240)
+        
+        # Mapeo de datos de placa
         tag = datos.get('Tag') or datos.get('tag') or "S/D"
-        serie = datos.get('N_Serie') or datos.get('n_serie') or datos.get('Serie') or "S/D"
+        serie = datos.get('N_Serie') or datos.get('n_serie') or "S/D"
         pot = datos.get('Potencia') or datos.get('potencia') or "S/D"
-        tens = datos.get('Tension') or datos.get('tension') or "S/D"
         rpm = datos.get('RPM') or datos.get('rpm') or "S/D"
 
-        pdf.cell(45, 8, "TAG:", 1, 0, 'L', True); pdf.cell(50, 8, f"{tag}", 1)
-        pdf.cell(45, 8, "N° SERIE:", 1, 0, 'L', True); pdf.cell(50, 8, f"{serie}", 1, 1)
-        pdf.cell(45, 8, "POTENCIA:", 1, 0, 'L', True); pdf.cell(50, 8, f"{pot}", 1)
-        pdf.cell(45, 8, "TENSIÓN:", 1, 0, 'L', True); pdf.cell(50, 8, f"{tens}", 1, 1)
-        pdf.ln(8)
+        pdf.cell(30, 8, "TAG:", 1, 0, 'L', True); pdf.cell(65, 8, f"{tag}", 1)
+        pdf.cell(35, 8, "N° SERIE:", 1, 0, 'L', True); pdf.cell(60, 8, f"{serie}", 1, 1)
+        pdf.cell(30, 8, "POTENCIA:", 1, 0, 'L', True); pdf.cell(65, 8, f"{pot}", 1)
+        pdf.cell(35, 8, "VELOCIDAD:", 1, 0, 'L', True); pdf.cell(60, 8, f"{rpm}", 1, 1)
+        pdf.ln(10)
 
-        # --- 2. DETALLES TÉCNICOS ---
-        modo = str(titulo_reporte).upper()
-
-        # SECCIÓN ELÉCTRICA (MEGADO)
-        if any(x in modo for x in ["MEGADO", "CAMPO", "ELECTRICO"]):
-            pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " 2. ENSAYOS ELÉCTRICOS REALIZADOS", ln=True, fill=True)
-            
-            # Resistencia de Aislamiento (Gohm)
-            pdf.set_font("Arial", 'B', 10)
-            pdf.cell(0, 8, "Resistencia de Aislamiento a Tierra (Gohm):", ln=True)
-            pdf.set_font("Arial", '', 10)
-            pdf.cell(63, 8, f"T - V1: {datos.get('RT_TV1', '-')}", 1, 0, 'C')
-            pdf.cell(63, 8, f"T - U1: {datos.get('RT_TU1', '-')}", 1, 0, 'C')
-            pdf.cell(64, 8, f"T - W1: {datos.get('RT_TW1', '-')}", 1, 1, 'C')
-            
-            # Resistencia Óhmica (Ohm)
-            pdf.ln(3)
-            pdf.set_font("Arial", 'B', 10)
-            pdf.cell(0, 8, "Resistencia de Bobinados / Continuidad (Ohm):", ln=True)
-            pdf.set_font("Arial", '', 10)
-            pdf.cell(63, 8, f"U1-U2: {datos.get('RI_U1U2', '-')}", 1, 0, 'C')
-            pdf.cell(63, 8, f"V1-V2: {datos.get('RI_V1V2', '-')}", 1, 0, 'C')
-            pdf.cell(64, 8, f"W1-W2: {datos.get('RI_W1W2', '-')}", 1, 1, 'C')
-
-        # SECCIÓN LUBRICACIÓN
-        elif any(x in modo for x in ["LUBRI", "GRASA", "ENGRASE"]):
-            pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, " 2. REPORTE DE LUBRICACIÓN", ln=True, fill=True)
-            
-            pdf.set_font("Arial", 'B', 10)
-            pdf.cell(95, 8, "LADO ACOPLE (LA)", 1, 0, 'C', True)
-            pdf.cell(95, 8, "LADO OP. ACOPLE (LOA)", 1, 1, 'C', True)
-            
-            # Mapeo flexible para lubricación
-            rod_la = datos.get('Rodamiento_LA') or datos.get('rodamiento_la') or "S/D"
-            rod_loa = datos.get('Rodamiento_LOA') or datos.get('rodamiento_loa') or "S/D"
-            gr_la = datos.get('Gramos_LA') or datos.get('gramos_la') or "0"
-            gr_loa = datos.get('Gramos_LOA') or datos.get('gramos_loa') or "0"
-
-            pdf.set_font("Arial", '', 10)
-            pdf.cell(95, 10, f"Rodamiento: {rod_la}", 1, 0, 'C')
-            pdf.cell(95, 10, f"Rodamiento: {rod_loa}", 1, 1, 'C')
-            pdf.cell(95, 10, f"Grasa: {gr_la} g", 1, 0, 'C')
-            pdf.cell(95, 10, f"Grasa: {gr_loa} g", 1, 1, 'C')
-
-        # Pie de firma
+        # --- SECCIÓN 2: HALLAZGOS Y TAREAS ---
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, "2. DETALLES DE LA INSPECCIÓN / TRABAJO", ln=True)
+        
+        pdf.set_font("Arial", '', 11)
+        # Buscamos la descripción del trabajo
+        obs = datos.get('Descripcion') or datos.get('descripcion') or datos.get('Observaciones') or "Sin observaciones registradas."
+        pdf.multi_cell(0, 8, obs, border=1)
+        
+        # --- PIE DE FIRMA ---
         pdf.set_y(-40)
-        pdf.set_font("Arial", 'B', 10)
+        pdf.line(120, pdf.get_y(), 190, pdf.get_y())
         pdf.cell(110)
-        pdf.cell(70, 0, "", "T", ln=True)
-        pdf.cell(110)
-        pdf.cell(70, 8, f"Firma Responsable: {r_val}", 0, 0, 'C')
+        pdf.cell(80, 7, "Firma Depto. Técnico", 0, 1, 'C')
 
         return pdf.output(dest='S').encode('latin-1', 'replace')
     except Exception as e:
-        print(f"Error: {e}")
+        st.error(f"Error generando Informe Técnico: {e}")
         return None
 # Inicializamos variables de estado
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
@@ -425,17 +386,15 @@ elif modo == "Historial y QR":
                     
                         # 4. Generamos el PDF usando la función profesional
                         # Usamos datos_historial que contiene la fila del Excel
-                        pdf_archivo = generar_pdf_reporte(datos_historial, titulo_final)
-                    
-                        # 5. Botón de descarga (Verificamos que pdf_archivo no sea None)
-                        if pdf_archivo:
+                       pdf_archivo = generar_pdf_tecnico(fila.to_dict())
+
+                       if pdf_archivo:
                             st.download_button(
-                                label="📄 Descargar Informe PDF",
+                                label="📥 Descargar Informe Técnico",
                                 data=pdf_archivo,
-                                file_name=f"Reporte_{buscado}_{fecha}.pdf",
-                                key=f"pdf_hist_{idx}", 
-                                use_container_width=True,
-                                mime="application/pdf"
+                                file_name=f"Informe_Tecnico_{idx}.pdf",
+                                mime="application/pdf",
+                                key=f"btn_tec_{idx}"
                             )
                         else:
                             st.warning(f"No se pudo generar el PDF para {buscado}")
@@ -754,6 +713,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
