@@ -49,6 +49,7 @@ def generar_pdf_reporte(datos, titulo_reporte):
         
         # --- 1. ENCABEZADO: LOGO, TÍTULO Y FECHA ---
         try:
+            # Intenta cargar el logo, si no existe salta al texto
             pdf.image("logo.png", x=10, y=8, w=40)
             pdf.ln(5)
         except:
@@ -63,14 +64,14 @@ def generar_pdf_reporte(datos, titulo_reporte):
         pdf.cell(0, 5, f"Fecha de Informe: {datos.get('Fecha', 'S/D')}", ln=True, align='R')
         pdf.ln(10)
 
-        # Franja de Título
+        # Franja de Título Azul
         pdf.set_fill_color(0, 51, 102)
         pdf.set_text_color(255, 255, 255)
         pdf.set_font("Arial", 'B', 14)
-        pdf.cell(0, 12, f"INFORME TÉCNICO: {titulo_reporte}", ln=True, align='C', fill=True)
+        pdf.cell(0, 12, f"INFORME: {titulo_reporte}", ln=True, align='C', fill=True)
         pdf.ln(5)
 
-        # --- 2. SECCIÓN: DATOS DE PLACA (COMPLETA) ---
+        # --- 2. SECCIÓN: DATOS DE PLACA (COMÚN A TODOS) ---
         pdf.set_text_color(0)
         pdf.set_font("Arial", 'B', 12)
         pdf.set_fill_color(230, 230, 230)
@@ -80,30 +81,25 @@ def generar_pdf_reporte(datos, titulo_reporte):
         col1, col2 = 45, 50
         pdf.cell(col1, 8, "TAG:", 1, 0, 'L', True); pdf.cell(col2, 8, f"{datos.get('Tag', 'S/D')}", 1)
         pdf.cell(col1, 8, "N° SERIE:", 1, 0, 'L', True); pdf.cell(50, 8, f"{datos.get('N_Serie', 'S/D')}", 1, 1)
-        
         pdf.cell(col1, 8, "POTENCIA:", 1, 0, 'L', True); pdf.cell(col2, 8, f"{datos.get('Potencia', 'S/D')}", 1)
         pdf.cell(col1, 8, "TENSIÓN:", 1, 0, 'L', True); pdf.cell(50, 8, f"{datos.get('Tension', 'S/D')}", 1, 1)
-        
         pdf.cell(col1, 8, "RPM:", 1, 0, 'L', True); pdf.cell(col2, 8, f"{datos.get('RPM', 'S/D')}", 1)
         pdf.cell(col1, 8, "CARCASA:", 1, 0, 'L', True); pdf.cell(50, 8, f"{datos.get('Carcasa', 'S/D')}", 1, 1)
         pdf.ln(8)
 
-        # --- 3. SECCIÓN: DETALLES TÉCNICOS ESPECÍFICOS ---
+        # --- 3. SECCIÓN ESPECÍFICA SEGÚN EL TIPO ---
         modo = str(titulo_reporte).upper()
 
+        # CASO A: MEGADO / CAMPO
         if "MEGADO" in modo or "CAMPO" in modo:
             pdf.set_font("Arial", 'B', 12)
             pdf.cell(0, 10, " 2. ENSAYOS ELÉCTRICOS REALIZADOS", ln=True, fill=True)
-            
-            # Resistencia de Aislamiento
             pdf.set_font("Arial", 'B', 10)
             pdf.cell(0, 8, "Resistencia de Aislamiento a Tierra (Gohm):", ln=True)
             pdf.set_font("Arial", '', 10)
             pdf.cell(63, 8, f"T - V1: {datos.get('RT_TV1', '-')}", 1, 0, 'C')
             pdf.cell(63, 8, f"T - U1: {datos.get('RT_TU1', '-')}", 1, 0, 'C')
             pdf.cell(64, 8, f"T - W1: {datos.get('RT_TW1', '-')}", 1, 1, 'C')
-            
-            # Resistencia Óhmica
             pdf.ln(3)
             pdf.set_font("Arial", 'B', 10)
             pdf.cell(0, 8, "Resistencia de Bobinados / Continuidad (Ohm):", ln=True)
@@ -111,14 +107,40 @@ def generar_pdf_reporte(datos, titulo_reporte):
             pdf.cell(63, 8, f"U1 - U2: {datos.get('RI_U1U2', '-')}", 1, 0, 'C')
             pdf.cell(63, 8, f"V1 - V2: {datos.get('RI_V1V2', '-')}", 1, 0, 'C')
             pdf.cell(64, 8, f"W1 - W2: {datos.get('RI_W1W2', '-')}", 1, 1, 'C')
-            
-            pdf.ln(5)
+
+        # CASO B: LUBRICACIÓN
+        elif "LUBRICA" in modo or "GRASA" in modo:
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, " 2. DATOS DE LUBRICACIÓN / ENGRASE", ln=True, fill=True)
             pdf.set_font("Arial", 'B', 10)
-            return pdf.output(dest='S').encode('latin-1', 'replace')
+            pdf.cell(95, 8, "LADO ACOPLE (LA)", 1, 0, 'C', True)
+            pdf.cell(95, 8, "LADO OP. ACOPLE (LOA)", 1, 1, 'C', True)
+            pdf.set_font("Arial", '', 10)
+            pdf.cell(95, 10, f"Rodamiento: {datos.get('Rodamiento_LA', 'S/D')}", 1, 0, 'C')
+            pdf.cell(95, 10, f"Rodamiento: {datos.get('Rodamiento_LOA', 'S/D')}", 1, 1, 'C')
+            pdf.cell(95, 10, f"Grasa Aplicada: {datos.get('Gramos_LA', '0')} g", 1, 0, 'C')
+            pdf.cell(95, 10, f"Grasa Aplicada: {datos.get('Gramos_LOA', '0')} g", 1, 1, 'C')
+
+        # CASO C: INFORME TÉCNICO (DETALLES GENERALES)
+        else:
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, " 2. DESCRIPCIÓN DEL TRABAJO / HALLAZGOS", ln=True, fill=True)
+            pdf.set_font("Arial", '', 11)
+            desc = datos.get('Descripcion') or datos.get('Observaciones') or "Sin detalles adicionales."
+            pdf.multi_cell(0, 8, str(desc), border=1)
+
+        # --- PIE DE PÁGINA Y FIRMA ---
+        pdf.set_y(-40)
+        pdf.set_font("Arial", 'B', 10)
+        pdf.cell(110)
+        pdf.cell(70, 0.1, "", border="T", ln=True) # Línea de firma
+        pdf.cell(110)
+        pdf.cell(70, 8, f"Firma: {datos.get('Responsable', 'Dpto. Técnico')}", 0, 0, 'C')
+
+        return pdf.output(dest='S').encode('latin-1', 'replace')
 
     except Exception as e:
-        # ESTE ES EL BLOQUE QUE TE FALTA Y CAUSA EL SYNTAX ERROR
-        print(f"Error en PDF: {e}")
+        print(f"Error crítico en PDF: {e}")
         return None
 # Inicializamos variables de estado
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
@@ -725,6 +747,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
