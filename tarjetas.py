@@ -448,6 +448,44 @@ elif modo == "Historial y QR":
                 desc_completa = str(fila.get('Descripcion', '-'))
                 desc_corta = desc_completa[:30]
                 
+                # --- BOTONES DE DESCARGA Y DETALLES ---
+                with st.expander(f"🔍 Ver Detalle - {tarea} ({fecha})"):
+                    st.write(f"**Responsable:** {responsable}")
+                    st.write(f"**Descripción:** {desc_completa}")
+                    
+                    col_pdf, col_qr = st.columns(2)
+
+                    with col_pdf:
+                        # 1. Botón para el Informe PDF
+                        datos_pdf = fila.to_dict()
+                        pdf_bytes = generar_pdf_reporte(datos_pdf, tarea)
+                        if pdf_bytes:
+                            st.download_button(
+                                label="📄 Descargar Informe",
+                                data=pdf_bytes,
+                                file_name=f"Informe_{idx}.pdf",
+                                mime="application/pdf",
+                                key=f"pdf_hist_{idx}"
+                            )
+
+                    with col_qr:
+                        # 2. Botón para la Etiqueta Honeywell
+                        # Usamos los nombres de columnas de tu Excel: 'Tag', 'N_Serie', 'Potencia'
+                        etiqueta_bytes = generar_etiqueta_honeywell(
+                            fila.get('Tag', 'S/D'), 
+                            fila.get('N_Serie', 'S/D'), 
+                            fila.get('Potencia', 'S/D')
+                        )
+                        if etiqueta_bytes:
+                            st.image(etiqueta_bytes, width=150)
+                            st.download_button(
+                                label="🖨️ Etiqueta QR",
+                                data=etiqueta_bytes,
+                                file_name=f"Etiqueta_{idx}.png",
+                                mime="image/png",
+                                key=f"qr_hist_{idx}"
+                            )
+                
                 with st.expander(f"📅 {fecha} - {tarea} ({desc_corta}...)"):
                     col1, col2 = st.columns(2)
                     with col1:
@@ -826,6 +864,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
