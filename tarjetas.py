@@ -12,51 +12,53 @@ from PIL import Image, ImageDraw
 
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
-        # 1. Lienzo 60x40mm (480x320 px)
+        # 1. Tamaño 60x40mm (480x320 px)
         ancho, alto = 480, 320
         etiqueta = Image.new('L', (ancho, alto), 255)
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. QR Robusto (Bajamos el detalle para que los puntos sean más grandes)
+        # 2. QR Robusto
         url = f"https://marpi-motores.streamlit.app/?tag={tag}"
         qr = qrcode.QRCode(version=1, box_size=5, border=1)
         qr.add_data(url)
         qr.make(fit=True)
         img_qr = qr.make_image().convert('L')
-        
-        # Redimensionar el QR para que sea grande pero no gigante
-        img_qr = img_qr.resize((200, 200), Image.NEAREST)
-        etiqueta.paste(img_qr, (15, 60))
+        img_qr = img_qr.resize((190, 190), Image.NEAREST)
+        etiqueta.paste(img_qr, (20, 65))
 
-        # 3. Línea divisoria bien gruesa
-        draw.rectangle([225, 30, 230, 290], fill=0)
+        # 3. Línea divisoria muy gruesa (5 píxeles)
+        draw.rectangle([220, 30, 225, 290], fill=0)
 
-        # 4. TEXTOS EN BLOQUE (Mayúsculas y más grandes)
-        # Título Empresa
-        draw.text((245, 40), "MARPI MOTORES", fill=0)
-        draw.text((245, 55), "SERVICE OFICIAL", fill=0)
-        draw.line([245, 75, 460, 75], fill=0, width=3)
-
-        # Datos - Aumentamos el espaciado y simplificamos
-        # Usamos coordenadas fijas para simular negrita pegando el texto dos veces
-        def draw_bold_text(pos, text):
+        # 4. Función interna para texto extra-grueso (Legibilidad Industrial)
+        def draw_ultra_bold(pos, text):
             x, y = pos
-            draw.text((x, y), text, fill=0)
-            draw.text((x+1, y), text, fill=0) # Un píxel a la derecha para engrosar
+            # Escribimos el texto 3 veces con leve desplazamiento para engrosarlo
+            txt_str = str(text).upper()
+            draw.text((x, y), txt_str, fill=0)
+            draw.text((x+1, y), txt_str, fill=0)
+            draw.text((x, y+1), txt_str, fill=0)
 
-        draw_bold_text((245, 100), "TAG:")
-        draw.text((245, 120), f"{tag.upper()}", fill=0)
+        # 5. TEXTOS (Ubicación derecha)
+        x_col2 = 240
         
-        draw_bold_text((245, 160), "NRO SERIE:")
-        draw.text((245, 180), f"{serie.upper()}", fill=0)
+        draw_ultra_bold((x_col2, 40), "MARPI MOTORES")
+        draw.text((x_col2, 60), "SERVICE OFICIAL", fill=0)
+        draw.line([x_col2, 78, 450, 78], fill=0, width=3)
+
+        # Datos del motor (Convertidos a string para evitar el error anterior)
+        draw_ultra_bold((x_col2, 100), "TAG:")
+        draw.text((x_col2, 120), str(tag).upper(), fill=0)
         
-        draw_bold_text((245, 220), "POTENCIA:")
-        draw.text((245, 240), f"{potencia.upper()}", fill=0)
+        draw_ultra_bold((x_col2, 160), "SERIE:")
+        draw.text((x_col2, 180), str(serie).upper(), fill=0)
+        
+        draw_ultra_bold((x_col2, 220), "POTENCIA:")
+        draw.text((x_col2, 240), str(potencia).upper(), fill=0)
 
-        # 5. Marco reforzado
-        draw.rectangle([5, 5, ancho-5, alto-5], outline=0, width=5)
+        # Marco exterior
+        draw.rectangle([5, 5, ancho-5, alto-5], outline=0, width=4)
 
-        # 6. Conversión final (Umbral directo para evitar grises)
+        # 6. Conversión limpia a Blanco y Negro
         final_bw = etiqueta.point(lambda x: 0 if x < 128 else 255, '1')
         
         buf = BytesIO()
@@ -887,6 +889,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
