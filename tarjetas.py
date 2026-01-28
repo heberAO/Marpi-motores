@@ -12,49 +12,58 @@ from PIL import Image, ImageDraw
 
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
-        # Tamaño para 50x25mm a 203 DPI
+        # Tamaño para 50x25mm
         ancho, alto = 400, 200 
         etiqueta = Image.new('1', (ancho, alto), 1) 
         draw = ImageDraw.Draw(etiqueta)
 
-        # --- DISEÑO ESTÉTICO ---
-        # Marco exterior fino
-        draw.rectangle([2, 2, 397, 197], outline=0, width=2)
-        
-        # Generar QR (un poco más pequeño para que entre el diseño)
-        url = f"https://marpi-motores.streamlit.app/?tag={tag}"
-        qr = qrcode.QRCode(box_size=3, border=1) # Box_size 3 para que sea más fino
+        # 1. GENERAR QR CON LOGO
+        url = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={tag}"
+        qr = qrcode.QRCode(
+            version=None,
+            error_correction=qrcode.constants.ERROR_CORRECT_H, # Máxima resistencia
+            box_size=3,
+            border=1,
+        )
         qr.add_data(url)
         qr.make(fit=True)
-        img_qr = qr.make_image(fill_color="black", back_color="white").convert('1')
-        
-        # Pegar QR centrado verticalmente a la izquierda
+        img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
+
+        # Intentar cargar el logo para el centro del QR
+        try:
+            logo = Image.open("logo.png") # Asegurate de que el nombre coincida
+            # Calcular tamaño del logo (25% del QR)
+            pos = ((img_qr.size[0] - 30) // 2, (img_qr.size[1] - 30) // 2)
+            logo = logo.resize((30, 30))
+            img_qr.paste(logo, pos)
+        except:
+            pass # Si no encuentra el logo, genera el QR normal
+
+        # Convertir QR de nuevo a Blanco y Negro para la Honeywell
+        img_qr = img_qr.convert('1')
         etiqueta.paste(img_qr, (15, 45))
 
-        # Línea vertical separadora
+        # --- DISEÑO DE LA ETIQUETA ---
+        draw.rectangle([2, 2, 397, 197], outline=0, width=2)
         draw.line([135, 10, 135, 190], fill=0, width=2)
 
-        # --- TEXTOS ---
-        # Encabezado Empresa
+        # Textos
         draw.text((150, 15), "MARPI MOTORES S.R.L.", fill=0)
-        draw.line([150, 32, 380, 32], fill=0, width=1) # Subrayado título
-
-        # Datos con etiquetas
+        draw.line([150, 32, 380, 32], fill=0, width=1)
+        
         draw.text((150, 50), f"IDENTIFICACIÓN:", fill=0)
-        draw.text((150, 70), f"> TAG: {tag}", fill=0) # El '>' le da toque técnico
+        draw.text((150, 70), f"> TAG: {tag}", fill=0)
         
         draw.text((150, 110), f"DATOS TÉCNICOS:", fill=0)
         draw.text((150, 130), f"N° SERIE: {serie}", fill=0)
         draw.text((150, 155), f"POTENCIA: {potencia}", fill=0)
-
-        # Pie de etiqueta pequeño
         draw.text((280, 180), "SERVICE OFICIAL", fill=0)
 
         buf = BytesIO()
         etiqueta.save(buf, format="PNG")
         return buf.getvalue()
     except Exception as e:
-        st.error(f"Error estético: {e}")
+        st.error(f"Error en etiqueta: {e}")
         return None
 
 st.set_page_config(page_title="Marpi Motores", layout="wide")
@@ -878,6 +887,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
