@@ -46,9 +46,8 @@ def generar_pdf_reporte(datos, titulo_reporte):
         pdf.add_page()
         
         # --- 1. ENCABEZADO CON LOGO, TÍTULO Y FECHA ---
-        # Si tienes el logo en la misma carpeta que el script, pon el nombre del archivo abajo
         try:
-            # pdf.image("logo_marpi.png", x=10, y=8, w=33) # Descomenta esta línea cuando tengas el logo
+            pdf.image("logo.png", x=10, y=8, w=33)
             pdf.ln(5) 
         except:
             pass
@@ -734,6 +733,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
