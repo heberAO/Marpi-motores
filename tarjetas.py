@@ -41,72 +41,84 @@ fecha_hoy = date.today()
 if 'pdf_listo' not in st.session_state:
     st.session_state.pdf_listo = None
 
-def generar_pdf_tecnico(datos):
+def generar_pdf_reporte(datos, titulo_reporte):
     try:
         from fpdf import FPDF
         pdf = FPDF()
         pdf.add_page()
         
-        # --- ENCABEZADO ---
+        # --- 1. ENCABEZADO: LOGO, TÍTULO Y FECHA ---
+        try:
+            pdf.image("logo.png", x=10, y=8, w=40)
+            pdf.ln(5)
+        except:
+            pdf.ln(10)
+
         pdf.set_font("Arial", 'B', 16)
         pdf.set_text_color(0, 51, 102)
-        pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='L')
+        pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='R')
         
         pdf.set_font("Arial", '', 10)
         pdf.set_text_color(0)
-        # Buscamos fecha y responsable de forma flexible
-        fecha = datos.get('Fecha') or datos.get('fecha') or "___/___/___"
-        resp = datos.get('Responsable') or datos.get('responsable') or "Depto. Técnico"
-        
-        pdf.set_y(10)
-        pdf.cell(0, 5, f"Fecha: {fecha}", ln=True, align='R')
-        pdf.cell(0, 5, f"Responsable: {resp}", ln=True, align='R')
-        
-        pdf.ln(15)
+        pdf.cell(0, 5, f"Fecha de Informe: {datos.get('Fecha', 'S/D')}", ln=True, align='R')
+        pdf.ln(10)
+
+        # Franja de Título
         pdf.set_fill_color(0, 51, 102)
         pdf.set_text_color(255, 255, 255)
         pdf.set_font("Arial", 'B', 14)
-        pdf.cell(0, 12, "INFORME TÉCNICO GENERAL", ln=True, align='C', fill=True)
+        pdf.cell(0, 12, f"INFORME TÉCNICO: {titulo_reporte}", ln=True, align='C', fill=True)
         pdf.ln(5)
 
-        # --- SECCIÓN 1: DATOS DE PLACA ---
+        # --- 2. SECCIÓN: DATOS DE PLACA (COMPLETA) ---
         pdf.set_text_color(0)
         pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, "1. IDENTIFICACIÓN DEL EQUIPO", ln=True)
+        pdf.set_fill_color(230, 230, 230)
+        pdf.cell(0, 10, " 1. DATOS DE PLACA DEL EQUIPO", ln=True, fill=True)
+        pdf.set_font("Arial", '', 10)
         
-        pdf.set_font("Arial", 'B', 10)
-        pdf.set_fill_color(240, 240, 240)
+        col1, col2 = 45, 50
+        pdf.cell(col1, 8, "TAG:", 1, 0, 'L', True); pdf.cell(col2, 8, f"{datos.get('Tag', 'S/D')}", 1)
+        pdf.cell(col1, 8, "N° SERIE:", 1, 0, 'L', True); pdf.cell(50, 8, f"{datos.get('N_Serie', 'S/D')}", 1, 1)
         
-        # Mapeo de datos de placa
-        tag = datos.get('Tag') or datos.get('tag') or "S/D"
-        serie = datos.get('N_Serie') or datos.get('n_serie') or "S/D"
-        pot = datos.get('Potencia') or datos.get('potencia') or "S/D"
-        rpm = datos.get('RPM') or datos.get('rpm') or "S/D"
+        pdf.cell(col1, 8, "POTENCIA:", 1, 0, 'L', True); pdf.cell(col2, 8, f"{datos.get('Potencia', 'S/D')}", 1)
+        pdf.cell(col1, 8, "TENSIÓN:", 1, 0, 'L', True); pdf.cell(50, 8, f"{datos.get('Tension', 'S/D')}", 1, 1)
+        
+        pdf.cell(col1, 8, "RPM:", 1, 0, 'L', True); pdf.cell(col2, 8, f"{datos.get('RPM', 'S/D')}", 1)
+        pdf.cell(col1, 8, "CARCASA:", 1, 0, 'L', True); pdf.cell(50, 8, f"{datos.get('Carcasa', 'S/D')}", 1, 1)
+        pdf.ln(8)
 
-        pdf.cell(30, 8, "TAG:", 1, 0, 'L', True); pdf.cell(65, 8, f"{tag}", 1)
-        pdf.cell(35, 8, "N° SERIE:", 1, 0, 'L', True); pdf.cell(60, 8, f"{serie}", 1, 1)
-        pdf.cell(30, 8, "POTENCIA:", 1, 0, 'L', True); pdf.cell(65, 8, f"{pot}", 1)
-        pdf.cell(35, 8, "VELOCIDAD:", 1, 0, 'L', True); pdf.cell(60, 8, f"{rpm}", 1, 1)
-        pdf.ln(10)
+        # --- 3. SECCIÓN: DETALLES TÉCNICOS ESPECÍFICOS ---
+        modo = str(titulo_reporte).upper()
 
-        # --- SECCIÓN 2: HALLAZGOS Y TAREAS ---
-        pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, "2. DETALLES DE LA INSPECCIÓN / TRABAJO", ln=True)
-        
-        pdf.set_font("Arial", '', 11)
-        # Buscamos la descripción del trabajo
-        obs = datos.get('Descripcion') or datos.get('descripcion') or datos.get('Observaciones') or "Sin observaciones registradas."
-        pdf.multi_cell(0, 8, obs, border=1)
-        
-        # --- PIE DE FIRMA ---
-        pdf.set_y(-40)
-        pdf.line(120, pdf.get_y(), 190, pdf.get_y())
-        pdf.cell(110)
-        pdf.cell(80, 7, "Firma Depto. Técnico", 0, 1, 'C')
+        if "MEGADO" in modo or "CAMPO" in modo:
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, " 2. ENSAYOS ELÉCTRICOS REALIZADOS", ln=True, fill=True)
+            
+            # Resistencia de Aislamiento
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Resistencia de Aislamiento a Tierra (Gohm):", ln=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.cell(63, 8, f"T - V1: {datos.get('RT_TV1', '-')}", 1, 0, 'C')
+            pdf.cell(63, 8, f"T - U1: {datos.get('RT_TU1', '-')}", 1, 0, 'C')
+            pdf.cell(64, 8, f"T - W1: {datos.get('RT_TW1', '-')}", 1, 1, 'C')
+            
+            # Resistencia Óhmica
+            pdf.ln(3)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 8, "Resistencia de Bobinados / Continuidad (Ohm):", ln=True)
+            pdf.set_font("Arial", '', 10)
+            pdf.cell(63, 8, f"U1 - U2: {datos.get('RI_U1U2', '-')}", 1, 0, 'C')
+            pdf.cell(63, 8, f"V1 - V2: {datos.get('RI_V1V2', '-')}", 1, 0, 'C')
+            pdf.cell(64, 8, f"W1 - W2: {datos.get('RI_W1W2', '-')}", 1, 1, 'C')
+            
+            pdf.ln(5)
+            pdf.set_font("Arial", 'B', 10)
+            return pdf.output(dest='S').encode('latin-1', 'replace')
 
-        return pdf.output(dest='S').encode('latin-1', 'replace')
     except Exception as e:
-        st.error(f"Error generando Informe Técnico: {e}")
+        # ESTE ES EL BLOQUE QUE TE FALTA Y CAUSA EL SYNTAX ERROR
+        print(f"Error en PDF: {e}")
         return None
 # Inicializamos variables de estado
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
@@ -365,42 +377,35 @@ elif modo == "Historial y QR":
 
                     # --- ESTE BLOQUE DEBE ESTAR AQUÍ ADENTRO (CON ESTA SANGRÍA) ---
                     try:
-                        # 1. Convertimos la fila del historial a un diccionario
                         datos_historial = fila.to_dict()
-                        
-                        # 2. Identificamos el tipo de tarea
+                        # IMPORTANTE: En tu Excel la columna se llama 'Tipo_Tarea'
                         tarea_val = str(datos_historial.get('Tipo_Tarea', '')).upper()
-                        buscado = datos_historial.get('Tag', 'S_TAG')
-                        fecha = datos_historial.get('Fecha', 'S_F').replace("/", "_")
-                    
-                        # 3. "Traductor": Aseguramos que los nombres coincidan con lo que el PDF espera
-                        if "LUBRICACION" in tarea_val or "RELUBRICACION" in tarea_val:
-                            titulo_final = f"LUBRICACIÓN - {buscado}"
-                            # Mapeo de campos para el diseño de lubricación
-                            datos_historial['Gramos_LA'] = datos_historial.get('Gramos_LA', 0)
-                            datos_historial['Gramos_LOA'] = datos_historial.get('Gramos_LOA', 0)
-                        elif "MEGADO" in tarea_val or "CAMPO" in tarea_val:
-                            titulo_final = f"MEDICIONES DE CAMPO - {buscado}"
+                
+                        if "RELUBRICACION" in tarea_val or "LUBRICACION" in tarea_val:
+                            # TRADUCTOR: Mapeamos los nombres del Excel a los que el PDF espera
+                            datos_historial['gr_real_la'] = datos_historial.get('Gramos_LA', 0)
+                            datos_historial['gr_real_loa'] = datos_historial.get('Gramos_LOA', 0)
+                            datos_historial['Rodamiento_LA'] = datos_historial.get('Rodamiento_LA', 'S/D')
+                            datos_historial['Rodamiento_LOA'] = datos_historial.get('Rodamiento_LOA', 'S/D')
+                            datos_historial['notas'] = datos_historial.get('notas', 'Sin notas')
+                            titulo_final = f"LUBRICACION - {buscado}"
                         else:
-                            titulo_final = f"REPORTE TÉCNICO - {buscado}"
-                    
-                        # --- DENTRO DE TU BUCLE DE HISTORIAL ---
-                        # Asegúrate de que todas estas líneas tengan la MISMA sangría
-                        try:
-                            datos_para_pdf = fila.to_dict()
-                            pdf_archivo = generar_pdf_tecnico(datos_para_pdf)
-                            
-                            if pdf_archivo:
-                                st.download_button(
-                                    label="📥 Descargar Informe Técnico",
-                                    data=pdf_archivo,
-                                    file_name=f"Informe_Tecnico_{idx}.pdf",
-                                    mime="application/pdf",
-                                    key=f"btn_tec_{idx}",
-                                    use_container_width=True
-                                )
-                        except Exception as e:
-                            st.error(f"Error en fila {idx}: {e}")
+                            titulo_final = buscado
+                
+                        pdf_archivo = generar_pdf_reporte(datos_historial, titulo_final)
+                
+                        if pdf_archivo:
+                            st.download_button(
+                                label="📄 Descargar Informe PDF",
+                                data=pdf_archivo,
+                                file_name=f"Reporte_{buscado}_{fecha}.pdf",
+                                key=f"pdf_hist_{idx}", 
+                                use_container_width=True
+                            )
+                    except Exception as e:
+                        st.error(f"Error al generar PDF: {e}")
+        else:
+            st.warning("No hay intervenciones registradas para este motor.")
 
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -704,6 +709,13 @@ elif modo == "Mediciones de Campo":
                 if 'tag_fijo' in st.session_state:
                     st.session_state.tag_fijo = ""
                 st.success(f"✅ ¡Excelente! Las mediciones del motor {t} se guardaron correctamente.")
+                st.download_button(
+                    label="📥 DESCARGAR INFORME TÉCNICO",
+                    data=st.session_state.pdf_buffer,
+                    file_name=f"Informe_{t}.pdf",
+                    mime="application/pdf",
+                    key="download_megado_final" # Clave única para que no choque con otros botones
+                )
                 st.balloons()
                 import time
                 time.sleep(1.5)
@@ -713,6 +725,9 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
+
+
 
 
 
