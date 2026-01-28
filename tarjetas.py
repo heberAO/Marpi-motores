@@ -89,25 +89,39 @@ def generar_pdf_reporte(datos, titulo_reporte):
 
         # --- 3. SECCIÓN ESPECÍFICA SEGÚN EL TIPO ---
         modo = str(titulo_reporte).upper()
-
-        # CASO A: MEGADO / CAMPO
+        
+        # --- SECCIÓN: MEGADO / MEDICIONES ELÉCTRICAS ---
         if "MEGADO" in modo or "CAMPO" in modo:
             pdf.set_font("Arial", 'B', 12)
             pdf.cell(0, 10, " 2. ENSAYOS ELÉCTRICOS REALIZADOS", ln=True, fill=True)
+            
+            # --- MEDICIÓN DE AISLAMIENTO (A TIERRA) ---
             pdf.set_font("Arial", 'B', 10)
             pdf.cell(0, 8, "Resistencia de Aislamiento a Tierra (Gohm):", ln=True)
             pdf.set_font("Arial", '', 10)
-            pdf.cell(63, 8, f"T - V1: {datos.get('RT_TV1', '-')}", 1, 0, 'C')
-            pdf.cell(63, 8, f"T - U1: {datos.get('RT_TU1', '-')}", 1, 0, 'C')
-            pdf.cell(64, 8, f"T - W1: {datos.get('RT_TW1', '-')}", 1, 1, 'C')
+            
+            # Buscamos con diferentes nombres posibles (con guion, con punto o espacio)
+            tv1 = datos.get('RT_TV1') or datos.get('RT.TV1') or datos.get('TV1') or "-"
+            tu1 = datos.get('RT_TU1') or datos.get('RT.TU1') or datos.get('TU1') or "-"
+            tw1 = datos.get('RT_TW1') or datos.get('RT.TW1') or datos.get('TW1') or "-"
+            
+            pdf.cell(63, 8, f"T - V1: {tv1}", 1, 0, 'C')
+            pdf.cell(63, 8, f"T - U1: {tu1}", 1, 0, 'C')
+            pdf.cell(64, 8, f"T - W1: {tw1}", 1, 1, 'C')
+            
+            # --- MEDICIÓN DE BOBINADOS (ENTRE FASES) ---
             pdf.ln(3)
             pdf.set_font("Arial", 'B', 10)
             pdf.cell(0, 8, "Resistencia de Bobinados / Continuidad (Ohm):", ln=True)
             pdf.set_font("Arial", '', 10)
-            pdf.cell(63, 8, f"U1 - U2: {datos.get('RI_U1U2', '-')}", 1, 0, 'C')
-            pdf.cell(63, 8, f"V1 - V2: {datos.get('RI_V1V2', '-')}", 1, 0, 'C')
-            pdf.cell(64, 8, f"W1 - W2: {datos.get('RI_W1W2', '-')}", 1, 1, 'C')
-
+            
+            u1u2 = datos.get('RI_U1U2') or datos.get('U1-U2') or datos.get('U1U2') or "-"
+            v1v2 = datos.get('RI_V1V2') or datos.get('V1-V2') or datos.get('V1V2') or "-"
+            w1w2 = datos.get('RI_W1W2') or datos.get('W1-W2') or datos.get('W1W2') or "-"
+            
+            pdf.cell(63, 8, f"U1 - U2: {u1u2}", 1, 0, 'C')
+            pdf.cell(63, 8, f"V1 - V2: {v1v2}", 1, 0, 'C')
+            pdf.cell(64, 8, f"W1 - W2: {w1w2}", 1, 1, 'C')
         # CASO B: LUBRICACIÓN
         elif "LUBRICA" in modo or "GRASA" in modo:
             pdf.set_font("Arial", 'B', 12)
@@ -760,6 +774,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
