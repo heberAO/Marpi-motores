@@ -535,8 +535,9 @@ elif modo == "Historial y QR":
                         
                         # LÓGICA DE SELECCIÓN DE PLANTILLA
                         try:
-                            if "lubric" in tipo_t or "grasa" in tipo_t:
-                                pdf_archivo = generar_pdf_lubricacion(datos_fila)
+                            if tarea == 'Lubricación':
+                                pdf_archivo = generar_pdf_lubricacion(fila.to_dict())
+                                nombre_archivo = f"Lubricacion_{tag}_{fecha}.pdf"
                             elif "mega" in tipo_t or "medici" in tipo_t:
                                 pdf_archivo = generar_pdf_megado(datos_fila)
                             else:
@@ -947,6 +948,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
