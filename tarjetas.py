@@ -172,7 +172,7 @@ def generar_pdf_ingreso(datos):
         # Mediciones de Alta (9 campos)
         pdf.ln(5); pdf.set_font("Arial", 'B', 11); pdf.cell(0, 8, " 2. MEDICIONES ELÉCTRICAS DE INGRESO", ln=True)
         pdf.set_font("Arial", 'B', 9); pdf.set_fill_color(230,230,230)
-        pdf.cell(63, 7, "AISLAMIENTO (Tierra)", 1, 0, 'C', True); pdf.cell(63, 7, "BOBINADO (Entre sí)", 1, 0, 'C', True); pdf.cell(64, 7, "RESISTENCIA (Ohm)", 1, 1, 'C', True)
+        pdf.cell(63, 7, "AISLAMIENTO (Tierra)", 1, 0, 'C', True); pdf.cell(63, 7, "BOBINADO (Entre sí)", 1, 0, 'C', True); pdf.cell(64, 7, "RESISTENCIA INTE.(Ohm)", 1, 1, 'C', True)
         pdf.set_font("Arial", '', 9)
         pdf.cell(63, 7, f"RT_TU: {datos.get('RT_TU','-')}", 1, 0); pdf.cell(63, 7, f"RB_UV: {datos.get('RB_UV','-')}", 1, 0); pdf.cell(64, 7, f"RI_U: {datos.get('RI_U','-')}", 1, 1)
         pdf.cell(63, 7, f"RT_TV: {datos.get('RT_TV','-')}", 1, 0); pdf.cell(63, 7, f"RB_VW: {datos.get('RB_VW','-')}", 1, 0); pdf.cell(64, 7, f"RI_V: {datos.get('RI_V','-')}", 1, 1)
@@ -947,6 +947,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
