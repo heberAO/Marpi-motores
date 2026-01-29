@@ -551,9 +551,6 @@ elif modo == "Historial y QR":
 
                     except Exception as e:
                         st.error(f"Error al generar el PDF del historial en fila {idx}: {e}")
-
-                except Exception as e:
-                    st.error(f"Error crítico en el historial: {e}")
         else:
             st.warning("No hay intervenciones registradas para este motor.")
 
@@ -866,6 +863,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
