@@ -300,21 +300,24 @@ elif modo == "Historial y QR":
         seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
 
         if seleccion:
+            # Extraemos el TAG y filtramos los datos
             buscado = seleccion.split(" | ")[0].strip()
             st.session_state.tag_fijo = buscado
             historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
 
-            # --- PANEL SUPERIOR: QR Y DATOS ---
+            # --- PANEL SUPERIOR: QR Y DATOS DEL MOTOR ---
             with st.container(border=True):
                 col_qr, col_info = st.columns([1, 2])
-                url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}" # Ajusta tu URL
+                # Ajusta esta URL a la de tu app real
+                url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}"
                 qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
                 
                 with col_qr:
                     st.image(qr_api, width=150)
                 with col_info:
                     st.subheader(f" Ⓜ {buscado}")
-                    st.caption(f"Número de Serie: {seleccion.split('SN: ')[1] if 'SN: ' in seleccion else 'S/D'}")
+                    sn_display = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else 'S/D'
+                    st.caption(f"Número de Serie: {sn_display}")
 
             # --- BOTONES DE ACCIÓN ---
             st.subheader("➕ Cargar Nueva Tarea")
@@ -336,71 +339,48 @@ elif modo == "Historial y QR":
             st.subheader("📜 Historial de Intervenciones")
             
             if not historial_motor.empty:
+                # Mostramos lo más nuevo primero
                 hist_m = historial_motor.iloc[::-1] 
 
-                # --- EL BUCLE 'FOR' AHORA ESTÁ BIEN INDENTADO (CON ESPACIOS) ---
-                # --- HISTORIAL VISUAL OPTIMIZADO PARA MÓVIL ---
-for idx, fila in hist_m.iterrows():
-    tarea = str(fila.get('Tipo_Tarea', 'General'))
-    fecha = fila.get('Fecha', 'S/D')
-    tag_equipo = fila.get('Tag', '-')
-    responsable = fila.get('Responsable', 'No asignado')
-    
-    # Usamos border=True para que en el celular se vea como una "tarjeta" separada
-    with st.container(border=True):
-        # Encabezado principal
-        st.markdown(f"### 🗓️ {fecha} - {tarea}")
-        
-        # Fila destacada con Tag y Responsable
-        c_meta1, c_meta2 = st.columns(2)
-        c_meta1.markdown(f"**🆔 TAG:** `{tag_equipo}`")
-        c_meta2.markdown(f"**👤 RESP.:** `{responsable}`")
-        
-        st.divider() # Línea sutil de separación
-        
-        col1, col2 = st.columns([1, 1])
-        
-        with col1:
-            st.markdown("**📋 Datos de Placa:**")
-            st.write(f"**Serie:** {fila.get('N_Serie', '-')}")
-            st.write(f"**Potencia:** {fila.get('Potencia', '-')}")
-            st.write(f"**RPM:** {fila.get('RPM', '-')}")
+                # --- EL BUCLE FOR (Bien indentado con 16 espacios) ---
+                for idx, fila in hist_m.iterrows():
+                    tarea = str(fila.get('Tipo_Tarea', 'General'))
+                    fecha = fila.get('Fecha', 'S/D')
+                    tag_h = fila.get('Tag', buscado)
+                    resp_h = fila.get('Responsable', 'S/D')
+                    
+                    # Creamos la tarjeta visual
+                    with st.container(border=True):
+                        # Encabezado con TAG y RESPONSABLE
+                        st.markdown(f"### 🗓️ {fecha} - {tarea}")
+                        st.markdown(f"**🆔 TAG:** `{tag_h}` | **👤 RESP:** `{resp_h}`")
+                        
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            st.markdown("**📋 Datos de Placa:**")
+                            st.write(f"**Serie:** {fila.get('N_Serie', '-')}")
+                            st.write(f"**Potencia:** {fila.get('Potencia', '-')}")
+                            st.write(f"**RPM:** {fila.get('RPM', '-')}")
 
-        # --- LÓGICA POR TIPO DE TAREA ---
-        
-        # 1. CASO LUBRICACIÓN
-        if "Relubricacion" in tarea or "Lubricación" in tarea:
-            with col2:
-                st.markdown("**🛢️ Detalle Lubricación:**")
-                st.info(f"""
-                **LA:** {fila.get('Rodamiento_LA', '-')} ({fila.get('Gramos_LA', '0')}g)
-                **LOA:** {fila.get('Rodamiento_LOA', '-')} ({fila.get('Gramos_LOA', '0')}g)
-                **Grasa:** {fila.get('Tipo_Grasa', '-')}
-                """)
-        
-        # 2. CASO MEGADO (MEDICIONES)
-        elif "Mediciones" in tarea:
-            with col2:
-                st.markdown("**⚡ Mediciones Campo:**")
-                st.warning(f"""
-                **Aislamiento:** {fila.get('RT_TU1', '-')}
-                **Resistencia:** {fila.get('RI_U1U2', '-')}
-                **Línea L1:** {fila.get('ML_L1', '-')}
-                """)
-        
-        # 3. CASO REPARACIÓN / REGISTRO INICIAL
-        else:
-            with col2:
-                st.markdown("**🛠️ Reparación / Alta:**")
-                st.success(f"""
-                **Estado:** Ingreso al Taller
-                **Rod. LA:** {fila.get('Rodamiento_LA', '-')}
-                **Rod. LOA:** {fila.get('Rodamiento_LOA', '-')}
-                """)
+                        # Lógica de colores según el tipo de trabajo
+                        if "Lubricación" in tarea or "Relubricacion" in tarea:
+                            with col2:
+                                st.markdown("**🛢️ Detalle Lubricación:**")
+                                st.info(f"**LA:** {fila.get('Rodamiento_LA', '-')} ({fila.get('Gramos_LA', '0')}g)\n\n**LOA:** {fila.get('Rodamiento_LOA', '-')} ({fila.get('Gramos_LOA', '0')}g)")
+                        
+                        elif "Mediciones" in tarea:
+                            with col2:
+                                st.markdown("**⚡ Mediciones Eléctricas:**")
+                                st.warning(f"**Aislamiento:** {fila.get('RT_TU1', '-')}\n\n**Resistencia:** {fila.get('RI_U1U2', '-')}")
+                        
+                        else: # Reparación o Alta
+                            with col2:
+                                st.markdown("**🛠️ Detalles Técnicos:**")
+                                st.success(f"**Rod. LA:** {fila.get('Rodamiento_LA', '-')}\n\n**Rod. LOA:** {fila.get('Rodamiento_LOA', '-')}")
 
-        # Parte baja común a todos
-        st.markdown("**📝 Notas del Trabajo:**")
-        st.write(fila.get('Descripcion', 'Sin observaciones registradas.'))
+                        st.markdown("**📝 Observaciones:**")
+                        st.write(fila.get('Descripcion', 'Sin notas adicionales.'))
 
 # --- AHORA EL ELIF ESTÁ ALINEADO AL BORDE IZQUIERDO CORRECTAMENTE ---
 elif modo == "Relubricacion":
@@ -713,6 +693,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
