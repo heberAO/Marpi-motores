@@ -591,34 +591,33 @@ elif modo == "Historial y QR":
                             "Gramos_LOA": raw_data.get('Gramos_LOA') or "0",
                             "Descripcion": raw_data.get('Descripcion') or raw_data.get('descripcion') or "S/D"
                         }
-
-                       try:
-                           datos_dict = {k: ("-" if str(v).lower() == "nan" else v) for k, v in fila.to_dict().items()}
-                           tarea_actual = str(datos_dict.get('Tipo_Tarea', '')).strip()
+                    try:
+                        datos_dict = {k: ("-" if str(v).lower() == "nan" else v) for k, v in fila.to_dict().items()}
+                        tarea_actual = str(datos_dict.get('Tipo_Tarea', '')).strip()
                             
                             # Lógica de decisión de plantilla
-                           if "Lubricación" in tarea_actual:
-                               pdf_archivo = generar_pdf_lubricacion(datos_dict)
-                               nombre_archivo = f"Lubricacion_{tag}_{idx}.pdf"
-                           elif "Mediciones" in tarea_actual:
-                               pdf_archivo = generar_pdf_megado(datos_dict)
-                               nombre_archivo = f"Mediciones_{tag}_{idx}.pdf"
-                           else:
-                               pdf_archivo = generar_pdf_ingreso(datos_dict)
-                               nombre_archivo = f"Protocolo_{tag}_{idx}.pdf"
+                        if "Lubricación" in tarea_actual:
+                            pdf_archivo = generar_pdf_lubricacion(datos_dict)
+                            nombre_archivo = f"Lubricacion_{tag}_{idx}.pdf"
+                        elif "Mediciones" in tarea_actual:
+                            pdf_archivo = generar_pdf_megado(datos_dict)
+                            nombre_archivo = f"Mediciones_{tag}_{idx}.pdf"
+                        else:
+                            pdf_archivo = generar_pdf_ingreso(datos_dict)
+                            nombre_archivo = f"Protocolo_{tag}_{idx}.pdf"
                         
                             # --- BOTÓN DE DESCARGA ---
-                            if pdf_archivo:
-                                st.download_button(
-                                    label=f"📥 Descargar Informe de {tarea_actual}",
-                                    data=pdf_archivo,
-                                    file_name=nombre_archivo,
-                                    mime="application/pdf",
-                                    key=f"btn_hist_{idx}_{tarea_actual.replace(' ', '_')}"
-                                )
+                        if pdf_archivo:
+                            st.download_button(
+                                label=f"📥 Descargar Informe de {tarea_actual}",
+                                data=pdf_archivo,
+                                file_name=nombre_archivo,
+                                mime="application/pdf",
+                                key=f"btn_hist_{idx}_{tarea_actual.replace(' ', '_')}"
+                            )
                         
-                        except Exception as e:
-                            st.error(f"Error al generar el PDF para la tarea {tarea_actual}: {e}")
+                    except Exception as e:
+                         st.error(f"Error al generar el PDF para la tarea {tarea_actual}: {e}")
 
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -929,6 +928,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
