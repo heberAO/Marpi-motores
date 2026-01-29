@@ -597,12 +597,12 @@ elif modo == "Historial y QR":
                         datos_dict = fila.to_dict()
                         tarea_actual = str(datos_dict.get('Tipo_Tarea', '')).strip()
                         
-                            if "Lubricación" in tarea_actual:
-                                pdf_final = generar_pdf_lubricacion(datos_dict)
-                            else:
-                                pdf_final = generar_pdf_megado(datos_dict) if "Mediciones" in tarea_actual else generar_pdf_ingreso(datos_dict)
-                            else:
-                                pdf_archivo = generar_pdf_ingreso(datos_pdf)
+                        if "Lubricación" in tarea_actual:
+                            pdf_final = generar_pdf_lubricacion(datos_dict)
+                        else:
+                            pdf_final = generar_pdf_megado(datos_dict) if "Mediciones" in tarea_actual else generar_pdf_ingreso(datos_dict)
+                        else:
+                            pdf_archivo = generar_pdf_ingreso(datos_pdf)
                         except Exception as e:
                             # Este es el bloque que faltaba y por eso daba SyntaxError
                             st.error(f"Error al generar el PDF: {e}")
@@ -932,6 +932,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
