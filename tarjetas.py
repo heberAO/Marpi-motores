@@ -168,9 +168,7 @@ def generar_pdf_lubricacion(datos):
     # ... (No incluir las tablas de RT_TU o RB_UV aquí)
     
     return pdf.output(dest='S').encode('latin-1')
-    except: return None
-
-def generar_pdf_megado(datos):
+def enerar_pdf_megado(datos):
     try:
         pdf = FPDF()
         pdf.add_page()
@@ -858,6 +856,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
