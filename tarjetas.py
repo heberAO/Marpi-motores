@@ -111,7 +111,31 @@ def calcular_grasa_marpi(rodamiento):
         return 0
 
 # --- 2. FUNCIONES DE GENERACIÓN DE PDF ESPECIALIZADAS ---
+def limpiar(val):
+    v = str(val).strip()
+    return "-" if v.lower() in ["nan", "", "none", "0", "0.0"] else v
 
+def agregar_cabecera_marpi(pdf, titulo, tag):
+    # Logo a la izquierda (10mm desde el borde, 8mm desde arriba, 33mm de ancho)
+    try:
+        pdf.image("logo.png", 10, 8, 33)
+    except:
+        # Si no encuentra el logo, deja el espacio para que no falle el PDF
+        pdf.ln(10)
+    
+    # Nombre de la empresa a la derecha
+    pdf.set_font("Arial", 'B', 16)
+    pdf.set_text_color(0, 51, 102)
+    pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='R')
+    
+    # Título central
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.set_text_color(0)
+    pdf.cell(0, 10, f"{titulo}", ln=True, align='C')
+    pdf.set_font("Arial", 'B', 11)
+    pdf.cell(0, 7, f"EQUIPO: {limpiar(tag)}", ln=True, align='C')
+    pdf.ln(5)
 def generar_pdf_ingreso(datos):
     try:
         pdf = FPDF()
@@ -200,34 +224,46 @@ def generar_pdf_megado(datos):
     pdf = FPDF()
     pdf.add_page()
     
-    # Función interna para limpiar datos
-    def limpiar(val):
-        v = str(val)
-        return "-" if v.lower() == "nan" or v == "" or v == "None" else v
-
-    # Encabezado
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='C')
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, f"REPORTE DE MEDICIONES ELÉCTRICAS: {limpiar(datos.get('Tag'))}", ln=True, align='C')
-    pdf.ln(10)
+    # 1. Cabecera con Logo
+    agregar_cabecera_marpi(pdf, "REPORTE DE MEDICIONES ELÉCTRICAS", datos.get('Tag'))
     
-    # Cuerpo del reporte
+    # 2. Cuerpo - Mediciones
+    pdf.set_fill_color(240, 240, 240)
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "MEDICIONES DE AISLAMIENTO Y RESISTENCIA", ln=True)
+    pdf.cell(0, 10, " 1. ENSAYOS DE AISLAMIENTO Y RESISTENCIA", ln=True, fill=True)
+    pdf.ln(2)
+    
     pdf.set_font("Arial", '', 11)
+    # Aislamiento a Tierra
+    t1 = limpiar(datos.get('RT_TU'))
+    t2 = limpiar(datos.get('RT_TV'))
+    t3 = limpiar(datos.get('RT_TW'))
+    pdf.cell(0, 8, f"Resistencia de Aislamiento (Tierra):", ln=True)
+    pdf.set_font("Arial", 'B', 11)
+    pdf.cell(0, 8, f"   RT_TU: {t1}  |  RT_TV: {t2}  |  RT_TW: {t3}", ln=True)
     
-    # Línea 1: Aislamiento a Tierra
-    t1, t2, t3 = limpiar(datos.get('RT_TU')), limpiar(datos.get('RT_TV')), limpiar(datos.get('RT_TW'))
-    pdf.cell(0, 8, f"RT_TU: {t1}  |  RT_TV: {t2}  |  RT_TW: {t3}", ln=True)
+    pdf.ln(3)
+    pdf.set_font("Arial", '', 11)
+    # Resistencia de Bobinado
+    r1 = limpiar(datos.get('RI_U'))
+    r2 = limpiar(datos.get('RI_V'))
+    r3 = limpiar(datos.get('RI_W'))
+    pdf.cell(0, 8, f"Resistencia de Bobinado (Ohm):", ln=True)
+    pdf.set_font("Arial", 'B', 11)
+    pdf.cell(0, 8, f"   RI_U: {r1}  |  RI_V: {r2}  |  RI_W: {r3}", ln=True)
     
-    # Línea 2: Resistencia de Bobinado
-    r1, r2, r3 = limpiar(datos.get('RI_U')), limpiar(datos.get('RI_V')), limpiar(datos.get('RI_W'))
-    pdf.cell(0, 8, f"RI_U: {r1}  |  RI_V: {r2}  |  RI_W: {r3}", ln=True)
-    
-    pdf.ln(5)
+    # 3. Observaciones
+    pdf.ln(10)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, " 2. OBSERVACIONES TÉCNICAS", ln=True, fill=True)
+    pdf.set_font("Arial", '', 11)
     obs = limpiar(datos.get('Descripcion'))
-    pdf.multi_cell(0, 8, f"Observaciones: {obs}")
+    pdf.multi_cell(0, 8, obs)
+    
+    # Pie de página simple
+    pdf.set_y(-25)
+    pdf.set_font("Arial", 'I', 8)
+    pdf.cell(0, 10, "Documento generado por Sistema de Gestión MARPI - 2026", align='C')
     
     return pdf.output(dest='S').encode('latin-1', errors='replace')
 # Inicializamos variables de estado
@@ -894,6 +930,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
