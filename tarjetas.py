@@ -699,11 +699,13 @@ elif modo == "Relubricacion":
         notas = st.text_area("Notas")
         
         if st.form_submit_button("💾 GUARDAR"):
+            # 1. Identificación de TAG y Responsable
             tag_actual = t if 't' in locals() else (tag_seleccionado if 'tag_seleccionado' in locals() else None)
             resp_actual = resp if 'resp' in locals() else (tecnico if 'tecnico' in locals() else None)
 
             if tag_actual and resp_actual:
-                # 1. ARMAMOS EL DICCIONARIO BASE
+                # 2. Creación del diccionario con datos de Relubricación
+                # Estos campos son los que evitan los 'nan' en el informe final
                 nueva = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": tag_actual,
@@ -715,26 +717,27 @@ elif modo == "Relubricacion":
                     "Gramos_LOA": gr_real_loa,
                     "Tipo_Grasa": grasa_t,
                     "Notas": notas,
-                    "Descripcion": f"LUBRICACIÓN: {grasa_t}. LA: {gr_real_la}g, LOA: {gr_real_loa}g."
+                    "Descripcion": f"LUBRICACIÓN REALIZADA: {grasa_t}"
                 }
                 
-                # 2. GUARDAR EN BASE DE DATOS
+                # 3. Guardado en la base de datos (Google Sheets / Excel)
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
 
-                # 3. GENERAR EL PDF CORRECTO (Acá se arreglan los 'nan')
+                # 4. GENERACIÓN DEL PDF (EL CAMBIO CLAVE)
                 st.session_state.pdf_buffer = generar_pdf_lubricacion(nueva)
 
-                # 4. FINALIZAR
+                # 5. Interfaz de usuario
                 st.session_state.tag_buffer = tag_actual
                 st.session_state.form_id += 1
-                st.success(f"✅ Registro de {tag_actual} guardado con éxito")
+                st.success(f"✅ Registro de {tag_actual} guardado con éxito.")
                 st.balloons()
-                time.sleep(1.5)
+                
+                import time
+                time.sleep(1)
                 st.rerun()
             else:
-                st.error("⚠️ Error: No se encontró el TAG o el Responsable.")
-
+                st.error("⚠️ Error: El TAG y el Responsable son obligatorios.")
     # --- BOTÓN DE DESCARGA (CORREGIDO) ---
     if st.session_state.get("pdf_buffer") is not None:
         st.divider() # <--- Ves? Estos espacios son los que faltaban
@@ -868,6 +871,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
