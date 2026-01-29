@@ -530,13 +530,9 @@ elif modo == "Historial y QR":
                     
                     if str(fila.get('Tipo_Grasa')) != 'nan':
                         st.write(f"🧪 **Grasa:** {fila.get('Tipo_Grasa')} ({fila.get('Gramos_LA', '0')}g / {fila.get('Gramos_LOA', '0')}g)")
-
-                    # --- ESTE BLOQUE DEBE ESTAR AQUÍ ADENTRO (CON ESTA SANGRÍA) ---
-                    # --- DENTRO DE TU BUCLE DE HISTORIAL ---
                     try:
                         # 1. Convertimos la fila a diccionario
                         raw_data = fila.to_dict()
-                        
                         # 2. TRADUCTOR: Forzamos que los datos estén donde el PDF los busca
                         datos_limpios = {
                             "Fecha": raw_data.get('Fecha') or raw_data.get('fecha') or "S/D",
@@ -559,7 +555,7 @@ elif modo == "Historial y QR":
                         }
 
                         # --- 3. SELECCIÓN DE PLANTILLA PDF SEGÚN EL TIPO DE TAREA ---
-                        datos_pdf = fila.to_dict()
+                        datos_pdf = {k: ("-" if str(v).lower() == "nan" else v) for k, v in fila.to_dict().items()}
                         tipo_t = str(datos_pdf.get('Tipo_Tarea', '')).strip().lower()
                         pdf_archivo = None # Limpiamos el texto
                         try:
@@ -898,6 +894,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
