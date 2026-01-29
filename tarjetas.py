@@ -318,26 +318,26 @@ if modo == "Nuevo Registro":
         
         btn_guardar = st.form_submit_button("💾 GUARDAR Y GENERAR PDF")
 
-            if btn_guardar:
-                if t and resp:
-                    nueva = {
-                        "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
-                        "Tag": t,
-                        "N_Serie": sn,
-                        "Responsable": resp,
-                        "Potencia": p, "Tension": v, "Corriente": cor,
-                        "RPM": r, "Carcasa": carc,
-                        "Rodamiento_LA": r_la, "Rodamiento_LOA": r_loa,
-                        "RT_TU": v_rt_tu, "RT_TV": v_rt_tv, "RT_TW": v_rt_tw,
-                        "RB_UV": v_rb_uv, "RB_VW": v_rb_vw, "RB_UW": v_rb_uw,
-                        "RI_U": v_ri_u, "RI_V": v_ri_v, "RI_W": v_ri_w,
-                        "Descripcion": desc,
-                        "Trabajos_Externos": ext,
-                        "Tipo_Tarea": "Nuevo Registro" # <--- AGREGA ESTO SIEMPRE
-                    }
+        if btn_guardar:
+            if t and resp:
+                nueva = {
+                    "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
+                    "Tag": t,
+                    "N_Serie": sn,
+                    "Responsable": resp,
+                    "Potencia": p, "Tension": v, "Corriente": cor,
+                    "RPM": r, "Carcasa": carc,
+                    "Rodamiento_LA": r_la, "Rodamiento_LOA": r_loa,
+                    "RT_TU": v_rt_tu, "RT_TV": v_rt_tv, "RT_TW": v_rt_tw,
+                    "RB_UV": v_rb_uv, "RB_VW": v_rb_vw, "RB_UW": v_rb_uw,
+                    "RI_U": v_ri_u, "RI_V": v_ri_v, "RI_W": v_ri_w,
+                    "Descripcion": desc,
+                    "Trabajos_Externos": ext,
+                    "Tipo_Tarea": "Nuevo Registro" # <--- AGREGA ESTO SIEMPRE
+                }
             # ..# Guardar y generar...
-                    df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-                    conn.update(data=df_final)
+                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+                conn.update(data=df_final)
                     # --- LIMPIEZA Y GENERACIÓN ---
                     if "pdf_buffer" in st.session_state:
                         del st.session_state["pdf_buffer"]
@@ -882,6 +882,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
