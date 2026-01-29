@@ -220,50 +220,55 @@ def generar_pdf_lubricacion(datos):
 
     # Retornar el buffer para Streamlit
     return pdf.output(dest='S').encode('latin-1')
+El problema es que estamos intentando leer los datos de la fila del historial, pero los nombres de las columnas que busca el código (ej. RT_TU) no coinciden exactamente con los que están escritos en tu Excel o base de datos. Si hay un espacio de más o una mayúscula distinta, el sistema no los encuentra y por eso pone -.
+
+Aquí tienes la solución completa. He modificado la función para que sea "inteligente": si no encuentra RT_TU, busca variaciones comunes y limpia los datos antes de escribir.
+
+1. Reemplaza tu función de Megado por esta
+Esta versión es mucho más robusta y utiliza una tabla para que los campos no se vean amontonados:
+
+Python
 def generar_pdf_megado(datos):
     pdf = FPDF()
     pdf.add_page()
     
-    # 1. Cabecera con Logo
+    # Función interna para buscar datos aunque el nombre varíe un poco
+    def obtener_dato(lista_nombres):
+        for nombre in lista_nombres:
+            val = datos.get(nombre)
+            if val is not None and str(val).lower() != 'nan' and str(val).strip() != '':
+                return str(val)
+        return "-"
+
+    # 1. Cabecera
     agregar_cabecera_marpi(pdf, "REPORTE DE MEDICIONES ELÉCTRICAS", datos.get('Tag'))
     
-    # 2. Cuerpo - Mediciones
-    pdf.set_fill_color(240, 240, 240)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, " 1. ENSAYOS DE AISLAMIENTO Y RESISTENCIA", ln=True, fill=True)
-    pdf.ln(2)
+    # 2. Tabla de Mediciones (Diseño más claro)
+    pdf.set_fill_color(230, 230, 230)
+    pdf.set_font("Arial", 'B', 11)
+    pdf.cell(95, 8, "MEDICIÓN DE AISLAMIENTO (M/G Ohms)", 1, 0, 'C', True)
+    pdf.cell(95, 8, "RESISTENCIA DE BOBINADO (Ohms)", 1, 1, 'C', True)
     
     pdf.set_font("Arial", '', 11)
-    # Aislamiento a Tierra
-    t1 = limpiar(datos.get('RT_TU'))
-    t2 = limpiar(datos.get('RT_TV'))
-    t3 = limpiar(datos.get('RT_TW'))
-    pdf.cell(0, 8, f"Resistencia de Aislamiento (Tierra):", ln=True)
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 8, f"   RT_TU: {t1}  |  RT_TV: {t2}  |  RT_TW: {t3}", ln=True)
+    # Fila 1: TU y U
+    pdf.cell(95, 8, f" RT_TU: {obtener_dato(['RT_TU', 'RT TU', 'RT-TU'])}", 1, 0)
+    pdf.cell(95, 8, f" RI_U: {obtener_dato(['RI_U', 'RI U', 'RI-U'])}", 1, 1)
     
-    pdf.ln(3)
-    pdf.set_font("Arial", '', 11)
-    # Resistencia de Bobinado
-    r1 = limpiar(datos.get('RI_U'))
-    r2 = limpiar(datos.get('RI_V'))
-    r3 = limpiar(datos.get('RI_W'))
-    pdf.cell(0, 8, f"Resistencia de Bobinado (Ohm):", ln=True)
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 8, f"   RI_U: {r1}  |  RI_V: {r2}  |  RI_W: {r3}", ln=True)
+    # Fila 2: TV y V
+    pdf.cell(95, 8, f" RT_TV: {obtener_dato(['RT_TV', 'RT TV', 'RT-TV'])}", 1, 0)
+    pdf.cell(95, 8, f" RI_V: {obtener_dato(['RI_V', 'RI V', 'RI-V'])}", 1, 1)
+    
+    # Fila 3: TW y W
+    pdf.cell(95, 8, f" RT_TW: {obtener_dato(['RT_TW', 'RT TW', 'RT-TW'])}", 1, 0)
+    pdf.cell(95, 8, f" RI_W: {obtener_dato(['RI_W', 'RI W', 'RI-W'])}", 1, 1)
     
     # 3. Observaciones
     pdf.ln(10)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, " 2. OBSERVACIONES TÉCNICAS", ln=True, fill=True)
+    pdf.set_font("Arial", 'B', 11)
+    pdf.cell(0, 8, "OBSERVACIONES Y CONCLUSIONES:", ln=True)
     pdf.set_font("Arial", '', 11)
-    obs = limpiar(datos.get('Descripcion'))
-    pdf.multi_cell(0, 8, obs)
-    
-    # Pie de página simple
-    pdf.set_y(-25)
-    pdf.set_font("Arial", 'I', 8)
-    pdf.cell(0, 10, "Documento generado por Sistema de Gestión MARPI - 2026", align='C')
+    obs = obtener_dato(['Descripcion', 'Observaciones', 'Detalle'])
+    pdf.multi_cell(0, 7, obs)
     
     return pdf.output(dest='S').encode('latin-1', errors='replace')
 # Inicializamos variables de estado
@@ -930,6 +935,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
