@@ -118,173 +118,6 @@ def calcular_grasa_marpi(rodamiento):
         return max(5, round(gramos, 1)) # Mínimo 5g para motores industriales
     except:
         return 0
-
-# --- 2. FUNCIONES DE GENERACIÓN DE PDF ESPECIALIZADAS ---
-def limpiar(val):
-    v = str(val).strip()
-    return "-" if v.lower() in ["nan", "", "none", "0", "0.0"] else v
-
-def agregar_cabecera_marpi(pdf, titulo, tag):
-    try:
-        pdf.image("logo.png", 10, 8, 33)
-    except:
-        pdf.ln(10)
-    
-    pdf.set_font("Arial", 'B', 16)
-    pdf.set_text_color(0, 51, 102)
-    pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='R')
-    
-    pdf.ln(5)
-    pdf.set_font("Arial", 'B', 14)
-    pdf.set_text_color(0)
-    pdf.cell(0, 10, titulo, ln=True, align='C')
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 7, f"EQUIPO: {limpiar(tag)}", ln=True, align='C')
-    pdf.ln(5)
-def generar_pdf_ingreso(datos):
-    try:
-        pdf = FPDF()
-        pdf.add_page()
-        # USAMOS LA CABECERA UNIFICADA (Aquí sí saldrá el logo)
-        agregar_cabecera_marpi(pdf, "PROTOCOLO DE ALTA Y REGISTRO", datos.get('Tag'))
-        
-        # Tabla de Datos de Placa
-        pdf.set_font("Arial", 'B', 11); pdf.cell(0, 8, " 1. ESPECIFICACIONES DE PLACA", ln=True)
-        pdf.set_font("Arial", '', 10)
-        
-        pdf.cell(45, 8, "N. SERIE:", 1); pdf.cell(50, 8, limpiar(datos.get('N_Serie')), 1)
-        pdf.cell(45, 8, "POTENCIA:", 1); pdf.cell(50, 8, limpiar(datos.get('Potencia')), 1, 1)
-        pdf.cell(45, 8, "TENSIÓN:", 1); pdf.cell(50, 8, limpiar(datos.get('Tension')), 1)
-        pdf.cell(45, 8, "RPM:", 1); pdf.cell(50, 8, limpiar(datos.get('RPM')), 1, 1)
-
-        # MEDICIONES (Mapeadas a tus columnas reales con '1')
-        pdf.ln(5); pdf.set_font("Arial", 'B', 11); pdf.cell(0, 8, " 2. MEDICIONES ELÉCTRICAS", ln=True)
-        pdf.set_font("Arial", 'B', 9); pdf.set_fill_color(230,230,230)
-        pdf.cell(63, 7, "AISLAMIENTO (Tierra)", 1, 0, 'C', True)
-        pdf.cell(63, 7, "BOBINADO (Entre sí)", 1, 0, 'C', True)
-        pdf.cell(64, 7, "RESISTENCIA (Ohm)", 1, 1, 'C', True)
-        
-        pdf.set_font("Arial", '', 9)
-        # Fila 1: TU1 / VU1 / U1U2
-        pdf.cell(63, 7, f"RT_TU: {limpiar(datos.get('RT_TU1'))}", 1, 0)
-        pdf.cell(63, 7, f"RB_VU: {limpiar(datos.get('RB_VU1'))}", 1, 0)
-        pdf.cell(64, 7, f"RI_U: {limpiar(datos.get('RI_U1U2'))}", 1, 1)
-        # Fila 2: TV1 / WV1 / V1V2
-        pdf.cell(63, 7, f"RT_TV: {limpiar(datos.get('RT_TV1'))}", 1, 0)
-        pdf.cell(63, 7, f"RB_VW: {limpiar(datos.get('RB_WV1'))}", 1, 0)
-        pdf.cell(64, 7, f"RI_V: {limpiar(datos.get('RI_V1V2'))}", 1, 1)
-
-        pdf.ln(5)
-        pdf.multi_cell(0, 7, f"DESCRIPCIÓN: {limpiar(datos.get('Descripcion'))}", border=1)
-        
-        return pdf.output(dest='S').encode('latin-1', 'replace')
-    except Exception as e:
-        print(f"Error en ingreso: {e}")
-        return None
-def generar_pdf_lubricacion(datos):
-    pdf = FPDF()
-    pdf.add_page()
-    
-    # Cabecera profesional usando la función que ya definimos
-    agregar_cabecera_marpi(pdf, "REPORTE DE LUBRICACIÓN DE EQUIPO", datos.get('Tag'))
-    
-    # 1. Datos Identificatorios del Motor
-    pdf.set_fill_color(230, 230, 230)
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 8, " 1. IDENTIFICACIÓN DEL MOTOR", ln=True, fill=True)
-    
-    pdf.set_font("Arial", '', 10)
-    # Mostramos solo datos relevantes de placa que ya tienes [cite: 57, 68]
-    pdf.cell(45, 8, "N. SERIE:", 1); pdf.cell(50, 8, limpiar(datos.get('N_Serie')), 1)
-    pdf.cell(45, 8, "POTENCIA:", 1); pdf.cell(50, 8, limpiar(datos.get('Potencia')), 1, 1)
-    
-    pdf.ln(5)
-
-    # 2. Información Específica de Lubricación
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 8, " 2. DATOS DE LUBRICACIÓN", ln=True, fill=True)
-    
-    # Tabla de rodamientos (LA y LOA)
-    pdf.set_font("Arial", 'B', 10)
-    pdf.cell(95, 8, "LADO ACOPLE (LA)", 1, 0, 'C')
-    pdf.cell(95, 8, "LADO OPUESTO (LOA)", 1, 1, 'C')
-    
-    pdf.set_font("Arial", '', 10)
-    pdf.cell(45, 8, "Rodamiento:", 1); pdf.cell(50, 8, limpiar(datos.get('Rodamiento_LA')), 1, 0)
-    pdf.cell(45, 8, "Rodamiento:", 1); pdf.cell(50, 8, limpiar(datos.get('Rodamiento_LOA')), 1, 1)
-    
-    pdf.cell(45, 8, "Grasa (gr):", 1); pdf.cell(50, 8, limpiar(datos.get('Gramos_LA')), 1, 0)
-    pdf.cell(45, 8, "Grasa (gr):", 1); pdf.cell(50, 8, limpiar(datos.get('Gramos_LOA')), 1, 1)
-    
-    pdf.ln(5)
-
-    # 3. Observaciones y Tipo de Grasa
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 8, " 3. DETALLES DEL TRABAJO", ln=True, fill=True)
-    pdf.set_font("Arial", '', 10)
-    
-    # Aquí es donde aparecerá el texto "LUBRICACIÓN REALIZADA: SKF LGHP 2" 
-    detalles = f"TIPO DE GRASA: {limpiar(datos.get('Tipo_Grasa'))}\n\nOBSERVACIONES: {limpiar(datos.get('Descripcion'))}"
-    pdf.multi_cell(0, 8, detalles, border=1)
-    
-    return pdf.output(dest='S').encode('latin-1', 'replace')
-def generar_pdf_megado(datos):
-    pdf = FPDF()
-    pdf.add_page()
-    
-    # 1. Cabecera con Logo
-    agregar_cabecera_marpi(pdf, "REPORTE DE MEDICIONES ELÉCTRICAS", datos.get('Tag'))
-    
-    # 2. Tabla de Mediciones
-    pdf.set_fill_color(230, 230, 230)
-    pdf.set_font("Arial", 'B', 10)
-    
-    # Encabezados de tabla
-    pdf.cell(63, 8, "AISLAMIENTO (Tierra)", 1, 0, 'C', True)
-    pdf.cell(63, 8, "BOBINADO (Entre sí)", 1, 0, 'C', True)
-    pdf.cell(64, 8, "RESISTENCIA INTERNA (Ohm)", 1, 1, 'C', True)
-    
-    pdf.set_font("Arial", '', 10)
-    
-   # --- FILA 1 ---
-    # Aislamiento: RT_TU1 | Bobinado: RB_VU1 | Fase: RI_U1U2
-    pdf.cell(63, 8, f" RT_TU: {obtener_dato_seguro(datos, ['RT_TU1', 'RT_TU'])}", 1, 0)
-    pdf.cell(63, 8, f" RB_VU: {obtener_dato_seguro(datos, ['RB_VU1', 'RB_VU', 'RB_UV1'])}", 1, 0)
-    pdf.cell(64, 8, f" RI_U: {obtener_dato_seguro(datos, ['RI_U1U2', 'RI_U1', 'RI_U'])}", 1, 1)
-    
-    # --- FILA 2 ---
-    # Aislamiento: RT_TV1 | Bobinado: RB_WV1 | Fase: RI_V1V2
-    pdf.cell(63, 8, f" RT_TV: {obtener_dato_seguro(datos, ['RT_TV1', 'RT_TV'])}", 1, 0)
-    pdf.cell(63, 8, f" RB_VW: {obtener_dato_seguro(datos, ['RB_WV1', 'RB_VW', 'RB_VW1'])}", 1, 0)
-    pdf.cell(64, 8, f" RI_V: {obtener_dato_seguro(datos, ['RI_V1V2', 'RI_V1', 'RI_V'])}", 1, 1)
-    
-    # --- FILA 3 ---
-    # Aislamiento: RT_TW1 | Bobinado: RB_WU1 | Fase: RI_W1W2
-    pdf.cell(63, 8, f" RT_TW: {obtener_dato_seguro(datos, ['RT_TW1', 'RT_TW'])}", 1, 0)
-    pdf.cell(63, 8, f" RB_UW: {obtener_dato_seguro(datos, ['RB_WU1', 'RB_UW', 'RB_UW1'])}", 1, 0)
-    pdf.cell(64, 8, f" RI_W: {obtener_dato_seguro(datos, ['RI_W1W2', 'RI_W1', 'RI_W'])}", 1, 1)
-
-    # 3. Mediciones de Línea (Amperaje/Carga)
-    pdf.ln(5)
-    pdf.set_fill_color(230, 230, 230)
-    pdf.set_font("Arial", 'B', 10)
-    pdf.cell(0, 8, "MEDICIONES EN LÍNEA", 1, 1, 'C', True)
-    
-    pdf.set_font("Arial", '', 10)
-    l1 = obtener_dato_seguro(datos, ['ML_L1'])
-    l2 = obtener_dato_seguro(datos, ['ML_L2'])
-    l3 = obtener_dato_seguro(datos, ['ML_L3'])
-    pdf.cell(0, 8, f" L1: {l1}  |  L2: {l2}  |  L3: {l3}", 1, 1, 'C')
-    
-    # 3. Observaciones
-    pdf.ln(10)
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 8, "OBSERVACIONES TÉCNICAS:", ln=True)
-    pdf.set_font("Arial", '', 10)
-    obs = obtener_dato_seguro(datos, ['Descripcion', 'Observaciones', 'Detalle'])
-    pdf.multi_cell(0, 7, obs)
-    
-    return pdf.output(dest='S').encode('latin-1', errors='replace')
 # Inicializamos variables de estado
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
 if "modo_manual" not in st.session_state: st.session_state.modo_manual = False
@@ -511,123 +344,47 @@ elif modo == "Historial y QR":
             # Mostramos lo más nuevo primero
             hist_m = historial_motor.iloc[::-1] 
 
-            for idx, fila in hist_m.iterrows():
-                fecha = fila.get('Fecha','-')
-                tarea = fila.get('Tipo_Tarea', 'General')
-                responsable = fila.get('Responsable', 'S/D')
-                desc_completa = str(fila.get('Descripcion', '-'))
-                desc_corta = desc_completa[:30]
+           # --- HISTORIAL VISUAL EN PANTALLA ---
+for idx, fila in hist_m.iterrows():
+    tarea = str(fila.get('Tipo_Tarea', 'General'))
+    fecha = fila.get('Fecha', 'S/D')
+    
+    # Creamos un contenedor visual para cada intervención
+    with st.container():
+        st.markdown(f"### 🗓️ {tarea} - {fecha}")
+        
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            st.markdown("**📋 Datos de Placa:**")
+            st.write(f"**Serie:** {fila.get('N_Serie', '-')} | **Potencia:** {fila.get('Potencia', '-')}")
+            st.write(f"**RPM:** {fila.get('RPM', '-')} | **Carcasa:** {fila.get('Carcasa', '-')}")
 
-                with st.expander(f"🔍 {fecha} - {tarea} ({desc_corta}...)"):
-                    # 1. Mostrar información en pantalla
-                    c1, c2 = st.columns(2)
-                    with c1:
-                        st.write(f"**👤 Responsable:** {responsable}")
-                        st.write(f"**📝 Descripción:** {desc_completa}")
-                    with c2:
-                        st.write(f"**⚙️ Rod. LA:** {fila.get('Rodamiento_LA','-')}")
-                        st.write(f"**⚙️ Rod. LOA:** {fila.get('Rodamiento_LOA','-')}")
-                    st.divider()    
-                # 2. Generación de PDF y Botones
-                    col_pdf, col_qr = st.columns(2)
-                    with col_pdf:
-                        # Convertimos la fila actual a diccionario para las funciones
-                        datos_fila = fila.to_dict()
-                        tipo_t = str(datos_fila.get('Tipo_Tarea', '')).lower()
-                        
-                        # LÓGICA DE SELECCIÓN DE PLANTILLA
-                        try:
-                            if tarea == 'Lubricación':
-                                pdf_archivo = generar_pdf_lubricacion(fila.to_dict())
-                                nombre_archivo = f"Lubricacion_{tag}_{fecha}.pdf"
-                            elif "mega" in tipo_t or "medici" in tipo_t:
-                                pdf_archivo = generar_pdf_megado(datos_fila)
-                            else:
-                                pdf_archivo = generar_pdf_ingreso(datos_fila)
+        # --- SI ES LUBRICACIÓN: Solo muestra rodamientos y grasa ---
+        if "Lubricación" in tarea:
+            with col2:
+                st.markdown("**🛢️ Detalle de Lubricación:**")
+                st.info(f"""
+                **Lado Acople (LA):** {fila.get('Rodamiento_LA', '-')} ({fila.get('Gramos_LA', '0')} gr)
+                **Lado Opuesto (LOA):** {fila.get('Rodamiento_LOA', '-')} ({fila.get('Gramos_LOA', '0')} gr)
+                **Tipo de Grasa:** {fila.get('Tipo_Grasa', '-')}
+                """)
+        
+        # --- SI ES MEDICIONES: Solo muestra la parte eléctrica ---
+        elif "Mediciones" in tarea:
+            with col2:
+                st.markdown("**⚡ Mediciones Eléctricas:**")
+                st.warning(f"""
+                **Aislamiento (RT_TU1):** {fila.get('RT_TU1', '-')}
+                **Resistencia (RI_U1U2):** {fila.get('RI_U1U2', '-')}
+                **Línea (L1):** {fila.get('ML_L1', '-')}
+                """)
 
-                            # 3. BOTÓN DE DESCARGA
-                            if pdf_archivo:
-                                st.download_button(
-                                    label="📄 Descargar Informe",
-                                    data=pdf_archivo,
-                                    file_name=f"Informe_{datos_fila.get('Tag','Motor')}_{idx}.pdf",
-                                    mime="application/pdf",
-                                    key=f"btn_pdf_hist_{idx}"
-                                 )
-                        except Exception as e:
-                            st.error(f"Error al generar PDF: {e}")
-
-                    with col_qr:
-                        etiqueta_bytes = generar_etiqueta_honeywell(
-                            fila.get('Tag', 'S/D'), 
-                            fila.get('N_Serie', 'S/D'), 
-                            fila.get('Potencia', 'S/D')
-                        )
-                        if etiqueta_bytes:
-                            st.download_button(
-                                label="🖨️ Etiqueta QR",
-                                data=etiqueta_bytes,
-                                file_name=f"Etiqueta_{idx}.png",
-                                mime="image/png",
-                                key=f"qr_hist_{idx}"
-                            )
-                
-                with st.expander(f"📅 {fecha} - {tarea} ({desc_corta}...)"):
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.write(f"**👤 Responsable:** {responsable}")
-                        st.write(f"**🏷️ Tag:** {fila.get('Tag','-')}")
-                    with col2:
-                        st.write(f"**⚙️ Rod. LA:** {fila.get('Rodamiento_LA','-')}")
-                        st.write(f"**⚙️ Rod. LOA:** {fila.get('Rodamiento_LOA','-')}")
-
-                    st.write(f"**📝 Descripción:** {desc_completa}")
-                    st.write(f"**🗒️ Notas:** {fila.get('notas','-')}")
-                    
-                    if str(fila.get('Tipo_Grasa')) != 'nan':
-                        st.write(f"🧪 **Grasa:** {fila.get('Tipo_Grasa')} ({fila.get('Gramos_LA', '0')}g / {fila.get('Gramos_LOA', '0')}g)")
-
-                    try:
-                        raw_data = fila.to_dict()
-                        # Usamos tu 'Traductor' para asegurar que el dato llegue a la función
-                        datos_dict = {
-                            "Tag": raw_data.get('Tag') or raw_data.get('tag') or "-",
-                            "Fecha": raw_data.get('Fecha') or raw_data.get('fecha') or "-",
-                            "Responsable": raw_data.get('Responsable') or raw_data.get('Usuario') or "-",
-                            "Rodamiento_LA": raw_data.get('Rodamiento_LA') or raw_data.get('Rodamiento LA') or "-",
-                            "Rodamiento_LOA": raw_data.get('Rodamiento_LOA') or raw_data.get('Rodamiento LOA') or "-",
-                            "Gramos_LA": raw_data.get('Gramos_LA') or raw_data.get('Gramos LA') or "0",
-                            "Gramos_LOA": raw_data.get('Gramos_LOA') or raw_data.get('Gramos LOA') or "0",
-                            "Descripcion": raw_data.get('Descripcion') or raw_data.get('descripcion') or "-"
-                        }
-                    
-                        # Limpiamos los 'nan' de texto
-                        datos_dict = {k: ("-" if str(v).lower() == "nan" else v) for k, v in datos_dict.items()}
-                        tarea_actual = str(raw_data.get('Tipo_Tarea', '')).strip()
-                    
-                        # ESTA ES LA CLAVE: Aquí es donde el programa elige el camino
-                        if "Lubricación" in tarea_actual:
-                            # Si entra aquí, el PDF DEBE ser distinto
-                            pdf_archivo = generar_pdf_lubricacion(datos_dict)
-                            nombre_archivo = f"Lubricacion_{tag}_{idx}.pdf"
-                        elif "Mediciones" in tarea_actual:
-                            pdf_archivo = generar_pdf_megado(datos_dict)
-                            nombre_archivo = f"Mediciones_{tag}_{idx}.pdf"
-                        else:
-                            pdf_archivo = generar_pdf_ingreso(datos_dict)
-                            nombre_archivo = f"Protocolo_{tag}_{idx}.pdf"
-                    
-                        # --- 4. BOTÓN DE DESCARGA (Key única para que refresque) ---
-                        if pdf_archivo:
-                            st.download_button(
-                                label=f"📥 Descargar {tarea_actual}",
-                                data=pdf_archivo,
-                                file_name=nombre_archivo,
-                                mime="application/pdf",
-                                key=f"final_btn_{idx}_{tarea_actual.replace(' ', '_')}"
-                            )
-                    except Exception as e:
-                        st.error(f"Error crítico: {e}")
+        # --- PARTE BAJA: Observaciones y Reparaciones ---
+        st.markdown("**🛠️ Descripción del Trabajo / Reparaciones:**")
+        st.write(fila.get('Descripcion', 'Sin observaciones registradas.'))
+        
+        st.divider() # Línea para separar cada registro
 
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -938,6 +695,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
