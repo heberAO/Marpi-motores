@@ -156,17 +156,45 @@ def generar_pdf_ingreso(datos):
 def generar_pdf_lubricacion(datos):
     pdf = FPDF()
     pdf.add_page()
-    # Título específico para que no diga "Alta y Registro"
+    
+    # Encabezado MARPI
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, "REPORTE DE LUBRICACIÓN Y MANTENIMIENTO", ln=True, align='C')
+    pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='C')
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, f"REPORTE DE LUBRICACIÓN: {datos.get('Tag', 'S/D')}", ln=True, align='C')
+    pdf.ln(5)
+
+    # Datos Generales
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "1. IDENTIFICACIÓN DEL MOTOR", ln=True)
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(0, 8, f"Fecha de Intervención: {datos.get('Fecha', 'S/D')}", ln=True)
+    pdf.cell(0, 8, f"Responsable: {datos.get('Responsable', 'S/D')}", ln=True)
+    pdf.ln(5)
+
+    # Detalle de Lubricación
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "2. DETALLES DE LUBRICACIÓN", ln=True)
+    pdf.set_font("Arial", '', 11)
     
-    # Solo mostrar datos relevantes
-    pdf.set_font("Arial", '', 12)
-    pdf.cell(0, 10, f"TAG: {datos['Tag']}", ln=True)
-    pdf.cell(0, 10, f"Rodamiento LA: {datos.get('Rodamiento_LA', 'S/D')}", ln=True)
-    pdf.cell(0, 10, f"Grasa aplicada (g): {datos.get('Gramos_LA', '0')}", ln=True)
-    # ... (No incluir las tablas de RT_TU o RB_UV aquí)
+    # Rodamiento LA
+    pdf.cell(0, 8, f"Rodamiento LA (Lado Acople): {datos.get('Rodamiento_LA', 'S/D')}", ln=True)
+    pdf.cell(0, 8, f"Grasa Inyectada LA: {datos.get('Gramos_LA', '0')} gr.", ln=True)
+    pdf.ln(2)
     
+    # Rodamiento LOA
+    pdf.cell(0, 8, f"Rodamiento LOA (Lado Opuesto): {datos.get('Rodamiento_LOA', 'S/D')}", ln=True)
+    pdf.cell(0, 8, f"Grasa Inyectada LOA: {datos.get('Gramos_LOA', '0')} gr.", ln=True)
+    pdf.ln(5)
+
+    # Observaciones
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "3. OBSERVACIONES TÉCNICAS", ln=True)
+    pdf.set_font("Arial", '', 11)
+    desc = datos.get('Descripcion', 'Sin observaciones adicionales.')
+    pdf.multi_cell(0, 8, desc)
+
+    # Retornar el buffer para Streamlit
     return pdf.output(dest='S').encode('latin-1')
 def enerar_pdf_megado(datos):
     try:
@@ -856,6 +884,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
