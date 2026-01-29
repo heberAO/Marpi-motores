@@ -340,15 +340,6 @@ if modo == "Nuevo Registro":
                             "Descripcion": desc,
                             "Trabajos_Externos": ext
                         }
-                
-                # Guardar y generar...
-                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-                conn.update(data=df_final)
-                st.session_state.pdf_buffer = generar_pdf_reporte(nueva, "PROTOCOLO DE ALTA Y REGISTRO")
-                st.session_state.tag_actual = t
-                st.session_state.form_key += 1
-                
-                if t and resp:  # Este es tu IF principal
             # ..# Guardar y generar...
                     df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                     conn.update(data=df_final)
@@ -743,13 +734,17 @@ elif modo == "Relubricacion":
                     })
                 
                 if modo == "Relubricacion":
-                    nueva["Descripcion"] = f"LUBRICACIÓN: {grasa_t}. LA: {gr_real_la}g, LOA: {gr_real_loa}g."
-                    nueva["notas"] = notas
                 # 4. GUARDAR Y GENERAR PDF
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
                 
-                st.session_state.pdf_buffer = generar_pdf_lubricacion(nueva)
+                if modo == "Relubricacion":
+                    st.session_state.pdf_buffer = generar_pdf_lubricacion(nueva)
+                elif modo == "Mediciones de Campo":
+                    st.session_state.pdf_buffer = generar_pdf_megado(nueva)
+                else:
+                    st.session_state.pdf_buffer = generar_pdf_ingreso(nueva)
+
                 st.session_state.tag_buffer = tag_actual
                 st.session_state.form_id += 1
                 st.success(f"✅ Registro de {tag_actual} guardado con éxito")
@@ -893,6 +888,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
