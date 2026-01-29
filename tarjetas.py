@@ -551,12 +551,11 @@ elif modo == "Historial y QR":
                         try:
                             if "lubric" in tipo_t or "grasa" in tipo_t:
                                 pdf_archivo = generar_pdf_lubricacion(datos_pdf)
-                        elif "mega" in tipo_t or "medici" in tipo_t or "aisla" in tipo_t:
-                            # Si no tienes esta función, dará error y lo veremos abajo
-                            pdf_archivo = generar_pdf_megado(datos_pdf)
-                        else:
-                            # Por defecto usa el de ingreso
-                            pdf_archivo = generar_pdf_ingreso(datos_pdf)
+                            elif "mega" in tipo_t or "medici" in tipo_t or "aisla" in tipo_t:
+                                pdf_archivo = generar_pdf_megado(datos_pdf)
+            
+                            else:
+                                pdf_archivo = generar_pdf_ingreso(datos_pdf)
                     except NameError as e:
                         st.error(f"❌ Error: La función de PDF no existe: {e}")
                     except Exception as e:
@@ -886,6 +885,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
