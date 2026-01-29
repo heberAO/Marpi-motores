@@ -88,102 +88,87 @@ def generar_pdf_reporte(datos, tipo_informe):
     try:
         from fpdf import FPDF
         import pandas as pd
-        import re
 
-        # 1. LIMPIEZA Y EXTRACCIÓN AUTOMÁTICA
-        # Esta función busca datos dentro del texto de 'Descripcion' si las columnas están vacías
-        def obtener_dato(clave, patron=None):
-            valor_directo = datos.get(clave)
-            if pd.notna(valor_directo) and str(valor_directo).lower() != "nan" and str(valor_directo) != "":
-                return str(valor_directo)
-            
-            # Si no hay dato en la columna, lo buscamos en la Descripción usando el patrón
-            if patron:
-                descripcion = str(datos.get('Descripcion', '')).upper()
-                match = re.search(patron, descripcion)
-                if match:
-                    return match.group(1).strip()
-            return "-"
+        # Función de limpieza para que no aparezca "nan"
+        def val(clave):
+            v = datos.get(clave)
+            return str(v) if pd.notna(v) and str(v).lower() != "nan" and str(v) != "" else "-"
 
         pdf = FPDF()
         pdf.add_page()
         
-        # --- ENCABEZADO MARPI ---
+        # 1. ENCABEZADO
         pdf.set_font("Arial", 'B', 16)
         pdf.set_text_color(0, 51, 102)
         pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='R')
         pdf.set_font("Arial", 'B', 10)
-        pdf.cell(0, 5, f"FECHA: {obtener_dato('Fecha')}", ln=True, align='R')
-        pdf.ln(10)
+        pdf.cell(0, 5, f"FECHA: {val('Fecha')}", ln=True, align='R')
+        pdf.ln(5)
 
-        # TÍTULO DEL INFORME (Corrige el error 'NAN')
-        titulo = str(tipo_informe).upper() if tipo_informe and str(tipo_informe).lower() != 'nan' else "INFORME TÉCNICO"
+        # TÍTULO DINÁMICO (Usa 'Tipo_Tarea' o el nombre del informe)
+        titulo = val('Tipo_Tarea').upper() if val('Tipo_Tarea') != "-" else str(tipo_informe).upper()
         pdf.set_fill_color(0, 51, 102); pdf.set_text_color(255)
         pdf.set_font("Arial", 'B', 14)
-        pdf.cell(0, 12, f"{titulo}: {obtener_dato('Tag')}", ln=True, align='C', fill=True)
+        pdf.cell(0, 12, f"INFORME DE {titulo}: {val('Tag')}", ln=True, align='C', fill=True)
         pdf.ln(5)
 
-        # --- SECCIÓN 1: DATOS DE PLACA (ORGANIZADOS) ---
+        # 2. DATOS DE PLACA (Mapeo exacto)
         pdf.set_text_color(0); pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, " 1. IDENTIFICACIÓN DEL EQUIPO", ln=True, fill=False)
+        pdf.cell(0, 8, " 1. ESPECIFICACIONES DEL EQUIPO", ln=True)
+        pdf.set_font("Arial", '', 10)
+        pdf.cell(35, 8, "TAG:", 1); pdf.cell(60, 8, val('Tag'), 1)
+        pdf.cell(35, 8, "N. SERIE:", 1); pdf.cell(60, 8, val('N_Serie'), 1, 1)
+        pdf.cell(35, 8, "POTENCIA:", 1); pdf.cell(60, 8, val('Potencia'), 1)
+        pdf.cell(35, 8, "TENSIÓN:", 1); pdf.cell(60, 8, val('Tension'), 1, 1)
+        pdf.cell(35, 8, "RPM:", 1); pdf.cell(60, 8, val('RPM'), 1)
+        pdf.cell(35, 8, "CARCASA:", 1); pdf.cell(60, 8, val('Carcasa'), 1, 1)
+        pdf.ln(5)
+
+        # 3. SECCIÓN DE LUBRICACIÓN (Columnas: Rodamiento_LA, Gramos_LA, etc.)
+        pdf.set_font("Arial", 'B', 11); pdf.set_fill_color(230, 230, 230)
+        pdf.cell(0, 8, " 2. SISTEMA DE RODAMIENTOS Y LUBRICACIÓN", ln=True, fill=True)
+        
+        pdf.set_font("Arial", 'B', 10)
+        pdf.cell(95, 8, "LADO ACOPLE (LA)", 1, 0, 'C', True)
+        pdf.cell(95, 8, "LADO OPUESTO (LOA)", 1, 1, 'C', True)
+        
+        pdf.set_font("Arial", '', 10)
+        pdf.cell(95, 10, f"Rodamiento: {val('Rodamiento_LA')}", 1, 0, 'C')
+        pdf.cell(95, 10, f"Rodamiento: {val('Rodamiento_LOA')}", 1, 1, 'C')
+        
+        pdf.set_font("Arial", 'B', 11); pdf.set_text_color(180, 0, 0)
+        pdf.cell(95, 12, f"GRASA: {val('Tipo_Grasa')}", 1, 0, 'C')
+        pdf.cell(95, 12, f"GRASA: {val('Tipo_Grasa')}", 1, 1, 'C')
+        
+        pdf.cell(95, 10, f"CANTIDAD: {val('Gramos_LA')} g", 1, 0, 'C')
+        pdf.cell(95, 10, f"CANTIDAD: {val('Gramos_LOA')} g", 1, 1, 'C')
+        pdf.set_text_color(0); pdf.ln(5)
+
+        # 4. ENSAYOS ELÉCTRICOS (Columnas: RT_TU1, RI_U1U2, etc.)
+        pdf.set_font("Arial", 'B', 11); pdf.set_fill_color(230, 230, 230)
+        pdf.cell(0, 8, " 3. MEDICIONES ELÉCTRICAS", ln=True, fill=True)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(63, 8, "FASE", 1, 0, 'C', True); pdf.cell(63, 8, "AISLAMIENTO (Gohm)", 1, 0, 'C', True); pdf.cell(64, 8, "CONTINUIDAD (Ohm)", 1, 1, 'C', True)
+        
+        pdf.set_font("Arial", '', 10)
+        pdf.cell(63, 8, "U1-U2", 1, 0, 'C'); pdf.cell(63, 8, val('RT_TU1'), 1, 0, 'C'); pdf.cell(64, 8, val('RI_U1U2'), 1, 1, 'C')
+        pdf.cell(63, 8, "V1-V2", 1, 0, 'C'); pdf.cell(63, 8, val('RT_TV1'), 1, 0, 'C'); pdf.cell(64, 8, val('RI_V1V2'), 1, 1, 'C')
+        pdf.cell(63, 8, "W1-W2", 1, 0, 'C'); pdf.cell(63, 8, val('RT_TW1'), 1, 0, 'C'); pdf.cell(64, 8, val('RI_W1W2'), 1, 1, 'C')
+        pdf.ln(5)
+
+        # 5. OBSERVACIONES Y NOTAS (Muestra TODO lo escrito)
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 8, " 4. OBSERVACIONES Y TRABAJOS REALIZADOS", ln=True, fill=True)
         pdf.set_font("Arial", '', 10)
         
-        # Tabla con anchos fijos para evitar solapamientos [cite: 9, 63, 72]
-        pdf.cell(35, 8, "TAG:", 1); pdf.cell(60, 8, obtener_dato('Tag'), 1)
-        pdf.cell(35, 8, "N. SERIE:", 1); pdf.cell(60, 8, obtener_dato('N_Serie'), 1, 1)
-        pdf.cell(35, 8, "POTENCIA:", 1); pdf.cell(60, 8, obtener_dato('Potencia'), 1)
-        pdf.cell(35, 8, "RPM:", 1); pdf.cell(60, 8, obtener_dato('RPM'), 1, 1)
-        pdf.ln(5)
+        # Combinamos Descripcion y Notas para que no falte nada
+        texto_final = f"DESCRIPCIÓN: {val('Descripcion')}\n\nNOTAS ADICIONALES: {val('Notas')}"
+        pdf.multi_cell(0, 7, texto_final, border=1)
 
-        # --- SECCIÓN 2: LUBRICACIÓN (EXTRACCIÓN DE NOTAS) ---
-        # Ahora busca 'SKF LGHP 2', '60.0g', etc., dentro de tus notas 
-        if "LUBRICA" in titulo:
-            pdf.set_font("Arial", 'B', 11); pdf.set_fill_color(230, 230, 230)
-            pdf.cell(0, 8, " 2. REGISTRO TÉCNICO DE LUBRICACIÓN", ln=True, fill=True)
-            
-            # Buscamos la grasa y los gramos en la descripción si la tabla está vacía
-            grasa = obtener_dato('Tipo_Grasa', r"LUBRICACIÓN:\s*([^.]+)")
-            g_la = obtener_dato('Gramos_LA', r"LA:\s*([\d\.]+G?)")
-            g_loa = obtener_dato('Gramos_LOA', r"LOA:\s*([\d\.]+G?)")
-
-            pdf.set_font("Arial", 'B', 10)
-            pdf.cell(95, 8, "LADO ACOPLE (LA)", 1, 0, 'C', True)
-            pdf.cell(95, 8, "LADO OPUESTO (LOA)", 1, 1, 'C', True)
-            
-            pdf.set_font("Arial", '', 10)
-            pdf.cell(95, 10, f"Rodamiento: {obtener_dato('Rodamiento_LA')}", 1, 0, 'C')
-            pdf.cell(95, 10, f"Rodamiento: {obtener_dato('Rodamiento_LOA')}", 1, 1, 'C')
-            
-            pdf.set_font("Arial", 'B', 11); pdf.set_text_color(180, 0, 0)
-            pdf.cell(95, 12, f"GRASA: {grasa}", 1, 0, 'C')
-            pdf.cell(95, 12, f"GRASA: {grasa}", 1, 1, 'C')
-            pdf.cell(95, 10, f"CANTIDAD: {g_la}", 1, 0, 'C')
-            pdf.cell(95, 10, f"CANTIDAD: {g_loa}", 1, 1, 'C')
-            pdf.set_text_color(0); pdf.ln(5)
-
-        # --- SECCIÓN 3: ENSAYOS ELÉCTRICOS ---
-        elif "ELECTRICO" in titulo or "MEGADO" in titulo:
-            pdf.set_font("Arial", 'B', 11); pdf.set_fill_color(230, 230, 230)
-            pdf.cell(0, 8, " 2. MEDICIONES ELÉCTRICAS", ln=True, fill=True)
-            pdf.set_font("Arial", '', 10)
-            # Organiza las mediciones de aislamiento y bobinado en una tabla clara [cite: 85]
-            pdf.cell(63, 10, f"U1-U2 / T-U1: {obtener_dato('U1U2')} / {obtener_dato('RT_TU1')}", 1, 0, 'C')
-            pdf.cell(63, 10, f"V1-V2 / T-V1: {obtener_dato('V1V2')} / {obtener_dato('RT_TV1')}", 1, 0, 'C')
-            pdf.cell(64, 10, f"W1-W2 / T-W1: {obtener_dato('W1W2')} / {obtener_dato('RT_TW1')}", 1, 1, 'C')
-            pdf.ln(5)
-
-        # --- SECCIÓN 4: HALLAZGOS Y FIRMA ---
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, " 3. OBSERVACIONES GENERALES", ln=True, fill=True)
-        pdf.set_font("Arial", '', 10)
-        pdf.multi_cell(0, 7, obtener_dato('Descripcion'), border=1) # multi_cell para evitar amontonamiento 
-
-        pdf.set_y(-40)
-        pdf.cell(120); pdf.cell(60, 0.1, "", border="T", ln=True)
-        pdf.cell(120); pdf.cell(60, 8, f"Responsable: {obtener_dato('Responsable')}", 0, 0, 'C')
+        pdf.set_y(-30)
+        pdf.cell(120); pdf.cell(60, 8, f"Responsable: {val('Responsable')}", 0, 0, 'C')
 
         return pdf.output(dest='S').encode('latin-1', 'replace')
-
     except Exception as e:
         return None
 # Inicializamos variables de estado
@@ -859,6 +844,7 @@ elif modo == "Mediciones de Campo":
             
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
