@@ -467,7 +467,6 @@ elif modo == "Historial y QR":
                     col_pdf, col_qr = st.columns(2)
 
                    with col_pdf:
-                       # 1. Convertimos la fila a diccionario (usamos 'fila' que es lo que viene del loop)
                        datos_pdf = fila.to_dict()
         
                        # --- SELECCIÓN CRÍTICA DE PLANTILLA ---
@@ -884,6 +883,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
