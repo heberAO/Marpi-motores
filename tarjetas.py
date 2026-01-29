@@ -125,23 +125,19 @@ def limpiar(val):
     return "-" if v.lower() in ["nan", "", "none", "0", "0.0"] else v
 
 def agregar_cabecera_marpi(pdf, titulo, tag):
-    # Logo a la izquierda (10mm desde el borde, 8mm desde arriba, 33mm de ancho)
     try:
         pdf.image("logo.png", 10, 8, 33)
     except:
-        # Si no encuentra el logo, deja el espacio para que no falle el PDF
         pdf.ln(10)
     
-    # Nombre de la empresa a la derecha
     pdf.set_font("Arial", 'B', 16)
     pdf.set_text_color(0, 51, 102)
     pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='R')
     
-    # Título central
     pdf.ln(5)
     pdf.set_font("Arial", 'B', 14)
     pdf.set_text_color(0)
-    pdf.cell(0, 10, f"{titulo}", ln=True, align='C')
+    pdf.cell(0, 10, titulo, ln=True, align='C')
     pdf.set_font("Arial", 'B', 11)
     pdf.cell(0, 7, f"EQUIPO: {limpiar(tag)}", ln=True, align='C')
     pdf.ln(5)
@@ -149,65 +145,59 @@ def generar_pdf_ingreso(datos):
     try:
         pdf = FPDF()
         pdf.add_page()
-        # Encabezado estándar Marpi
-        pdf.set_font("Arial", 'B', 16); pdf.set_text_color(0, 51, 102)
-        pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='R')
-        pdf.set_font("Arial", 'B', 10); pdf.cell(0, 5, f"FECHA: {datos.get('Fecha','-')}", ln=True, align='R')
+        # USAMOS LA CABECERA UNIFICADA (Aquí sí saldrá el logo)
+        agregar_cabecera_marpi(pdf, "PROTOCOLO DE ALTA Y REGISTRO", datos.get('Tag'))
         
-        pdf.set_fill_color(0, 51, 102); pdf.set_text_color(255); pdf.set_font("Arial", 'B', 14)
-        pdf.cell(0, 12, f"PROTOCOLO DE ALTA Y REGISTRO: {datos.get('Tag','-')}", ln=True, align='C', fill=True)
-        pdf.ln(5); pdf.set_text_color(0)
-
         # Tabla de Datos de Placa
         pdf.set_font("Arial", 'B', 11); pdf.cell(0, 8, " 1. ESPECIFICACIONES DE PLACA", ln=True)
         pdf.set_font("Arial", '', 10)
-        col_w = 45
-        pdf.cell(col_w, 8, "TAG:", 1); pdf.cell(50, 8, str(datos.get('Tag','-')), 1)
-        pdf.cell(col_w, 8, "N. SERIE:", 1); pdf.cell(50, 8, str(datos.get('N_Serie','-')), 1, 1)
-        pdf.cell(col_w, 8, "POTENCIA:", 1); pdf.cell(50, 8, str(datos.get('Potencia','-')), 1)
-        pdf.cell(col_w, 8, "TENSIÓN:", 1); pdf.cell(50, 8, str(datos.get('Tension','-')), 1, 1)
-        pdf.cell(col_w, 8, "RPM:", 1); pdf.cell(50, 8, str(datos.get('RPM','-')), 1)
-        pdf.cell(col_w, 8, "CARCASA:", 1); pdf.cell(50, 8, str(datos.get('Carcasa','-')), 1, 1)
         
-        # Mediciones de Alta (9 campos)
-        pdf.ln(5); pdf.set_font("Arial", 'B', 11); pdf.cell(0, 8, " 2. MEDICIONES ELÉCTRICAS DE INGRESO", ln=True)
-        pdf.set_font("Arial", 'B', 9); pdf.set_fill_color(230,230,230)
-        pdf.cell(63, 7, "AISLAMIENTO (Tierra)", 1, 0, 'C', True); pdf.cell(63, 7, "BOBINADO (Entre sí)", 1, 0, 'C', True); pdf.cell(64, 7, "RESISTENCIA INTE.(Ohm)", 1, 1, 'C', True)
-        pdf.set_font("Arial", '', 9)
-        pdf.cell(63, 7, f"RT_TU: {datos.get('RT_TU','-')}", 1, 0); pdf.cell(63, 7, f"RB_UV: {datos.get('RB_UV','-')}", 1, 0); pdf.cell(64, 7, f"RI_U: {datos.get('RI_U','-')}", 1, 1)
-        pdf.cell(63, 7, f"RT_TV: {datos.get('RT_TV','-')}", 1, 0); pdf.cell(63, 7, f"RB_VW: {datos.get('RB_VW','-')}", 1, 0); pdf.cell(64, 7, f"RI_V: {datos.get('RI_V','-')}", 1, 1)
-        pdf.cell(63, 7, f"RT_TW: {datos.get('RT_TW','-')}", 1, 0); pdf.cell(63, 7, f"RB_UW: {datos.get('RB_UW','-')}", 1, 0); pdf.cell(64, 7, f"RI_W: {datos.get('RI_W','-')}", 1, 1)
+        pdf.cell(45, 8, "N. SERIE:", 1); pdf.cell(50, 8, limpiar(datos.get('N_Serie')), 1)
+        pdf.cell(45, 8, "POTENCIA:", 1); pdf.cell(50, 8, limpiar(datos.get('Potencia')), 1, 1)
+        pdf.cell(45, 8, "TENSIÓN:", 1); pdf.cell(50, 8, limpiar(datos.get('Tension')), 1)
+        pdf.cell(45, 8, "RPM:", 1); pdf.cell(50, 8, limpiar(datos.get('RPM')), 1, 1)
 
-        # Notas
-        pdf.ln(5); pdf.set_font("Arial", 'B', 11); pdf.cell(0, 8, " 3. DETALLES Y TRABAJOS", ln=True)
-        pdf.set_font("Arial", '', 10)
-        pdf.multi_cell(0, 7, f"DESCRIPCIÓN: {datos.get('Descripcion','-')}\nEXTERNO: {datos.get('Trabajos_Externos','-')}", border=1)
+        # MEDICIONES (Mapeadas a tus columnas reales con '1')
+        pdf.ln(5); pdf.set_font("Arial", 'B', 11); pdf.cell(0, 8, " 2. MEDICIONES ELÉCTRICAS", ln=True)
+        pdf.set_font("Arial", 'B', 9); pdf.set_fill_color(230,230,230)
+        pdf.cell(63, 7, "AISLAMIENTO (Tierra)", 1, 0, 'C', True)
+        pdf.cell(63, 7, "BOBINADO (Entre sí)", 1, 0, 'C', True)
+        pdf.cell(64, 7, "RESISTENCIA (Ohm)", 1, 1, 'C', True)
+        
+        pdf.set_font("Arial", '', 9)
+        # Fila 1: TU1 / VU1 / U1U2
+        pdf.cell(63, 7, f"RT_TU: {limpiar(datos.get('RT_TU1'))}", 1, 0)
+        pdf.cell(63, 7, f"RB_VU: {limpiar(datos.get('RB_VU1'))}", 1, 0)
+        pdf.cell(64, 7, f"RI_U: {limpiar(datos.get('RI_U1U2'))}", 1, 1)
+        # Fila 2: TV1 / WV1 / V1V2
+        pdf.cell(63, 7, f"RT_TV: {limpiar(datos.get('RT_TV1'))}", 1, 0)
+        pdf.cell(63, 7, f"RB_VW: {limpiar(datos.get('RB_WV1'))}", 1, 0)
+        pdf.cell(64, 7, f"RI_V: {limpiar(datos.get('RI_V1V2'))}", 1, 1)
+
+        pdf.ln(5)
+        pdf.multi_cell(0, 7, f"DESCRIPCIÓN: {limpiar(datos.get('Descripcion'))}", border=1)
         
         return pdf.output(dest='S').encode('latin-1', 'replace')
-    except: return None
-
+    except Exception as e:
+        print(f"Error en ingreso: {e}")
+        return None
 def generar_pdf_lubricacion(datos):
     pdf = FPDF()
     pdf.add_page()
-    # Cabecera simple
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='C')
-    pdf.cell(0, 10, f"REPORTE DE LUBRICACIÓN: {datos.get('Tag', 'S/D')}", ln=True, align='C')
-    pdf.ln(10)
+    # USAMOS LA CABECERA UNIFICADA
+    agregar_cabecera_marpi(pdf, "REPORTE DE LUBRICACIÓN", datos.get('Tag'))
 
-    # ESTO ES LO QUE FALTA EN TUS PDF ACTUALES:
     pdf.set_font("Arial", 'B', 12)
-    # Buscamos los nombres de columna que usa tu formulario de entrada
-    la_rod = str(datos.get('Rodamiento_LA', datos.get('Rodamiento LA', '-')))
-    la_grs = str(datos.get('Grasa_LA', datos.get('Grasa LA', '-')))
+    # Buscamos con los nombres que declaraste en tu traductor
+    pdf.cell(0, 10, f"Rodamiento Lado Acople (LA): {limpiar(datos.get('Rodamiento_LA'))}", ln=True)
+    pdf.cell(0, 10, f"Grasa Inyectada LA: {limpiar(datos.get('Gramos_LA'))} grs.", ln=True)
+    pdf.cell(0, 10, f"Rodamiento Opuesto (LOA): {limpiar(datos.get('Rodamiento_LOA'))}", ln=True)
+    pdf.cell(0, 10, f"Grasa Inyectada LOA: {limpiar(datos.get('Gramos_LOA'))} grs.", ln=True)
     
-    pdf.cell(0, 10, f"Rodamiento Lado Acople: {la_rod}", ln=True)
-    pdf.cell(0, 10, f"Grasa Inyectada: {la_grs} grs.", ln=True)
-    
-    # Descripción/Observaciones donde sí aparece el texto que mencionas
     pdf.ln(5)
-    desc = str(datos.get('Descripcion', datos.get('DESCRIPCIÓN', '-')))
-    pdf.multi_cell(0, 10, f"Detalle Técnico: {desc}")
+    pdf.set_font("Arial", 'B', 11); pdf.cell(0, 8, "DETALLE TÉCNICO:", ln=True)
+    pdf.set_font("Arial", '', 11)
+    pdf.multi_cell(0, 10, limpiar(datos.get('Descripcion')))
     
     return pdf.output(dest='S').encode('latin-1', 'replace')
 def generar_pdf_megado(datos):
@@ -920,6 +910,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
