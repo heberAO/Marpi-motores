@@ -707,20 +707,18 @@ elif modo == "Relubricacion":
                 # 2. BUSCAMOS LOS DATOS DE PLACA EN EL HISTORIAL
                 datos_tecnicos = df_completo[df_completo['Tag'] == tag_actual].tail(1).to_dict('records')
                 info = datos_tecnicos[0] if datos_tecnicos else {}
-
-                # 3. ARMAMOS EL DICCIONARIO 'nueva'
-               nueva = {
-                   "Fecha": date.today().strftime("%d/%m/%Y"),
-                   "Tag": tag_actual,
-                   "Tipo_Tarea": "Relubricacion", # Esto le dice al Historial qué PDF usar
-                   "Responsable": resp_actual,
-                   "Rodamiento_LA": rod_la,
-                   "Rodamiento_LOA": rod_loa,
-                   "Gramos_LA": gr_real_la,
-                   "Gramos_LOA": gr_real_loa,
-                   "Tipo_Grasa": grasa_t,
-                   "Notas": notas,
-                   "Descripcion": f"Servicio de lubricación con {grasa_t}" # Solo una nota breve
+                nueva = {
+                    "Fecha": date.today().strftime("%d/%m/%Y"),
+                    "Tag": tag_actual,
+                    "Tipo_Tarea": "Relubricacion",
+                    "Responsable": resp_actual,
+                    "Rodamiento_LA": rod_la,
+                    "Rodamiento_LOA": rod_loa,
+                    "Gramos_LA": gr_real_la,
+                    "Gramos_LOA": gr_real_loa,
+                    "Tipo_Grasa": grasa_t,
+                    "Notas": notas,
+                    "Descripcion": f"Servicio de lubricación con {grasa_t}"
                 }
                 
                 # --- AGREGAR DATOS ESPECÍFICOS SEGÚN EL MODO ---
@@ -888,6 +886,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
