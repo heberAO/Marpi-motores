@@ -318,28 +318,23 @@ if modo == "Nuevo Registro":
         
         btn_guardar = st.form_submit_button("💾 GUARDAR Y GENERAR PDF")
 
-    if btn_guardar:
-            if t and resp:
-                # Armamos el diccionario con ABSOLUTAMENTE TODO
-                if btn_guardar:
-                    if t and resp:
-                        nueva = {
-                            "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
-                            "Tag": t,
-                            "N_Serie": sn,
-                            "Responsable": resp,
-                            "Potencia": p, "Tension": v, "Corriente": cor,
-                            "RPM": r, "Carcasa": carc,
-                            "Rodamiento_LA": r_la, "Rodamiento_LOA": r_loa,
-                            
-                            # --- LAS 9 MEDICIONES DE ALTA ---
-                            "RT_TU": v_rt_tu, "RT_TV": v_rt_tv, "RT_TW": v_rt_tw, # Tierra
-                            "RB_UV": v_rb_uv, "RB_VW": v_rb_vw, "RB_UW": v_rb_uw, # Entre bobinas
-                            "RI_U": v_ri_u, "RI_V": v_ri_v, "RI_W": v_ri_w,      # Resistencias
-                            
-                            "Descripcion": desc,
-                            "Trabajos_Externos": ext
-                        }
+            if btn_guardar:
+                if t and resp:
+                    nueva = {
+                        "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
+                        "Tag": t,
+                        "N_Serie": sn,
+                        "Responsable": resp,
+                        "Potencia": p, "Tension": v, "Corriente": cor,
+                        "RPM": r, "Carcasa": carc,
+                        "Rodamiento_LA": r_la, "Rodamiento_LOA": r_loa,
+                        "RT_TU": v_rt_tu, "RT_TV": v_rt_tv, "RT_TW": v_rt_tw,
+                        "RB_UV": v_rb_uv, "RB_VW": v_rb_vw, "RB_UW": v_rb_uw,
+                        "RI_U": v_ri_u, "RI_V": v_ri_v, "RI_W": v_ri_w,
+                        "Descripcion": desc,
+                        "Trabajos_Externos": ext,
+                        "Tipo_Tarea": "Nuevo Registro" # <--- AGREGA ESTO SIEMPRE
+                    }
             # ..# Guardar y generar...
                     df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                     conn.update(data=df_final)
@@ -543,20 +538,16 @@ elif modo == "Historial y QR":
                             # Datos Informe Técnico
                             "Descripcion": raw_data.get('Descripcion') or raw_data.get('descripcion') or raw_data.get('Observaciones') or "S/D"
                         }
-                    
                        # --- 3. LLAMADA AL PDF (REEMPLAZO PARA EL HISTORIAL) ---
-                        # Extraemos el tipo de tarea para decidir qué función usar
-                        tipo_t = str(raw_data.get('Tipo_Tarea', 'Informe Tecnico'))
-                        
-                        try:
-                            if "Mediciones" in tipo_t or "Megado" in tipo_t:
-                                # Usa la función de las 15 mediciones
-                                pdf_archivo = generar_pdf_megado(datos_limpios)
-                            elif "Lubricacion" in tipo_t or "Relubricacion" in tipo_t:
-                                # Usa la función de rodamientos y grasa (con texto rojo)
+                            tipo_t = str(raw_data.get('Tipo_Tarea', ''))
+
+                            if "Relubricacion" in tipo_t or "Lubricacion" in tipo_t:
+                                # Si la tarea es lubricación, NO puede usar generar_pdf_ingreso
                                 pdf_archivo = generar_pdf_lubricacion(datos_limpios)
+                            elif "Mediciones" in tipo_t or "Megado" in tipo_t:
+                                pdf_archivo = generar_pdf_megado(datos_limpios)
                             else:
-                                # Por defecto, usa la de Alta/Registro Inicial
+                                # Solo aquí usa el de Alta (el que tiene los nan)
                                 pdf_archivo = generar_pdf_ingreso(datos_limpios)
                         except Exception as e:
                             st.error(f"Error al generar el PDF del historial: {e}")
@@ -708,6 +699,8 @@ elif modo == "Relubricacion":
                 nueva = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": tag_actual,
+                    "N_Serie": v_serie, # <--- AGREGA ESTO
+                    "Potencia": info_motor.get('Potencia', 'S/D'), # <--- AGREGA ESTO
                     "Tipo_Tarea": "Relubricacion",
                     "Responsable": resp_actual,
                     "Rodamiento_LA": rod_la,
@@ -882,6 +875,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
