@@ -338,6 +338,13 @@ if modo == "Nuevo Registro":
             # ..# Guardar y generar...
                     df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                     conn.update(data=df_final)
+                    # --- LIMPIEZA Y GENERACIÓN ---
+                    if "pdf_buffer" in st.session_state:
+                        del st.session_state["pdf_buffer"]
+                    
+                    # AQUÍ USAMOS LA FUNCIÓN DE INGRESO PORQUE ES UN NUEVO REGISTRO
+                    st.session_state.pdf_buffer = generar_pdf_ingreso(nueva)
+                    st.session_state.tag_buffer = t
                     st.session_state.pdf_buffer = generar_pdf_ingreso(nueva)
                     st.session_state.tag_actual = t
                     st.session_state.form_key += 1.
@@ -875,6 +882,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
