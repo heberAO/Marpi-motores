@@ -717,7 +717,7 @@ elif modo == "Relubricacion":
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
                 
-               st.session_state.pdf_buffer = generar_pdf_lubricacion(nueva)
+                st.session_state.pdf_buffer = generar_pdf_lubricacion(nueva)
                 st.session_state.tag_buffer = tag_actual
                 st.session_state.form_id += 1
                 st.success(f"✅ Registro de {tag_actual} guardado con éxito")
@@ -861,6 +861,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
