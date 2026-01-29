@@ -9,7 +9,6 @@ from io import BytesIO
 from fpdf import FPDF
 import qrcode
 from PIL import Image, ImageDraw
-
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
         # 1. Tamaño exacto 60x40mm (480x320 px)
@@ -83,6 +82,33 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         st.error(f"Error de legibilidad: {e}")
         return None
 st.set_page_config(page_title="Marpi Motores", layout="wide")
+
+def calcular_grasa_marpi(rodamiento):
+    """Calcula gramos de grasa según el modelo del rodamiento."""
+    if not rodamiento or rodamiento in ["-", "S/D", "nan"]:
+        return 0
+    
+    # Extraemos solo los números del rodamiento (ej: de 6319 C3 saca 6319)
+    import re
+    match = re.search(r'\d{4,5}', str(rodamiento))
+    if not match:
+        return 0
+    
+    codigo = match.group()
+    # Lógica de cálculo basada en el diámetro exterior aproximado
+    # Fórmula: D * B * 0.005 (Simplificada para mantenimiento)
+    try:
+        serie = int(codigo[1]) # 2 para 62xx, 3 para 63xx
+        tamanio = int(codigo[2:]) # Los últimos dos dígitos (19, 22, etc)
+        
+        # Estimación de gramos Marpi
+        if serie == 3:
+            gramos = (tamanio * 2.5) - 5 
+        else:
+            gramos = (tamanio * 1.5)
+        return max(5, round(gramos, 1)) # Mínimo 5g para motores industriales
+    except:
+        return 0
 
 # --- 2. FUNCIONES DE GENERACIÓN DE PDF ESPECIALIZADAS ---
 
@@ -186,7 +212,6 @@ def generar_pdf_megado(datos):
 # Inicializamos variables de estado
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
 if "modo_manual" not in st.session_state: st.session_state.modo_manual = False
-
 # --- 3. CONEXIÓN A DATOS ---
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
@@ -868,6 +893,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
