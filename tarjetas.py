@@ -450,7 +450,14 @@ elif modo == "Historial y QR":
                     with col_pdf:
                         # 1. Botón para el Informe PDF
                         datos_pdf = fila.to_dict()
-                        pdf_bytes = generar_pdf_reporte(datos_pdf, tarea)
+                        tarea = str(datos_pdf.get('Tipo_Tarea', ''))
+                        # Selector inteligente de función PDF
+                        if "Mediciones" in tarea or "Megado" in tarea:
+                            pdf_bytes = generar_pdf_megado(datos_pdf)
+                        elif "Lubricacion" in tarea or "Relubricacion" in tarea:
+                            pdf_bytes = generar_pdf_lubricacion(datos_pdf)
+                        else:
+                            pdf_bytes = generar_pdf_ingreso(datos_pdf)
                         if pdf_bytes:
                             st.download_button(
                                 label="📄 Descargar Informe",
@@ -861,6 +868,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
