@@ -185,53 +185,47 @@ def generar_pdf_lubricacion(datos):
     pdf = FPDF()
     pdf.add_page()
     
-    # 1. Cabecera con Logo y Nombre
-    agregar_cabecera_marpi(pdf, "REPORTE DE LUBRICACIÓN Y MANTENIMIENTO", datos.get('Tag'))
+    # Cabecera profesional usando la función que ya definimos
+    agregar_cabecera_marpi(pdf, "REPORTE DE LUBRICACIÓN DE EQUIPO", datos.get('Tag'))
     
-    # 2. Información del Motor (Datos de Placa básicos)
+    # 1. Datos Identificatorios del Motor
     pdf.set_fill_color(230, 230, 230)
     pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 8, " 1. DATOS DEL EQUIPO", ln=True, fill=True)
+    pdf.cell(0, 8, " 1. IDENTIFICACIÓN DEL MOTOR", ln=True, fill=True)
     
     pdf.set_font("Arial", '', 10)
+    # Mostramos solo datos relevantes de placa que ya tienes [cite: 57, 68]
     pdf.cell(45, 8, "N. SERIE:", 1); pdf.cell(50, 8, limpiar(datos.get('N_Serie')), 1)
     pdf.cell(45, 8, "POTENCIA:", 1); pdf.cell(50, 8, limpiar(datos.get('Potencia')), 1, 1)
-    pdf.cell(45, 8, "RPM:", 1); pdf.cell(50, 8, limpiar(datos.get('RPM')), 1)
-    pdf.cell(45, 8, "CARCASA:", 1); pdf.cell(50, 8, limpiar(datos.get('Carcasa')), 1, 1)
     
     pdf.ln(5)
-    
-    # 3. Datos de Lubricación (LA y LOA)
+
+    # 2. Información Específica de Lubricación
     pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 8, " 2. DETALLE DE LUBRICACIÓN", ln=True, fill=True)
+    pdf.cell(0, 8, " 2. DATOS DE LUBRICACIÓN", ln=True, fill=True)
     
+    # Tabla de rodamientos (LA y LOA)
     pdf.set_font("Arial", 'B', 10)
-    # Tabla de rodamientos
     pdf.cell(95, 8, "LADO ACOPLE (LA)", 1, 0, 'C')
     pdf.cell(95, 8, "LADO OPUESTO (LOA)", 1, 1, 'C')
     
     pdf.set_font("Arial", '', 10)
-    rod_la = limpiar(datos.get('Rodamiento_LA'))
-    grs_la = limpiar(datos.get('Gramos_LA'))
-    rod_loa = limpiar(datos.get('Rodamiento_LOA'))
-    grs_loa = limpiar(datos.get('Gramos_LOA'))
+    pdf.cell(45, 8, "Rodamiento:", 1); pdf.cell(50, 8, limpiar(datos.get('Rodamiento_LA')), 1, 0)
+    pdf.cell(45, 8, "Rodamiento:", 1); pdf.cell(50, 8, limpiar(datos.get('Rodamiento_LOA')), 1, 1)
     
-    pdf.cell(45, 8, "Rodamiento:", 1); pdf.cell(50, 8, rod_la, 1, 0)
-    pdf.cell(45, 8, "Rodamiento:", 1); pdf.cell(50, 8, rod_loa, 1, 1)
+    pdf.cell(45, 8, "Grasa (gr):", 1); pdf.cell(50, 8, limpiar(datos.get('Gramos_LA')), 1, 0)
+    pdf.cell(45, 8, "Grasa (gr):", 1); pdf.cell(50, 8, limpiar(datos.get('Gramos_LOA')), 1, 1)
     
-    pdf.cell(45, 8, "Grasa Cargada:", 1); pdf.cell(50, 8, f"{grs_la} gr.", 1, 0)
-    pdf.cell(45, 8, "Grasa Cargada:", 1); pdf.cell(50, 8, f"{grs_loa} gr.", 1, 1)
-    
-    # 4. Observaciones Finales
     pdf.ln(5)
+
+    # 3. Observaciones y Tipo de Grasa
     pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 8, " 3. OBSERVACIONES TÉCNICAS", ln=True, fill=True)
+    pdf.cell(0, 8, " 3. DETALLES DEL TRABAJO", ln=True, fill=True)
     pdf.set_font("Arial", '', 10)
     
-    tipo_grasa = limpiar(datos.get('Tipo_Grasa'))
-    obs = limpiar(datos.get('Descripcion'))
-    
-    pdf.multi_cell(0, 8, f"TIPO DE GRASA UTILIZADA: {tipo_grasa}\n\nDETALLES: {obs}", border=1)
+    # Aquí es donde aparecerá el texto "LUBRICACIÓN REALIZADA: SKF LGHP 2" 
+    detalles = f"TIPO DE GRASA: {limpiar(datos.get('Tipo_Grasa'))}\n\nOBSERVACIONES: {limpiar(datos.get('Descripcion'))}"
+    pdf.multi_cell(0, 8, detalles, border=1)
     
     return pdf.output(dest='S').encode('latin-1', 'replace')
 def generar_pdf_megado(datos):
@@ -944,6 +938,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
