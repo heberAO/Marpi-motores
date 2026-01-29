@@ -460,7 +460,7 @@ elif modo == "Historial y QR":
                 desc_corta = desc_completa[:30]
                 
                 # --- BOTONES DE DESCARGA Y DETALLES ---
-                with st.expander(f"🔍 Ver Detalle - {tarea} ({fecha})"):
+            with st.expander(f"🔍 Ver Detalle - {tarea} ({fecha})"):
                 st.write(f"**Responsable:** {responsable}")
                 st.write(f"**Descripción:** {desc_completa}")
                 
@@ -884,6 +884,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
