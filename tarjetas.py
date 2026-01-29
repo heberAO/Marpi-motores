@@ -190,40 +190,31 @@ def generar_pdf_lubricacion(datos):
     pdf = FPDF()
     pdf.add_page()
     
-    # Usamos la cabecera que ya tienes
-    agregar_cabecera_marpi(pdf, "REPORTE DE LUBRICACIÓN", datos.get('Tag'))
-    
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "1. DETALLES DE LA INTERVENCIÓN", ln=True)
-    pdf.set_font("Arial", '', 11)
-    
-    # Buscamos los campos tal cual se guardan en tu historial
-    responsable = obtener_dato_seguro(datos, ['Responsable', 'Usuario', 'Personal'])
-    fecha = obtener_dato_seguro(datos, ['Fecha', 'fecha'])
-    
-    pdf.cell(0, 8, f"Fecha: {fecha} | Responsable: {responsable}", ln=True)
+    # 1. Cabecera
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='C')
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, f"REPORTE DE LUBRICACIÓN: {datos.get('Tag', 'S/D')}", ln=True, align='C')
     pdf.ln(5)
-    
-    # Datos específicos de rodamientos
+
+    # 2. Datos de Intervención
     pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 8, "2. PUNTOS DE LUBRICACIÓN", ln=True)
-    pdf.set_font("Arial", '', 11)
-    
-    la_rod = obtener_dato_seguro(datos, ['Rodamiento_LA', 'Rodamiento LA'])
-    la_grs = obtener_dato_seguro(datos, ['Grasa_LA', 'Grasa LA'])
-    loa_rod = obtener_dato_seguro(datos, ['Rodamiento_LOA', 'Rodamiento LOA'])
-    loa_grs = obtener_dato_seguro(datos, ['Grasa_LOA', 'Grasa LOA'])
-    
-    pdf.cell(0, 8, f" - Lado Acople (LA): {la_rod} | Grasa: {la_grs} gr.", ln=True)
-    pdf.cell(0, 8, f" - Lado Opuesto (LOA): {loa_rod} | Grasa: {loa_grs} gr.", ln=True)
-    
+    # Buscamos 'Rodamiento_LA' o 'Rodamiento LA' (sin guion)
+    rod_la = obtener_dato_seguro(datos, ['Rodamiento_LA', 'Rodamiento LA'])
+    gra_la = obtener_dato_seguro(datos, ['Grasa_LA', 'Grasa LA'])
+    rod_loa = obtener_dato_seguro(datos, ['Rodamiento_LOA', 'Rodamiento LOA'])
+    gra_loa = obtener_dato_seguro(datos, ['Grasa_LOA', 'Grasa LOA'])
+
+    pdf.cell(0, 10, f"Rodamiento LA: {rod_la}", ln=True)
+    pdf.cell(0, 10, f"Grasa Inyectada LA: {gra_la} gr.", ln=True)
+    pdf.cell(0, 10, f"Rodamiento LOA: {rod_loa}", ln=True)
+    pdf.cell(0, 10, f"Grasa Inyectada LOA: {gra_loa} gr.", ln=True)
+
+    # 3. Observaciones
     pdf.ln(5)
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 8, "3. OBSERVACIONES", ln=True)
-    pdf.set_font("Arial", '', 11)
     obs = obtener_dato_seguro(datos, ['Descripcion', 'Observaciones'])
-    pdf.multi_cell(0, 8, obs)
-    
+    pdf.multi_cell(0, 7, f"Detalles: {obs}")
+
     return pdf.output(dest='S').encode('latin-1', 'replace')
 def generar_pdf_megado(datos):
     pdf = FPDF()
@@ -612,8 +603,8 @@ elif modo == "Historial y QR":
                         tipo_t = str(datos_pdf.get('Tipo_Tarea', '')).strip().lower()
                         pdf_archivo = None # Limpiamos el texto
                         try:
-                            if "lubric" in tipo_t or "grasa" in tipo_t:
-                                pdf_archivo = generar_pdf_lubricacion(datos_pdf)
+                            if tipo_tarea == 'Lubricación':
+                                pdf_bytes = generar_pdf_lubricacion(fila.to_dict())
                             elif "mega" in tipo_t or "medici" in tipo_t or "aisla" in tipo_t:
                                 pdf_archivo = generar_pdf_megado(datos_pdf)
                             else:
@@ -947,6 +938,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
