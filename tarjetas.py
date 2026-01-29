@@ -699,14 +699,11 @@ elif modo == "Relubricacion":
         notas = st.text_area("Notas")
         
         if st.form_submit_button("💾 GUARDAR"):
-            # Buscamos el TAG y el Responsable sin importar cómo se llamen en el formulario
             tag_actual = t if 't' in locals() else (tag_seleccionado if 'tag_seleccionado' in locals() else None)
             resp_actual = resp if 'resp' in locals() else (tecnico if 'tecnico' in locals() else None)
 
             if tag_actual and resp_actual:
-                # 2. BUSCAMOS LOS DATOS DE PLACA EN EL HISTORIAL
-                datos_tecnicos = df_completo[df_completo['Tag'] == tag_actual].tail(1).to_dict('records')
-                info = datos_tecnicos[0] if datos_tecnicos else {}
+                # 1. ARMAMOS EL DICCIONARIO BASE
                 nueva = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": tag_actual,
@@ -718,40 +715,25 @@ elif modo == "Relubricacion":
                     "Gramos_LOA": gr_real_loa,
                     "Tipo_Grasa": grasa_t,
                     "Notas": notas,
-                    "Descripcion": f"Servicio de lubricación con {grasa_t}"
+                    "Descripcion": f"LUBRICACIÓN: {grasa_t}. LA: {gr_real_la}g, LOA: {gr_real_loa}g."
                 }
                 
-                # --- AGREGAR DATOS ESPECÍFICOS SEGÚN EL MODO ---
-                if modo == "Mediciones de Campo":
-                    nueva.update({
-                        "RT_TV1": tv1, "RT_TU1": tu1, "RT_TW1": tw1,
-                        "RB_WV1": wv1, "RB_WU1": wu1, "RB_VU1": vu1,
-                        "RI_U1U2": u1u2, "RI_V1V2": v1v2, "RI_W1W2": w1w2,
-                        "ML_L1": tl1, "ML_L2": tl2, "ML_L3": tl3,
-                        "ML_L1L2": l1l2, "ML_L1L3": l1l3, "ML_L2L3": l2l3
-                    })
-                
-            if modo == "Relubricacion":
-                # 4. GUARDAR Y GENERAR PDF
+                # 2. GUARDAR EN BASE DE DATOS
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
-                
-                if modo == "Relubricacion":
-                    st.session_state.pdf_buffer = generar_pdf_lubricacion(nueva)
-                elif modo == "Mediciones de Campo":
-                    st.session_state.pdf_buffer = generar_pdf_megado(nueva)
-                else:
-                    st.session_state.pdf_buffer = generar_pdf_ingreso(nueva)
 
+                # 3. GENERAR EL PDF CORRECTO (Acá se arreglan los 'nan')
+                st.session_state.pdf_buffer = generar_pdf_lubricacion(nueva)
+
+                # 4. FINALIZAR
                 st.session_state.tag_buffer = tag_actual
                 st.session_state.form_id += 1
                 st.success(f"✅ Registro de {tag_actual} guardado con éxito")
                 st.balloons()
-                import time
-                time.sleep(1.5) # Para que lleguen a ver el mensaje de éxito
+                time.sleep(1.5)
                 st.rerun()
             else:
-                st.error("⚠️ Error: No se encontró el TAG o el Responsable. Verifique los campos.")
+                st.error("⚠️ Error: No se encontró el TAG o el Responsable.")
 
     # --- BOTÓN DE DESCARGA (CORREGIDO) ---
     if st.session_state.get("pdf_buffer") is not None:
@@ -886,6 +868,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
