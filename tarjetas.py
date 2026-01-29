@@ -189,32 +189,26 @@ def generar_pdf_ingreso(datos):
 def generar_pdf_lubricacion(datos):
     pdf = FPDF()
     pdf.add_page()
-    
-    # 1. Cabecera
+    # Cabecera simple
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='C')
-    pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, f"REPORTE DE LUBRICACIÓN: {datos.get('Tag', 'S/D')}", ln=True, align='C')
+    pdf.ln(10)
+
+    # ESTO ES LO QUE FALTA EN TUS PDF ACTUALES:
+    pdf.set_font("Arial", 'B', 12)
+    # Buscamos los nombres de columna que usa tu formulario de entrada
+    la_rod = str(datos.get('Rodamiento_LA', datos.get('Rodamiento LA', '-')))
+    la_grs = str(datos.get('Grasa_LA', datos.get('Grasa LA', '-')))
+    
+    pdf.cell(0, 10, f"Rodamiento Lado Acople: {la_rod}", ln=True)
+    pdf.cell(0, 10, f"Grasa Inyectada: {la_grs} grs.", ln=True)
+    
+    # Descripción/Observaciones donde sí aparece el texto que mencionas
     pdf.ln(5)
-
-    # 2. Datos de Intervención
-    pdf.set_font("Arial", 'B', 11)
-    # Buscamos 'Rodamiento_LA' o 'Rodamiento LA' (sin guion)
-    rod_la = obtener_dato_seguro(datos, ['Rodamiento_LA', 'Rodamiento LA'])
-    gra_la = obtener_dato_seguro(datos, ['Grasa_LA', 'Grasa LA'])
-    rod_loa = obtener_dato_seguro(datos, ['Rodamiento_LOA', 'Rodamiento LOA'])
-    gra_loa = obtener_dato_seguro(datos, ['Grasa_LOA', 'Grasa LOA'])
-
-    pdf.cell(0, 10, f"Rodamiento LA: {rod_la}", ln=True)
-    pdf.cell(0, 10, f"Grasa Inyectada LA: {gra_la} gr.", ln=True)
-    pdf.cell(0, 10, f"Rodamiento LOA: {rod_loa}", ln=True)
-    pdf.cell(0, 10, f"Grasa Inyectada LOA: {gra_loa} gr.", ln=True)
-
-    # 3. Observaciones
-    pdf.ln(5)
-    obs = obtener_dato_seguro(datos, ['Descripcion', 'Observaciones'])
-    pdf.multi_cell(0, 7, f"Detalles: {obs}")
-
+    desc = str(datos.get('Descripcion', datos.get('DESCRIPCIÓN', '-')))
+    pdf.multi_cell(0, 10, f"Detalle Técnico: {desc}")
+    
     return pdf.output(dest='S').encode('latin-1', 'replace')
 def generar_pdf_megado(datos):
     pdf = FPDF()
@@ -600,13 +594,13 @@ elif modo == "Historial y QR":
 
                         # --- 3. SELECCIÓN DE PLANTILLA PDF SEGÚN EL TIPO DE TAREA ---
                         datos_pdf = {k: ("-" if str(v).lower() == "nan" else v) for k, v in fila.to_dict().items()}
-                        tipo_t = str(datos_pdf.get('Tipo_Tarea', '')).strip().lower()
-                        pdf_archivo = None # Limpiamos el texto
-                        try:
-                            if tipo_tarea == 'Lubricación':
-                                pdf_bytes = generar_pdf_lubricacion(fila.to_dict())
-                            elif "mega" in tipo_t or "medici" in tipo_t or "aisla" in tipo_t:
-                                pdf_archivo = generar_pdf_megado(datos_pdf)
+                        datos_dict = fila.to_dict()
+                        tarea_actual = str(datos_dict.get('Tipo_Tarea', '')).strip()
+                        
+                            if "Lubricación" in tarea_actual:
+                                pdf_final = generar_pdf_lubricacion(datos_dict)
+                            else:
+                                pdf_final = generar_pdf_megado(datos_dict) if "Mediciones" in tarea_actual else generar_pdf_ingreso(datos_dict)
                             else:
                                 pdf_archivo = generar_pdf_ingreso(datos_pdf)
                         except Exception as e:
@@ -938,6 +932,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
