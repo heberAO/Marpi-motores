@@ -217,17 +217,6 @@ def generar_pdf_lubricacion(datos):
     pdf.set_font("Arial", '', 11)
     desc = datos.get('Descripcion', 'Sin observaciones adicionales.')
     pdf.multi_cell(0, 8, desc)
-
-    # Retornar el buffer para Streamlit
-    return pdf.output(dest='S').encode('latin-1')
-El problema es que estamos intentando leer los datos de la fila del historial, pero los nombres de las columnas que busca el código (ej. RT_TU) no coinciden exactamente con los que están escritos en tu Excel o base de datos. Si hay un espacio de más o una mayúscula distinta, el sistema no los encuentra y por eso pone -.
-
-Aquí tienes la solución completa. He modificado la función para que sea "inteligente": si no encuentra RT_TU, busca variaciones comunes y limpia los datos antes de escribir.
-
-1. Reemplaza tu función de Megado por esta
-Esta versión es mucho más robusta y utiliza una tabla para que los campos no se vean amontonados:
-
-Python
 def generar_pdf_megado(datos):
     pdf = FPDF()
     pdf.add_page()
@@ -935,6 +924,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
