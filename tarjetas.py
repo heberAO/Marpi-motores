@@ -731,7 +731,7 @@ elif modo == "Relubricacion":
                         "ML_L1L2": l1l2, "ML_L1L3": l1l3, "ML_L2L3": l2l3
                     })
                 
-                if modo == "Relubricacion":
+            if modo == "Relubricacion":
                 # 4. GUARDAR Y GENERAR PDF
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
@@ -886,6 +886,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
