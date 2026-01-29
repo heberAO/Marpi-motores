@@ -461,33 +461,34 @@ elif modo == "Historial y QR":
                 
                 # --- BOTONES DE DESCARGA Y DETALLES ---
                 with st.expander(f"🔍 Ver Detalle - {tarea} ({fecha})"):
-                    st.write(f"**Responsable:** {responsable}")
-                    st.write(f"**Descripción:** {desc_completa}")
-    
-                    col_pdf, col_qr = st.columns(2)
+                st.write(f"**Responsable:** {responsable}")
+                st.write(f"**Descripción:** {desc_completa}")
+                
+                col_pdf, col_qr = st.columns(2)
 
-                   with col_pdf:
-                       datos_pdf = fila.to_dict()
-        
-                       # --- SELECCIÓN CRÍTICA DE PLANTILLA ---
-                       tipo_t = str(datos_pdf.get('Tipo_Tarea', ''))
-        
-                       if "Lubricacion" in tipo_t or "Relubricacion" in tipo_t:
-                           pdf_archivo = generar_pdf_lubricacion(datos_pdf)
-                       elif "Mediciones" in tipo_t or "Megado" in tipo_t:
-                           pdf_archivo = generar_pdf_megado(datos_pdf)
-                       else:
-                           pdf_archivo = generar_pdf_ingreso(datos_pdf)
+                with col_pdf: # <-- Esta es la línea 469. Ahora está alineada con col_pdf, col_qr
+                    # 1. Convertimos la fila a diccionario
+                    datos_pdf = fila.to_dict()
+                    
+                    # 2. SELECCIÓN DE PLANTILLA
+                    tipo_t = str(datos_pdf.get('Tipo_Tarea', ''))
+                    
+                    if "Lubricacion" in tipo_t or "Relubricacion" in tipo_t:
+                        pdf_archivo = generar_pdf_lubricacion(datos_pdf)
+                    elif "Mediciones" in tipo_t or "Megado" in tipo_t:
+                        pdf_archivo = generar_pdf_megado(datos_pdf)
+                    else:
+                        pdf_archivo = generar_pdf_ingreso(datos_pdf)
 
-                        # Usamos 'pdf_archivo' que es lo que generamos arriba
-                       if pdf_archivo:
-                           st.download_button(
-                              label="📄 Descargar Informe",
-                              data=pdf_archivo,
-                              file_name=f"Informe_{t}_{idx}.pdf",
-                              mime="application/pdf",
-                              key=f"pdf_hist_{idx}"
-                          )
+                    # 3. BOTÓN DE DESCARGA
+                    if pdf_archivo:
+                        st.download_button(
+                            label="📄 Descargar Informe",
+                            data=pdf_archivo,
+                            file_name=f"Informe_{idx}.pdf",
+                            mime="application/pdf",
+                            key=f"pdf_hist_{idx}"
+                        )
 
                     with col_qr:
                         # 2. Botón para la Etiqueta Honeywell
@@ -883,6 +884,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
