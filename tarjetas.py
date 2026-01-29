@@ -788,62 +788,70 @@ elif modo == "Mediciones de Campo":
         l1l3 = c14.text_input("L1 - L3 (GΩ)")
         l2l3 = c15.text_input("L2 - L3 (GΩ)")
 
-        st.text_area("Observaciones")
+      # --- FUERA O ANTES DEL FORMULARIO ---
+# Inicializamos el buffer del PDF en la memoria si no existe
+if 'pdf_buffer' not in st.session_state:
+    st.session_state.pdf_buffer = None
 
-        # BOTÓN DE Guardado
-        if st.form_submit_button("💾 GUARDAR MEDICIONES"):
-            if t and resp:
-                # 1. RESCATE DE DATOS PARA EL PDF
-                busqueda = df_completo[df_completo['Tag'] == t].tail(1)
-                info = busqueda.iloc[0].to_dict() if not busqueda.empty else {}
-                # --- DICCIONARIO PARA MEGADO
-                nueva = {
-                    "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
-                    "Tag": t,
-                    "N_Serie": n_serie,
-                    "Responsable": resp,
-                    "Tipo_Tarea": "Mediciones de Campo",
-                    "Notas": "",  # Enviamos vacío manualmente para no romper el Excel
-                    "Potencia": info.get("Potencia", ""),
-                    "Tension": info.get("Tension", ""),
-                    "RPM": info.get("RPM", ""),
-                    "Carcasa": info.get("Carcasa", ""),
-                    "Rodamiento_LA": info.get("Rodamiento_LA", ""),
-                    "Rodamiento_LOA": info.get("Rodamiento_LOA", ""),
-                    "Descripcion": f"Equipo: {equipo_megado} ({tension_prueba})",
-                    # Guardamos los valores técnicos
-                    "RT_TV1": tv1, "RT_TU1": tu1, "RT_TW1": tw1,
-                    "RB_WV1": wv1, "RB_WU1": wu1, "RB_VU1": vu1,
-                    "RI_U1U2": u1u2, "RI_V1V2": v1v2, "RI_W1W2": w1w2
-                }
-
-                # 3. GUARDAR Y PDF
-                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-                conn.update(data=df_final)
-                st.session_state.pdf_buffer = generar_pdf_reporte(nueva, "REPORTE DE MEGADO")
-                st.session_state.tag_buffer = f"{t}_MEGADO"
-                st.session_state.cnt_meg += 1
-                
-                # --- EL DETALLITO: AVISO DE ÉXITO ---
-                if 'tag_fijo' in st.session_state:
-                    st.session_state.tag_fijo = ""
-                st.success(f"✅ ¡Excelente! Las mediciones del motor {t} se guardaron correctamente.")
-                st.download_button(
-                    label="📥 DESCARGAR INFORME TÉCNICO",
-                    data=st.session_state.pdf_buffer,
-                    file_name=f"Informe_{t}.pdf",
-                    mime="application/pdf",
-                    key="download_megado_final" # Clave única para que no choque con otros botones
-                )
-                st.balloons()
-                import time
-                time.sleep(1.5)
-                st.rerun()
-            else:
-                st.error("⚠️ El TAG y el Responsable son obligatorios.")
+with st.form(key="formulario_motores"):
+    # ... (Tus inputs: t, resp, n_serie, tv1, tu1, etc.) ...
+    
+    st.text_area("Observaciones")
+    
+    # BOTÓN DE Guardado
+    submitted = st.form_submit_button("💾 GUARDAR MEDICIONES")
+    
+    if submitted:
+        if t and resp:
+            # 1. RESCATE DE DATOS
+            busqueda = df_completo[df_completo['Tag'] == t].tail(1)
+            info = busqueda.iloc[0].to_dict() if not busqueda.empty else {}
             
+            nueva = {
+                "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
+                "Tag": t,
+                "N_Serie": n_serie,
+                "Responsable": resp,
+                "Tipo_Tarea": "Mediciones de Campo",
+                "Notas": "",  
+                "Potencia": info.get("Potencia", ""),
+                "Tension": info.get("Tension", ""),
+                "RPM": info.get("RPM", ""),
+                "Carcasa": info.get("Carcasa", ""),
+                "Rodamiento_LA": info.get("Rodamiento_LA", ""),
+                "Rodamiento_LOA": info.get("Rodamiento_LOA", ""),
+                "Descripcion": f"Equipo: {equipo_megado} ({tension_prueba})",
+                "RT_TV1": tv1, "RT_TU1": tu1, "RT_TW1": tw1,
+                "RB_WV1": wv1, "RB_WU1": wu1, "RB_VU1": vu1,
+                "RI_U1U2": u1u2, "RI_V1V2": v1v2, "RI_W1W2": w1w2
+            }
+
+            # 2. GUARDAR EN EXCEL/DB
+            df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+            conn.update(data=df_final)
+            
+            # 3. GENERAR PDF Y GUARDAR EN MEMORIA (Session State)
+            st.session_state.pdf_buffer = generar_pdf_reporte(nueva, "REPORTE DE MEGADO")
+            st.session_state.current_tag = t
+            
+            st.success(f"✅ ¡Excelente! Datos de {t} guardados.")
+            st.balloons()
+        else:
+            st.error("⚠️ El TAG y el Responsable son obligatorios.")
+
+# --- ESTO VA AFUERA DEL FORMULARIO ---
+if st.session_state.pdf_buffer is not None:
+    st.download_button(
+        label="📥 DESCARGAR INFORME TÉCNICO",
+        data=st.session_state.pdf_buffer,
+        file_name=f"Informe_{st.session_state.current_tag}.pdf",
+        mime="application/pdf",
+        key="download_megado_final"
+    )
+    
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
