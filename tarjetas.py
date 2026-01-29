@@ -196,36 +196,28 @@ def generar_pdf_lubricacion(datos):
 
     # Retornar el buffer para Streamlit
     return pdf.output(dest='S').encode('latin-1')
-def enerar_pdf_megado(datos):
-    try:
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", 'B', 16); pdf.set_text_color(0, 51, 102)
-        pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='R')
-        pdf.set_fill_color(0, 51, 102); pdf.set_text_color(255); pdf.set_font("Arial", 'B', 14)
-        pdf.cell(0, 12, f"INFORME DE MEDICIONES ELÉCTRICAS: {datos.get('Tag','-')}", ln=True, align='C', fill=True)
-        
-        pdf.ln(5); pdf.set_text_color(0); pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "📊 MEDICIONES DE CAMPO (15 PUNTOS)", ln=True, fill=True)
-        
-        # Grilla de 15 mediciones
-        pdf.set_font("Arial", 'B', 9); pdf.set_fill_color(240, 240, 240)
-        pdf.cell(63, 7, "AISLAMIENTO TIERRA (Gohm)", 1, 0, 'C', True); pdf.cell(63, 7, "ENTRE BOBINAS (Gohm)", 1, 0, 'C', True); pdf.cell(64, 7, "CONTINUIDAD (Ohm)", 1, 1, 'C', True)
-        pdf.set_font("Arial", '', 10)
-        pdf.cell(63, 7, f"T-U1: {datos.get('RT_TU1','-')}", 1, 0); pdf.cell(63, 7, f"W1-V1: {datos.get('RB_WV1','-')}", 1, 0); pdf.cell(64, 7, f"U1-U2: {datos.get('RI_U1U2','-')}", 1, 1)
-        pdf.cell(63, 7, f"T-V1: {datos.get('RT_TV1','-')}", 1, 0); pdf.cell(63, 7, f"W1-U1: {datos.get('RB_WU1','-')}", 1, 0); pdf.cell(64, 7, f"V1-V2: {datos.get('RI_V1V2','-')}", 1, 1)
-        pdf.cell(63, 7, f"T-W1: {datos.get('RT_TW1','-')}", 1, 0); pdf.cell(63, 7, f"V1-U1: {datos.get('RB_VU1','-')}", 1, 1)
-        
-        pdf.ln(5); pdf.set_font("Arial", 'B', 9); pdf.set_fill_color(240, 240, 240)
-        pdf.cell(95, 7, "MEGADO DE LÍNEA A TIERRA", 1, 0, 'C', True); pdf.cell(95, 7, "MEGADO ENTRE LÍNEAS", 1, 1, 'C', True)
-        pdf.set_font("Arial", '', 10)
-        pdf.cell(95, 7, f"T-L1: {datos.get('ML_L1','-')}", 1, 0); pdf.cell(95, 7, f"L1-L2: {datos.get('ML_L1L2','-')}", 1, 1)
-        pdf.cell(95, 7, f"T-L2: {datos.get('ML_L2','-')}", 1, 0); pdf.cell(95, 7, f"L1-L3: {datos.get('ML_L1L3','-')}", 1, 1)
-        pdf.cell(95, 7, f"T-L3: {datos.get('ML_L3','-')}", 1, 0); pdf.cell(95, 7, f"L2-L3: {datos.get('ML_L2L3','-')}", 1, 1)
-
-        pdf.ln(5); pdf.multi_cell(0, 7, f"OBSERVACIONES: {datos.get('Descripcion','-')}", border=1)
-        return pdf.output(dest='S').encode('latin-1', 'replace')
-    except: return None
+def generar_pdf_megado(datos):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='C')
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, f"REPORTE DE MEDICIONES ELÉCTRICAS: {datos.get('Tag', 'S/D')}", ln=True, align='C')
+    pdf.ln(10)
+    
+    # Datos de Megado/Resistencia
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "MEDICIONES DE AISLAMIENTO Y RESISTENCIA", ln=True)
+    pdf.set_font("Arial", '', 11)
+    
+    # Ejemplo de campos (ajusta según tus nombres de columna)
+    pdf.cell(0, 8, f"RT_TU: {datos.get('RT_TU', '-')} | RT_TV: {datos.get('RT_TV', '-')} | RT_TW: {datos.get('RT_TW', '-')}", ln=True)
+    pdf.cell(0, 8, f"RI_U: {datos.get('RI_U', '-')} | RI_V: {datos.get('RI_V', '-')} | RI_W: {datos.get('RI_W', '-')}", ln=True)
+    
+    pdf.ln(5)
+    pdf.multi_cell(0, 8, f"Observaciones: {datos.get('Descripcion', 'Sin observaciones')}")
+    
+    return pdf.output(dest='S').encode('latin-1', errors='replace')
 # Inicializamos variables de estado
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
 if "modo_manual" not in st.session_state: st.session_state.modo_manual = False
@@ -894,6 +886,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
