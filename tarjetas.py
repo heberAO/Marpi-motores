@@ -518,32 +518,28 @@ elif modo == "Historial y QR":
                             "Tension": raw_data.get('Tension') or raw_data.get('Tensión') or "S/D",
                             "RPM": raw_data.get('RPM') or "S/D",
                             "Carcasa": raw_data.get('Carcasa') or "S/D",
-                            # Datos Megado
+                            # Datos Megado (Asegúrate que coincidan con tus funciones de PDF)
                             "RT_TV1": raw_data.get('RT_TV1', '-'), "RT_TU1": raw_data.get('RT_TU1', '-'), "RT_TW1": raw_data.get('RT_TW1', '-'),
                             "RI_U1U2": raw_data.get('RI_U1U2', '-'), "RI_V1V2": raw_data.get('RI_V1V2', '-'), "RI_W1W2": raw_data.get('RI_W1W2', '-'),
                             # Datos Lubricación
-                            "Rodamiento_LA": raw_data.get('Rodamiento_LA') or raw_data.get('rod_la') or "S/D",
-                            "Rodamiento_LOA": raw_data.get('Rodamiento_LOA') or raw_data.get('rod_loa') or "S/D",
-                            "Gramos_LA": raw_data.get('Gramos_LA') or raw_data.get('gr_la') or "0",
-                            "Gramos_LOA": raw_data.get('Gramos_LOA') or raw_data.get('gr_loa') or "0",
-                            # Datos Informe Técnico
-                            "Descripcion": raw_data.get('Descripcion') or raw_data.get('descripcion') or raw_data.get('Observaciones') or "S/D"
+                            "Rodamiento_LA": raw_data.get('Rodamiento_LA') or "S/D",
+                            "Rodamiento_LOA": raw_data.get('Rodamiento_LOA') or "S/D",
+                            "Gramos_LA": raw_data.get('Gramos_LA') or "0",
+                            "Gramos_LOA": raw_data.get('Gramos_LOA') or "0",
+                            "Descripcion": raw_data.get('Descripcion') or raw_data.get('descripcion') or "S/D"
                         }
-                       # --- 3. LLAMADA AL PDF (REEMPLAZO PARA EL HISTORIAL) ---
-                            tipo_t = str(raw_data.get('Tipo_Tarea', ''))
 
-                            if "Relubricacion" in tipo_t or "Lubricacion" in tipo_t:
-                                # Si la tarea es lubricación, NO puede usar generar_pdf_ingreso
-                                pdf_archivo = generar_pdf_lubricacion(datos_limpios)
-                            elif "Mediciones" in tipo_t or "Megado" in tipo_t:
-                                pdf_archivo = generar_pdf_megado(datos_limpios)
-                            else:
-                                # Solo aquí usa el de Alta (el que tiene los nan)
-                                pdf_archivo = generar_pdf_ingreso(datos_limpios)
-                        except Exception as e:
-                            st.error(f"Error al generar el PDF del historial: {e}")
-                            pdf_archivo = None
-                    
+                        # --- 3. SELECCIÓN DE PLANTILLA PDF SEGÚN EL TIPO DE TAREA ---
+                        tipo_t = str(raw_data.get('Tipo_Tarea', ''))
+
+                        if "Relubricacion" in tipo_t or "Lubricacion" in tipo_t:
+                            pdf_archivo = generar_pdf_lubricacion(datos_limpios)
+                        elif "Mediciones" in tipo_t or "Megado" in tipo_t:
+                            pdf_archivo = generar_pdf_megado(datos_limpios)
+                        else:
+                            pdf_archivo = generar_pdf_ingreso(datos_limpios)
+
+                        # --- 4. BOTÓN DE DESCARGA (Dentro del primer try) ---
                         if pdf_archivo:
                             st.download_button(
                                 label=f"📄 Descargar {tipo_t}",
@@ -552,8 +548,12 @@ elif modo == "Historial y QR":
                                 mime="application/pdf",
                                 key=f"btn_pdf_{idx}"
                             )
+
                     except Exception as e:
-                        st.error(f"Error en datos de fila {idx}: {e}")
+                        st.error(f"Error al generar el PDF del historial en fila {idx}: {e}")
+
+                except Exception as e:
+                    st.error(f"Error crítico en el historial: {e}")
         else:
             st.warning("No hay intervenciones registradas para este motor.")
 
@@ -866,6 +866,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
