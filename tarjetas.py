@@ -704,8 +704,7 @@ elif modo == "Relubricacion":
             resp_actual = resp if 'resp' in locals() else (tecnico if 'tecnico' in locals() else None)
 
             if tag_actual and resp_actual:
-                # 2. Creación del diccionario con datos de Relubricación
-                # Estos campos son los que evitan los 'nan' en el informe final
+                # 2. Creación del diccionario
                 nueva = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": tag_actual,
@@ -720,12 +719,24 @@ elif modo == "Relubricacion":
                     "Descripcion": f"LUBRICACIÓN REALIZADA: {grasa_t}"
                 }
                 
-                # 3. Guardado en la base de datos (Google Sheets / Excel)
+                # 3. Guardado
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
 
-                # 4. GENERACIÓN DEL PDF (EL CAMBIO CLAVE)
-                st.session_state.pdf_buffer = generar_pdf_lubricacion(nueva)
+                # --- LÓGICA DE GENERACIÓN DE PDF REFORZADA (UBICACIÓN EXACTA) ---
+                if "pdf_buffer" in st.session_state:
+                    del st.session_state["pdf_buffer"]
+
+                tipo_de_informe = nueva.get("Tipo_Tarea", "")
+
+                if tipo_de_informe == "Relubricacion":
+                    # ESTA LÍNEA ES LA QUE CAMBIA EL ENCABEZADO Y QUITA LOS NAN
+                    st.session_state.pdf_buffer = generar_pdf_lubricacion(nueva)
+                elif modo == "Mediciones de Campo":
+                    st.session_state.pdf_buffer = generar_pdf_megado(nueva)
+                else:
+                    st.session_state.pdf_buffer = generar_pdf_ingreso(nueva)
+                # --- FIN DE LA LÓGICA ---
 
                 # 5. Interfaz de usuario
                 st.session_state.tag_buffer = tag_actual
@@ -871,6 +882,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
