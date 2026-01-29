@@ -320,6 +320,7 @@ if modo == "Nuevo Registro":
 
         if btn_guardar:
             if t and resp:
+                # 1. Crear el diccionario de datos
                 nueva = {
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
                     "Tag": t,
@@ -333,54 +334,40 @@ if modo == "Nuevo Registro":
                     "RI_U": v_ri_u, "RI_V": v_ri_v, "RI_W": v_ri_w,
                     "Descripcion": desc,
                     "Trabajos_Externos": ext,
-                    "Tipo_Tarea": "Nuevo Registro" # <--- AGREGA ESTO SIEMPRE
+                    "Tipo_Tarea": "Nuevo Registro"
                 }
-            # ..# Guardar y generar...
+
+                # 2. Guardar en la base de datos (Google Sheets / DataFrame)
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
-                    # --- LIMPIEZA Y GENERACIÓN ---
-                if "pdf_buffer" in st.session_state:
-                     del st.session_state["pdf_buffer"]
-                    # AQUÍ USAMOS LA FUNCIÓN DE INGRESO PORQUE ES UN NUEVO REGISTRO
-                    st.session_state.pdf_buffer = generar_pdf_ingreso(nueva)
-                    st.session_state.tag_actual = t
-                    st.session_state.form_key += 1.
-                    st.success(f"✅ Motor {t} registrado con éxito.")
-                    # --- GENERACIÓN DE ETIQUETA QR ---
-                    # Usamos las variables que ya tenés en tu formulario
-                    etiqueta_img = generar_etiqueta_honeywell(t, sn, p)
-            
-                    if etiqueta_img:
-                        st.info("📋 Etiqueta lista para Honeywell PC42")
-                        # Mostramos la vista previa pequeña
-                        st.image(etiqueta_img, width=300)
-                        
-                        # Botón para descargar e imprimir
-                        st.download_button(
-                            label="💾 Descargar Etiqueta (PNG)",
-                            data=etiqueta_img,
-                            file_name=f"Etiqueta_{t}.png",
-                            mime="image/png",
-                            use_container_width=True
-                        )
-            
-            # --- EFECTO DE ÉXITO CON LOGO DE MARPI ---
-                    placeholder = st.empty() 
-                    with placeholder.container():
-                        col1, col2, col3 = st.columns([1, 2, 1])
-                        with col2:
-                            st.image("logo.png", use_container_width=True)
-                            st.markdown("<h2 style='text-align: center; color: #007BFF;'>¡Registro Guardado en Marpi!</h2>", unsafe_allow_html=True)
-                
-                        st.balloons()
-                        time.sleep(3)
-                        placeholder.empty()
-                    
-                    # El rerun va afuera del placeholder pero adentro del IF
-                    st.rerun()
 
-                else:
-                    st.error("⚠️ El TAG y el Responsable son obligatorios.")
+                # 3. Limpiar y Generar PDF en el estado de la sesión
+                if "pdf_buffer" in st.session_state:
+                    del st.session_state["pdf_buffer"]
+                
+                st.session_state.pdf_buffer = generar_pdf_ingreso(nueva)
+                st.session_state.tag_actual = t
+                st.session_state.form_key += 1
+                
+                # 4. Mostrar Éxito y Etiqueta
+                st.success(f"✅ Motor {t} registrado con éxito.")
+                
+                etiqueta_img = generar_etiqueta_honeywell(t, sn, p)
+                if etiqueta_img:
+                    st.info("📋 Etiqueta lista para Honeywell PC42")
+                    st.image(etiqueta_img, width=300)
+                    st.download_button(
+                        label="💾 Descargar Etiqueta (PNG)",
+                        data=etiqueta_img,
+                        file_name=f"Etiqueta_{t}.png",
+                        mime="image/png"
+                    )
+
+                # 5. Efecto visual (Opcional: No uses rerun aquí si quieres que descarguen el PDF)
+                st.balloons()
+                
+            else:
+                st.error("⚠️ El TAG y el Responsable son obligatorios.")
   
 elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
@@ -879,6 +866,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
