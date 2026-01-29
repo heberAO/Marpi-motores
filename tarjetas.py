@@ -288,7 +288,7 @@ elif modo == "Historial y QR":
         )
         opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
         
-        # 2. Detección automática por QR (lectura de URL)
+        # 2. Detección automática por QR
         query_tag = st.query_params.get("tag", "").upper()
         idx_q = 0
         if query_tag:
@@ -299,20 +299,15 @@ elif modo == "Historial y QR":
         
         seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
 
-        # Inicializamos variables para que la App no explote si no hay selección
-        buscado = "" 
-        historial_motor = pd.DataFrame()
-
         if seleccion:
-            # Extraemos el TAG y filtramos los datos
             buscado = seleccion.split(" | ")[0].strip()
             st.session_state.tag_fijo = buscado
             historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
 
-            # --- PANEL SUPERIOR: QR Y DATOS DEL MOTOR ---
+            # --- PANEL SUPERIOR: QR Y DATOS ---
             with st.container(border=True):
                 col_qr, col_info = st.columns([1, 2])
-                url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}"
+                url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}" # Ajusta tu URL
                 qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
                 
                 with col_qr:
@@ -321,7 +316,7 @@ elif modo == "Historial y QR":
                     st.subheader(f" Ⓜ {buscado}")
                     st.caption(f"Número de Serie: {seleccion.split('SN: ')[1] if 'SN: ' in seleccion else 'S/D'}")
 
-            # --- BOTONES DE ACCIÓN (Optimizado para Celular) ---
+            # --- BOTONES DE ACCIÓN ---
             st.subheader("➕ Cargar Nueva Tarea")
             c1, c2, c3 = st.columns(3)
             with c1:
@@ -338,56 +333,43 @@ elif modo == "Historial y QR":
                     st.rerun() 
 
             st.divider()
-            # --- HISTORIAL (Vista de Acordeón para Celular) ---
-        st.subheader("📜 Historial de Intervenciones")
-        if not historial_motor.empty:
-            # Mostramos lo más nuevo primero
-            hist_m = historial_motor.iloc[::-1] 
+            st.subheader("📜 Historial de Intervenciones")
+            
+            if not historial_motor.empty:
+                hist_m = historial_motor.iloc[::-1] 
 
-           # --- HISTORIAL VISUAL EN PANTALLA ---
-for idx, fila in hist_m.iterrows():
-    tarea = str(fila.get('Tipo_Tarea', 'General'))
-    fecha = fila.get('Fecha', 'S/D')
-    
-    # Creamos un contenedor visual para cada intervención
-    with st.container():
-        st.markdown(f"### 🗓️ {tarea} - {fecha}")
-        
-        col1, col2 = st.columns([1, 1])
-        
-        with col1:
-            st.markdown("**📋 Datos de Placa:**")
-            st.write(f"**Serie:** {fila.get('N_Serie', '-')} | **Potencia:** {fila.get('Potencia', '-')}")
-            st.write(f"**RPM:** {fila.get('RPM', '-')} | **Carcasa:** {fila.get('Carcasa', '-')}")
+                # --- EL BUCLE 'FOR' AHORA ESTÁ BIEN INDENTADO (CON ESPACIOS) ---
+                for idx, fila in hist_m.iterrows():
+                    tarea = str(fila.get('Tipo_Tarea', 'General'))
+                    fecha = fila.get('Fecha', 'S/D')
+                    
+                    with st.container(border=True):
+                        st.markdown(f"### 🗓️ {tarea} - {fecha}")
+                        col1, col2 = st.columns([1, 1])
+                        
+                        with col1:
+                            st.markdown("**📋 Datos de Placa:**")
+                            st.write(f"**Serie:** {fila.get('N_Serie', '-')} | **Potencia:** {fila.get('Potencia', '-')}")
+                            st.write(f"**RPM:** {fila.get('RPM', '-')} | **Carcasa:** {fila.get('Carcasa', '-')}")
 
-        # --- SI ES LUBRICACIÓN: Solo muestra rodamientos y grasa ---
-        if "Lubricación" in tarea:
-            with col2:
-                st.markdown("**🛢️ Detalle de Lubricación:**")
-                st.info(f"""
-                **Lado Acople (LA):** {fila.get('Rodamiento_LA', '-')} ({fila.get('Gramos_LA', '0')} gr)
-                **Lado Opuesto (LOA):** {fila.get('Rodamiento_LOA', '-')} ({fila.get('Gramos_LOA', '0')} gr)
-                **Tipo de Grasa:** {fila.get('Tipo_Grasa', '-')}
-                """)
-        
-        # --- SI ES MEDICIONES: Solo muestra la parte eléctrica ---
-        elif "Mediciones" in tarea:
-            with col2:
-                st.markdown("**⚡ Mediciones Eléctricas:**")
-                st.warning(f"""
-                **Aislamiento (RT_TU1):** {fila.get('RT_TU1', '-')}
-                **Resistencia (RI_U1U2):** {fila.get('RI_U1U2', '-')}
-                **Línea (L1):** {fila.get('ML_L1', '-')}
-                """)
+                        # Lógica visual por tipo de tarea
+                        if "Relubricacion" in tarea:
+                            with col2:
+                                st.markdown("**🛢️ Detalle de Lubricación:**")
+                                st.info(f"**LA:** {fila.get('Rodamiento_LA', '-')} ({fila.get('Gramos_LA', '0')} gr)\n\n**LOA:** {fila.get('Rodamiento_LOA', '-')} ({fila.get('Gramos_LOA', '0')} gr)")
+                        
+                        elif "Mediciones" in tarea:
+                            with col2:
+                                st.markdown("**⚡ Mediciones Eléctricas:**")
+                                st.warning(f"**Aislamiento:** {fila.get('RT_TU1', '-')}\n\n**Resistencia:** {fila.get('RI_U1U2', '-')}")
 
-        # --- PARTE BAJA: Observaciones y Reparaciones ---
-        st.markdown("**🛠️ Descripción del Trabajo / Reparaciones:**")
-        st.write(fila.get('Descripcion', 'Sin observaciones registradas.'))
-        
-        st.divider() # Línea para separar cada registro
+                        st.markdown("**🛠️ Descripción / Reparaciones:**")
+                        st.write(fila.get('Descripcion', 'Sin observaciones.'))
 
+# --- AHORA EL ELIF ESTÁ ALINEADO AL BORDE IZQUIERDO CORRECTAMENTE ---
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
+    # ... (el resto de tu código de lubricación)
     
     if "cnt_lub" not in st.session_state:
         st.session_state.cnt_lub = 0
@@ -695,6 +677,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
