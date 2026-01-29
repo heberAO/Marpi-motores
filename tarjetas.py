@@ -199,23 +199,35 @@ def generar_pdf_lubricacion(datos):
 def generar_pdf_megado(datos):
     pdf = FPDF()
     pdf.add_page()
+    
+    # Función interna para limpiar datos
+    def limpiar(val):
+        v = str(val)
+        return "-" if v.lower() == "nan" or v == "" or v == "None" else v
+
+    # Encabezado
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='C')
     pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, f"REPORTE DE MEDICIONES ELÉCTRICAS: {datos.get('Tag', 'S/D')}", ln=True, align='C')
+    pdf.cell(0, 10, f"REPORTE DE MEDICIONES ELÉCTRICAS: {limpiar(datos.get('Tag'))}", ln=True, align='C')
     pdf.ln(10)
     
-    # Datos de Megado/Resistencia
+    # Cuerpo del reporte
     pdf.set_font("Arial", 'B', 12)
     pdf.cell(0, 10, "MEDICIONES DE AISLAMIENTO Y RESISTENCIA", ln=True)
     pdf.set_font("Arial", '', 11)
     
-    # Ejemplo de campos (ajusta según tus nombres de columna)
-    pdf.cell(0, 8, f"RT_TU: {datos.get('RT_TU', '-')} | RT_TV: {datos.get('RT_TV', '-')} | RT_TW: {datos.get('RT_TW', '-')}", ln=True)
-    pdf.cell(0, 8, f"RI_U: {datos.get('RI_U', '-')} | RI_V: {datos.get('RI_V', '-')} | RI_W: {datos.get('RI_W', '-')}", ln=True)
+    # Línea 1: Aislamiento a Tierra
+    t1, t2, t3 = limpiar(datos.get('RT_TU')), limpiar(datos.get('RT_TV')), limpiar(datos.get('RT_TW'))
+    pdf.cell(0, 8, f"RT_TU: {t1}  |  RT_TV: {t2}  |  RT_TW: {t3}", ln=True)
+    
+    # Línea 2: Resistencia de Bobinado
+    r1, r2, r3 = limpiar(datos.get('RI_U')), limpiar(datos.get('RI_V')), limpiar(datos.get('RI_W'))
+    pdf.cell(0, 8, f"RI_U: {r1}  |  RI_V: {r2}  |  RI_W: {r3}", ln=True)
     
     pdf.ln(5)
-    pdf.multi_cell(0, 8, f"Observaciones: {datos.get('Descripcion', 'Sin observaciones')}")
+    obs = limpiar(datos.get('Descripcion'))
+    pdf.multi_cell(0, 8, f"Observaciones: {obs}")
     
     return pdf.output(dest='S').encode('latin-1', errors='replace')
 # Inicializamos variables de estado
@@ -886,6 +898,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
