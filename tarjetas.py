@@ -244,20 +244,35 @@ def generar_pdf_megado(datos):
     
     pdf.set_font("Arial", '', 10)
     
-    # Fila 1: TU / UV / U
-    pdf.cell(63, 8, f" RT_TU: {obtener_dato_seguro(datos, ['RT_TU', 'RT TU', 'RT-TU'])}", 1, 0)
-    pdf.cell(63, 8, f" RB_UV: {obtener_dato_seguro(datos, ['RB_UV', 'RB UV', 'RB-UV', 'RB_UV '])}", 1, 0)
-    pdf.cell(64, 8, f" RI_U: {obtener_dato_seguro(datos, ['RI_U', 'RI U', 'RI-U', 'RI_U '])}", 1, 1)
+   # --- FILA 1 ---
+    # Aislamiento: RT_TU1 | Bobinado: RB_VU1 | Fase: RI_U1U2
+    pdf.cell(63, 8, f" RT_TU: {obtener_dato_seguro(datos, ['RT_TU1', 'RT_TU'])}", 1, 0)
+    pdf.cell(63, 8, f" RB_VU: {obtener_dato_seguro(datos, ['RB_VU1', 'RB_VU', 'RB_UV1'])}", 1, 0)
+    pdf.cell(64, 8, f" RI_U: {obtener_dato_seguro(datos, ['RI_U1U2', 'RI_U1', 'RI_U'])}", 1, 1)
     
-    # Fila 2: TV / VW / V
-    pdf.cell(63, 8, f" RT_TV: {obtener_dato_seguro(datos, ['RT_TV', 'RT TV', 'RT-TV'])}", 1, 0)
-    pdf.cell(63, 8, f" RB_VW: {obtener_dato_seguro(datos, ['RB_VW', 'RB VW', 'RB-VW', 'RB_VW '])}", 1, 0)
-    pdf.cell(64, 8, f" RI_V: {obtener_dato_seguro(datos, ['RI_V', 'RI V', 'RI-V', 'RI_V '])}", 1, 1)
+    # --- FILA 2 ---
+    # Aislamiento: RT_TV1 | Bobinado: RB_WV1 | Fase: RI_V1V2
+    pdf.cell(63, 8, f" RT_TV: {obtener_dato_seguro(datos, ['RT_TV1', 'RT_TV'])}", 1, 0)
+    pdf.cell(63, 8, f" RB_VW: {obtener_dato_seguro(datos, ['RB_WV1', 'RB_VW', 'RB_VW1'])}", 1, 0)
+    pdf.cell(64, 8, f" RI_V: {obtener_dato_seguro(datos, ['RI_V1V2', 'RI_V1', 'RI_V'])}", 1, 1)
     
-    # Fila 3: TW / UW / W
-    pdf.cell(63, 8, f" RT_TW: {obtener_dato_seguro(datos, ['RT_TW', 'RT TW', 'RT-TW'])}", 1, 0)
-    pdf.cell(63, 8, f" RB_UW: {obtener_dato_seguro(datos, ['RB_UW', 'RB UW', 'RB-UW'])}", 1, 0)
-    pdf.cell(64, 8, f" RI_W: {obtener_dato_seguro(datos, ['RI_W', 'RI W', 'RI-W'])}", 1, 1)
+    # --- FILA 3 ---
+    # Aislamiento: RT_TW1 | Bobinado: RB_WU1 | Fase: RI_W1W2
+    pdf.cell(63, 8, f" RT_TW: {obtener_dato_seguro(datos, ['RT_TW1', 'RT_TW'])}", 1, 0)
+    pdf.cell(63, 8, f" RB_UW: {obtener_dato_seguro(datos, ['RB_WU1', 'RB_UW', 'RB_UW1'])}", 1, 0)
+    pdf.cell(64, 8, f" RI_W: {obtener_dato_seguro(datos, ['RI_W1W2', 'RI_W1', 'RI_W'])}", 1, 1)
+
+    # 3. Mediciones de Línea (Amperaje/Carga)
+    pdf.ln(5)
+    pdf.set_fill_color(230, 230, 230)
+    pdf.set_font("Arial", 'B', 10)
+    pdf.cell(0, 8, "MEDICIONES EN LÍNEA / CARGA", 1, 1, 'C', True)
+    
+    pdf.set_font("Arial", '', 10)
+    l1 = obtener_dato_seguro(datos, ['ML_L1'])
+    l2 = obtener_dato_seguro(datos, ['ML_L2'])
+    l3 = obtener_dato_seguro(datos, ['ML_L3'])
+    pdf.cell(0, 8, f" L1: {l1}  |  L2: {l2}  |  L3: {l3}", 1, 1, 'C')
     
     # 3. Observaciones
     pdf.ln(10)
@@ -932,6 +947,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
