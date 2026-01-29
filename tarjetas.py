@@ -450,48 +450,52 @@ elif modo == "Historial y QR":
                 responsable = fila.get('Responsable', 'S/D')
                 desc_completa = str(fila.get('Descripcion', '-'))
                 desc_corta = desc_completa[:30]
-                
-                # --- BOTONES DE DESCARGA Y DETALLES ---
-            with st.expander(f"🔍 Ver Detalle - {tarea} ({fecha})"):
-                st.write(f"**Responsable:** {responsable}")
-                st.write(f"**Descripción:** {desc_completa}")
-                
-                col_pdf, col_qr = st.columns(2)
 
-                with col_pdf: # <-- Esta es la línea 469. Ahora está alineada con col_pdf, col_qr
-                    # 1. Convertimos la fila a diccionario
-                    datos_pdf = fila.to_dict()
-                    
-                    # 2. SELECCIÓN DE PLANTILLA
-                    tipo_t = str(datos_pdf.get('Tipo_Tarea', ''))
-                    
-                    if "Lubricacion" in tipo_t or "Relubricacion" in tipo_t:
-                        pdf_archivo = generar_pdf_lubricacion(datos_pdf)
-                    elif "Mediciones" in tipo_t or "Megado" in tipo_t:
-                        pdf_archivo = generar_pdf_megado(datos_pdf)
-                    else:
-                        pdf_archivo = generar_pdf_ingreso(datos_pdf)
+                with st.expander(f"🔍 {fecha} - {tarea} ({desc_corta}...)"):
+                    # 1. Mostrar información en pantalla
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.write(f"**👤 Responsable:** {responsable}")
+                        st.write(f"**📝 Descripción:** {desc_completa}")
+                    with c2:
+                        st.write(f"**⚙️ Rod. LA:** {fila.get('Rodamiento_LA','-')}")
+                        st.write(f"**⚙️ Rod. LOA:** {fila.get('Rodamiento_LOA','-')}")
+                    st.driver()    
+                # 2. Generación de PDF y Botones
+                    col_pdf, col_qr = st.columns(2)
+                    with col_pdf:
+                        # Convertimos la fila actual a diccionario para las funciones
+                        datos_fila = fila.to_dict()
+                        tipo_t = str(datos_fila.get('Tipo_Tarea', '')).lower()
+                        
+                        # LÓGICA DE SELECCIÓN DE PLANTILLA
+                        try:
+                            if "lubric" in tipo_t or "grasa" in tipo_t:
+                                pdf_archivo = generar_pdf_lubricacion(datos_fila)
+                            elif "mega" in tipo_t or "medici" in tipo_t:
+                                pdf_archivo = generar_pdf_megado(datos_fila)
+                            else:
+                                pdf_archivo = generar_pdf_ingreso(datos_fila)
 
-                    # 3. BOTÓN DE DESCARGA
-                    if pdf_archivo:
-                        st.download_button(
-                            label="📄 Descargar Informe",
-                            data=pdf_archivo,
-                            file_name=f"Informe_{idx}.pdf",
-                            mime="application/pdf",
-                            key=f"pdf_hist_{idx}"
-                        )
+                            # 3. BOTÓN DE DESCARGA
+                            if pdf_archivo:
+                                st.download_button(
+                                    label="📄 Descargar Informe",
+                                    data=pdf_archivo,
+                                    file_name=f"Informe_{datos_fila.get('Tag','Motor')}_{idx}.pdf",
+                                    mime="application/pdf",
+                                    key=f"btn_pdf_hist_{idx}"
+                                 )
+                        except Exception as e:
+                            st.error(f"Error al generar PDF: {e}")
 
                     with col_qr:
-                        # 2. Botón para la Etiqueta Honeywell
-                        # Usamos los nombres de columnas de tu Excel: 'Tag', 'N_Serie', 'Potencia'
                         etiqueta_bytes = generar_etiqueta_honeywell(
                             fila.get('Tag', 'S/D'), 
                             fila.get('N_Serie', 'S/D'), 
                             fila.get('Potencia', 'S/D')
                         )
                         if etiqueta_bytes:
-                            st.image(etiqueta_bytes, width=150)
                             st.download_button(
                                 label="🖨️ Etiqueta QR",
                                 data=etiqueta_bytes,
@@ -882,6 +886,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
