@@ -240,7 +240,7 @@ def generar_pdf_megado(datos):
     # Encabezados de tabla
     pdf.cell(63, 8, "AISLAMIENTO (Tierra)", 1, 0, 'C', True)
     pdf.cell(63, 8, "BOBINADO (Entre sí)", 1, 0, 'C', True)
-    pdf.cell(64, 8, "RESISTENCIA FASE (Ohm)", 1, 1, 'C', True)
+    pdf.cell(64, 8, "RESISTENCIA INTERNA (Ohm)", 1, 1, 'C', True)
     
     pdf.set_font("Arial", '', 10)
     
@@ -266,7 +266,7 @@ def generar_pdf_megado(datos):
     pdf.ln(5)
     pdf.set_fill_color(230, 230, 230)
     pdf.set_font("Arial", 'B', 10)
-    pdf.cell(0, 8, "MEDICIONES EN LÍNEA / CARGA", 1, 1, 'C', True)
+    pdf.cell(0, 8, "MEDICIONES EN LÍNEA", 1, 1, 'C', True)
     
     pdf.set_font("Arial", '', 10)
     l1 = obtener_dato_seguro(datos, ['ML_L1'])
@@ -947,6 +947,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
