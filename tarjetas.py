@@ -9,6 +9,15 @@ from io import BytesIO
 from fpdf import FPDF
 import qrcode
 from PIL import Image, ImageDraw
+
+def obtener_dato_seguro(datos, claves_posibles):
+    """Busca en el diccionario 'datos' cualquier variante de nombre de columna."""
+    for clave in claves_posibles:
+        valor = datos.get(clave)
+        # Verifica que el valor no sea nulo, nan o vacío
+        if valor is not None and str(valor).lower() not in ['nan', '', 'none', '0', '0.0']:
+            return str(valor)
+    return "-"
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
         # 1. Tamaño exacto 60x40mm (480x320 px)
@@ -221,42 +230,41 @@ def generar_pdf_megado(datos):
     pdf = FPDF()
     pdf.add_page()
     
-    # Función interna para buscar datos aunque el nombre varíe un poco
-    def obtener_dato(lista_nombres):
-        for nombre in lista_nombres:
-            val = datos.get(nombre)
-            if val is not None and str(val).lower() != 'nan' and str(val).strip() != '':
-                return str(val)
-        return "-"
-
-    # 1. Cabecera
+    # 1. Cabecera con Logo
     agregar_cabecera_marpi(pdf, "REPORTE DE MEDICIONES ELÉCTRICAS", datos.get('Tag'))
     
-    # 2. Tabla de Mediciones (Diseño más claro)
+    # 2. Tabla de Mediciones
     pdf.set_fill_color(230, 230, 230)
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(95, 8, "MEDICIÓN DE AISLAMIENTO (M/G Ohms)", 1, 0, 'C', True)
-    pdf.cell(95, 8, "RESISTENCIA DE BOBINADO (Ohms)", 1, 1, 'C', True)
+    pdf.set_font("Arial", 'B', 10)
     
-    pdf.set_font("Arial", '', 11)
-    # Fila 1: TU y U
-    pdf.cell(95, 8, f" RT_TU: {obtener_dato(['RT_TU', 'RT TU', 'RT-TU'])}", 1, 0)
-    pdf.cell(95, 8, f" RI_U: {obtener_dato(['RI_U', 'RI U', 'RI-U'])}", 1, 1)
+    # Encabezados de tabla
+    pdf.cell(63, 8, "AISLAMIENTO (Tierra)", 1, 0, 'C', True)
+    pdf.cell(63, 8, "BOBINADO (Entre sí)", 1, 0, 'C', True)
+    pdf.cell(64, 8, "RESISTENCIA FASE (Ohm)", 1, 1, 'C', True)
     
-    # Fila 2: TV y V
-    pdf.cell(95, 8, f" RT_TV: {obtener_dato(['RT_TV', 'RT TV', 'RT-TV'])}", 1, 0)
-    pdf.cell(95, 8, f" RI_V: {obtener_dato(['RI_V', 'RI V', 'RI-V'])}", 1, 1)
+    pdf.set_font("Arial", '', 10)
     
-    # Fila 3: TW y W
-    pdf.cell(95, 8, f" RT_TW: {obtener_dato(['RT_TW', 'RT TW', 'RT-TW'])}", 1, 0)
-    pdf.cell(95, 8, f" RI_W: {obtener_dato(['RI_W', 'RI W', 'RI-W'])}", 1, 1)
+    # Fila 1: TU / UV / U
+    pdf.cell(63, 8, f" RT_TU: {obtener_dato_seguro(datos, ['RT_TU', 'RT TU', 'RT-TU'])}", 1, 0)
+    pdf.cell(63, 8, f" RB_UV: {obtener_dato_seguro(datos, ['RB_UV', 'RB UV', 'RB-UV', 'RB_UV '])}", 1, 0)
+    pdf.cell(64, 8, f" RI_U: {obtener_dato_seguro(datos, ['RI_U', 'RI U', 'RI-U', 'RI_U '])}", 1, 1)
+    
+    # Fila 2: TV / VW / V
+    pdf.cell(63, 8, f" RT_TV: {obtener_dato_seguro(datos, ['RT_TV', 'RT TV', 'RT-TV'])}", 1, 0)
+    pdf.cell(63, 8, f" RB_VW: {obtener_dato_seguro(datos, ['RB_VW', 'RB VW', 'RB-VW', 'RB_VW '])}", 1, 0)
+    pdf.cell(64, 8, f" RI_V: {obtener_dato_seguro(datos, ['RI_V', 'RI V', 'RI-V', 'RI_V '])}", 1, 1)
+    
+    # Fila 3: TW / UW / W
+    pdf.cell(63, 8, f" RT_TW: {obtener_dato_seguro(datos, ['RT_TW', 'RT TW', 'RT-TW'])}", 1, 0)
+    pdf.cell(63, 8, f" RB_UW: {obtener_dato_seguro(datos, ['RB_UW', 'RB UW', 'RB-UW'])}", 1, 0)
+    pdf.cell(64, 8, f" RI_W: {obtener_dato_seguro(datos, ['RI_W', 'RI W', 'RI-W'])}", 1, 1)
     
     # 3. Observaciones
     pdf.ln(10)
     pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 8, "OBSERVACIONES Y CONCLUSIONES:", ln=True)
-    pdf.set_font("Arial", '', 11)
-    obs = obtener_dato(['Descripcion', 'Observaciones', 'Detalle'])
+    pdf.cell(0, 8, "OBSERVACIONES TÉCNICAS:", ln=True)
+    pdf.set_font("Arial", '', 10)
+    obs = obtener_dato_seguro(datos, ['Descripcion', 'Observaciones', 'Detalle'])
     pdf.multi_cell(0, 7, obs)
     
     return pdf.output(dest='S').encode('latin-1', errors='replace')
@@ -924,6 +932,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
