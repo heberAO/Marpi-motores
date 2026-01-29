@@ -592,36 +592,33 @@ elif modo == "Historial y QR":
                             "Descripcion": raw_data.get('Descripcion') or raw_data.get('descripcion') or "S/D"
                         }
 
-                        # --- 3. SELECCIÓN DE PLANTILLA PDF SEGÚN EL TIPO DE TAREA ---
-                        datos_pdf = {k: ("-" if str(v).lower() == "nan" else v) for k, v in fila.to_dict().items()}
-                        datos_dict = fila.to_dict()
-                        tarea_actual = str(datos_dict.get('Tipo_Tarea', '')).strip()
+                       try:
+                           datos_dict = {k: ("-" if str(v).lower() == "nan" else v) for k, v in fila.to_dict().items()}
+                           tarea_actual = str(datos_dict.get('Tipo_Tarea', '')).strip()
+                            
+                            # Lógica de decisión de plantilla
+                           if "Lubricación" in tarea_actual:
+                               pdf_archivo = generar_pdf_lubricacion(datos_dict)
+                               nombre_archivo = f"Lubricacion_{tag}_{idx}.pdf"
+                           elif "Mediciones" in tarea_actual:
+                               pdf_archivo = generar_pdf_megado(datos_dict)
+                               nombre_archivo = f"Mediciones_{tag}_{idx}.pdf"
+                           else:
+                               pdf_archivo = generar_pdf_ingreso(datos_dict)
+                               nombre_archivo = f"Protocolo_{tag}_{idx}.pdf"
                         
-                        if "Lubricación" in tarea_actual:
-                            pdf_final = generar_pdf_lubricacion(datos_dict)
-                        else:
-                            pdf_final = generar_pdf_megado(datos_dict) if "Mediciones" in tarea_actual else generar_pdf_ingreso(datos_dict)
-                        else:
-                            pdf_archivo = generar_pdf_ingreso(datos_pdf)
+                            # --- BOTÓN DE DESCARGA ---
+                            if pdf_archivo:
+                                st.download_button(
+                                    label=f"📥 Descargar Informe de {tarea_actual}",
+                                    data=pdf_archivo,
+                                    file_name=nombre_archivo,
+                                    mime="application/pdf",
+                                    key=f"btn_hist_{idx}_{tarea_actual.replace(' ', '_')}"
+                                )
+                        
                         except Exception as e:
-                            # Este es el bloque que faltaba y por eso daba SyntaxError
-                            st.error(f"Error al generar el PDF: {e}")
-                            pdf_archivo = None
-
-                        # --- 4. BOTÓN DE DESCARGA (Dentro del primer try) ---
-                        if pdf_archivo:
-                            st.download_button(
-                                label=f"📄 Descargar {tipo_t}",
-                                data=pdf_archivo,
-                                file_name=f"Reporte_{datos_limpios['Tag']}.pdf",
-                                mime="application/pdf",
-                                key=f"btn_pdf_{idx}"
-                            )
-
-                    except Exception as e:
-                        st.error(f"Error al generar el PDF del historial en fila {idx}: {e}")
-        else:
-            st.warning("No hay intervenciones registradas para este motor.")
+                            st.error(f"Error al generar el PDF para la tarea {tarea_actual}: {e}")
 
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -932,6 +929,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
