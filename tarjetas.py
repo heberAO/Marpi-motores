@@ -460,7 +460,7 @@ elif modo == "Historial y QR":
                     with c2:
                         st.write(f"**⚙️ Rod. LA:** {fila.get('Rodamiento_LA','-')}")
                         st.write(f"**⚙️ Rod. LOA:** {fila.get('Rodamiento_LOA','-')}")
-                    st.dirider()    
+                    st.divider()    
                 # 2. Generación de PDF y Botones
                     col_pdf, col_qr = st.columns(2)
                     with col_pdf:
@@ -886,6 +886,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
