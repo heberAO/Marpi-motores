@@ -718,18 +718,18 @@ elif modo == "Relubricacion":
                 info = datos_tecnicos[0] if datos_tecnicos else {}
 
                 # 3. ARMAMOS EL DICCIONARIO 'nueva'
-                nueva = {
+               nueva = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
                     "Tag": tag_actual,
+                    "Tipo_Tarea": "Relubricacion", # Esto le dice al Historial qué PDF usar
                     "Responsable": resp_actual,
+                    "Rodamiento_LA": rod_la,
+                    "Rodamiento_LOA": rod_loa,
+                    "Gramos_LA": gr_real_la,
+                    "Gramos_LOA": gr_real_loa,
+                    "Tipo_Grasa": grasa_t,
                     "Notas": notas,
-                    "N_Serie": info.get("N_Serie", ""),
-                    "Potencia": info.get("Potencia", ""),
-                    "Tension": info.get("Tension", ""),
-                    "RPM": info.get("RPM", ""),
-                    "Carcasa": info.get("Carcasa", ""),
-                    "Rodamiento_LA": info.get("Rodamiento_LA", ""),
-                    "Rodamiento_LOA": info.get("Rodamiento_LOA", "")
+                    "Descripcion": f"Servicio de lubricación con {grasa_t}" # Solo una nota breve
                 }
                 
                 # --- AGREGAR DATOS ESPECÍFICOS SEGÚN EL MODO ---
@@ -893,6 +893,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
