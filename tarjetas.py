@@ -84,93 +84,105 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         return None
 st.set_page_config(page_title="Marpi Motores", layout="wide")
 
-def generar_pdf_reporte(datos, tipo_informe):
+# --- 2. FUNCIONES DE GENERACIÓN DE PDF ESPECIALIZADAS ---
+
+def generar_pdf_ingreso(datos):
     try:
-        from fpdf import FPDF
-        import pandas as pd
-
-        # Función de limpieza para que no aparezca "nan"
-        def val(clave):
-            v = datos.get(clave)
-            return str(v) if pd.notna(v) and str(v).lower() != "nan" and str(v) != "" else "-"
-
         pdf = FPDF()
         pdf.add_page()
-        
-        # 1. ENCABEZADO
-        pdf.set_font("Arial", 'B', 16)
-        pdf.set_text_color(0, 51, 102)
+        # Encabezado estándar Marpi
+        pdf.set_font("Arial", 'B', 16); pdf.set_text_color(0, 51, 102)
         pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='R')
-        pdf.set_font("Arial", 'B', 10)
-        pdf.cell(0, 5, f"FECHA: {val('Fecha')}", ln=True, align='R')
-        pdf.ln(5)
+        pdf.set_font("Arial", 'B', 10); pdf.cell(0, 5, f"FECHA: {datos.get('Fecha','-')}", ln=True, align='R')
+        
+        pdf.set_fill_color(0, 51, 102); pdf.set_text_color(255); pdf.set_font("Arial", 'B', 14)
+        pdf.cell(0, 12, f"PROTOCOLO DE ALTA Y REGISTRO: {datos.get('Tag','-')}", ln=True, align='C', fill=True)
+        pdf.ln(5); pdf.set_text_color(0)
 
-        # TÍTULO DINÁMICO (Usa 'Tipo_Tarea' o el nombre del informe)
-        titulo = val('Tipo_Tarea').upper() if val('Tipo_Tarea') != "-" else str(tipo_informe).upper()
-        pdf.set_fill_color(0, 51, 102); pdf.set_text_color(255)
-        pdf.set_font("Arial", 'B', 14)
-        pdf.cell(0, 12, f"INFORME DE {titulo}: {val('Tag')}", ln=True, align='C', fill=True)
-        pdf.ln(5)
-
-        # 2. DATOS DE PLACA (Mapeo exacto)
-        pdf.set_text_color(0); pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, " 1. ESPECIFICACIONES DEL EQUIPO", ln=True)
+        # Tabla de Datos de Placa
+        pdf.set_font("Arial", 'B', 11); pdf.cell(0, 8, " 1. ESPECIFICACIONES DE PLACA", ln=True)
         pdf.set_font("Arial", '', 10)
-        pdf.cell(35, 8, "TAG:", 1); pdf.cell(60, 8, val('Tag'), 1)
-        pdf.cell(35, 8, "N. SERIE:", 1); pdf.cell(60, 8, val('N_Serie'), 1, 1)
-        pdf.cell(35, 8, "POTENCIA:", 1); pdf.cell(60, 8, val('Potencia'), 1)
-        pdf.cell(35, 8, "TENSIÓN:", 1); pdf.cell(60, 8, val('Tension'), 1, 1)
-        pdf.cell(35, 8, "RPM:", 1); pdf.cell(60, 8, val('RPM'), 1)
-        pdf.cell(35, 8, "CARCASA:", 1); pdf.cell(60, 8, val('Carcasa'), 1, 1)
-        pdf.ln(5)
+        col_w = 45
+        pdf.cell(col_w, 8, "TAG:", 1); pdf.cell(50, 8, str(datos.get('Tag','-')), 1)
+        pdf.cell(col_w, 8, "N. SERIE:", 1); pdf.cell(50, 8, str(datos.get('N_Serie','-')), 1, 1)
+        pdf.cell(col_w, 8, "POTENCIA:", 1); pdf.cell(50, 8, str(datos.get('Potencia','-')), 1)
+        pdf.cell(col_w, 8, "TENSIÓN:", 1); pdf.cell(50, 8, str(datos.get('Tension','-')), 1, 1)
+        pdf.cell(col_w, 8, "RPM:", 1); pdf.cell(50, 8, str(datos.get('RPM','-')), 1)
+        pdf.cell(col_w, 8, "CARCASA:", 1); pdf.cell(50, 8, str(datos.get('Carcasa','-')), 1, 1)
+        
+        # Mediciones de Alta (9 campos)
+        pdf.ln(5); pdf.set_font("Arial", 'B', 11); pdf.cell(0, 8, " 2. MEDICIONES ELÉCTRICAS DE INGRESO", ln=True)
+        pdf.set_font("Arial", 'B', 9); pdf.set_fill_color(230,230,230)
+        pdf.cell(63, 7, "AISLAMIENTO (Tierra)", 1, 0, 'C', True); pdf.cell(63, 7, "BOBINADO (Entre sí)", 1, 0, 'C', True); pdf.cell(64, 7, "RESISTENCIA (Ohm)", 1, 1, 'C', True)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(63, 7, f"RT_TU: {datos.get('RT_TU','-')}", 1, 0); pdf.cell(63, 7, f"RB_UV: {datos.get('RB_UV','-')}", 1, 0); pdf.cell(64, 7, f"RI_U: {datos.get('RI_U','-')}", 1, 1)
+        pdf.cell(63, 7, f"RT_TV: {datos.get('RT_TV','-')}", 1, 0); pdf.cell(63, 7, f"RB_VW: {datos.get('RB_VW','-')}", 1, 0); pdf.cell(64, 7, f"RI_V: {datos.get('RI_V','-')}", 1, 1)
+        pdf.cell(63, 7, f"RT_TW: {datos.get('RT_TW','-')}", 1, 0); pdf.cell(63, 7, f"RB_UW: {datos.get('RB_UW','-')}", 1, 0); pdf.cell(64, 7, f"RI_W: {datos.get('RI_W','-')}", 1, 1)
 
-        # 3. SECCIÓN DE LUBRICACIÓN (Columnas: Rodamiento_LA, Gramos_LA, etc.)
-        pdf.set_font("Arial", 'B', 11); pdf.set_fill_color(230, 230, 230)
-        pdf.cell(0, 8, " 2. SISTEMA DE RODAMIENTOS Y LUBRICACIÓN", ln=True, fill=True)
-        
-        pdf.set_font("Arial", 'B', 10)
-        pdf.cell(95, 8, "LADO ACOPLE (LA)", 1, 0, 'C', True)
-        pdf.cell(95, 8, "LADO OPUESTO (LOA)", 1, 1, 'C', True)
-        
+        # Notas
+        pdf.ln(5); pdf.set_font("Arial", 'B', 11); pdf.cell(0, 8, " 3. DETALLES Y TRABAJOS", ln=True)
         pdf.set_font("Arial", '', 10)
-        pdf.cell(95, 10, f"Rodamiento: {val('Rodamiento_LA')}", 1, 0, 'C')
-        pdf.cell(95, 10, f"Rodamiento: {val('Rodamiento_LOA')}", 1, 1, 'C')
+        pdf.multi_cell(0, 7, f"DESCRIPCIÓN: {datos.get('Descripcion','-')}\nEXTERNO: {datos.get('Trabajos_Externos','-')}", border=1)
         
-        pdf.set_font("Arial", 'B', 11); pdf.set_text_color(180, 0, 0)
-        pdf.cell(95, 12, f"GRASA: {val('Tipo_Grasa')}", 1, 0, 'C')
-        pdf.cell(95, 12, f"GRASA: {val('Tipo_Grasa')}", 1, 1, 'C')
-        
-        pdf.cell(95, 10, f"CANTIDAD: {val('Gramos_LA')} g", 1, 0, 'C')
-        pdf.cell(95, 10, f"CANTIDAD: {val('Gramos_LOA')} g", 1, 1, 'C')
-        pdf.set_text_color(0); pdf.ln(5)
-
-        # 4. ENSAYOS ELÉCTRICOS (Columnas: RT_TU1, RI_U1U2, etc.)
-        pdf.set_font("Arial", 'B', 11); pdf.set_fill_color(230, 230, 230)
-        pdf.cell(0, 8, " 3. MEDICIONES ELÉCTRICAS", ln=True, fill=True)
-        pdf.set_font("Arial", 'B', 9)
-        pdf.cell(63, 8, "FASE", 1, 0, 'C', True); pdf.cell(63, 8, "AISLAMIENTO (Gohm)", 1, 0, 'C', True); pdf.cell(64, 8, "CONTINUIDAD (Ohm)", 1, 1, 'C', True)
-        
-        pdf.set_font("Arial", '', 10)
-        pdf.cell(63, 8, "U1-U2", 1, 0, 'C'); pdf.cell(63, 8, val('RT_TU1'), 1, 0, 'C'); pdf.cell(64, 8, val('RI_U1U2'), 1, 1, 'C')
-        pdf.cell(63, 8, "V1-V2", 1, 0, 'C'); pdf.cell(63, 8, val('RT_TV1'), 1, 0, 'C'); pdf.cell(64, 8, val('RI_V1V2'), 1, 1, 'C')
-        pdf.cell(63, 8, "W1-W2", 1, 0, 'C'); pdf.cell(63, 8, val('RT_TW1'), 1, 0, 'C'); pdf.cell(64, 8, val('RI_W1W2'), 1, 1, 'C')
-        pdf.ln(5)
-
-        # 5. OBSERVACIONES Y NOTAS (Muestra TODO lo escrito)
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, " 4. OBSERVACIONES Y TRABAJOS REALIZADOS", ln=True, fill=True)
-        pdf.set_font("Arial", '', 10)
-        
-        # Combinamos Descripcion y Notas para que no falte nada
-        texto_final = f"DESCRIPCIÓN: {val('Descripcion')}\n\nNOTAS ADICIONALES: {val('Notas')}"
-        pdf.multi_cell(0, 7, texto_final, border=1)
-
-        pdf.set_y(-30)
-        pdf.cell(120); pdf.cell(60, 8, f"Responsable: {val('Responsable')}", 0, 0, 'C')
-
         return pdf.output(dest='S').encode('latin-1', 'replace')
-    except Exception as e:
-        return None
+    except: return None
+
+def generar_pdf_lubricacion(datos):
+    try:
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", 'B', 16); pdf.set_text_color(0, 51, 102)
+        pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='R')
+        pdf.set_font("Arial", 'B', 14); pdf.set_fill_color(0, 51, 102); pdf.set_text_color(255)
+        pdf.cell(0, 12, f"REPORTE DE LUBRICACIÓN: {datos.get('Tag','-')}", ln=True, align='C', fill=True)
+        
+        pdf.ln(10); pdf.set_text_color(0); pdf.set_font("Arial", 'B', 11)
+        pdf.cell(95, 8, "LADO ACOPLE (LA)", 1, 0, 'C'); pdf.cell(95, 8, "LADO OPUESTO (LOA)", 1, 1, 'C')
+        pdf.set_font("Arial", '', 11)
+        pdf.cell(95, 12, f"ROD: {datos.get('Rodamiento_LA','-')}", 1, 0, 'C'); pdf.cell(95, 12, f"ROD: {datos.get('Rodamiento_LOA','-')}", 1, 1, 'C')
+        
+        # Grasa en Rojo como el original
+        pdf.set_text_color(200, 0, 0); pdf.set_font("Arial", 'B', 12)
+        pdf.cell(95, 12, f"INYECTADO: {datos.get('Gramos_LA','0')}g", 1, 0, 'C'); pdf.cell(95, 12, f"INYECTADO: {datos.get('Gramos_LOA','0')}g", 1, 1, 'C')
+        
+        pdf.ln(5); pdf.set_text_color(0); pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 8, "DETALLE DEL SERVICIO", ln=True)
+        pdf.set_font("Arial", '', 10)
+        pdf.multi_cell(0, 7, f"{datos.get('Descripcion','-')}\nNOTAS: {datos.get('Notas','-')}", border=1)
+        
+        return pdf.output(dest='S').encode('latin-1', 'replace')
+    except: return None
+
+def generar_pdf_megado(datos):
+    try:
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", 'B', 16); pdf.set_text_color(0, 51, 102)
+        pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='R')
+        pdf.set_fill_color(0, 51, 102); pdf.set_text_color(255); pdf.set_font("Arial", 'B', 14)
+        pdf.cell(0, 12, f"INFORME DE MEDICIONES ELÉCTRICAS: {datos.get('Tag','-')}", ln=True, align='C', fill=True)
+        
+        pdf.ln(5); pdf.set_text_color(0); pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 8, "📊 MEDICIONES DE CAMPO (15 PUNTOS)", ln=True, fill=True)
+        
+        # Grilla de 15 mediciones
+        pdf.set_font("Arial", 'B', 9); pdf.set_fill_color(240, 240, 240)
+        pdf.cell(63, 7, "AISLAMIENTO TIERRA (Gohm)", 1, 0, 'C', True); pdf.cell(63, 7, "ENTRE BOBINAS (Gohm)", 1, 0, 'C', True); pdf.cell(64, 7, "CONTINUIDAD (Ohm)", 1, 1, 'C', True)
+        pdf.set_font("Arial", '', 10)
+        pdf.cell(63, 7, f"T-U1: {datos.get('RT_TU1','-')}", 1, 0); pdf.cell(63, 7, f"W1-V1: {datos.get('RB_WV1','-')}", 1, 0); pdf.cell(64, 7, f"U1-U2: {datos.get('RI_U1U2','-')}", 1, 1)
+        pdf.cell(63, 7, f"T-V1: {datos.get('RT_TV1','-')}", 1, 0); pdf.cell(63, 7, f"W1-U1: {datos.get('RB_WU1','-')}", 1, 0); pdf.cell(64, 7, f"V1-V2: {datos.get('RI_V1V2','-')}", 1, 1)
+        pdf.cell(63, 7, f"T-W1: {datos.get('RT_TW1','-')}", 1, 0); pdf.cell(63, 7, f"V1-U1: {datos.get('RB_VU1','-')}", 1, 1)
+        
+        pdf.ln(5); pdf.set_font("Arial", 'B', 9); pdf.set_fill_color(240, 240, 240)
+        pdf.cell(95, 7, "MEGADO DE LÍNEA A TIERRA", 1, 0, 'C', True); pdf.cell(95, 7, "MEGADO ENTRE LÍNEAS", 1, 1, 'C', True)
+        pdf.set_font("Arial", '', 10)
+        pdf.cell(95, 7, f"T-L1: {datos.get('ML_L1','-')}", 1, 0); pdf.cell(95, 7, f"L1-L2: {datos.get('ML_L1L2','-')}", 1, 1)
+        pdf.cell(95, 7, f"T-L2: {datos.get('ML_L2','-')}", 1, 0); pdf.cell(95, 7, f"L1-L3: {datos.get('ML_L1L3','-')}", 1, 1)
+        pdf.cell(95, 7, f"T-L3: {datos.get('ML_L3','-')}", 1, 0); pdf.cell(95, 7, f"L2-L3: {datos.get('ML_L2L3','-')}", 1, 1)
+
+        pdf.ln(5); pdf.multi_cell(0, 7, f"OBSERVACIONES: {datos.get('Descripcion','-')}", border=1)
+        return pdf.output(dest='S').encode('latin-1', 'replace')
+    except: return None
 # Inicializamos variables de estado
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
 if "modo_manual" not in st.session_state: st.session_state.modo_manual = False
@@ -315,7 +327,7 @@ if modo == "Nuevo Registro":
             # ..# Guardar y generar...
                     df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                     conn.update(data=df_final)
-                    st.session_state.pdf_buffer = generar_pdf_reporte(nueva, "PROTOCOLO DE ALTA Y REGISTRO")
+                    st.session_state.pdf_buffer = generar_pdf_ingreso(nueva)
                     st.session_state.tag_actual = t
                     st.session_state.form_key += 1.
                     st.success(f"✅ Motor {t} registrado con éxito.")
@@ -509,9 +521,23 @@ elif modo == "Historial y QR":
                             "Descripcion": raw_data.get('Descripcion') or raw_data.get('descripcion') or raw_data.get('Observaciones') or "S/D"
                         }
                     
-                        # 3. LLAMADA AL PDF
+                       # --- 3. LLAMADA AL PDF (REEMPLAZO PARA EL HISTORIAL) ---
+                        # Extraemos el tipo de tarea para decidir qué función usar
                         tipo_t = str(raw_data.get('Tipo_Tarea', 'Informe Tecnico'))
-                        pdf_archivo = generar_pdf_reporte(datos_limpios, tipo_t)
+                        
+                        try:
+                            if "Mediciones" in tipo_t or "Megado" in tipo_t:
+                                # Usa la función de las 15 mediciones
+                                pdf_archivo = generar_pdf_megado(datos_limpios)
+                            elif "Lubricacion" in tipo_t or "Relubricacion" in tipo_t:
+                                # Usa la función de rodamientos y grasa (con texto rojo)
+                                pdf_archivo = generar_pdf_lubricacion(datos_limpios)
+                            else:
+                                # Por defecto, usa la de Alta/Registro Inicial
+                                pdf_archivo = generar_pdf_ingreso(datos_limpios)
+                        except Exception as e:
+                            st.error(f"Error al generar el PDF del historial: {e}")
+                            pdf_archivo = None
                     
                         if pdf_archivo:
                             st.download_button(
@@ -691,7 +717,7 @@ elif modo == "Relubricacion":
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
                 
-                st.session_state.pdf_buffer = generar_pdf_reporte(nueva, f"REPORTE DE {modo.upper()}")
+               st.session_state.pdf_buffer = generar_pdf_lubricacion(nueva)
                 st.session_state.tag_buffer = tag_actual
                 st.session_state.form_id += 1
                 st.success(f"✅ Registro de {tag_actual} guardado con éxito")
@@ -816,7 +842,7 @@ elif modo == "Mediciones de Campo":
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_final)
                 
-                st.session_state.pdf_buffer = generar_pdf_reporte(nueva_fila, "REPORTE DE MEGADO")
+                st.session_state.pdf_buffer = generar_pdf_megado(nueva_fila)
                 st.session_state.current_tag = t
                 st.success(f"✅ ¡Todo guardado! {t} actualizado con sus 15 mediciones.")
                 st.balloons()
@@ -835,6 +861,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
