@@ -339,8 +339,8 @@ if modo == "Nuevo Registro":
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
                     # --- LIMPIEZA Y GENERACIÓN ---
-                    if "pdf_buffer" in st.session_state:
-                        del st.session_state["pdf_buffer"]
+                if "pdf_buffer" in st.session_state:
+                     del st.session_state["pdf_buffer"]
                     
                     # AQUÍ USAMOS LA FUNCIÓN DE INGRESO PORQUE ES UN NUEVO REGISTRO
                     st.session_state.pdf_buffer = generar_pdf_ingreso(nueva)
