@@ -568,38 +568,28 @@ elif modo == "Historial y QR":
                     
                     if str(fila.get('Tipo_Grasa')) != 'nan':
                         st.write(f"🧪 **Grasa:** {fila.get('Tipo_Grasa')} ({fila.get('Gramos_LA', '0')}g / {fila.get('Gramos_LOA', '0')}g)")
-                    # --- 3. PROCESAMIENTO Y SELECCIÓN DE PLANTILLA ---
+
                     try:
-                        # 1. TRADUCTOR: Mapeamos los datos para que el PDF los encuentre siempre
                         raw_data = fila.to_dict()
+                        # Usamos tu 'Traductor' para asegurar que el dato llegue a la función
                         datos_dict = {
-                            "Fecha": raw_data.get('Fecha') or raw_data.get('fecha') or "-",
                             "Tag": raw_data.get('Tag') or raw_data.get('tag') or "-",
-                            "Responsable": raw_data.get('Responsable') or raw_data.get('Usuario') or "Marpi Motores",
-                            "N_Serie": raw_data.get('N_Serie') or raw_data.get('Serie') or "-",
-                            "Potencia": raw_data.get('Potencia') or "-",
-                            "Tension": raw_data.get('Tension') or raw_data.get('Tensión') or "-",
-                            "RPM": raw_data.get('RPM') or "-",
-                            "Carcasa": raw_data.get('Carcasa') or "-",
-                            # Datos Megado/Ingreso (Columnas con "1" y "12")
-                            "RT_TU1": raw_data.get('RT_TU1', '-'), "RT_TV1": raw_data.get('RT_TV1', '-'), "RT_TW1": raw_data.get('RT_TW1', '-'),
-                            "RB_VU1": raw_data.get('RB_VU1', '-'), "RB_WV1": raw_data.get('RB_WV1', '-'), "RB_WU1": raw_data.get('RB_WU1', '-'),
-                            "RI_U1U2": raw_data.get('RI_U1U2', '-'), "RI_V1V2": raw_data.get('RI_V1V2', '-'), "RI_W1W2": raw_data.get('RI_W1W2', '-'),
-                            "ML_L1": raw_data.get('ML_L1', '-'), "ML_L2": raw_data.get('ML_L2', '-'), "ML_L3": raw_data.get('ML_L3', '-'),
-                            # Datos Lubricación
-                            "Rodamiento_LA": raw_data.get('Rodamiento_LA') or "-",
-                            "Rodamiento_LOA": raw_data.get('Rodamiento_LOA') or "-",
-                            "Gramos_LA": raw_data.get('Gramos_LA') or "0",
-                            "Gramos_LOA": raw_data.get('Gramos_LOA') or "0",
+                            "Fecha": raw_data.get('Fecha') or raw_data.get('fecha') or "-",
+                            "Responsable": raw_data.get('Responsable') or raw_data.get('Usuario') or "-",
+                            "Rodamiento_LA": raw_data.get('Rodamiento_LA') or raw_data.get('Rodamiento LA') or "-",
+                            "Rodamiento_LOA": raw_data.get('Rodamiento_LOA') or raw_data.get('Rodamiento LOA') or "-",
+                            "Gramos_LA": raw_data.get('Gramos_LA') or raw_data.get('Gramos LA') or "0",
+                            "Gramos_LOA": raw_data.get('Gramos_LOA') or raw_data.get('Gramos LOA') or "0",
                             "Descripcion": raw_data.get('Descripcion') or raw_data.get('descripcion') or "-"
                         }
-
-                        # Limpiamos los 'nan' del diccionario final
+                    
+                        # Limpiamos los 'nan' de texto
                         datos_dict = {k: ("-" if str(v).lower() == "nan" else v) for k, v in datos_dict.items()}
                         tarea_actual = str(raw_data.get('Tipo_Tarea', '')).strip()
                     
-                        # 2. SELECCIÓN DE PLANTILLA
+                        # ESTA ES LA CLAVE: Aquí es donde el programa elige el camino
                         if "Lubricación" in tarea_actual:
+                            # Si entra aquí, el PDF DEBE ser distinto
                             pdf_archivo = generar_pdf_lubricacion(datos_dict)
                             nombre_archivo = f"Lubricacion_{tag}_{idx}.pdf"
                         elif "Mediciones" in tarea_actual:
@@ -608,19 +598,18 @@ elif modo == "Historial y QR":
                         else:
                             pdf_archivo = generar_pdf_ingreso(datos_dict)
                             nombre_archivo = f"Protocolo_{tag}_{idx}.pdf"
-
-                        # 3. BOTÓN DE DESCARGA
+                    
+                        # --- 4. BOTÓN DE DESCARGA (Key única para que refresque) ---
                         if pdf_archivo:
                             st.download_button(
-                                label=f"📥 Descargar Informe de {tarea_actual}",
+                                label=f"📥 Descargar {tarea_actual}",
                                 data=pdf_archivo,
                                 file_name=nombre_archivo,
                                 mime="application/pdf",
-                                key=f"btn_hist_{idx}_{tarea_actual.replace(' ', '_')}"
+                                key=f"final_btn_{idx}_{tarea_actual.replace(' ', '_')}"
                             )
-                    
                     except Exception as e:
-                        st.error(f"Error al generar el PDF para la tarea {tarea_actual}: {e}")
+                        st.error(f"Error crítico: {e}")
 
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -931,6 +920,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
