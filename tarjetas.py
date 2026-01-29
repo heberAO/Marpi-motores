@@ -544,22 +544,19 @@ elif modo == "Historial y QR":
 
                         # --- 3. SELECCIÓN DE PLANTILLA PDF SEGÚN EL TIPO DE TAREA ---
                         datos_pdf = fila.to_dict()
-                        tipo_t = str(datos_pdf.get('Tipo_Tarea', '')).strip().lower() # Limpiamos el texto
-                        
-                        pdf_archivo = None # Empezamos vacíos
-
+                        tipo_t = str(datos_pdf.get('Tipo_Tarea', '')).strip().lower()
+                        pdf_archivo = None # Limpiamos el texto
                         try:
                             if "lubric" in tipo_t or "grasa" in tipo_t:
                                 pdf_archivo = generar_pdf_lubricacion(datos_pdf)
                             elif "mega" in tipo_t or "medici" in tipo_t or "aisla" in tipo_t:
                                 pdf_archivo = generar_pdf_megado(datos_pdf)
-            
                             else:
                                 pdf_archivo = generar_pdf_ingreso(datos_pdf)
-                    except NameError as e:
-                        st.error(f"❌ Error: La función de PDF no existe: {e}")
-                    except Exception as e:
-                        st.error(f"❌ Error al generar PDF: {e}")
+                        except Exception as e:
+                            # Este es el bloque que faltaba y por eso daba SyntaxError
+                            st.error(f"Error al generar el PDF: {e}")
+                            pdf_archivo = None
 
                         # --- 4. BOTÓN DE DESCARGA (Dentro del primer try) ---
                         if pdf_archivo:
