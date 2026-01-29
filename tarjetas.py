@@ -154,29 +154,20 @@ def generar_pdf_ingreso(datos):
     except: return None
 
 def generar_pdf_lubricacion(datos):
-    try:
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", 'B', 16); pdf.set_text_color(0, 51, 102)
-        pdf.cell(0, 10, "MARPI MOTORES S.R.L.", ln=True, align='R')
-        pdf.set_font("Arial", 'B', 14); pdf.set_fill_color(0, 51, 102); pdf.set_text_color(255)
-        pdf.cell(0, 12, f"REPORTE DE LUBRICACIÓN: {datos.get('Tag','-')}", ln=True, align='C', fill=True)
-        
-        pdf.ln(10); pdf.set_text_color(0); pdf.set_font("Arial", 'B', 11)
-        pdf.cell(95, 8, "LADO ACOPLE (LA)", 1, 0, 'C'); pdf.cell(95, 8, "LADO OPUESTO (LOA)", 1, 1, 'C')
-        pdf.set_font("Arial", '', 11)
-        pdf.cell(95, 12, f"ROD: {datos.get('Rodamiento_LA','-')}", 1, 0, 'C'); pdf.cell(95, 12, f"ROD: {datos.get('Rodamiento_LOA','-')}", 1, 1, 'C')
-        
-        # Grasa en Rojo como el original
-        pdf.set_text_color(200, 0, 0); pdf.set_font("Arial", 'B', 12)
-        pdf.cell(95, 12, f"INYECTADO: {datos.get('Gramos_LA','0')}g", 1, 0, 'C'); pdf.cell(95, 12, f"INYECTADO: {datos.get('Gramos_LOA','0')}g", 1, 1, 'C')
-        
-        pdf.ln(5); pdf.set_text_color(0); pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 8, "DETALLE DEL SERVICIO", ln=True)
-        pdf.set_font("Arial", '', 10)
-        pdf.multi_cell(0, 7, f"{datos.get('Descripcion','-')}\nNOTAS: {datos.get('Notas','-')}", border=1)
-        
-        return pdf.output(dest='S').encode('latin-1', 'replace')
+    pdf = FPDF()
+    pdf.add_page()
+    # Título específico para que no diga "Alta y Registro"
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, "REPORTE DE LUBRICACIÓN Y MANTENIMIENTO", ln=True, align='C')
+    
+    # Solo mostrar datos relevantes
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(0, 10, f"TAG: {datos['Tag']}", ln=True)
+    pdf.cell(0, 10, f"Rodamiento LA: {datos.get('Rodamiento_LA', 'S/D')}", ln=True)
+    pdf.cell(0, 10, f"Grasa aplicada (g): {datos.get('Gramos_LA', '0')}", ln=True)
+    # ... (No incluir las tablas de RT_TU o RB_UV aquí)
+    
+    return pdf.output(dest='S').encode('latin-1')
     except: return None
 
 def generar_pdf_megado(datos):
@@ -452,14 +443,18 @@ elif modo == "Historial y QR":
                     with col_pdf:
                         # 1. Botón para el Informe PDF
                         datos_pdf = fila.to_dict()
-                        tarea = str(datos_pdf.get('Tipo_Tarea', ''))
-                        # Selector inteligente de función PDF
-                        if "Mediciones" in tarea or "Megado" in tarea:
-                            pdf_bytes = generar_pdf_megado(datos_pdf)
-                        elif "Lubricacion" in tarea or "Relubricacion" in tarea:
-                            pdf_bytes = generar_pdf_lubricacion(datos_pdf)
+                        # --- SELECCIÓN CRÍTICA DE PLANTILLA ---
+                        tipo_t = str(raw_data.get('Tipo_Tarea', ''))
+                        
+                        if "Lubricacion" in tipo_t or "Relubricacion" in tipo_t:
+                            # Esta función debe existir y estar diseñada solo para grasas
+                            pdf_archivo = generar_pdf_lubricacion(datos_limpios)
+                        elif "Mediciones" in tipo_t or "Megado" in tipo_t:
+                            # Esta función debe estar diseñada para aislamientos
+                            pdf_archivo = generar_pdf_megado(datos_limpios)
                         else:
-                            pdf_bytes = generar_pdf_ingreso(datos_pdf)
+                            # Solo los registros nuevos usan la plantilla que viste con 'nan'
+                            pdf_archivo = generar_pdf_ingreso(datos_limpios)
                         if pdf_bytes:
                             st.download_button(
                                 label="📄 Descargar Informe",
@@ -863,6 +858,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
