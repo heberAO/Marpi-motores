@@ -457,10 +457,13 @@ elif modo == "Historial y QR":
                             'RI_U1V1', 'RI_V1W1', 'RI_W1U1' # Agregá aquí los que falten hasta completar los 15
                         ]
                         detalles_foto = "<b>Mediciones Eléctricas:</b><br>"
-                        for c in campos_electricos:
+                        for i, c in enumerate(campos_electricos):
                             valor = f_limpia.get(c, '-')
                             if valor != '-':
                                 detalles_foto += f"{c}: {valor} | "
+                                # Cada 3 mediciones, mete un salto de línea para que sea legible
+                                if (i + 1) % 3 == 0:
+                                    detalles_foto += "<br>"
                     
                     elif "Lubricación" in tarea or "Relubricacion" in tarea:
                         detalles_foto = f"<b>Rodamiento LA:</b> {f_limpia.get('Rodamiento_LA')} ({f_limpia.get('Gramos_LA')}g)<br>"
@@ -481,17 +484,20 @@ elif modo == "Historial y QR":
 
                     # --- LLAMAMOS AL BOTÓN CON EL NUEVO CAMPO 'detalles_foto' ---
                    html_boton = boton_descarga_pro(
-                        tag_h, fecha, tarea, resp_h, 
+                        tag_h, 
+                        fecha, 
+                        tarea, 
+                        resp_h, 
                         f_limpia.get('N_Serie', '-'), 
                         f_limpia.get('Potencia', '-'), 
                         f_limpia.get('RPM', '-'),
                         detalles_foto, 
-                        info_extra, # <--- Enviamos taller y notas aquí
+                        info_extra, 
                         f_limpia.get('Descripcion', '-')
                     )
-                    components.html(html_boton, height=80)
                     
-                    st.divider() # Espacio para la siguiente ficha del historial
+                    components.html(html_boton, height=80)
+                    st.divider()
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     # ... (el resto de tu código de lubricación)
@@ -791,6 +797,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
