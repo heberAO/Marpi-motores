@@ -440,8 +440,8 @@ elif modo == "Historial y QR":
                                         st.caption(f"U1-U2: {f_limpia.get('RI_U1U2', '-')}")
                                         st.caption(f"W1-W2: {f_limpia.get('RI_W1W2', '-')}")
                             else:
-                                st.markdown("**🛠️ Detalles Técnicos:**")
-                                st.success(f"**Rod. LA:** {f_limpia.get('Rodamiento_LA', '-')}\n\n**Rod. LOA:** {f_limpia.get('Rodamiento_LOA', '-')}")
+                            st.markdown("**🛠️ Detalles Técnicos:**")
+                            st.success(f"**Rod. LA:** {f_limpia.get('Rodamiento_LA', '-')}\n\n**Rod. LOA:** {f_limpia.get('Rodamiento_LOA', '-')}")
 
                         st.divider()
                         st.markdown("**📝 Descripción/Observaciones:**")
@@ -453,14 +453,13 @@ elif modo == "Historial y QR":
                         if str(f_limpia.get('Notas', '-')) not in ['-', 'nan', '']:
                             st.caption(f"**📌 Notas:** {f_limpia.get('Notas')}")
 
-                   st.markdown('</div>', unsafe_allow_html=True) 
-                    # --- FIN DEL CONTENEDOR PARA CAPTURA ---
+                    # --- ESTAS LÍNEAS DE ABAJO ESTÁN TODAS ALINEADAS ---
+                    st.markdown('</div>', unsafe_allow_html=True) 
 
-                    # ESTAS LÍNEAS TIENEN QUE ESTAR ALINEADAS CON EL st.markdown DE ARRIBA
                     nombre_img = f"Motor_{tag_h}_{fecha}".replace("/", "-")
                     components.html(boton_descarga_pro(f"ficha_{idx}", nombre_img), height=75)
                     
-                    st.divider() # Espacio entre tarjetas
+                    st.divider()
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     # ... (el resto de tu código de lubricación)
@@ -760,6 +759,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
