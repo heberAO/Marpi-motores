@@ -256,9 +256,7 @@ if modo == "Nuevo Registro":
                 # 3. Limpiar y Generar PDF en el estado de la sesión
                 if "pdf_buffer" in st.session_state:
                     del st.session_state["pdf_buffer"]
-                
-                st.session_state.pdf_buffer = generar_pdf_ingreso(nueva)
-                st.session_state.archivo_nombre = f"Reparacion_{t}_{fecha_hoy.strftime('%d%m%Y')}" # <--- Nueva variable unificada
+        
                 st.session_state.form_key += 1
                 
                 # 4. Mostrar Éxito y Etiqueta
@@ -545,21 +543,6 @@ elif modo == "Relubricacion":
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
 
-                # --- LÓGICA DE GENERACIÓN DE PDF REFORZADA (UBICACIÓN EXACTA) ---
-                if "pdf_buffer" in st.session_state:
-                    del st.session_state["pdf_buffer"]
-
-                tipo_de_informe = nueva.get("Tipo_Tarea", "")
-
-                if tipo_de_informe == "Relubricacion":
-                    # ESTA LÍNEA ES LA QUE CAMBIA EL ENCABEZADO Y QUITA LOS NAN
-                    st.session_state.pdf_buffer = generar_pdf_lubricacion(nueva)
-                elif modo == "Mediciones de Campo":
-                    st.session_state.pdf_buffer = generar_pdf_megado(nueva)
-                else:
-                    st.session_state.pdf_buffer = generar_pdf_ingreso(nueva)
-                # --- FIN DE LA LÓGICA ---
-
                 # 5. Interfaz de usuario
                 st.session_state.tag_buffer = tag_actual
                 st.session_state.form_id += 1
@@ -571,11 +554,7 @@ elif modo == "Relubricacion":
                 st.rerun()
             else:
                 st.error("⚠️ Error: El TAG y el Responsable son obligatorios.")
-        # --- BOTÓN DE DESCARGA UNIFICADO ---
-    if st.session_state.get("pdf_buffer") is not None:
-        st.divider()
-        st.subheader("📥 Reporte Listo")
-        
+      
         # Usamos el nombre guardado o uno por defecto si fallara
         nombre_final = st.session_state.get("archivo_nombre", f"Reporte_Lubricacion_{tag_seleccionado}")
         
@@ -685,10 +664,8 @@ elif modo == "Mediciones de Campo":
 
                 # Guardar y generar PDF
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
-                conn.update(data=df_final)
+                conn.update(data=df_final) 
                 
-                st.session_state.pdf_buffer = generar_pdf_megado(nueva_fila)
-                st.session_state.archivo_nombre = f"Megado_{t}_{fecha_hoy.strftime('%d%m%Y')}" # <--- Nombre descriptivo
                 st.success(f"✅ ¡Todo guardado! Reporte listo para {t}")
                 st.balloons()
             else:
@@ -706,6 +683,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
