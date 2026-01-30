@@ -282,13 +282,12 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Preparamos la lista de búsqueda
+        # 1. Buscador
         df_completo['Busqueda_Combo'] = (
             df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
         )
         opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
         
-        # 2. Detección automática por QR
         query_tag = st.query_params.get("tag", "").upper()
         idx_q = 0
         if query_tag:
@@ -300,27 +299,25 @@ elif modo == "Historial y QR":
         seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
 
         if seleccion:
-            # Extraemos el TAG y filtramos los datos
             buscado = seleccion.split(" | ")[0].strip()
             st.session_state.tag_fijo = buscado
             historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
 
-            # --- PANEL SUPERIOR: QR Y DATOS DEL MOTOR ---
+            # --- PANEL SUPERIOR: QR Y DATOS ---
             with st.container(border=True):
                 col_qr, col_info = st.columns([1, 2])
-                # Ajusta esta URL a la de tu app real
-                url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}"
+                url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}" 
                 qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
                 
                 with col_qr:
-                    st.image(qr_api, width=150)
+                    st.image(qr_api, width=120)
                 with col_info:
-                    st.subheader(f" Ⓜ {buscado}")
-                    sn_display = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else 'S/D'
-                    st.caption(f"Número de Serie: {sn_display}")
+                    st.subheader(f"Ⓜ️ {buscado}")
+                    sn_txt = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else 'S/D'
+                    st.caption(f"Número de Serie: {sn_txt}")
 
-            # --- BOTONES DE ACCIÓN ---
-            st.subheader("➕ Cargar Nueva Tarea")
+            # --- BOTONES DE ACCIÓN RÁPIDA ---
+            st.subheader("➕ Nueva Tarea")
             c1, c2, c3 = st.columns(3)
             with c1:
                 if st.button("🛠️ Reparar", use_container_width=True):
@@ -339,21 +336,19 @@ elif modo == "Historial y QR":
             st.subheader("📜 Historial de Intervenciones")
             
             if not historial_motor.empty:
-                # Mostramos lo más nuevo primero
-                hist_m = historial_motor.iloc[::-1] 
+                hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
 
-                # --- EL BUCLE FOR (Bien indentado con 16 espacios) ---
                 for idx, fila in hist_m.iterrows():
                     tarea = str(fila.get('Tipo_Tarea', 'General'))
                     fecha = fila.get('Fecha', 'S/D')
                     tag_h = fila.get('Tag', buscado)
                     resp_h = fila.get('Responsable', 'S/D')
                     
-                    # Creamos la tarjeta visual
+                    # CARTA VISUAL
                     with st.container(border=True):
-                        # Encabezado con TAG y RESPONSABLE
+                        # Encabezado con TAG y RESPONSABLE (Lo que pediste)
                         st.markdown(f"### 🗓️ {fecha} - {tarea}")
-                        st.markdown(f"**🆔 TAG:** `{tag_h}` | **👤 RESP:** `{resp_h}`")
+                        st.markdown(f"**🆔 TAG:** `{tag_h}`  |  **👤 RESP:** `{resp_h}`")
                         
                         col1, col2 = st.columns(2)
                         
@@ -363,24 +358,24 @@ elif modo == "Historial y QR":
                             st.write(f"**Potencia:** {fila.get('Potencia', '-')}")
                             st.write(f"**RPM:** {fila.get('RPM', '-')}")
 
-                        # Lógica de colores según el tipo de trabajo
+                        # Lógica de colores según el trabajo
                         if "Lubricación" in tarea or "Relubricacion" in tarea:
                             with col2:
-                                st.markdown("**🛢️ Detalle Lubricación:**")
+                                st.markdown("**🛢️ Lubricación:**")
                                 st.info(f"**LA:** {fila.get('Rodamiento_LA', '-')} ({fila.get('Gramos_LA', '0')}g)\n\n**LOA:** {fila.get('Rodamiento_LOA', '-')} ({fila.get('Gramos_LOA', '0')}g)")
                         
                         elif "Mediciones" in tarea:
                             with col2:
-                                st.markdown("**⚡ Mediciones Eléctricas:**")
+                                st.markdown("**⚡ Mediciones:**")
                                 st.warning(f"**Aislamiento:** {fila.get('RT_TU1', '-')}\n\n**Resistencia:** {fila.get('RI_U1U2', '-')}")
                         
                         else: # Reparación o Alta
                             with col2:
-                                st.markdown("**🛠️ Detalles Técnicos:**")
+                                st.markdown("**🛠️ Reparación/Alta:**")
                                 st.success(f"**Rod. LA:** {fila.get('Rodamiento_LA', '-')}\n\n**Rod. LOA:** {fila.get('Rodamiento_LOA', '-')}")
 
                         st.markdown("**📝 Observaciones:**")
-                        st.write(fila.get('Descripcion', 'Sin notas adicionales.'))
+                        st.write(fila.get('Descripcion', 'Sin notas.'))
 
 # --- AHORA EL ELIF ESTÁ ALINEADO AL BORDE IZQUIERDO CORRECTAMENTE ---
 elif modo == "Relubricacion":
@@ -693,6 +688,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
