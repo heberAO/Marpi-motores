@@ -342,44 +342,56 @@ elif modo == "Historial y QR":
                 hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
 
                 for idx, fila in hist_m.iterrows():
-                    f_limpia = fila.fillna('-')
-                    tarea = str(fila.get('Tipo_Tarea', 'General'))
-                    fecha = fila.get('Fecha', 'S/D')
-                    tag_h = fila.get('Tag', buscado)
-                    resp_h = fila.get('Responsable', 'S/D')
-                    # CARTA VISUAL
-                    with st.container(border=True):
-                        # Encabezado con TAG y RESPONSABLE (Lo que pediste)
-                        t_mostrar = tarea if tarea != "-" else "Registro General"
-                        st.markdown(f"### 🗓️ {fecha} - {t_mostrar}")
-                        st.markdown(f"**🆔 TAG:** `{tag_h}`  |  **👤 RESP:** `{resp_h}`")
-                        
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            st.markdown("**📋 Datos de Placa:**")
-                            st.write(f"**Serie:** {fila.get('N_Serie', '-')}")
-                            st.write(f"**Potencia:** {fila.get('Potencia', '-')}")
-                            st.write(f"**RPM:** {fila.get('RPM', '-')}")
+    # 1. Limpiamos los datos para que no aparezca 'nan'
+    f_limpia = fila.fillna('-') 
+    
+    # 2. Extraemos variables asegurando que sean texto
+    tarea = str(f_limpia.get('Tipo_Tarea', '-')).strip()
+    fecha = str(f_limpia.get('Fecha', '-'))
+    tag_h = str(f_limpia.get('Tag', buscado))
+    resp_h = str(f_limpia.get('Responsable', '-'))
+    
+    # 3. Forzamos un título si viene vacío o con guion
+    if tarea == "-" or tarea.lower() == "nan":
+        titulo_card = "📝 Registro / Mantenimiento"
+    else:
+        titulo_card = f"🗓️ {tarea}"
 
-                        # Lógica de colores según el trabajo
-                        if "Lubricación" in tarea or "Relubricacion" in tarea:
-                            with col2:
-                                st.markdown("**🛢️ Lubricación:**")
-                                st.info(f"**LA:** {fila.get('Rodamiento_LA', '-')} ({fila.get('Gramos_LA', '0')}g)\n\n**LOA:** {fila.get('Rodamiento_LOA', '-')} ({fila.get('Gramos_LOA', '0')}g)")
-                        
-                        elif "Mediciones" in tarea:
-                            with col2:
-                                st.markdown("**⚡ Mediciones:**")
-                                st.warning(f"**Aislamiento:** {fila.get('RT_TU1', '-')}\n\n**Resistencia:** {fila.get('RI_U1U2', '-')}")
-                        
-                        else: # Reparación o Alta
-                            with col2:
-                                st.markdown("**🛠️ Reparación/Alta:**")
-                                st.success(f"**Rod. LA:** {fila.get('Rodamiento_LA', '-')}\n\n**Rod. LOA:** {fila.get('Rodamiento_LOA', '-')}")
+    with st.container(border=True):
+        # Título principal con la Fecha
+        st.markdown(f"### {titulo_card} - {fecha}")
+        
+        # Sub-encabezado con TAG y RESPONSABLE (Bien visible)
+        st.markdown(f"**🆔 TAG:** `{tag_h}`  |  **👤 RESP:** `{resp_h}`")
+        
+        st.divider() # Una línea para separar el encabezado del contenido
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**📋 Datos de Placa:**")
+            st.write(f"**Serie:** {f_limpia.get('N_Serie', '-')}")
+            st.write(f"**Potencia:** {f_limpia.get('Potencia', '-')}")
+            st.write(f"**RPM:** {f_limpia.get('RPM', '-')}")
 
-                        st.markdown("**📝 Observaciones:**")
-                        st.write(fila.get('Descripcion', 'Sin notas.'))
+        # --- Lógica de visualización por tipo de tarea ---
+        if "Lubricación" in tarea or "Relubricacion" in tarea:
+            with col2:
+                st.markdown("**🛢️ Detalle Lubricación:**")
+                st.info(f"**LA:** {f_limpia.get('Rodamiento_LA', '-')} ({f_limpia.get('Gramos_LA', '0')}g)\n\n**LOA:** {f_limpia.get('Rodamiento_LOA', '-')} ({f_limpia.get('Gramos_LOA', '0')}g)")
+        
+        elif "Mediciones" in tarea:
+            with col2:
+                st.markdown("**⚡ Mediciones:**")
+                st.warning(f"**Aislamiento:** {f_limpia.get('RT_TU1', '-')}\n\n**Resistencia:** {f_limpia.get('RI_U1U2', '-')}")
+        
+        else:
+            with col2:
+                st.markdown("**🛠️ Detalles Técnicos:**")
+                st.success(f"**Rod. LA:** {f_limpia.get('Rodamiento_LA', '-')}\n\n**Rod. LOA:** {f_limpia.get('Rodamiento_LOA', '-')}")
+
+        st.markdown("**📝 Observaciones:**")
+        st.write(f_limpia.get('Descripcion', 'Sin notas adicionales.'))
 
 # --- AHORA EL ELIF ESTÁ ALINEADO AL BORDE IZQUIERDO CORRECTAMENTE ---
 elif modo == "Relubricacion":
@@ -694,6 +706,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
