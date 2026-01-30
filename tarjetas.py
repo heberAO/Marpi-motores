@@ -9,6 +9,7 @@ from io import BytesIO
 from fpdf import FPDF
 import qrcode
 from PIL import Image, ImageDraw
+import streamlit.components.v1 as components
 
 def obtener_dato_seguro(datos, claves_posibles):
     """Busca en el diccionario 'datos' cualquier variante de nombre de columna."""
@@ -430,13 +431,19 @@ elif modo == "Historial y QR":
                         if str(f_limpia.get('Trabajos_Externos', '-')) not in ['-', 'nan', '']:
                             st.markdown("**🏗️ Trabajos Taller Externo:**")
                             st.info(f_limpia.get('Trabajos_Externos'))
-                    
+                        
                         # Notas de Lubricación (Solo si existen)
                         if str(f_limpia.get('Notas', '-')) not in ['-', 'nan', '']:
                             st.markdown("**📌 Notas adicionales:**")
                             st.caption(f_limpia.get('Notas'))
-                        
-                        st.divider() # Una línea para separar el encabezado del contenido
+
+                    # <--- EL CONTAINER TERMINA AQUÍ (Alineado con el with)
+
+                    # El botón y el divider van a la misma altura que el with
+                    if st.button(f"🖼️ Preparar Ficha #{idx}", key=f"btn_print_{idx}", use_container_width=True):
+                        st.success("📱 **¡Listo!** Sacale captura a la ficha de arriba para compartirla.")
+                    
+                    st.divider()
 
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -737,6 +744,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
