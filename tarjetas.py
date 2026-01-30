@@ -18,31 +18,6 @@ def boton_descarga_pro(id_c, nombre):
     html = '<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>'
     html += '<button onclick="' + script + '" style="' + btn_style + '">📥 GUARDAR FICHA EN GALERÍA</button>'
     return html
-    
-# LA FUNCIÓN VA AQUÍ (Fuera de cualquier bucle)
-def boton_descarga_pro(contenedor_id, nombre_archivo):
-    # El celeste empieza acá...
-    plantilla = """
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script>
-    function descargar() {
-        const element = window.parent.document.getElementById("ID_CONTENEDOR");
-        if (!element) return;
-        html2canvas(element, { scale: 2, backgroundColor: "#0e1117", useCORS: true }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = 'NOMBRE_ARCHIVO.png';
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        });
-    }
-    </script>
-    <button onclick="descargar()" style="width:100%; background-color:#007bff; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">
-        📥 GUARDAR FICHA EN GALERÍA
-    </button>
-    """ # ...y el celeste DEBE terminar acá con estas tres comillas.
-    
-    return plantilla.replace("ID_CONTENEDOR", contenedor_id).replace("NOMBRE_ARCHIVO", nombre_archivo)
-    
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
         # 1. Tamaño exacto 60x40mm (480x320 px)
@@ -746,6 +721,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
