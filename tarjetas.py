@@ -17,14 +17,25 @@ def crear_boton_descarga_imagen(contenedor_id, nombre_archivo):
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
     function descargarFicha() {{
+        // Buscamos el elemento en el documento padre
         const element = window.parent.document.getElementById("{contenedor_id}");
         if (element) {{
-            html2canvas(element).then(canvas => {{
-                const link = document.createElement('a');
-                link.download = '{nombre_archivo}.png';
-                link.href = canvas.toDataURL();
-                link.click();
-            }});
+            // Pequeño delay para asegurar que el render terminó
+            setTimeout(() => {{
+                html2canvas(element, {{
+                    backgroundColor: "#ffffff", // Forzamos fondo blanco para la imagen
+                    useCORS: true,
+                    scale: 2, // Mejor calidad de imagen
+                    logging: false
+                }}).then(canvas => {{
+                    const link = document.createElement('a');
+                    link.download = '{nombre_archivo}.png';
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
+                }});
+            }}, 500); // Espera medio segundo
+        }} else {{
+            alert("No se encontró la ficha para descargar");
         }}
     }}
     </script>
@@ -32,6 +43,7 @@ def crear_boton_descarga_imagen(contenedor_id, nombre_archivo):
         width: 100%; background-color: #007bff; color: white;
         padding: 15px; border: none; border-radius: 10px;
         cursor: pointer; font-weight: bold; font-size: 16px;
+        box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
     ">📥 GUARDAR FICHA EN GALERÍA</button>"""
     return js_code
 def obtener_dato_seguro(datos, claves_posibles):
@@ -743,6 +755,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
