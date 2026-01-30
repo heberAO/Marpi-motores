@@ -118,6 +118,9 @@ def calcular_grasa_marpi(rodamiento):
         return max(5, round(gramos, 1)) # Mínimo 5g para motores industriales
     except:
         return 0
+        
+if "archivo_nombre" not in st.session_state:
+    st.session_state.archivo_nombre = "Reporte_Motor"        
 # Inicializamos variables de estado
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
 if "modo_manual" not in st.session_state: st.session_state.modo_manual = False
@@ -255,7 +258,7 @@ if modo == "Nuevo Registro":
                     del st.session_state["pdf_buffer"]
                 
                 st.session_state.pdf_buffer = generar_pdf_ingreso(nueva)
-                st.session_state.tag_actual = t
+                st.session_state.archivo_nombre = f"Reparacion_{t}_{fecha_hoy.strftime('%d%m%Y')}" # <--- Nueva variable unificada
                 st.session_state.form_key += 1
                 
                 # 4. Mostrar Éxito y Etiqueta
@@ -555,18 +558,20 @@ elif modo == "Relubricacion":
                 st.rerun()
             else:
                 st.error("⚠️ Error: El TAG y el Responsable son obligatorios.")
-    # --- BOTÓN DE DESCARGA (CORREGIDO) ---
+        # --- BOTÓN DE DESCARGA UNIFICADO ---
     if st.session_state.get("pdf_buffer") is not None:
-        st.divider() # <--- Ves? Estos espacios son los que faltaban
-        st.subheader("📥 Reporte Listo para Descargar")
+        st.divider()
+        st.subheader("📥 Reporte Listo")
         
-        nombre_tag = st.session_state.get("tag_buffer", "Motor")
+        # Usamos el nombre guardado o uno por defecto si fallara
+        nombre_final = st.session_state.get("archivo_nombre", f"Reporte_Lubricacion_{tag_seleccionado}")
         
         st.download_button(
-            label=f"Hacé clic aquí para descargar Reporte {nombre_tag}",
+            label=f"💾 Descargar Reporte: {nombre_final}",
             data=st.session_state.pdf_buffer,
-            file_name=f"Reporte_{nombre_tag}.pdf",
-            mime="application/pdf"
+            file_name=f"{nombre_final}.pdf", # <--- Aquí se aplica el nombre
+            mime="application/pdf",
+            key="btn_descarga_lub"
         )
         
         if st.button("Limpiar y hacer otro registro"):
@@ -670,8 +675,8 @@ elif modo == "Mediciones de Campo":
                 conn.update(data=df_final)
                 
                 st.session_state.pdf_buffer = generar_pdf_megado(nueva_fila)
-                st.session_state.current_tag = t
-                st.success(f"✅ ¡Todo guardado! {t} actualizado con sus 15 mediciones.")
+                st.session_state.archivo_nombre = f"Megado_{t}_{fecha_hoy.strftime('%d%m%Y')}" # <--- Nombre descriptivo
+                st.success(f"✅ ¡Todo guardado! Reporte listo para {t}")
                 st.balloons()
             else:
                 st.error("⚠️ Falta TAG o Responsable.")
@@ -688,6 +693,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
