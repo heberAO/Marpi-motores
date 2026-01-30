@@ -12,39 +12,15 @@ from PIL import Image, ImageDraw
 import streamlit.components.v1 as components
 
 # LA FUNCIÓN VA AQUÍ (Fuera de cualquier bucle)
-def crear_boton_descarga_imagen(contenedor_id, nombre_archivo):
+def boton_imprimir_limpio(idx):
+    # Este botón simplemente abre la ficha en una versión para captura
     js_code = f"""
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script>
-    function descargarFicha() {{
-        // Buscamos el elemento en el documento padre
-        const element = window.parent.document.getElementById("{contenedor_id}");
-        if (element) {{
-            // Pequeño delay para asegurar que el render terminó
-            setTimeout(() => {{
-                html2canvas(element, {{
-                    backgroundColor: "#ffffff", // Forzamos fondo blanco para la imagen
-                    useCORS: true,
-                    scale: 2, // Mejor calidad de imagen
-                    logging: false
-                }}).then(canvas => {{
-                    const link = document.createElement('a');
-                    link.download = '{nombre_archivo}.png';
-                    link.href = canvas.toDataURL("image/png");
-                    link.click();
-                }});
-            }}, 500); // Espera medio segundo
-        }} else {{
-            alert("No se encontró la ficha para descargar");
-        }}
-    }}
-    </script>
-    <button onclick="descargarFicha()" style="
-        width: 100%; background-color: #007bff; color: white;
+    <button onclick="window.parent.location.reload()" style="
+        width: 100%; background-color: #28a745; color: white;
         padding: 15px; border: none; border-radius: 10px;
         cursor: pointer; font-weight: bold; font-size: 16px;
-        box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
-    ">📥 GUARDAR FICHA EN GALERÍA</button> """
+    ">🔍 ABRIR VISTA DE IMPRESIÓN / CAPTURA</button>
+    """
     return js_code
 def obtener_dato_seguro(datos, claves_posibles):
     """Busca en el diccionario 'datos' cualquier variante de nombre de columna."""
@@ -399,8 +375,20 @@ elif modo == "Historial y QR":
                     else:
                         titulo_card = f"🗓️ {tarea}"
 
-                    # --- INICIO DEL CONTENEDOR PARA CAPTURA ---
-                    st.markdown(f'<div id="ficha_{idx}" style="background-color: white; padding: 15px; border-radius: 10px;">', unsafe_allow_html=True)
+                    # BOTÓN DE STREAMLIT (Sencillo y efectivo)
+                    if st.button(f"📸 Preparar para Foto #{idx}", key=f"btn_foto_{idx}", use_container_width=True):
+                        st.session_state.captura_activa = idx
+                        st.rerun()
+
+                # FUERA DEL BUCLE: Si hay una captura activa, mostramos la ficha SOLA
+                if "captura_activa" in st.session_state and st.session_state.captura_activa is not None:
+                    idx_c = st.session_state.captura_activa
+                    # Aquí dibujás la ficha una vez más, pero solita en la pantalla
+                    st.success("📱 MODO CAPTURA: Sacá el pantallazo ahora y dale a 'Volver'")
+                    # (Dibujás el container aquí...)
+                    if st.button("⬅️ VOLVER AL HISTORIAL"):
+                        st.session_state.captura_activa = None
+                        st.rerun()
                     
                     with st.container(border=True):
                         st.markdown(f"### {titulo_card} - {fecha}")
@@ -754,6 +742,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
