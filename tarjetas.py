@@ -12,31 +12,46 @@ from PIL import Image, ImageDraw
 import streamlit.components.v1 as components
 
 def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, obs):
-    st_btn = 'width:100%;background:#007bff;color:white;padding:15px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;'
+    # Estilo del botón (Azul profesional)
+    st_btn = 'width:100%;background:#007bff;color:white;padding:15px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-family:sans-serif;'
     
-    # Construimos el HTML de la ficha con todos los campos
-    # He agregado una sección de 'DETALLES ESPECÍFICOS'
-    contenido = f"<h3>FICHA TECNICA: {tag}</h3>"
-    contenido += f"<p><b>Fecha:</b> {fecha} | <b>Tarea:</b> {tarea}</p>"
-    contenido += f"<p><b>Responsable:</b> {resp}</p><hr>"
-    contenido += f"<p><b>DATOS DE PLACA:</b><br>Serie: {serie} | Potencia: {pot} | RPM: {rpm}</p><hr>"
-    contenido += f"<p><b>DETALLES TECNICOS:</b><br>{detalles}</p><hr>"
-    contenido += f"<p><b>OBSERVACIONES:</b><br>{obs}</p>"
+    # HTML de la Ficha que se va a convertir en imagen
+    # Usamos celdas simples para que se vea ordenado
+    contenido = f"""
+    <div style='text-align:center;border-bottom:2px solid #444;margin-bottom:15px;'>
+        <h2 style='margin:0;color:#007bff;'>REPORTE DE MOTOR</h2>
+        <p style='margin:5px 0;font-size:14px;color:#888;'>Generado desde Gestión Marpi</p>
+    </div>
+    <p><b>🏷️ TAG:</b> {tag} | <b>📅 FECHA:</b> {fecha}</p>
+    <p><b>🛠️ TAREA:</b> {tarea}</p>
+    <p><b>👤 RESPONSABLE:</b> {resp}</p>
+    <div style='background:#1a1c23;padding:10px;border-radius:5px;margin:10px 0;'>
+        <b>📋 DATOS DE PLACA:</b><br>
+        Serie: {serie} | Potencia: {pot} | RPM: {rpm}
+    </div>
+    <div style='background:#1a1c23;padding:10px;border-radius:5px;margin:10px 0;'>
+        <b>⚡ DETALLES TÉCNICOS / MEDICIONES:</b><br>
+        {detalles}
+    </div>
+    <p><b>📝 OBSERVACIONES:</b><br>{obs}</p>
+    """
     
+    # El Script "mágico" (limpiado de errores de escape)
     js_code = f"""
     const el = document.createElement('div');
-    el.style = 'padding:30px;background:#0e1117;color:white;width:500px;font-family:sans-serif;line-height:1.6;';
-    el.innerHTML = '{contenido}';
+    el.style = 'padding:30px;background:#0e1117;color:white;width:550px;font-family:sans-serif;line-height:1.5;';
+    el.innerHTML = `{contenido}`;
     document.body.appendChild(el);
-    html2canvas(el,{{backgroundColor:'#0e1117'}}).then(canvas => {{
+    html2canvas(el,{{backgroundColor:'#0e1117',scale:2}}).then(canvas => {{
         const link = document.createElement('a');
-        link.download = 'Motor_{tag}_{fecha}.png';
-        link.href = canvas.toDataURL();
+        link.download = 'Reporte_{tag}_{fecha}.png';
+        link.href = canvas.toDataURL('image/png');
         link.click();
         document.body.removeChild(el);
     }});
     """
-    return f'<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><button onclick="{js_code}" style="{st_btn}">📥 GUARDAR CAPTURA COMPLETA</button>'
+    
+    return f'<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><button onclick="{js_code}" style="{st_btn}">📥 GUARDAR REPORTE EN GALERÍA</button>'
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
         # 1. Tamaño exacto 60x40mm (480x320 px)
@@ -760,6 +775,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
