@@ -13,18 +13,14 @@ import streamlit.components.v1 as components
 
 # LA FUNCIÓN VA AQUÍ (Fuera de cualquier bucle)
 def boton_descarga_pro(contenedor_id, nombre_archivo):
-    # Esta función DEBE estar definida arriba para que Python la conozca
+    # El celeste empieza acá...
     plantilla = """
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
     function descargar() {
         const element = window.parent.document.getElementById("ID_CONTENEDOR");
         if (!element) return;
-        html2canvas(element, {
-            scale: 2,
-            backgroundColor: "#0e1117",
-            useCORS: true
-        }).then(canvas => {
+        html2canvas(element, { scale: 2, backgroundColor: "#0e1117", useCORS: true }).then(canvas => {
             const link = document.createElement('a');
             link.download = 'NOMBRE_ARCHIVO.png';
             link.href = canvas.toDataURL("image/png");
@@ -35,16 +31,10 @@ def boton_descarga_pro(contenedor_id, nombre_archivo):
     <button onclick="descargar()" style="width:100%; background-color:#007bff; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">
         📥 GUARDAR FICHA EN GALERÍA
     </button>
-    """
+    """ # ...y el celeste DEBE terminar acá con estas tres comillas.
+    
     return plantilla.replace("ID_CONTENEDOR", contenedor_id).replace("NOMBRE_ARCHIVO", nombre_archivo)
-def obtener_dato_seguro(datos, claves_posibles):
-    """Busca en el diccionario 'datos' cualquier variante de nombre de columna."""
-    for clave in claves_posibles:
-        valor = datos.get(clave)
-        # Verifica que el valor no sea nulo, nan o vacío
-        if valor is not None and str(valor).lower() not in ['nan', '', 'none', '0', '0.0']:
-            return str(valor)
-    return "-"
+    
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
         # 1. Tamaño exacto 60x40mm (480x320 px)
@@ -748,6 +738,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
