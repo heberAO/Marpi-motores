@@ -317,9 +317,8 @@ elif modo == "Historial y QR":
                     st.rerun()
         
         else:
-            # ESTA ES LA PANTALLA DE CAPTURA
+            # ESTA ES LA PANTALLA DE CAPTURA (Alineada con el else)
             idx_c = st.session_state.captura_activa
-            # Usamos iloc o loc con cuidado para obtener la fila correcta
             fila_cap = hist_m.loc[idx_c].fillna('-')
             
             if st.button("⬅️ VOLVER AL HISTORIAL", use_container_width=True):
@@ -328,29 +327,24 @@ elif modo == "Historial y QR":
 
             st.success("✅ MODO CAPTURA: Sacá el pantallazo ahora")
             
-            # --- Aquí dibujás el container de la ficha (el que ya tenías) ---
+            # --- FICHA LIMPIA (Alineada con el bloque anterior) ---
             with st.container(border=True):
                 st.markdown(f"### 🗓️ {fila_cap.get('Tipo_Tarea')} - {fila_cap.get('Fecha')}")
-                st.write(f"**TAG:** {fila_cap.get('Tag')}")
-                st.write(f"**Observaciones:** {fila_cap.get('Descripcion')}")
-
-    else:
-        # Este else pertenece al primer IF (si no hay historial)
-        st.info("🔍 Ingresá un TAG arriba para ver el historial.")
-                    
-                    c1, c2 = st.columns(2)
-                    with c1:
-                        st.markdown("**📋 Datos de Placa:**")
-                        st.caption(f"Serie: {fila.get('N_Serie')}")
-                        st.caption(f"Potencia: {fila.get('Potencia')} HP")
-                    with c2:
-                        st.markdown("**🛠️ Rodamientos:**")
-                        st.caption(f"LA: {fila.get('Rodamiento_LA')}")
-                        st.caption(f"LOA: {fila.get('Rodamiento_LOA')}")
-                    
-                    st.divider()
-                    st.markdown("**📝 Observaciones:**")
-                    st.write(fila.get('Descripcion'))
+                st.markdown(f"**🆔 TAG:** `{fila_cap.get('Tag')}` | **👤 RESP:** {fila_cap.get('Responsable')}")
+                st.divider()
+                
+                # ACÁ ESTABA EL ERROR: Asegurate de que 'c1' esté justo debajo del with
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.markdown("**📋 Datos de Placa:**")
+                    st.write(f"Serie: {fila_cap.get('N_Serie')}")
+                with c2:
+                    st.markdown("**🛠️ Rodamientos:**")
+                    st.write(f"LA: {fila_cap.get('Rodamiento_LA')}")
+                
+                st.divider()
+                st.markdown("**📝 Observaciones:**")
+                st.write(fila_cap.get('Descripcion'))
                     
                     if str(fila.get('Trabajos_Externos')) != '-':
                         st.info(f"🏗️ **Taller:** {fila.get('Trabajos_Externos')}")
@@ -654,6 +648,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
