@@ -11,6 +11,29 @@ import qrcode
 from PIL import Image, ImageDraw
 import streamlit.components.v1 as components
 
+# LA FUNCIÓN VA AQUÍ (Fuera de cualquier bucle)
+def crear_boton_descarga_imagen(contenedor_id, nombre_archivo):
+    js_code = f"""
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+    function descargarFicha() {{
+        const element = window.parent.document.getElementById("{contenedor_id}");
+        if (element) {{
+            html2canvas(element).then(canvas => {{
+                const link = document.createElement('a');
+                link.download = '{nombre_archivo}.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            }});
+        }}
+    }}
+    </script>
+    <button onclick="descargarFicha()" style="
+        width: 100%; background-color: #007bff; color: white;
+        padding: 15px; border: none; border-radius: 10px;
+        cursor: pointer; font-weight: bold; font-size: 16px;
+    ">📥 GUARDAR FICHA EN GALERÍA</button>"""
+    return js_code
 def obtener_dato_seguro(datos, claves_posibles):
     """Busca en el diccionario 'datos' cualquier variante de nombre de columna."""
     for clave in claves_posibles:
@@ -350,30 +373,29 @@ elif modo == "Historial y QR":
                 hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
 
                 for idx, fila in hist_m.iterrows():
-                    # 1. Limpiamos los datos para que no aparezca 'nan'
+                    # 1. Limpiamos los datos
                     f_limpia = fila.fillna('-') 
                     
-                    # 2. Extraemos variables asegurando que sean texto
+                    # 2. Variables de texto
                     tarea = str(f_limpia.get('Tipo_Tarea', '-')).strip()
                     fecha = str(f_limpia.get('Fecha', '-'))
                     tag_h = str(f_limpia.get('Tag', buscado))
                     resp_h = str(f_limpia.get('Responsable', '-'))
                     
-                    # 3. Forzamos un título si viene vacío o con guion
                     if tarea == "-" or tarea.lower() == "nan":
                         titulo_card = "📝 Registro / Mantenimiento"
                     else:
                         titulo_card = f"🗓️ {tarea}"
-                
+
+                    # --- INICIO DEL CONTENEDOR PARA CAPTURA ---
+                    st.markdown(f'<div id="ficha_{idx}" style="background-color: white; padding: 15px; border-radius: 10px;">', unsafe_allow_html=True)
+                    
                     with st.container(border=True):
-                        # 1. Título y Encabezado Principal
                         st.markdown(f"### {titulo_card} - {fecha}")
                         st.markdown(f"**🆔 TAG:** `{tag_h}`  |  **👤 RESP:** `{resp_h}`")
                         st.divider() 
                         
-                        # 2. Cuerpo del Cartel (Dos columnas para datos técnicos)
                         col1, col2 = st.columns(2)
-                        
                         with col1:
                             st.markdown("**📋 Datos de Placa:**")
                             st.write(f"**Serie:** {f_limpia.get('N_Serie', '-')}")
@@ -381,70 +403,47 @@ elif modo == "Historial y QR":
                             st.write(f"**RPM:** {f_limpia.get('RPM', '-')}")
                     
                         with col2:
-                            # Lógica de visualización dinámica según la tarea
                             if "Lubricación" in tarea or "Relubricacion" in tarea:
                                 st.markdown("**🛢️ Detalle Lubricación:**")
                                 st.info(f"**LA:** {f_limpia.get('Rodamiento_LA', '-')} ({f_limpia.get('Gramos_LA', '0')}g)\n\n**LOA:** {f_limpia.get('Rodamiento_LOA', '-')} ({f_limpia.get('Gramos_LOA', '0')}g)")
                             elif "Mediciones" in tarea:
-                                with col2:
-                                    st.markdown("**⚡ Resumen Eléctrico:**")
-                                    # Mostramos lo más crítico: Aislamiento a Tierra
-                                    m_tierra = f_limpia.get('RT_TU1', '-')
-                                    st.warning(f"**Aislamiento T-U1:**\n\n{m_tierra} GΩ")
+                                st.markdown("**⚡ Resumen Eléctrico:**")
+                                m_tierra = f_limpia.get('RT_TU1', '-')
+                                st.warning(f"**Aislamiento T-U1:**\n\n{m_tierra} GΩ")
                                 
-                                # --- NUEVA SECCIÓN DESPLEGABLE PARA CELULARES ---
-                                with st.expander("🔍 Ver todas las Medidas Eléctricas"):
+                                with st.expander("🔍 Ver todas las Medidas"):
                                     m1, m2, m3 = st.columns(3)
                                     with m1:
-                                        st.write("**Aislamiento (GΩ)**")
                                         st.caption(f"T-V1: {f_limpia.get('RT_TV1', '-')}")
-                                        st.caption(f"T-U1: {f_limpia.get('RT_TU1', '-')}")
                                         st.caption(f"T-W1: {f_limpia.get('RT_TW1', '-')}")
                                     with m2:
-                                        st.write("**Bobinas (GΩ)**")
                                         st.caption(f"W1-V1: {f_limpia.get('RB_WV1', '-')}")
-                                        st.caption(f"W1-U1: {f_limpia.get('RB_WU1', '-')}")
                                         st.caption(f"V1-U1: {f_limpia.get('RB_VU1', '-')}")
                                     with m3:
-                                        st.write("**Continuidad (Ω)**")
                                         st.caption(f"U1-U2: {f_limpia.get('RI_U1U2', '-')}")
-                                        st.caption(f"V1-V2: {f_limpia.get('RI_V1V2', '-')}")
                                         st.caption(f"W1-W2: {f_limpia.get('RI_W1W2', '-')}")
-                                    
-                                    # Si hay datos de línea, los mostramos abajo
-                                    if f_limpia.get('ML_L1', '-') != '-':
-                                        st.divider()
-                                        st.write("**Megado de Línea (Cables)**")
-                                        st.code(f"T-L1: {f_limpia.get('ML_L1', '-')} | T-L2: {f_limpia.get('ML_L2', '-')} | T-L3: {f_limpia.get('ML_L3', '-')}")
                             else:
                                 st.markdown("**🛠️ Detalles Técnicos:**")
                                 st.success(f"**Rod. LA:** {f_limpia.get('Rodamiento_LA', '-')}\n\n**Rod. LOA:** {f_limpia.get('Rodamiento_LOA', '-')}")
-                    
-                        # 3. SECCIÓN DE TEXTO (Descripción, Notas y Trabajos Externos)
-                        st.markdown("---") # Una línea sutil
-                        
-                        # Descripción general
+
+                        st.divider()
                         st.markdown("**📝 Descripción/Observaciones:**")
                         st.write(f_limpia.get('Descripcion', 'Sin notas adicionales.'))
-                    
-                        # Trabajos Externos (Solo si existen)
-                        if str(f_limpia.get('Trabajos_Externos', '-')) not in ['-', 'nan', '']:
-                            st.markdown("**🏗️ Trabajos Taller Externo:**")
-                            st.info(f_limpia.get('Trabajos_Externos'))
                         
-                        # Notas de Lubricación (Solo si existen)
+                        if str(f_limpia.get('Trabajos_Externos', '-')) not in ['-', 'nan', '']:
+                            st.info(f"**🏗️ Taller Externo:** {f_limpia.get('Trabajos_Externos')}")
+                        
                         if str(f_limpia.get('Notas', '-')) not in ['-', 'nan', '']:
-                            st.markdown("**📌 Notas adicionales:**")
-                            st.caption(f_limpia.get('Notas'))
+                            st.caption(f"**📌 Notas:** {f_limpia.get('Notas')}")
 
-                    # <--- EL CONTAINER TERMINA AQUÍ (Alineado con el with)
+                    st.markdown('</div>', unsafe_allow_html=True) 
+                    # --- FIN DEL CONTENEDOR ---
 
-                    # El botón y el divider van a la misma altura que el with
-                    if st.button(f"🖼️ Preparar Ficha #{idx}", key=f"btn_print_{idx}", use_container_width=True):
-                        st.success("📱 **¡Listo!** Sacale captura a la ficha de arriba para compartirla.")
+                    # Botón de descarga
+                    nombre_img = f"Motor_{tag_h}_{fecha}".replace("/", "-")
+                    components.html(crear_boton_descarga_imagen(f"ficha_{idx}", nombre_img), height=75)
                     
-                    st.divider()
-
+                    st.divider() # Espacio entre tarjetas del historial
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     # ... (el resto de tu código de lubricación)
@@ -744,6 +743,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
