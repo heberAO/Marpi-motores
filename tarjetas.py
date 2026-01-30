@@ -8,7 +8,7 @@ import time
 from io import BytesIO
 from fpdf import FPDF
 import qrcode
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import streamlit.components.v1 as components
 
 def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, extra, obs):
@@ -497,6 +497,23 @@ elif modo == "Historial y QR":
                     )
                     
                     components.html(html_boton, height=80)
+                    # --- GENERAR IMAGEN DE ETIQUETA ---
+                    img_data = generar_etiqueta_honeywell(
+                        tag_h, 
+                        f_limpia.get('N_Serie', '-'), 
+                        f_limpia.get('Potencia', '-')
+                    )
+
+                    # --- MOSTRAR Y DESCARGAR ---
+                    with st.expander("🏷️ Ver Etiqueta para Impresión"):
+                        st.image(img_data, caption="Vista previa 60x30mm")
+                        st.download_button(
+                            label="📥 Descargar Etiqueta para PC42t",
+                            data=img_data,
+                            file_name=f"Etiqueta_{tag_h}.png",
+                            mime="image/png",
+                            use_container_width=True
+                        )
                     st.divider()
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -797,6 +814,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
