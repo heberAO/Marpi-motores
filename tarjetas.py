@@ -299,16 +299,6 @@ if modo == "Nuevo Registro":
             file_name=f"Etiqueta_{st.session_state.motor_registrado}.png",
             mime="image/png"
         )
-  
-¡Cuidado! Tenés un doble error de lógica y sangría que va a hacer que la app se rompa o se comporte de forma errática.
-
-Sangría (Indentation): El primer else (el que dice "Ingresá un TAG") está a la misma altura que el for, pero debería estar alineado con el primer if.
-
-Duplicación del else: Pusiste dos else para el mismo if. Python no sabe a cuál ir.
-
-Acá tenés el código limpio, alineado y corregido. Copiá y pegá este bloque tal cual:
-
-Python
 elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
@@ -664,6 +654,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
