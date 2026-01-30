@@ -44,7 +44,7 @@ def crear_boton_descarga_imagen(contenedor_id, nombre_archivo):
         padding: 15px; border: none; border-radius: 10px;
         cursor: pointer; font-weight: bold; font-size: 16px;
         box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
-    ">📥 GUARDAR FICHA EN GALERÍA</button>"""
+    ">📥 GUARDAR FICHA EN GALERÍA</button> """
     return js_code
 def obtener_dato_seguro(datos, claves_posibles):
     """Busca en el diccionario 'datos' cualquier variante de nombre de columna."""
@@ -450,7 +450,6 @@ elif modo == "Historial y QR":
 
                     st.markdown('</div>', unsafe_allow_html=True) 
                     # --- FIN DEL CONTENEDOR ---
-
                     # Botón de descarga
                     nombre_img = f"Motor_{tag_h}_{fecha}".replace("/", "-")
                     components.html(crear_boton_descarga_imagen(f"ficha_{idx}", nombre_img), height=75)
@@ -755,6 +754,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
