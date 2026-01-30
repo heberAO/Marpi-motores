@@ -249,35 +249,26 @@ if modo == "Nuevo Registro":
                     "Tipo_Tarea": "Nuevo Registro"
                 }
 
-                # 2. Guardar en la base de datos (Google Sheets / DataFrame)
-                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-                conn.update(data=df_final)
-
-                # 3. Limpiar y Generar PDF en el estado de la sesión
-                if "pdf_buffer" in st.session_state:
-                    del st.session_state["pdf_buffer"]
-        
-                st.session_state.form_key += 1
-                
-                # 4. Mostrar Éxito y Etiqueta
+               # Generamos la etiqueta pero la guardamos en el session_state
+                st.session_state.etiqueta_lista = generar_etiqueta_honeywell(t, sn, p)
+                st.session_state.motor_registrado = t
                 st.success(f"✅ Motor {t} registrado con éxito.")
-                
-                etiqueta_img = generar_etiqueta_honeywell(t, sn, p)
-                if etiqueta_img:
-                    st.info("📋 Etiqueta lista para Honeywell PC42")
-                    st.image(etiqueta_img, width=300)
-                    st.download_button(
-                        label="💾 Descargar Etiqueta (PNG)",
-                        data=etiqueta_img,
-                        file_name=f"Etiqueta_{t}.png",
-                        mime="image/png"
-                    )
-
-                # 5. Efecto visual (Opcional: No uses rerun aquí si quieres que descarguen el PDF)
                 st.balloons()
-                
             else:
                 st.error("⚠️ El TAG y el Responsable son obligatorios.")
+
+    # 2. EL BOTÓN DE DESCARGA VA AFUERA (Sin espacios al principio del 'if')
+    if "etiqueta_lista" in st.session_state and st.session_state.etiqueta_lista:
+        st.divider()
+        st.info(f"📋 Etiqueta lista para motor: {st.session_state.motor_registrado}")
+        st.image(st.session_state.etiqueta_lista, width=300)
+        
+        st.download_button(
+            label="💾 Descargar Etiqueta (PNG)",
+            data=st.session_state.etiqueta_lista,
+            file_name=f"Etiqueta_{st.session_state.motor_registrado}.png",
+            mime="image/png"
+        )
   
 elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
@@ -683,6 +674,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
