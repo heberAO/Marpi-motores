@@ -300,58 +300,57 @@ if modo == "Nuevo Registro":
             mime="image/png"
         )
 elif modo == "Historial y QR":
-    # --- BUSCADOR INTELIGENTE ---
-st.title("📚 Historial de Motores")
-
-# Un solo campo para buscar por cualquiera de los dos datos
-busqueda = st.text_input("🔍 Buscar por TAG o N° de Serie (Motor):", "").strip().upper()
-
-if busqueda:
-    # Filtramos: Buscamos si el dato está en 'Tag' O en 'N_Serie'
-    # .astype(str) asegura que no falle si hay números puros
-    hist_m = df[(df['Tag'].astype(str).str.upper() == busqueda) | 
-                (df['N_Serie'].astype(str).str.upper() == busqueda)]
+    st.title("📚 Historial de Motores")
     
-    if not hist_m.empty:
-        # Invertimos para ver lo último cargado arriba de todo
-        hist_m = hist_m.iloc[::-1]
+    # Un solo campo para buscar por cualquiera de los dos datos
+    busqueda = st.text_input("🔍 Buscar por TAG o N° de Serie (Motor):", "").strip().upper()
+    
+    if busqueda:
+        # Filtramos: Buscamos si el dato está en 'Tag' O en 'N_Serie'
+        # .astype(str) asegura que no falle si hay números puros
+        hist_m = df[(df['Tag'].astype(str).str.upper() == busqueda) | 
+                    (df['N_Serie'].astype(str).str.upper() == busqueda)]
         
-        st.success(f"✅ Se encontraron {len(hist_m)} registros para: {busqueda}")
-
-        for idx, fila in hist_m.iterrows():
-            f_limpia = fila.fillna('-')
+        if not hist_m.empty:
+            # Invertimos para ver lo último cargado arriba de todo
+            hist_m = hist_m.iloc[::-1]
             
-            # Diseño de la Tarjeta
-            with st.container(border=True):
-                col_t1, col_t2 = st.columns([3, 1])
-                with col_t1:
-                    st.markdown(f"### 🗓️ {f_limpia.get('Tipo_Tarea', 'Mantenimiento')}")
-                with col_t2:
-                    st.write(f"**Fecha:** {f_limpia.get('Fecha', '-')}")
+            st.success(f"✅ Se encontraron {len(hist_m)} registros para: {busqueda}")
+    
+            for idx, fila in hist_m.iterrows():
+                f_limpia = fila.fillna('-')
                 
-                st.markdown(f"**🆔 TAG:** `{f_limpia.get('Tag', '-')}`  |  **🔢 SERIE:** `{f_limpia.get('N_Serie', '-')}`")
-                st.divider()
-
-                c1, c2 = st.columns(2)
-                with c1:
-                    st.markdown("**📋 Datos:**")
-                    st.write(f"**Potencia:** {f_limpia.get('Potencia', '-')} HP")
-                    st.write(f"**RPM:** {f_limpia.get('RPM', '-')}")
-                with c2:
-                    st.markdown("**🛠️ Rodamientos:**")
-                    st.write(f"**LA:** {f_limpia.get('Rodamiento_LA', '-')}")
-                    st.write(f"**LOA:** {f_limpia.get('Rodamiento_LOA', '-')}")
-
-                st.divider()
-                st.markdown("**📝 Observaciones:**")
-                st.write(f_limpia.get('Descripcion', 'Sin notas.'))
-                
-                # Extras dinámicos
-                if f_limpia.get('Trabajos_Externos') != '-':
-                    st.info(f"🏗️ **Taller:** {f_limpia.get('Trabajos_Externos')}")
-
-   else:
-        st.error(f"❌ No se encontró nada para '{busqueda}'. Verificá el TAG o el N° de Serie.")
+                # Diseño de la Tarjeta
+                with st.container(border=True):
+                    col_t1, col_t2 = st.columns([3, 1])
+                    with col_t1:
+                        st.markdown(f"### 🗓️ {f_limpia.get('Tipo_Tarea', 'Mantenimiento')}")
+                    with col_t2:
+                        st.write(f"**Fecha:** {f_limpia.get('Fecha', '-')}")
+                    
+                    st.markdown(f"**🆔 TAG:** `{f_limpia.get('Tag', '-')}`  |  **🔢 SERIE:** `{f_limpia.get('N_Serie', '-')}`")
+                    st.divider()
+    
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.markdown("**📋 Datos:**")
+                        st.write(f"**Potencia:** {f_limpia.get('Potencia', '-')} HP")
+                        st.write(f"**RPM:** {f_limpia.get('RPM', '-')}")
+                    with c2:
+                        st.markdown("**🛠️ Rodamientos:**")
+                        st.write(f"**LA:** {f_limpia.get('Rodamiento_LA', '-')}")
+                        st.write(f"**LOA:** {f_limpia.get('Rodamiento_LOA', '-')}")
+    
+                    st.divider()
+                    st.markdown("**📝 Observaciones:**")
+                    st.write(f_limpia.get('Descripcion', 'Sin notas.'))
+                    
+                    # Extras dinámicos
+                    if f_limpia.get('Trabajos_Externos') != '-':
+                        st.info(f"🏗️ **Taller:** {f_limpia.get('Trabajos_Externos')}")
+    
+       else:
+            st.error(f"❌ No se encontró nada para '{busqueda}'. Verificá el TAG o el N° de Serie.")
                         
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -652,6 +651,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
