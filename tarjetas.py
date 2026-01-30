@@ -232,8 +232,8 @@ if modo == "Nuevo Registro":
 
         if btn_guardar:
             if t and resp:
-                # 1. Crear el diccionario de datos
-                nueva = {
+                # 1. Crear el diccionario con los datos exactos
+                nueva_fila = {
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
                     "Tag": t,
                     "N_Serie": sn,
@@ -249,11 +249,29 @@ if modo == "Nuevo Registro":
                     "Tipo_Tarea": "Nuevo Registro"
                 }
 
-               # Generamos la etiqueta pero la guardamos en el session_state
-                st.session_state.etiqueta_lista = generar_etiqueta_honeywell(t, sn, p)
-                st.session_state.motor_registrado = t
-                st.success(f"✅ Motor {t} registrado con éxito.")
-                st.balloons()
+                # 2. Convertir a DataFrame la nueva fila
+                df_nueva = pd.DataFrame([nueva_fila])
+
+                # 3. UNIR Y ACTUALIZAR (Paso crítico)
+                # Usamos st.session_state para asegurar que el cambio persista
+                df_actualizado = pd.concat([df_completo, df_nueva], ignore_index=True)
+                
+                try:
+                    # Intentar subir a Google Sheets
+                    conn.update(data=df_actualizado)
+                    
+                    # 4. LIMPIAR CACHÉ (Muy importante para que aparezca en el historial)
+                    st.cache_data.clear() 
+                    
+                    st.success(f"✅ Motor {t} guardado en la base de datos.")
+                    st.balloons()
+                    
+                    # Preparamos la etiqueta para descargar (AFUERA del formulario después)
+                    st.session_state.etiqueta_lista = generar_etiqueta_honeywell(t, sn, p)
+                    st.session_state.motor_registrado = t
+                    
+                except Exception as e:
+                    st.error(f"❌ Error al conectar con Google Sheets: {e}")
             else:
                 st.error("⚠️ El TAG y el Responsable son obligatorios.")
 
@@ -674,6 +692,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
