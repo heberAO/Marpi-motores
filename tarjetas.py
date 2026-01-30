@@ -12,30 +12,43 @@ from PIL import Image, ImageDraw
 import streamlit.components.v1 as components
 
 # LA FUNCIÓN VA AQUÍ (Fuera de cualquier bucle)
-def boton_descarga_pro(contenedor_id, html_contenido, nombre_archivo):
-    plantilla = """
+def generar_bloque_captura(idx, titulo, fecha, tag, resp, serie, potencia, rpm, detalle_mediciones, obs, nombre_archivo):
+    html = f"""
+    <div id="captura_{idx}" style="background-color: #0e1117; color: white; padding: 20px; border: 2px solid #333; border-radius: 15px; font-family: sans-serif;">
+        <h2 style="color: #007bff; margin-bottom: 5px;">{titulo} - {fecha}</h2>
+        <p><b>🆔 TAG:</b> {tag} | <b>👤 RESP:</b> {resp}</p>
+        <hr style="border: 0.5px solid #444;">
+        <div style="display: flex; justify-content: space-between;">
+            <div>
+                <p style="color: #ffa500;"><b>📋 Datos de Placa:</b></p>
+                <p>Serie: {serie}<br>Potencia: {potencia}<br>RPM: {rpm}</p>
+            </div>
+            <div style="background: #1a1c23; padding: 10px; border-radius: 10px; border: 1px solid #444; min-width: 200px;">
+                {detalle_mediciones}
+            </div>
+        </div>
+        <hr style="border: 0.5px solid #444;">
+        <p><b>📝 Descripción:</b></p>
+        <p style="font-size: 0.9em;">{obs}</p>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
-    function descargar() {
-        const element = window.parent.document.getElementById("ID_CONTENEDOR");
-        html2canvas(element, {
-            scale: 2,
-            backgroundColor: null, // Esto permite capturar el fondo oscuro
-            useCORS: true,
-            scrollY: -window.scrollY // Corrige desplazamientos en celulares
-        }).then(canvas => {
+    function descargar() {{
+        const element = document.getElementById("captura_{idx}");
+        html2canvas(element, {{ scale: 2, backgroundColor: "#0e1117" }}).then(canvas => {{
             const link = document.createElement('a');
-            link.download = 'NOMBRE_ARCHIVO.png';
+            link.download = '{nombre_archivo}.png';
             link.href = canvas.toDataURL("image/png");
             link.click();
-        });
-    }
+        }});
+    }}
     </script>
-    <button onclick="descargar()" style="width:100%; background-color:#007bff; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">
-        📥 GUARDAR FICHA EN GALERÍA
+    <button onclick="descargar()" style="width:100%; background-color:#007bff; color:white; padding:15px; border:none; border-radius:10px; margin-top:10px; font-weight:bold; cursor:pointer;">
+        📥 GUARDAR CAPTURA EN GALERÍA
     </button>
     """
-    return plantilla.replace("ID_CONTENEDOR", contenedor_id).replace("NOMBRE_ARCHIVO", nombre_archivo)
+    return html
 def obtener_dato_seguro(datos, claves_posibles):
     """Busca en el diccionario 'datos' cualquier variante de nombre de columna."""
     for clave in claves_posibles:
@@ -391,7 +404,7 @@ elif modo == "Historial y QR":
 
                     # --- INICIO DEL CONTENEDOR PARA CAPTURA ---
                     # Envolvemos TODO tu diseño en este div para que la foto lo encuentre
-                    st.markdown(f'<div id="ficha_{idx}" style="padding: 10px; border-radius: 10px;">', unsafe_allow_html=True)
+                    st.markdown(f'<div id="ficha_{idx}" style="background-color: #0e1117; padding: 10px; border-radius: 10px;">', unsafe_allow_html=True)
                     
                     with st.container(border=True):
                         st.markdown(f"### {titulo_card} - {fecha}")
@@ -443,12 +456,10 @@ elif modo == "Historial y QR":
                     st.markdown('</div>', unsafe_allow_html=True) 
                     # --- FIN DEL CONTENEDOR PARA CAPTURA ---
 
-                    # Botón de descarga: Asegurate de usar la función que NO pone el código celeste
-                    nombre_img = f"Motor_{tag_h}_{fecha}".replace("/", "-")
-                    # Llamada a la función
-                    components.html(boton_descarga_pro(f"ficha_{idx}", "", nombre_img), height=75)
+                   nombre_img = f"Motor_{tag_h}_{fecha}".replace("/", "-")
+                    components.html(boton_descarga_pro(f"ficha_{idx}", nombre_img), height=70)
                     
-                    st.divider() # Espacio entre tarjetas del historial
+                    st.divider()
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     # ... (el resto de tu código de lubricación)
@@ -748,6 +759,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
