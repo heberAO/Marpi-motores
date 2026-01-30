@@ -13,18 +13,17 @@ import streamlit.components.v1 as components
 
 # LA FUNCIÓN VA AQUÍ (Fuera de cualquier bucle)
 def boton_descarga_pro(contenedor_id, html_contenido, nombre_archivo):
-    # Usamos un texto simple y reemplazamos las variables manualmente
-    # Esto evita que Python se confunda con las llaves de JavaScript
     plantilla = """
-    <div id="ID_CONTENEDOR" style="padding:20px; background-color:white; color:black; border:1px solid #ccc; border-radius:10px; font-family:sans-serif;">
-        CONTENIDO_HTML
-    </div>
-    <br>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
     function descargar() {
-        const element = document.getElementById("ID_CONTENEDOR");
-        html2canvas(element, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
+        const element = window.parent.document.getElementById("ID_CONTENEDOR");
+        html2canvas(element, {
+            scale: 2,
+            backgroundColor: null, // Esto permite capturar el fondo oscuro
+            useCORS: true,
+            scrollY: -window.scrollY // Corrige desplazamientos en celulares
+        }).then(canvas => {
             const link = document.createElement('a');
             link.download = 'NOMBRE_ARCHIVO.png';
             link.href = canvas.toDataURL("image/png");
@@ -33,16 +32,10 @@ def boton_descarga_pro(contenedor_id, html_contenido, nombre_archivo):
     }
     </script>
     <button onclick="descargar()" style="width:100%; background-color:#007bff; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">
-        📥 GUARDAR CAPTURA EN GALERÍA
+        📥 GUARDAR FICHA EN GALERÍA
     </button>
     """
-    
-    # Reemplazamos las marcas por los valores reales
-    js_boton = plantilla.replace("ID_CONTENEDOR", contenedor_id)
-    js_boton = js_boton.replace("CONTENIDO_HTML", html_contenido)
-    js_boton = js_boton.replace("NOMBRE_ARCHIVO", nombre_archivo)
-    
-    return js_boton
+    return plantilla.replace("ID_CONTENEDOR", contenedor_id).replace("NOMBRE_ARCHIVO", nombre_archivo)
 def obtener_dato_seguro(datos, claves_posibles):
     """Busca en el diccionario 'datos' cualquier variante de nombre de columna."""
     for clave in claves_posibles:
@@ -398,7 +391,7 @@ elif modo == "Historial y QR":
 
                     # --- INICIO DEL CONTENEDOR PARA CAPTURA ---
                     # Envolvemos TODO tu diseño en este div para que la foto lo encuentre
-                    st.markdown(f'<div id="ficha_{idx}" style="background-color: white; padding: 10px; border-radius: 10px; border: 1px solid #eeeeee;">', unsafe_allow_html=True)
+                    st.markdown(f'<div id="ficha_{idx}" style="padding: 10px; border-radius: 10px;">', unsafe_allow_html=True)
                     
                     with st.container(border=True):
                         st.markdown(f"### {titulo_card} - {fecha}")
@@ -755,6 +748,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
