@@ -11,18 +11,21 @@ import qrcode
 from PIL import Image, ImageDraw
 import streamlit.components.v1 as components
 
-def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, obs):
-    # Estilo del botón
+def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, obs):
     st_btn = 'width:100%;background:#007bff;color:white;padding:15px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;'
     
-    # Contenido de la ficha (HTML limpio para la foto)
-    # Usamos comillas simples para que no se ponga celeste el editor
-    contenido = f"<h3>FICHA TECNICA: {tag}</h3><p><b>Fecha:</b> {fecha}</p><p><b>Tarea:</b> {tarea}</p><p><b>Resp:</b> {resp}</p><hr><p>Serie: {serie} | Pot: {pot} | RPM: {rpm}</p><hr><p><b>Obs:</b> {obs}</p>"
+    # Construimos el HTML de la ficha con todos los campos
+    # He agregado una sección de 'DETALLES ESPECÍFICOS'
+    contenido = f"<h3>FICHA TECNICA: {tag}</h3>"
+    contenido += f"<p><b>Fecha:</b> {fecha} | <b>Tarea:</b> {tarea}</p>"
+    contenido += f"<p><b>Responsable:</b> {resp}</p><hr>"
+    contenido += f"<p><b>DATOS DE PLACA:</b><br>Serie: {serie} | Potencia: {pot} | RPM: {rpm}</p><hr>"
+    contenido += f"<p><b>DETALLES TECNICOS:</b><br>{detalles}</p><hr>"
+    contenido += f"<p><b>OBSERVACIONES:</b><br>{obs}</p>"
     
-    # Script que genera la imagen
     js_code = f"""
     const el = document.createElement('div');
-    el.style = 'padding:20px;background:#0e1117;color:white;width:450px;font-family:sans-serif;';
+    el.style = 'padding:30px;background:#0e1117;color:white;width:500px;font-family:sans-serif;line-height:1.6;';
     el.innerHTML = '{contenido}';
     document.body.appendChild(el);
     html2canvas(el,{{backgroundColor:'#0e1117'}}).then(canvas => {{
@@ -33,8 +36,7 @@ def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, obs):
         document.body.removeChild(el);
     }});
     """
-    
-    return f'<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><button onclick="{js_code}" style="{st_btn}">📥 GUARDAR CAPTURA EN GALERÍA</button>'
+    return f'<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><button onclick="{js_code}" style="{st_btn}">📥 GUARDAR CAPTURA COMPLETA</button>'
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
         # 1. Tamaño exacto 60x40mm (480x320 px)
@@ -435,7 +437,15 @@ elif modo == "Historial y QR":
                     # Estas tres líneas se alinean con el 'with' de arriba
                     st.markdown('</div>', unsafe_allow_html=True) 
                     
-                    # Preparamos el botón con los datos de la fila actual
+                   # --- PREPARAMOS LOS DETALLES PARA LA FOTO ---
+                    if "Mediciones" in tarea:
+                        detalles_foto = f"Aislamiento T-U1: {f_limpia.get('RT_TU1', '-')} GΩ"
+                    elif "Lubricación" in tarea or "Relubricacion" in tarea:
+                        detalles_foto = f"LA: {f_limpia.get('Rodamiento_LA')} ({f_limpia.get('Gramos_LA')}g) | LOA: {f_limpia.get('Rodamiento_LOA')} ({f_limpia.get('Gramos_LOA')}g)"
+                    else:
+                        detalles_foto = f"Rod. LA: {f_limpia.get('Rodamiento_LA', '-')} | Rod. LOA: {f_limpia.get('Rodamiento_LOA', '-')}"
+
+                    # --- LLAMAMOS AL BOTÓN CON EL NUEVO CAMPO 'detalles_foto' ---
                     html_boton = boton_descarga_pro(
                         tag_h, 
                         fecha, 
@@ -444,10 +454,10 @@ elif modo == "Historial y QR":
                         f_limpia.get('N_Serie', '-'), 
                         f_limpia.get('Potencia', '-'), 
                         f_limpia.get('RPM', '-'),
+                        detalles_foto, # <--- ACÁ VAN LOS DATOS QUE FALTABAN
                         f_limpia.get('Descripcion', '-')
                     )
                     
-                    # Mostramos el botón
                     components.html(html_boton, height=80)
                     
                     st.divider() # Espacio para la siguiente ficha del historial
@@ -750,6 +760,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
