@@ -11,13 +11,30 @@ import qrcode
 from PIL import Image, ImageDraw
 import streamlit.components.v1 as components
 
-def boton_descarga_pro(id_c, nombre):
-    # Esta versión es 'anti-celeste' porque no usa comillas triples
-    btn_style = 'width:100%;background:#007bff;color:white;padding:15px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;'
-    script = "html2canvas(window.parent.document.getElementById('" + id_c + "'),{scale:2,backgroundColor:'#0e1117',useCORS:true}).then(c=>{let l=document.createElement('a');l.download='" + nombre + ".png';l.href=c.toDataURL();l.click();})"
-    html = '<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>'
-    html += '<button onclick="' + script + '" style="' + btn_style + '">📥 GUARDAR FICHA EN GALERÍA</button>'
-    return html
+def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, obs):
+    # Estilo del botón
+    st_btn = 'width:100%;background:#007bff;color:white;padding:15px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;'
+    
+    # Contenido de la ficha (HTML limpio para la foto)
+    # Usamos comillas simples para que no se ponga celeste el editor
+    contenido = f"<h3>FICHA TECNICA: {tag}</h3><p><b>Fecha:</b> {fecha}</p><p><b>Tarea:</b> {tarea}</p><p><b>Resp:</b> {resp}</p><hr><p>Serie: {serie} | Pot: {pot} | RPM: {rpm}</p><hr><p><b>Obs:</b> {obs}</p>"
+    
+    # Script que genera la imagen
+    js_code = f"""
+    const el = document.createElement('div');
+    el.style = 'padding:20px;background:#0e1117;color:white;width:450px;font-family:sans-serif;';
+    el.innerHTML = '{contenido}';
+    document.body.appendChild(el);
+    html2canvas(el,{{backgroundColor:'#0e1117'}}).then(canvas => {{
+        const link = document.createElement('a');
+        link.download = 'Motor_{tag}_{fecha}.png';
+        link.href = canvas.toDataURL();
+        link.click();
+        document.body.removeChild(el);
+    }});
+    """
+    
+    return f'<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><button onclick="{js_code}" style="{st_btn}">📥 GUARDAR CAPTURA EN GALERÍA</button>'
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
         # 1. Tamaño exacto 60x40mm (480x320 px)
@@ -417,11 +434,23 @@ elif modo == "Historial y QR":
 
                     # Estas tres líneas se alinean con el 'with' de arriba
                     st.markdown('</div>', unsafe_allow_html=True) 
-
-                    nombre_img = f"Motor_{tag_h}_{fecha}".replace("/", "-")
-                    components.html(boton_descarga_pro(f"ficha_{idx}", nombre_img), height=75)
                     
-                    st.divider()
+                    # Preparamos el botón con los datos de la fila actual
+                    html_boton = boton_descarga_pro(
+                        tag_h, 
+                        fecha, 
+                        tarea, 
+                        resp_h, 
+                        f_limpia.get('N_Serie', '-'), 
+                        f_limpia.get('Potencia', '-'), 
+                        f_limpia.get('RPM', '-'),
+                        f_limpia.get('Descripcion', '-')
+                    )
+                    
+                    # Mostramos el botón
+                    components.html(html_boton, height=80)
+                    
+                    st.divider() # Espacio para la siguiente ficha del historial
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     # ... (el resto de tu código de lubricación)
@@ -721,6 +750,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
