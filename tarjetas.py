@@ -564,22 +564,27 @@ elif modo == "Relubricacion":
             else:
                 st.error("⚠️ Error: El TAG y el Responsable son obligatorios.")
       
-        # Usamos el nombre guardado o uno por defecto si fallara
-        nombre_final = st.session_state.get("archivo_nombre", f"Reporte_Lubricacion_{tag_seleccionado}")
-        
-        # Reemplaza tu bloque de la línea 572 por este:
+       st.divider()
+    
+    # 6. LOS BOTONES DE DESCARGA Y LIMPIEZA VAN AQUÍ AFUERA
+    col_descarga, col_limpiar = st.columns(2)
+    
+    with col_descarga:
         if "pdf_buffer" in st.session_state and st.session_state.pdf_buffer is not None:
+            nombre_final = st.session_state.get("archivo_nombre", f"Reporte_Lubricacion_{tag_seleccionado}")
             st.download_button(
-                label=f"💾 Descargar Reporte: {nombre_final}",
+                label=f"📥 Descargar Reporte",
                 data=st.session_state.pdf_buffer,
                 file_name=f"{nombre_final}.pdf",
                 mime="application/pdf",
-                key="btn_descarga_lub"
+                key="btn_descarga_lub_final"
             )
         else:
-            st.warning("⚠️ No hay un reporte generado para descargar todavía. Guarda los datos primero.")
-        
-        if st.button("Limpiar y hacer otro registro"):
+            st.info("ℹ️ El reporte se habilitará después de guardar.")
+
+    with col_limpiar:
+        # AHORA ESTE BOTÓN YA NO DARÁ ERROR
+        if st.button("🔄 Limpiar y nuevo registro", use_container_width=True):
             st.session_state.pdf_buffer = None
             st.session_state.tag_buffer = None
             st.rerun()
@@ -695,6 +700,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
