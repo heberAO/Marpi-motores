@@ -345,9 +345,13 @@ elif modo == "Historial y QR":
                 st.divider()
                 st.markdown("**📝 Observaciones:**")
                 st.write(fila_cap.get('Descripcion'))
-                    
-                    if str(fila.get('Trabajos_Externos')) != '-':
-                        st.info(f"🏗️ **Taller:** {fila.get('Trabajos_Externos')}")
+                
+                # Todo alineado bajo la misma columna:
+                if str(fila_cap.get('Trabajos_Externos', '-')) not in ['-', 'nan', '']:
+                    st.info(f"🏗️ **Taller Externo:** {fila_cap.get('Trabajos_Externos')}")
+                
+                if str(fila_cap.get('Notas', '-')) not in ['-', 'nan', '']:
+                    st.caption(f"📌 **Notas:** {fila_cap.get('Notas')}")
                         
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -648,6 +652,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
