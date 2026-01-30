@@ -11,6 +11,14 @@ import qrcode
 from PIL import Image, ImageDraw
 import streamlit.components.v1 as components
 
+def boton_descarga_pro(id_c, nombre):
+    # Esta versión es 'anti-celeste' porque no usa comillas triples
+    btn_style = 'width:100%;background:#007bff;color:white;padding:15px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;'
+    script = "html2canvas(window.parent.document.getElementById('" + id_c + "'),{scale:2,backgroundColor:'#0e1117',useCORS:true}).then(c=>{let l=document.createElement('a');l.download='" + nombre + ".png';l.href=c.toDataURL();l.click();})"
+    html = '<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>'
+    html += '<button onclick="' + script + '" style="' + btn_style + '">📥 GUARDAR FICHA EN GALERÍA</button>'
+    return html
+    
 # LA FUNCIÓN VA AQUÍ (Fuera de cualquier bucle)
 def boton_descarga_pro(contenedor_id, nombre_archivo):
     # El celeste empieza acá...
@@ -382,7 +390,7 @@ elif modo == "Historial y QR":
 
                     # --- INICIO DEL CONTENEDOR PARA CAPTURA ---
                     # Envolvemos TODO tu diseño en este div para que la foto lo encuentre
-                    st.markdown(f'<div id="ficha_{idx}" style="background-color: #0e1117; padding: 10px; border-radius: 10px;">', unsafe_allow_html=True)
+                    st.markdown(f'<div id="ficha_{idx}" style="background-color: #0e1117; padding: 10px;">', unsafe_allow_html=True)
                     
                     with st.container(border=True):
                         st.markdown(f"### {titulo_card} - {fecha}")
@@ -738,6 +746,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
