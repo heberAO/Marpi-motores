@@ -567,13 +567,17 @@ elif modo == "Relubricacion":
         # Usamos el nombre guardado o uno por defecto si fallara
         nombre_final = st.session_state.get("archivo_nombre", f"Reporte_Lubricacion_{tag_seleccionado}")
         
-        st.download_button(
-            label=f"💾 Descargar Reporte: {nombre_final}",
-            data=st.session_state.pdf_buffer,
-            file_name=f"{nombre_final}.pdf", # <--- Aquí se aplica el nombre
-            mime="application/pdf",
-            key="btn_descarga_lub"
-        )
+        # Reemplaza tu bloque de la línea 572 por este:
+        if "pdf_buffer" in st.session_state and st.session_state.pdf_buffer is not None:
+            st.download_button(
+                label=f"💾 Descargar Reporte: {nombre_final}",
+                data=st.session_state.pdf_buffer,
+                file_name=f"{nombre_final}.pdf",
+                mime="application/pdf",
+                key="btn_descarga_lub"
+            )
+        else:
+            st.warning("⚠️ No hay un reporte generado para descargar todavía. Guarda los datos primero.")
         
         if st.button("Limpiar y hacer otro registro"):
             st.session_state.pdf_buffer = None
@@ -681,17 +685,17 @@ elif modo == "Mediciones de Campo":
                 st.error("⚠️ Falta TAG o Responsable.")
 
     # 3. BOTÓN DE DESCARGA (Afuera)
-    if st.session_state.pdf_buffer:
+    if st.session_state.get("pdf_buffer") is not None:
         st.download_button(
-            label="📥 DESCARGAR INFORME TÉCNICO COMPLETO",
+            label=f"📥 Descargar Reporte",
             data=st.session_state.pdf_buffer,
-            file_name=f"Informe_{st.session_state.current_tag}.pdf",
-            mime="application/pdf",
-            key="btn_descarga_final"
+            file_name=f"Reporte_{tag_seleccionado}.pdf",
+            mime="application/pdf"
         )
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
