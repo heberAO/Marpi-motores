@@ -482,8 +482,8 @@ elif modo == "Historial y QR":
                     if notas_ad not in ['-', 'nan', '']:
                         info_extra += f"<br><b>📌 Notas:</b> {notas_ad}"
 
-                    # --- LLAMAMOS AL BOTÓN CON EL NUEVO CAMPO 'detalles_foto' ---
-                   html_boton = boton_descarga_pro(
+                    # Esta línea debe estar verticalmente igual a los 'if' de arriba
+                    html_boton = boton_descarga_pro(
                         tag_h, 
                         fecha, 
                         tarea, 
@@ -797,6 +797,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
