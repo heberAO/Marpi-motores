@@ -365,48 +365,48 @@ elif modo == "Historial y QR":
                         titulo_card = f"🗓️ {tarea}"
                 
                     with st.container(border=True):
-                    # 1. Título y Encabezado Principal
-                    st.markdown(f"### {titulo_card} - {fecha}")
-                    st.markdown(f"**🆔 TAG:** `{tag_h}`  |  **👤 RESP:** `{resp_h}`")
-                    st.divider() 
+                        # 1. Título y Encabezado Principal
+                        st.markdown(f"### {titulo_card} - {fecha}")
+                        st.markdown(f"**🆔 TAG:** `{tag_h}`  |  **👤 RESP:** `{resp_h}`")
+                        st.divider() 
+                        
+                        # 2. Cuerpo del Cartel (Dos columnas para datos técnicos)
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            st.markdown("**📋 Datos de Placa:**")
+                            st.write(f"**Serie:** {f_limpia.get('N_Serie', '-')}")
+                            st.write(f"**Potencia:** {f_limpia.get('Potencia', '-')}")
+                            st.write(f"**RPM:** {f_limpia.get('RPM', '-')}")
                     
-                    # 2. Cuerpo del Cartel (Dos columnas para datos técnicos)
-                    col1, col2 = st.columns(2)
+                        with col2:
+                            # Lógica de visualización dinámica según la tarea
+                            if "Lubricación" in tarea or "Relubricacion" in tarea:
+                                st.markdown("**🛢️ Detalle Lubricación:**")
+                                st.info(f"**LA:** {f_limpia.get('Rodamiento_LA', '-')} ({f_limpia.get('Gramos_LA', '0')}g)\n\n**LOA:** {f_limpia.get('Rodamiento_LOA', '-')} ({f_limpia.get('Gramos_LOA', '0')}g)")
+                            elif "Mediciones" in tarea:
+                                st.markdown("**⚡ Mediciones:**")
+                                st.warning(f"**Aislamiento:** {f_limpia.get('RT_TU1', '-')}\n\n**Resistencia:** {f_limpia.get('RI_U1U2', '-')}")
+                            else:
+                                st.markdown("**🛠️ Detalles Técnicos:**")
+                                st.success(f"**Rod. LA:** {f_limpia.get('Rodamiento_LA', '-')}\n\n**Rod. LOA:** {f_limpia.get('Rodamiento_LOA', '-')}")
                     
-                    with col1:
-                        st.markdown("**📋 Datos de Placa:**")
-                        st.write(f"**Serie:** {f_limpia.get('N_Serie', '-')}")
-                        st.write(f"**Potencia:** {f_limpia.get('Potencia', '-')}")
-                        st.write(f"**RPM:** {f_limpia.get('RPM', '-')}")
-                
-                    with col2:
-                        # Lógica de visualización dinámica según la tarea
-                        if "Lubricación" in tarea or "Relubricacion" in tarea:
-                            st.markdown("**🛢️ Detalle Lubricación:**")
-                            st.info(f"**LA:** {f_limpia.get('Rodamiento_LA', '-')} ({f_limpia.get('Gramos_LA', '0')}g)\n\n**LOA:** {f_limpia.get('Rodamiento_LOA', '-')} ({f_limpia.get('Gramos_LOA', '0')}g)")
-                        elif "Mediciones" in tarea:
-                            st.markdown("**⚡ Mediciones:**")
-                            st.warning(f"**Aislamiento:** {f_limpia.get('RT_TU1', '-')}\n\n**Resistencia:** {f_limpia.get('RI_U1U2', '-')}")
-                        else:
-                            st.markdown("**🛠️ Detalles Técnicos:**")
-                            st.success(f"**Rod. LA:** {f_limpia.get('Rodamiento_LA', '-')}\n\n**Rod. LOA:** {f_limpia.get('Rodamiento_LOA', '-')}")
-                
-                    # 3. SECCIÓN DE TEXTO (Descripción, Notas y Trabajos Externos)
-                    st.markdown("---") # Una línea sutil
+                        # 3. SECCIÓN DE TEXTO (Descripción, Notas y Trabajos Externos)
+                        st.markdown("---") # Una línea sutil
+                        
+                        # Descripción general
+                        st.markdown("**📝 Descripción/Observaciones:**")
+                        st.write(f_limpia.get('Descripcion', 'Sin notas adicionales.'))
                     
-                    # Descripción general
-                    st.markdown("**📝 Descripción/Observaciones:**")
-                    st.write(f_limpia.get('Descripcion', 'Sin notas adicionales.'))
-                
-                    # Trabajos Externos (Solo si existen)
-                    if str(f_limpia.get('Trabajos_Externos', '-')) not in ['-', 'nan', '']:
-                        st.markdown("**🏗️ Trabajos Taller Externo:**")
-                        st.info(f_limpia.get('Trabajos_Externos'))
-                
-                    # Notas de Lubricación (Solo si existen)
-                    if str(f_limpia.get('Notas', '-')) not in ['-', 'nan', '']:
-                        st.markdown("**📌 Notas adicionales:**")
-                        st.caption(f_limpia.get('Notas'))
+                        # Trabajos Externos (Solo si existen)
+                        if str(f_limpia.get('Trabajos_Externos', '-')) not in ['-', 'nan', '']:
+                            st.markdown("**🏗️ Trabajos Taller Externo:**")
+                            st.info(f_limpia.get('Trabajos_Externos'))
+                    
+                        # Notas de Lubricación (Solo si existen)
+                        if str(f_limpia.get('Notas', '-')) not in ['-', 'nan', '']:
+                            st.markdown("**📌 Notas adicionales:**")
+                            st.caption(f_limpia.get('Notas'))
                         
                         st.divider() # Una línea para separar el encabezado del contenido
                         
@@ -737,6 +737,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
