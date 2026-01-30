@@ -11,35 +11,29 @@ import qrcode
 from PIL import Image, ImageDraw
 import streamlit.components.v1 as components
 
-def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, obs):
-    # Estilo del botón (Azul profesional)
+def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, extra, obs):
     st_btn = 'width:100%;background:#007bff;color:white;padding:15px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-family:sans-serif;'
     
-    # HTML de la Ficha que se va a convertir en imagen
-    # Usamos celdas simples para que se vea ordenado
     contenido = f"""
     <div style='text-align:center;border-bottom:2px solid #444;margin-bottom:15px;'>
-        <h2 style='margin:0;color:#007bff;'>REPORTE DE MOTOR</h2>
-        <p style='margin:5px 0;font-size:14px;color:#888;'>Generado desde Gestión Marpi</p>
+        <h2 style='margin:0;color:#007bff;'>REPORTE TÉCNICO DE MOTOR</h2>
     </div>
     <p><b>🏷️ TAG:</b> {tag} | <b>📅 FECHA:</b> {fecha}</p>
-    <p><b>🛠️ TAREA:</b> {tarea}</p>
-    <p><b>👤 RESPONSABLE:</b> {resp}</p>
-    <div style='background:#1a1c23;padding:10px;border-radius:5px;margin:10px 0;'>
-        <b>📋 DATOS DE PLACA:</b><br>
-        Serie: {serie} | Potencia: {pot} | RPM: {rpm}
+    <p><b>🛠️ TAREA:</b> {tarea} | <b>👤 RESP:</b> {resp}</p>
+    <hr>
+    <div style='background:#1a1c23;padding:10px;border-radius:5px;'>
+        <b>📋 DATOS DE PLACA:</b> Serie: {serie} | Pot: {pot} | RPM: {rpm}
     </div>
-    <div style='background:#1a1c23;padding:10px;border-radius:5px;margin:10px 0;'>
-        <b>⚡ DETALLES TÉCNICOS / MEDICIONES:</b><br>
+    <div style='background:#1a1c23;padding:10px;border-radius:5px;margin:10px 0; font-size:13px;'>
         {detalles}
+        <i style='color:#aaa;'>{extra}</i>
     </div>
     <p><b>📝 OBSERVACIONES:</b><br>{obs}</p>
     """
     
-    # El Script "mágico" (limpiado de errores de escape)
     js_code = f"""
     const el = document.createElement('div');
-    el.style = 'padding:30px;background:#0e1117;color:white;width:550px;font-family:sans-serif;line-height:1.5;';
+    el.style = 'padding:30px;background:#0e1117;color:white;width:600px;font-family:sans-serif;line-height:1.4;';
     el.innerHTML = `{contenido}`;
     document.body.appendChild(el);
     html2canvas(el,{{backgroundColor:'#0e1117',scale:2}}).then(canvas => {{
@@ -50,8 +44,7 @@ def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, obs):
         document.body.removeChild(el);
     }});
     """
-    
-    return f'<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><button onclick="{js_code}" style="{st_btn}">📥 GUARDAR REPORTE EN GALERÍA</button>'
+    return f'<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><button onclick="{js_code}" style="{st_btn}">📥 GUARDAR REPORTE COMPLETO</button>'
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
         # 1. Tamaño exacto 60x40mm (480x320 px)
@@ -453,26 +446,49 @@ elif modo == "Historial y QR":
                     st.markdown('</div>', unsafe_allow_html=True) 
                     
                    # --- PREPARAMOS LOS DETALLES PARA LA FOTO ---
-                    if "Mediciones" in tarea:
-                        detalles_foto = f"Aislamiento T-U1: {f_limpia.get('RT_TU1', '-')} GΩ"
+                    detalles_foto = ""
+                    
+                    if "Mediciones" in tarea or "Megado" in tarea:
+                        # Lista de todas las mediciones posibles (las 15 que mencionas)
+                        campos_electricos = [
+                            'RT_TU1', 'RT_TV1', 'RT_TW1', 
+                            'RB_WV1', 'RB_VU1', 'RB_UW1',
+                            'RI_U1U2', 'RI_V1V2', 'RI_W1W2',
+                            'RI_U1V1', 'RI_V1W1', 'RI_W1U1' # Agregá aquí los que falten hasta completar los 15
+                        ]
+                        detalles_foto = "<b>Mediciones Eléctricas:</b><br>"
+                        for c in campos_electricos:
+                            valor = f_limpia.get(c, '-')
+                            if valor != '-':
+                                detalles_foto += f"{c}: {valor} | "
+                    
                     elif "Lubricación" in tarea or "Relubricacion" in tarea:
-                        detalles_foto = f"LA: {f_limpia.get('Rodamiento_LA')} ({f_limpia.get('Gramos_LA')}g) | LOA: {f_limpia.get('Rodamiento_LOA')} ({f_limpia.get('Gramos_LOA')}g)"
+                        detalles_foto = f"<b>Rodamiento LA:</b> {f_limpia.get('Rodamiento_LA')} ({f_limpia.get('Gramos_LA')}g)<br>"
+                        detalles_foto += f"<b>Rodamiento LOA:</b> {f_limpia.get('Rodamiento_LOA')} ({f_limpia.get('Gramos_LOA')}g)"
+                    
                     else:
                         detalles_foto = f"Rod. LA: {f_limpia.get('Rodamiento_LA', '-')} | Rod. LOA: {f_limpia.get('Rodamiento_LOA', '-')}"
 
+                    # --- AGREGAMOS TRABAJOS EXTERNOS Y NOTAS SI EXISTEN ---
+                    info_extra = ""
+                    taller = str(f_limpia.get('Trabajos_Externos', '-'))
+                    notas_ad = str(f_limpia.get('Notas', '-'))
+                    
+                    if taller not in ['-', 'nan', '']:
+                        info_extra += f"<br><b>🏗️ Taller Externo:</b> {taller}"
+                    if notas_ad not in ['-', 'nan', '']:
+                        info_extra += f"<br><b>📌 Notas:</b> {notas_ad}"
+
                     # --- LLAMAMOS AL BOTÓN CON EL NUEVO CAMPO 'detalles_foto' ---
-                    html_boton = boton_descarga_pro(
-                        tag_h, 
-                        fecha, 
-                        tarea, 
-                        resp_h, 
+                   html_boton = boton_descarga_pro(
+                        tag_h, fecha, tarea, resp_h, 
                         f_limpia.get('N_Serie', '-'), 
                         f_limpia.get('Potencia', '-'), 
                         f_limpia.get('RPM', '-'),
-                        detalles_foto, # <--- ACÁ VAN LOS DATOS QUE FALTABAN
+                        detalles_foto, 
+                        info_extra, # <--- Enviamos taller y notas aquí
                         f_limpia.get('Descripcion', '-')
                     )
-                    
                     components.html(html_boton, height=80)
                     
                     st.divider() # Espacio para la siguiente ficha del historial
@@ -775,6 +791,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
