@@ -12,28 +12,37 @@ from PIL import Image, ImageDraw
 import streamlit.components.v1 as components
 
 # LA FUNCIÓN VA AQUÍ (Fuera de cualquier bucle)
-def crear_boton_descarga_imagen(contenedor_id, nombre_archivo):
-    js_code = f"""
+def boton_descarga_pro(contenedor_id, html_contenido, nombre_archivo):
+    # Usamos un texto simple y reemplazamos las variables manualmente
+    # Esto evita que Python se confunda con las llaves de JavaScript
+    plantilla = """
+    <div id="ID_CONTENEDOR" style="padding:20px; background-color:white; color:black; border:1px solid #ccc; border-radius:10px; font-family:sans-serif;">
+        CONTENIDO_HTML
+    </div>
+    <br>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
-    function descargarFicha() {{
-        const element = window.parent.document.getElementById("{contenedor_id}");
-        if (element) {{
-            html2canvas(element).then(canvas => {{
-                const link = document.createElement('a');
-                link.download = '{nombre_archivo}.png';
-                link.href = canvas.toDataURL();
-                link.click();
-            }});
-        }}
-    }}
+    function descargar() {
+        const element = document.getElementById("ID_CONTENEDOR");
+        html2canvas(element, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'NOMBRE_ARCHIVO.png';
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        });
+    }
     </script>
-    <button onclick="descargarFicha()" style="
-        width: 100%; background-color: #007bff; color: white;
-        padding: 15px; border: none; border-radius: 10px;
-        cursor: pointer; font-weight: bold; font-size: 16px;
-    ">📥 GUARDAR FICHA EN GALERÍA</button>"""
-    return js_code
+    <button onclick="descargar()" style="width:100%; background-color:#007bff; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">
+        📥 GUARDAR CAPTURA EN GALERÍA
+    </button>
+    """
+    
+    # Reemplazamos las marcas por los valores reales
+    js_boton = plantilla.replace("ID_CONTENEDOR", contenedor_id)
+    js_boton = js_boton.replace("CONTENIDO_HTML", html_contenido)
+    js_boton = js_boton.replace("NOMBRE_ARCHIVO", nombre_archivo)
+    
+    return js_boton
 def obtener_dato_seguro(datos, claves_posibles):
     """Busca en el diccionario 'datos' cualquier variante de nombre de columna."""
     for clave in claves_posibles:
@@ -388,7 +397,8 @@ elif modo == "Historial y QR":
                         titulo_card = f"🗓️ {tarea}"
 
                     # --- INICIO DEL CONTENEDOR PARA CAPTURA ---
-                    st.markdown(f'<div id="ficha_{idx}" style="background-color: white; padding: 15px; border-radius: 10px;">', unsafe_allow_html=True)
+                    # Envolvemos TODO tu diseño en este div para que la foto lo encuentre
+                    st.markdown(f'<div id="ficha_{idx}" style="background-color: white; padding: 10px; border-radius: 10px; border: 1px solid #eeeeee;">', unsafe_allow_html=True)
                     
                     with st.container(border=True):
                         st.markdown(f"### {titulo_card} - {fecha}")
@@ -411,6 +421,7 @@ elif modo == "Historial y QR":
                                 m_tierra = f_limpia.get('RT_TU1', '-')
                                 st.warning(f"**Aislamiento T-U1:**\n\n{m_tierra} GΩ")
                                 
+                                # Nota: Los expanders pueden salir cerrados en la captura, es normal en HTML2Canvas
                                 with st.expander("🔍 Ver todas las Medidas"):
                                     m1, m2, m3 = st.columns(3)
                                     with m1:
@@ -437,11 +448,12 @@ elif modo == "Historial y QR":
                             st.caption(f"**📌 Notas:** {f_limpia.get('Notas')}")
 
                     st.markdown('</div>', unsafe_allow_html=True) 
-                    # --- FIN DEL CONTENEDOR ---
+                    # --- FIN DEL CONTENEDOR PARA CAPTURA ---
 
-                    # Botón de descarga
+                    # Botón de descarga: Asegurate de usar la función que NO pone el código celeste
                     nombre_img = f"Motor_{tag_h}_{fecha}".replace("/", "-")
-                    components.html(crear_boton_descarga_imagen(f"ficha_{idx}", nombre_img), height=75)
+                    # Llamada a la función
+                    components.html(boton_descarga_pro(f"ficha_{idx}", "", nombre_img), height=75)
                     
                     st.divider() # Espacio entre tarjetas del historial
 elif modo == "Relubricacion":
@@ -743,6 +755,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
