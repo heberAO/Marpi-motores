@@ -303,146 +303,54 @@ if modo == "Nuevo Registro":
 elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
-    if not df_completo.empty:
-        # 1. Buscador
-        df_completo['Busqueda_Combo'] = (
-            df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
-        )
-        opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
-        
-        query_tag = st.query_params.get("tag", "").upper()
-        idx_q = 0
-        if query_tag:
-            for i, op in enumerate(opciones):
-                if op.startswith(query_tag + " |"):
-                    idx_q = i
-                    break
-        
-        seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
+    if not historial_motor.empty:
+            hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
 
-        if seleccion:
-            buscado = seleccion.split(" | ")[0].strip()
-            st.session_state.tag_fijo = buscado
-            historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
-
-            # --- PANEL SUPERIOR: QR Y DATOS ---
-            with st.container(border=True):
-                col_qr, col_info = st.columns([1, 2])
-                url_app = f"https://marpi-motores.streamlit.app/?tag={buscado}" 
-                qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
-                
-                with col_qr:
-                    st.image(qr_api, width=120)
-                with col_info:
-                    st.subheader(f"Ⓜ️ {buscado}")
-                    sn_txt = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else 'S/D'
-                    st.caption(f"Número de Serie: {sn_txt}")
-
-            # --- BOTONES DE ACCIÓN RÁPIDA ---
-            st.subheader("➕ Nueva Tarea")
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                if st.button("🛠️ Reparar", use_container_width=True):
-                    st.session_state.seleccion_manual = "Nuevo Registro"
-                    st.rerun()
-            with c2:
-                if st.button("🛢️ Engrasar", use_container_width=True):
-                    st.session_state.seleccion_manual = "Relubricacion"
-                    st.rerun()
-            with c3:
-                if st.button("⚡ Megar", use_container_width=True):
-                    st.session_state.seleccion_manual = "Mediciones de Campo"
-                    st.rerun() 
-
-            st.divider()
-            st.subheader("📜 Historial de Intervenciones")
-            
-            if not historial_motor.empty:
-                hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
-
+            # SI NO ESTAMOS EN MODO CAPTURA: Mostramos la lista de botones
+            if "captura_activa" not in st.session_state or st.session_state.captura_activa is None:
+                st.subheader("📜 Historial de Intervenciones")
                 for idx, fila in hist_m.iterrows():
-                    # 1. Limpiamos los datos
-                    f_limpia = fila.fillna('-') 
-                    
-                    # 2. Variables de texto
-                    tarea = str(f_limpia.get('Tipo_Tarea', '-')).strip()
-                    fecha = str(f_limpia.get('Fecha', '-'))
-                    tag_h = str(f_limpia.get('Tag', buscado))
-                    resp_h = str(f_limpia.get('Responsable', '-'))
-                    
-                    if tarea == "-" or tarea.lower() == "nan":
-                        titulo_card = "📝 Registro / Mantenimiento"
-                    else:
-                        titulo_card = f"🗓️ {tarea}"
-
-                    # BOTÓN DE STREAMLIT (Sencillo y efectivo)
-                    if st.button(f"📸 Preparar para Foto #{idx}", key=f"btn_foto_{idx}", use_container_width=True):
+                    tarea_btn = fila.get('Tipo_Tarea', 'Registro')
+                    fecha_btn = fila.get('Fecha', '-')
+                    if st.button(f"📸 Preparar Ficha: {tarea_btn} ({fecha_btn})", key=f"btn_{idx}", use_container_width=True):
                         st.session_state.captura_activa = idx
                         st.rerun()
+            
+            # SI EL MODO CAPTURA ESTÁ ACTIVO: Mostramos SOLO la ficha elegida
+            else:
+                idx_c = st.session_state.captura_activa
+                fila = hist_m.loc[idx_c].fillna('-')
+                
+                # Botón para salir del modo captura
+                if st.button("⬅️ VOLVER AL HISTORIAL", use_container_width=True):
+                    st.session_state.captura_activa = None
+                    st.rerun()
 
-                # FUERA DEL BUCLE: Si hay una captura activa, mostramos la ficha SOLA
-                if "captura_activa" in st.session_state and st.session_state.captura_activa is not None:
-                    idx_c = st.session_state.captura_activa
-                    # Aquí dibujás la ficha una vez más, pero solita en la pantalla
-                    st.success("📱 MODO CAPTURA: Sacá el pantallazo ahora y dale a 'Volver'")
-                    # (Dibujás el container aquí...)
-                    if st.button("⬅️ VOLVER AL HISTORIAL"):
-                        st.session_state.captura_activa = None
-                        st.rerun()
-                    
-                    with st.container(border=True):
-                        st.markdown(f"### {titulo_card} - {fecha}")
-                        st.markdown(f"**🆔 TAG:** `{tag_h}`  |  **👤 RESP:** `{resp_h}`")
-                        st.divider() 
-                        
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.markdown("**📋 Datos de Placa:**")
-                            st.write(f"**Serie:** {f_limpia.get('N_Serie', '-')}")
-                            st.write(f"**Potencia:** {f_limpia.get('Potencia', '-')}")
-                            st.write(f"**RPM:** {f_limpia.get('RPM', '-')}")
-                    
-                        with col2:
-                            if "Lubricación" in tarea or "Relubricacion" in tarea:
-                                st.markdown("**🛢️ Detalle Lubricación:**")
-                                st.info(f"**LA:** {f_limpia.get('Rodamiento_LA', '-')} ({f_limpia.get('Gramos_LA', '0')}g)\n\n**LOA:** {f_limpia.get('Rodamiento_LOA', '-')} ({f_limpia.get('Gramos_LOA', '0')}g)")
-                            elif "Mediciones" in tarea:
-                                st.markdown("**⚡ Resumen Eléctrico:**")
-                                m_tierra = f_limpia.get('RT_TU1', '-')
-                                st.warning(f"**Aislamiento T-U1:**\n\n{m_tierra} GΩ")
-                                
-                                with st.expander("🔍 Ver todas las Medidas"):
-                                    m1, m2, m3 = st.columns(3)
-                                    with m1:
-                                        st.caption(f"T-V1: {f_limpia.get('RT_TV1', '-')}")
-                                        st.caption(f"T-W1: {f_limpia.get('RT_TW1', '-')}")
-                                    with m2:
-                                        st.caption(f"W1-V1: {f_limpia.get('RB_WV1', '-')}")
-                                        st.caption(f"V1-U1: {f_limpia.get('RB_VU1', '-')}")
-                                    with m3:
-                                        st.caption(f"U1-U2: {f_limpia.get('RI_U1U2', '-')}")
-                                        st.caption(f"W1-W2: {f_limpia.get('RI_W1W2', '-')}")
-                            else:
-                                st.markdown("**🛠️ Detalles Técnicos:**")
-                                st.success(f"**Rod. LA:** {f_limpia.get('Rodamiento_LA', '-')}\n\n**Rod. LOA:** {f_limpia.get('Rodamiento_LOA', '-')}")
+                st.success("✅ MODO CAPTURA: Sacá el pantallazo ahora")
 
-                        st.divider()
-                        st.markdown("**📝 Descripción/Observaciones:**")
-                        st.write(f_limpia.get('Descripcion', 'Sin notas adicionales.'))
-                        
-                        if str(f_limpia.get('Trabajos_Externos', '-')) not in ['-', 'nan', '']:
-                            st.info(f"**🏗️ Taller Externo:** {f_limpia.get('Trabajos_Externos')}")
-                        
-                        if str(f_limpia.get('Notas', '-')) not in ['-', 'nan', '']:
-                            st.caption(f"**📌 Notas:** {f_limpia.get('Notas')}")
-
-                    st.markdown('</div>', unsafe_allow_html=True) 
-                    # --- FIN DEL CONTENEDOR ---
-                    # Botón de descarga
-                    nombre_img = f"Motor_{tag_h}_{fecha}".replace("/", "-")
-                    components.html(crear_boton_descarga_imagen(f"ficha_{idx}", nombre_img), height=75)
+                # --- LA FICHA LIMPIA ---
+                with st.container(border=True):
+                    st.markdown(f"### 🗓️ {fila.get('Tipo_Tarea', 'Registro')} - {fila.get('Fecha')}")
+                    st.markdown(f"**🆔 TAG:** `{fila.get('Tag')}` | **👤 RESP:** {fila.get('Responsable')}")
+                    st.divider()
                     
-                    st.divider() # Espacio entre tarjetas del historial
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.markdown("**📋 Datos de Placa:**")
+                        st.caption(f"Serie: {fila.get('N_Serie')}")
+                        st.caption(f"Potencia: {fila.get('Potencia')} HP")
+                    with c2:
+                        st.markdown("**🛠️ Rodamientos:**")
+                        st.caption(f"LA: {fila.get('Rodamiento_LA')}")
+                        st.caption(f"LOA: {fila.get('Rodamiento_LOA')}")
+                    
+                    st.divider()
+                    st.markdown("**📝 Observaciones:**")
+                    st.write(fila.get('Descripcion'))
+                    
+                    if str(fila.get('Trabajos_Externos')) != '-':
+                        st.info(f"🏗️ **Taller:** {fila.get('Trabajos_Externos')}")
+                        
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     # ... (el resto de tu código de lubricación)
@@ -742,6 +650,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
