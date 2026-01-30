@@ -564,7 +564,7 @@ elif modo == "Relubricacion":
             else:
                 st.error("⚠️ Error: El TAG y el Responsable son obligatorios.")
       
-       st.divider()
+    st.divider()
     
     # 6. LOS BOTONES DE DESCARGA Y LIMPIEZA VAN AQUÍ AFUERA
     col_descarga, col_limpiar = st.columns(2)
@@ -700,6 +700,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
