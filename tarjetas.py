@@ -349,8 +349,8 @@ elif modo == "Historial y QR":
                     if f_limpia.get('Trabajos_Externos') != '-':
                         st.info(f"🏗️ **Taller:** {f_limpia.get('Trabajos_Externos')}")
     
-       else:
-            st.error(f"❌ No se encontró nada para '{busqueda}'. Verificá el TAG o el N° de Serie.")
+           else:
+                st.error(f"❌ No se encontró nada para '{busqueda}'. Verificá el TAG o el N° de Serie.")
                         
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -651,6 +651,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
