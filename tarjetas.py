@@ -12,43 +12,31 @@ from PIL import Image, ImageDraw
 import streamlit.components.v1 as components
 
 # LA FUNCIÓN VA AQUÍ (Fuera de cualquier bucle)
-def generar_bloque_captura(idx, titulo, fecha, tag, resp, serie, potencia, rpm, detalle_mediciones, obs, nombre_archivo):
-    html = f"""
-    <div id="captura_{idx}" style="background-color: #0e1117; color: white; padding: 20px; border: 2px solid #333; border-radius: 15px; font-family: sans-serif;">
-        <h2 style="color: #007bff; margin-bottom: 5px;">{titulo} - {fecha}</h2>
-        <p><b>🆔 TAG:</b> {tag} | <b>👤 RESP:</b> {resp}</p>
-        <hr style="border: 0.5px solid #444;">
-        <div style="display: flex; justify-content: space-between;">
-            <div>
-                <p style="color: #ffa500;"><b>📋 Datos de Placa:</b></p>
-                <p>Serie: {serie}<br>Potencia: {potencia}<br>RPM: {rpm}</p>
-            </div>
-            <div style="background: #1a1c23; padding: 10px; border-radius: 10px; border: 1px solid #444; min-width: 200px;">
-                {detalle_mediciones}
-            </div>
-        </div>
-        <hr style="border: 0.5px solid #444;">
-        <p><b>📝 Descripción:</b></p>
-        <p style="font-size: 0.9em;">{obs}</p>
-    </div>
-
+def boton_descarga_pro(contenedor_id, nombre_archivo):
+    # Esta función DEBE estar definida arriba para que Python la conozca
+    plantilla = """
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
-    function descargar() {{
-        const element = document.getElementById("captura_{idx}");
-        html2canvas(element, {{ scale: 2, backgroundColor: "#0e1117" }}).then(canvas => {{
+    function descargar() {
+        const element = window.parent.document.getElementById("ID_CONTENEDOR");
+        if (!element) return;
+        html2canvas(element, {
+            scale: 2,
+            backgroundColor: "#0e1117",
+            useCORS: true
+        }).then(canvas => {
             const link = document.createElement('a');
-            link.download = '{nombre_archivo}.png';
+            link.download = 'NOMBRE_ARCHIVO.png';
             link.href = canvas.toDataURL("image/png");
             link.click();
-        }});
-    }}
+        });
+    }
     </script>
-    <button onclick="descargar()" style="width:100%; background-color:#007bff; color:white; padding:15px; border:none; border-radius:10px; margin-top:10px; font-weight:bold; cursor:pointer;">
-        📥 GUARDAR CAPTURA EN GALERÍA
+    <button onclick="descargar()" style="width:100%; background-color:#007bff; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">
+        📥 GUARDAR FICHA EN GALERÍA
     </button>
     """
-    return html
+    return plantilla.replace("ID_CONTENEDOR", contenedor_id).replace("NOMBRE_ARCHIVO", nombre_archivo)
 def obtener_dato_seguro(datos, claves_posibles):
     """Busca en el diccionario 'datos' cualquier variante de nombre de columna."""
     for clave in claves_posibles:
@@ -760,6 +748,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
