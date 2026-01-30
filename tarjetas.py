@@ -409,35 +409,7 @@ elif modo == "Historial y QR":
                             st.caption(f_limpia.get('Notas'))
                         
                         st.divider() # Una línea para separar el encabezado del contenido
-                        
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            st.markdown("**📋 Datos de Placa:**")
-                            st.write(f"**Serie:** {f_limpia.get('N_Serie', '-')}")
-                            st.write(f"**Potencia:** {f_limpia.get('Potencia', '-')}")
-                            st.write(f"**RPM:** {f_limpia.get('RPM', '-')}")
-                
-                        # --- Lógica de visualización por tipo de tarea ---
-                        if "Lubricación" in tarea or "Relubricacion" in tarea:
-                            with col2:
-                                st.markdown("**🛢️ Detalle Lubricación:**")
-                                st.info(f"**LA:** {f_limpia.get('Rodamiento_LA', '-')} ({f_limpia.get('Gramos_LA', '0')}g)\n\n**LOA:** {f_limpia.get('Rodamiento_LOA', '-')} ({f_limpia.get('Gramos_LOA', '0')}g)")
-                        
-                        elif "Mediciones" in tarea:
-                            with col2:
-                                st.markdown("**⚡ Mediciones:**")
-                                st.warning(f"**Aislamiento:** {f_limpia.get('RT_TU1', '-')}\n\n**Resistencia:** {f_limpia.get('RI_U1U2', '-')}")
-                        
-                        else:
-                            with col2:
-                                st.markdown("**🛠️ Detalles Técnicos:**")
-                                st.success(f"**Rod. LA:** {f_limpia.get('Rodamiento_LA', '-')}\n\n**Rod. LOA:** {f_limpia.get('Rodamiento_LOA', '-')}")
-                
-                        st.markdown("**📝 Observaciones:**")
-                        st.write(f_limpia.get('Descripcion', 'Sin notas adicionales.'))
 
-# --- AHORA EL ELIF ESTÁ ALINEADO AL BORDE IZQUIERDO CORRECTAMENTE ---
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     # ... (el resto de tu código de lubricación)
@@ -737,6 +709,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
