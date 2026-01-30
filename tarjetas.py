@@ -385,36 +385,36 @@ elif modo == "Historial y QR":
                                 st.markdown("**🛢️ Detalle Lubricación:**")
                                 st.info(f"**LA:** {f_limpia.get('Rodamiento_LA', '-')} ({f_limpia.get('Gramos_LA', '0')}g)\n\n**LOA:** {f_limpia.get('Rodamiento_LOA', '-')} ({f_limpia.get('Gramos_LOA', '0')}g)")
                             elif "Mediciones" in tarea:
-                            with col2:
-                                st.markdown("**⚡ Resumen Eléctrico:**")
-                                # Mostramos lo más crítico: Aislamiento a Tierra
-                                m_tierra = f_limpia.get('RT_TU1', '-')
-                                st.warning(f"**Aislamiento T-U1:**\n\n{m_tierra} GΩ")
-                            
-                            # --- NUEVA SECCIÓN DESPLEGABLE PARA CELULARES ---
-                            with st.expander("🔍 Ver todas las Medidas Eléctricas"):
-                                m1, m2, m3 = st.columns(3)
-                                with m1:
-                                    st.write("**Aislamiento (GΩ)**")
-                                    st.caption(f"T-V1: {f_limpia.get('RT_TV1', '-')}")
-                                    st.caption(f"T-U1: {f_limpia.get('RT_TU1', '-')}")
-                                    st.caption(f"T-W1: {f_limpia.get('RT_TW1', '-')}")
-                                with m2:
-                                    st.write("**Bobinas (GΩ)**")
-                                    st.caption(f"W1-V1: {f_limpia.get('RB_WV1', '-')}")
-                                    st.caption(f"W1-U1: {f_limpia.get('RB_WU1', '-')}")
-                                    st.caption(f"V1-U1: {f_limpia.get('RB_VU1', '-')}")
-                                with m3:
-                                    st.write("**Continuidad (Ω)**")
-                                    st.caption(f"U1-U2: {f_limpia.get('RI_U1U2', '-')}")
-                                    st.caption(f"V1-V2: {f_limpia.get('RI_V1V2', '-')}")
-                                    st.caption(f"W1-W2: {f_limpia.get('RI_W1W2', '-')}")
+                                with col2:
+                                    st.markdown("**⚡ Resumen Eléctrico:**")
+                                    # Mostramos lo más crítico: Aislamiento a Tierra
+                                    m_tierra = f_limpia.get('RT_TU1', '-')
+                                    st.warning(f"**Aislamiento T-U1:**\n\n{m_tierra} GΩ")
                                 
-                                # Si hay datos de línea, los mostramos abajo
-                                if f_limpia.get('ML_L1', '-') != '-':
-                                    st.divider()
-                                    st.write("**Megado de Línea (Cables)**")
-                                    st.code(f"T-L1: {f_limpia.get('ML_L1', '-')} | T-L2: {f_limpia.get('ML_L2', '-')} | T-L3: {f_limpia.get('ML_L3', '-')}")
+                                # --- NUEVA SECCIÓN DESPLEGABLE PARA CELULARES ---
+                                with st.expander("🔍 Ver todas las Medidas Eléctricas"):
+                                    m1, m2, m3 = st.columns(3)
+                                    with m1:
+                                        st.write("**Aislamiento (GΩ)**")
+                                        st.caption(f"T-V1: {f_limpia.get('RT_TV1', '-')}")
+                                        st.caption(f"T-U1: {f_limpia.get('RT_TU1', '-')}")
+                                        st.caption(f"T-W1: {f_limpia.get('RT_TW1', '-')}")
+                                    with m2:
+                                        st.write("**Bobinas (GΩ)**")
+                                        st.caption(f"W1-V1: {f_limpia.get('RB_WV1', '-')}")
+                                        st.caption(f"W1-U1: {f_limpia.get('RB_WU1', '-')}")
+                                        st.caption(f"V1-U1: {f_limpia.get('RB_VU1', '-')}")
+                                    with m3:
+                                        st.write("**Continuidad (Ω)**")
+                                        st.caption(f"U1-U2: {f_limpia.get('RI_U1U2', '-')}")
+                                        st.caption(f"V1-V2: {f_limpia.get('RI_V1V2', '-')}")
+                                        st.caption(f"W1-W2: {f_limpia.get('RI_W1W2', '-')}")
+                                    
+                                    # Si hay datos de línea, los mostramos abajo
+                                    if f_limpia.get('ML_L1', '-') != '-':
+                                        st.divider()
+                                        st.write("**Megado de Línea (Cables)**")
+                                        st.code(f"T-L1: {f_limpia.get('ML_L1', '-')} | T-L2: {f_limpia.get('ML_L2', '-')} | T-L3: {f_limpia.get('ML_L3', '-')}")
                             else:
                                 st.markdown("**🛠️ Detalles Técnicos:**")
                                 st.success(f"**Rod. LA:** {f_limpia.get('Rodamiento_LA', '-')}\n\n**Rod. LOA:** {f_limpia.get('Rodamiento_LOA', '-')}")
@@ -737,6 +737,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
