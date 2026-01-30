@@ -300,39 +300,53 @@ if modo == "Nuevo Registro":
             mime="image/png"
         )
   
+¡Cuidado! Tenés un doble error de lógica y sangría que va a hacer que la app se rompa o se comporte de forma errática.
+
+Sangría (Indentation): El primer else (el que dice "Ingresá un TAG") está a la misma altura que el for, pero debería estar alineado con el primer if.
+
+Duplicación del else: Pusiste dos else para el mismo if. Python no sabe a cuál ir.
+
+Acá tenés el código limpio, alineado y corregido. Copiá y pegá este bloque tal cual:
+
+Python
 elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
-    if not historial_motor.empty:
-            hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
+    # 1. Verificamos que la variable exista
+    if 'historial_motor' in locals() and not historial_motor.empty:
+        hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
 
-            # SI NO ESTAMOS EN MODO CAPTURA: Mostramos la lista de botones
-            if "captura_activa" not in st.session_state or st.session_state.captura_activa is None:
-                st.subheader("📜 Historial de Intervenciones")
-                for idx, fila in hist_m.iterrows():
-                    tarea_btn = fila.get('Tipo_Tarea', 'Registro')
-                    fecha_btn = fila.get('Fecha', '-')
-                    if st.button(f"📸 Preparar Ficha: {tarea_btn} ({fecha_btn})", key=f"btn_{idx}", use_container_width=True):
-                        st.session_state.captura_activa = idx
-                        st.rerun()
-            
-            # SI EL MODO CAPTURA ESTÁ ACTIVO: Mostramos SOLO la ficha elegida
-            else:
-                idx_c = st.session_state.captura_activa
-                fila = hist_m.loc[idx_c].fillna('-')
-                
-                # Botón para salir del modo captura
-                if st.button("⬅️ VOLVER AL HISTORIAL", use_container_width=True):
-                    st.session_state.captura_activa = None
+        # 2. LÓGICA DE PANTALLAS (Botones o Ficha Solita)
+        if "captura_activa" not in st.session_state or st.session_state.captura_activa is None:
+            st.subheader("📜 Historial de Intervenciones")
+            for idx, fila in hist_m.iterrows():
+                tarea_btn = fila.get('Tipo_Tarea', 'Registro')
+                fecha_btn = fila.get('Fecha', '-')
+                if st.button(f"📸 Preparar Ficha: {tarea_btn} ({fecha_btn})", key=f"btn_{idx}", use_container_width=True):
+                    st.session_state.captura_activa = idx
                     st.rerun()
+        
+        else:
+            # ESTA ES LA PANTALLA DE CAPTURA
+            idx_c = st.session_state.captura_activa
+            # Usamos iloc o loc con cuidado para obtener la fila correcta
+            fila_cap = hist_m.loc[idx_c].fillna('-')
+            
+            if st.button("⬅️ VOLVER AL HISTORIAL", use_container_width=True):
+                st.session_state.captura_activa = None
+                st.rerun()
 
-                st.success("✅ MODO CAPTURA: Sacá el pantallazo ahora")
+            st.success("✅ MODO CAPTURA: Sacá el pantallazo ahora")
+            
+            # --- Aquí dibujás el container de la ficha (el que ya tenías) ---
+            with st.container(border=True):
+                st.markdown(f"### 🗓️ {fila_cap.get('Tipo_Tarea')} - {fila_cap.get('Fecha')}")
+                st.write(f"**TAG:** {fila_cap.get('Tag')}")
+                st.write(f"**Observaciones:** {fila_cap.get('Descripcion')}")
 
-                # --- LA FICHA LIMPIA ---
-                with st.container(border=True):
-                    st.markdown(f"### 🗓️ {fila.get('Tipo_Tarea', 'Registro')} - {fila.get('Fecha')}")
-                    st.markdown(f"**🆔 TAG:** `{fila.get('Tag')}` | **👤 RESP:** {fila.get('Responsable')}")
-                    st.divider()
+    else:
+        # Este else pertenece al primer IF (si no hay historial)
+        st.info("🔍 Ingresá un TAG arriba para ver el historial.")
                     
                     c1, c2 = st.columns(2)
                     with c1:
@@ -650,6 +664,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
