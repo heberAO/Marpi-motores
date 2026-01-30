@@ -338,7 +338,7 @@ elif modo == "Historial y QR":
             buscado = seleccion.split(" | ")[0].strip()
             st.session_state.tag_fijo = buscado
             historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
-
+            
             # --- PANEL SUPERIOR: QR Y DATOS ---
             with st.container(border=True):
                 col_qr, col_info = st.columns([1, 2])
@@ -748,6 +748,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
