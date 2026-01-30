@@ -300,58 +300,58 @@ if modo == "Nuevo Registro":
             mime="image/png"
         )
 elif modo == "Historial y QR":
-    st.title("🔍 Consulta y Gestión de Motores")
+    # --- BUSCADOR INTELIGENTE ---
+st.title("📚 Historial de Motores")
+
+# Un solo campo para buscar por cualquiera de los dos datos
+busqueda = st.text_input("🔍 Buscar por TAG o N° de Serie (Motor):", "").strip().upper()
+
+if busqueda:
+    # Filtramos: Buscamos si el dato está en 'Tag' O en 'N_Serie'
+    # .astype(str) asegura que no falle si hay números puros
+    hist_m = df[(df['Tag'].astype(str).str.upper() == busqueda) | 
+                (df['N_Serie'].astype(str).str.upper() == busqueda)]
     
-    # 1. Verificamos que la variable exista
-    if 'historial_motor' in locals() and not historial_motor.empty:
-        hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
-
-        # 2. LÓGICA DE PANTALLAS (Botones o Ficha Solita)
-        if "captura_activa" not in st.session_state or st.session_state.captura_activa is None:
-            st.subheader("📜 Historial de Intervenciones")
-            for idx, fila in hist_m.iterrows():
-                tarea_btn = fila.get('Tipo_Tarea', 'Registro')
-                fecha_btn = fila.get('Fecha', '-')
-                if st.button(f"📸 Preparar Ficha: {tarea_btn} ({fecha_btn})", key=f"btn_{idx}", use_container_width=True):
-                    st.session_state.captura_activa = idx
-                    st.rerun()
+    if not hist_m.empty:
+        # Invertimos para ver lo último cargado arriba de todo
+        hist_m = hist_m.iloc[::-1]
         
-        else:
-            # ESTA ES LA PANTALLA DE CAPTURA (Alineada con el else)
-            idx_c = st.session_state.captura_activa
-            fila_cap = hist_m.loc[idx_c].fillna('-')
-            
-            if st.button("⬅️ VOLVER AL HISTORIAL", use_container_width=True):
-                st.session_state.captura_activa = None
-                st.rerun()
+        st.success(f"✅ Se encontraron {len(hist_m)} registros para: {busqueda}")
 
-            st.success("✅ MODO CAPTURA: Sacá el pantallazo ahora")
+        for idx, fila in hist_m.iterrows():
+            f_limpia = fila.fillna('-')
             
-            # --- FICHA LIMPIA (Alineada con el bloque anterior) ---
+            # Diseño de la Tarjeta
             with st.container(border=True):
-                st.markdown(f"### 🗓️ {fila_cap.get('Tipo_Tarea')} - {fila_cap.get('Fecha')}")
-                st.markdown(f"**🆔 TAG:** `{fila_cap.get('Tag')}` | **👤 RESP:** {fila_cap.get('Responsable')}")
-                st.divider()
+                col_t1, col_t2 = st.columns([3, 1])
+                with col_t1:
+                    st.markdown(f"### 🗓️ {f_limpia.get('Tipo_Tarea', 'Mantenimiento')}")
+                with col_t2:
+                    st.write(f"**Fecha:** {f_limpia.get('Fecha', '-')}")
                 
-                # ACÁ ESTABA EL ERROR: Asegurate de que 'c1' esté justo debajo del with
+                st.markdown(f"**🆔 TAG:** `{f_limpia.get('Tag', '-')}`  |  **🔢 SERIE:** `{f_limpia.get('N_Serie', '-')}`")
+                st.divider()
+
                 c1, c2 = st.columns(2)
                 with c1:
-                    st.markdown("**📋 Datos de Placa:**")
-                    st.write(f"Serie: {fila_cap.get('N_Serie')}")
+                    st.markdown("**📋 Datos:**")
+                    st.write(f"**Potencia:** {f_limpia.get('Potencia', '-')} HP")
+                    st.write(f"**RPM:** {f_limpia.get('RPM', '-')}")
                 with c2:
                     st.markdown("**🛠️ Rodamientos:**")
-                    st.write(f"LA: {fila_cap.get('Rodamiento_LA')}")
-                
+                    st.write(f"**LA:** {f_limpia.get('Rodamiento_LA', '-')}")
+                    st.write(f"**LOA:** {f_limpia.get('Rodamiento_LOA', '-')}")
+
                 st.divider()
                 st.markdown("**📝 Observaciones:**")
-                st.write(fila_cap.get('Descripcion'))
+                st.write(f_limpia.get('Descripcion', 'Sin notas.'))
                 
-                # Todo alineado bajo la misma columna:
-                if str(fila_cap.get('Trabajos_Externos', '-')) not in ['-', 'nan', '']:
-                    st.info(f"🏗️ **Taller Externo:** {fila_cap.get('Trabajos_Externos')}")
-                
-                if str(fila_cap.get('Notas', '-')) not in ['-', 'nan', '']:
-                    st.caption(f"📌 **Notas:** {fila_cap.get('Notas')}")
+                # Extras dinámicos
+                if f_limpia.get('Trabajos_Externos') != '-':
+                    st.info(f"🏗️ **Taller:** {f_limpia.get('Trabajos_Externos')}")
+
+   else:
+        st.error(f"❌ No se encontró nada para '{busqueda}'. Verificá el TAG o el N° de Serie.")
                         
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -652,6 +652,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
