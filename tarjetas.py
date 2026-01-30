@@ -453,13 +453,14 @@ elif modo == "Historial y QR":
                         if str(f_limpia.get('Notas', '-')) not in ['-', 'nan', '']:
                             st.caption(f"**📌 Notas:** {f_limpia.get('Notas')}")
 
-                    st.markdown('</div>', unsafe_allow_html=True) 
+                   st.markdown('</div>', unsafe_allow_html=True) 
                     # --- FIN DEL CONTENEDOR PARA CAPTURA ---
 
-                   nombre_img = f"Motor_{tag_h}_{fecha}".replace("/", "-")
-                    components.html(boton_descarga_pro(f"ficha_{idx}", nombre_img), height=70)
+                    # ESTAS LÍNEAS TIENEN QUE ESTAR ALINEADAS CON EL st.markdown DE ARRIBA
+                    nombre_img = f"Motor_{tag_h}_{fecha}".replace("/", "-")
+                    components.html(boton_descarga_pro(f"ficha_{idx}", nombre_img), height=75)
                     
-                    st.divider()
+                    st.divider() # Espacio entre tarjetas
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     # ... (el resto de tu código de lubricación)
@@ -759,6 +760,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
