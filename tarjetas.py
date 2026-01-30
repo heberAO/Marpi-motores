@@ -342,15 +342,16 @@ elif modo == "Historial y QR":
                 hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
 
                 for idx, fila in hist_m.iterrows():
+                    f_limpia = fila.fillna('-')
                     tarea = str(fila.get('Tipo_Tarea', 'General'))
                     fecha = fila.get('Fecha', 'S/D')
                     tag_h = fila.get('Tag', buscado)
                     resp_h = fila.get('Responsable', 'S/D')
-                    
                     # CARTA VISUAL
                     with st.container(border=True):
                         # Encabezado con TAG y RESPONSABLE (Lo que pediste)
-                        st.markdown(f"### 🗓️ {fecha} - {tarea}")
+                        t_mostrar = tarea if tarea != "-" else "Registro General"
+                        st.markdown(f"### 🗓️ {fecha} - {t_mostrar}")
                         st.markdown(f"**🆔 TAG:** `{tag_h}`  |  **👤 RESP:** `{resp_h}`")
                         
                         col1, col2 = st.columns(2)
@@ -693,6 +694,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
