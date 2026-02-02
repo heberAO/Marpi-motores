@@ -477,36 +477,39 @@ elif modo == "Historial y QR":
                     if img_bytes:
                         # --- BLOQUE DEL BOTÓN CORREGIDO ---
                         # 1. Preparar la imagen
+                        # --- 1. PREPARAR LA IMAGEN ---
                         import base64
                         b64_img = base64.b64encode(img_bytes).decode('utf-8')
                         
-                        # 2. HTML y JS simplificado al máximo para evitar errores
+                        # --- 2. EL BLOQUE DEL BOTÓN (TODO JUNTO AQUÍ) ---
                         boton_html = f"""
-                        <html>
-                        <body>
-                            <button onclick="imprimir()" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">
-                                🖨️ IMPRIMIR ETIQUETA GIGANTE
+                        <div style="width: 100%; text-align: center;">
+                            <button id="btnMarpi" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif;">
+                                🖨️ IMPRIMIR ETIQUETA MEJORADA
                             </button>
-                    
-                            <script>
-                            function imprimir() {{
-                                var win = window.open('', '', 'width=800,height=600');
-                                win.document.write('<html><head><style>');
-                                // Forzamos el tamaño del papel y quitamos márgenes internos
-                                win.document.write('@page {{ size: 60mm 30mm; margin: 0 !important; }}');
-                                win.document.write('body {{ margin: 0; padding: 0; overflow: hidden; }}');
-                                // 'fill' estira la imagen a los bordes y 'scale' la agranda un 5% extra para evitar bordes blancos
-                                win.document.write('img { width: 60mm; height: 30mm; object-fit: contain; image-rendering: pixelated; }');
-                                win.document.write('</style></head><body>');
-                                win.document.write('<img src="data:image/png;base64,{b64_img}" onload="setTimeout(() => {{ window.print(); window.close(); }}, 300);">');
-                                win.document.write('</body></html>');
-                                win.document.close();
-                            }}
-                            </script>
-                        </body>
-                        </html>
+                        </div>
+                        
+                        <script>
+                        document.getElementById('btnMarpi').onclick = function() {{
+                            const win = window.open('', '', 'width=800,height=600');
+                            win.document.write('<html><head><style>');
+                            
+                            // AQUÍ ES DONDE VAN LAS LÍNEAS QUE DABAN ERROR (DENTRO DEL SCRIPT)
+                            win.document.write('@page {{ size: 60mm 30mm; margin: 0 !important; }}');
+                            win.document.write('body {{ margin: 0; padding: 0; }}');
+                            win.document.write('img {{ width: 60mm; height: 30mm; object-fit: contain; image-rendering: pixelated; }}');
+                            
+                            win.document.write('</style></head><body>');
+                            win.document.write('<img src="data:image/png;base64,{b64_img}" onload="setTimeout(() => {{ window.print(); window.close(); }}, 500);">');
+                            win.document.write('</body></html>');
+                            win.document.close();
+                        }};
+                        </script>
                         """
-                        st.components.v1.html(boton_html, height=100)
+                        
+                        # --- 3. MOSTRAR EN STREAMLIT ---
+                        import streamlit.components.v1 as components
+                        components.html(boton_html, height=100)
                                             
                     
                     st.divider()
@@ -809,6 +812,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
