@@ -51,63 +51,45 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         import qrcode
         from io import BytesIO
 
-        # 1. Lienzo optimizado para 60x30mm (proporción 2:1)
-        ancho, alto = 600, 300
-        etiqueta = Image.new('1', (ancho, alto), 1)
+        # 1. Lienzo (600x300 px para 60x30mm)
+        etiqueta = Image.new('1', (600, 300), 1)
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. QR GIGANTE (Nivel de error Alto para permitir logo central)
+        # 2. QR LIMPIO Y LEGIBLE (Sin logo para asegurar escaneo)
         qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_H,
-            box_size=18,
+            version=1, # Versión 1 hace que los puntos sean más grandes
+            error_correction=qrcode.constants.ERROR_CORRECT_L, # Nivel bajo para QR más simple
+            box_size=18, 
             border=1
         )
         
-        # IMPORTANTE: Esta es la URL que hace que funcione el escaneo
-        url_final = f"https://marpi-motores.streamlit.app/?tag={tag}"
+        # IMPORTANTE: Aseguramos que la URL sea la correcta
+        url_final = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={tag}"
         qr.add_data(url_final)
         qr.make(fit=True)
         
-        # Crear imagen del QR
-        img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
+        # Imagen del QR puro
+        img_qr = qr.make_image(fill_color="black", back_color="white").convert('1')
         
-        # --- LÓGICA DEL LOGO CENTRAL (Similar al PDF) ---
-        q_w, q_h = img_qr.size
-        logo_size = q_w // 4  # El logo ocupará el 25% del centro
+        # Ajustamos el tamaño del QR (Casi todo el alto disponible)
+        img_qr = img_qr.resize((240, 240))
         
-        # Espacio en blanco para el logo
-        draw_qr = ImageDraw.Draw(img_qr)
-        c = q_w // 2
-        r = logo_size // 2
-        draw_qr.rectangle([c-r, c-r, c+r, c+r], fill="white")
-        
-        # Dibujamos la 'M' estilizada en el centro
+        # Pegamos el QR centrado arriba
+        etiqueta.paste(img_qr, (180, 5))
+
+        # 3. TEXTO: MARPI ELECTRICIDAD
+        # Usamos fuente del sistema o default
         try:
-            # Intentamos usar una fuente robusta si está disponible
-            f_m = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 60)
-            draw_qr.text((c-25, c-35), "M", fill="black", font=f_m)
+            # Fuente gruesa para que se vea bien
+            font_marpi = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 40)
         except:
-            draw_qr.text((c-10, c-10), "M", fill="black")
+            font_marpi = ImageFont.load_default()
 
-        # Ajustamos el QR al alto de la etiqueta dejando espacio para el texto inferior
-        img_qr = img_qr.resize((230, 230)).convert('1')
-        
-        # Pegamos el QR centrado horizontalmente
-        etiqueta.paste(img_qr, (185, 10))
-
-        # 3. TEXTO INFERIOR: MARPI ELECTRICIDAD
-        try:
-            font_footer = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 45)
-        except:
-            font_footer = ImageFont.load_default()
-
-        # Dibujamos el nombre centrado debajo del QR
+        # Texto centrado abajo
         texto = "MARPI ELECTRICIDAD"
-        # Centrado manual aproximado
-        draw.text((85, 240), texto, font=font_footer, fill=0)
+        draw.text((95, 245), texto, font=font_marpi, fill=0)
 
-        # 4. Retornar imagen
+        # 4. Retornar
         buf = BytesIO()
         etiqueta.save(buf, format="PNG")
         return buf.getvalue()
@@ -838,6 +820,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
