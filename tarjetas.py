@@ -474,42 +474,37 @@ elif modo == "Historial y QR":
                     
                     if img_bytes:
                         # --- BLOQUE DEL BOTÓN CORREGIDO ---
+                        # 1. Preparar la imagen
                         import base64
-                        b64_img = base64.encodebytes(img_bytes).decode('utf-8')
+                        b64_img = base64.b64encode(img_bytes).decode('utf-8')
                         
+                        # 2. HTML y JS simplificado al máximo para evitar errores
                         boton_html = f"""
-                        <div style="width: 100%; text-align: center;">
-                            <button id="btnMarpi" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif; font-size:16px;">
-                                🖨️ IMPRIMIR ETIQUETA GIGANTE
+                        <html>
+                        <body>
+                            <button onclick="imprimir()" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif;">
+                                🖨️ IMPRIMIR ETIQUETA (60x30)
                             </button>
-                        </div>
                     
-                        <script>
-                        document.getElementById('btnMarpi').onclick = function() {{
-                            const win = window.open('', '', 'width=800,height=600');
-                            win.document.write('<html><head><style>');
-                            // Doble llave para que Python no se confunda
-                            win.document.write('@page {{ size: 60mm 30mm; margin: 0 !important; }}');
-                            win.document.write('body {{ margin: 0; padding: 0; background: white; }}');
-                            win.document.write('img {{ width: 60mm; height: 30mm; display: block; object-fit: fill; image-rendering: pixelated; }}');
-                            win.document.write('</style></head><body>');
-                            win.document.write('<img src="data:image/png;base64,{b64_img}">');
-                            win.document.write('</body></html>');
-                            win.document.close();
-                            
-                            // Pequeña pausa para asegurar la carga
-                            setTimeout(function() {{
-                                win.focus();
-                                win.print();
-                                win.close();
-                            }}, 500);
-                        }};
-                        </script>
+                            <script>
+                            function imprimir() {{
+                                var win = window.open('', '', 'width=600,height=400');
+                                win.document.write('<html><head><style>');
+                                win.document.write('@page {{ size: 60mm 30mm; margin: 0 !important; }}');
+                                win.document.write('body {{ margin: 0; padding: 0; }}');
+                                win.document.write('img {{ width: 60mm; height: 30mm; object-fit: fill; }}');
+                                win.document.write('</style></head><body>');
+                                win.document.write('<img src="data:image/png;base64,{b64_img}" onload="window.print(); window.close();">');
+                                win.document.write('</body></html>');
+                                win.document.close();
+                            }}
+                            </script>
+                        </body>
+                        </html>
                         """
-    
-                        import streamlit.components.v1 as components
-                        components.html(boton_html, height=100)
                         
+                        st.components.v1.html(boton_html, height=100)
+                                            
                     
                     st.divider()
 elif modo == "Relubricacion":
@@ -811,6 +806,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
