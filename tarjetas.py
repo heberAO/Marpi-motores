@@ -46,44 +46,36 @@ def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, extra
     """
     return f'<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><button onclick="{js_code}" style="{st_btn}">📥 GUARDAR REPORTE COMPLETO</button>'
 def generar_etiqueta_honeywell(tag, serie, potencia):
-    try:
-        # Aumentamos la resolución base para que no salga pixelado
-        ancho, alto = 600, 300 
-        etiqueta = Image.new('L', (ancho, alto), 255)
-        draw = ImageDraw.Draw(etiqueta)
+    # Subimos la resolución (600x300 es ideal para 203 dpi de la PC42)
+    ancho, alto = 600, 300 
+    etiqueta = Image.new('L', (ancho, alto), 255)
+    draw = ImageDraw.Draw(etiqueta)
 
-        # Generar QR GIGANTE
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=15, # <-- Mucho más grande
-            border=0     # <-- Cero margen interno en el QR
-        )
-        url_app = f"https://marpi-motores.streamlit.app/?tag={tag}"
-        qr.add_data(url_app)
-        qr.make(fit=True)
-        img_qr = qr.make_image(fill_color="black", back_color="white").convert('L')
-        
-        # Redimensionar el QR para que ocupe casi todo el alto (280px de los 300px)
-        img_qr = img_qr.resize((280, 280), Image.Resampling.LANCZOS)
+    # ... (código del QR igual que antes) ...
 
-        # Pegar el QR bien a la izquierda y centrado verticalmente
-        etiqueta.paste(img_qr, (5, 10))
+    # TEXTOS: Usar coordenadas que aprovechen el espacio
+    x_text = 290
+    
+    # IMPORTANTE: Si podés, cargá una fuente TrueType (.ttf) para que sea más gruesa
+    # Si usas la fuente por defecto, dibujala dos veces (un píxel al lado) para darle grosor
+    def draw_bold_text(pos, text, size=0):
+        draw.text(pos, text, fill=0)
+        draw.text((pos[0]+1, pos[1]), text, fill=0) # Efecto negrita manual
 
-        # Textos a la derecha con fuentes más grandes
-        x_text = 300
-        draw.text((x_text, 30), "MARPI MOTORES", fill=0) # Ajustar tamaño de fuente si usas .ttf
-        draw.line([x_text, 65, 580, 65], fill=0, width=4)
+    draw_bold_text((x_text, 30), "MARPI MOTORES")
+    draw.line([x_text, 65, 580, 65], fill=0, width=5) # Línea más gruesa
 
-        draw.text((x_text, 90), f"TAG: {str(tag).upper()}", fill=0)
-        draw.text((x_text, 150), f"S/N: {str(serie).upper()}", fill=0)
-        draw.text((x_text, 210), f"POT: {str(potencia).upper()}", fill=0)
-        
-        # Conversión a blanco y negro puro para la térmica
-        final_bw = etiqueta.convert('1')
-        buf = BytesIO()
-        final_bw.save(buf, format="PNG")
-        return buf.getvalue()
+    draw_bold_text((x_text, 90), f"TAG: {str(tag).upper()}")
+    draw_bold_text((x_text, 150), f"S/N: {str(serie).upper()}")
+    draw_bold_text((x_text, 210), f"POT: {str(potencia).upper()}")
+
+    # Convertir a Blanco y Negro PURO (1-bit)
+    # Esto elimina los bordes grises que hacen que el texto se vea borroso
+    final_bw = etiqueta.convert('1', dither=Image.NONE)
+    
+    buf = BytesIO()
+    final_bw.save(buf, format="PNG")
+    return buf.getvalue()
     except Exception as e:
         st.error(f"Error al cargar datos: {e}")
         
@@ -807,6 +799,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
