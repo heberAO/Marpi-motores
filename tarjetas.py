@@ -47,13 +47,24 @@ def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, extra
     return f'<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><button onclick="{js_code}" style="{st_btn}">📥 GUARDAR REPORTE COMPLETO</button>'
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
-        from PIL import Image, ImageDraw
-        # Lienzo de alta definición para térmica (600x300)
-        ancho, alto = 600, 300
-        etiqueta = Image.new('1', (ancho, alto), 1)
+        from PIL import Image, ImageDraw, ImageFont
+        
+        # 1. Creamos el lienzo (600x300 px)
+        etiqueta = Image.new('1', (600, 300), 1)
         draw = ImageDraw.Draw(etiqueta)
 
-        # 1. QR GIGANTE (Mantenemos tu QR que ya funciona)
+        # 2. Intentamos cargar una fuente de Windows (Arial Bold)
+        # Si falla, usará la básica (pero probemos con tamaños grandes)
+        try:
+            # En Windows la ruta suele ser esta. En Streamlit Cloud buscamos una default.
+            font_path = "arialbd.ttf" # Arial Bold
+            fuente_titulo = ImageFont.truetype(font_path, 45)
+            fuente_datos = ImageFont.truetype(font_path, 38)
+            fuente_chica = ImageFont.truetype(font_path, 28)
+        except:
+            fuente_titulo = fuente_datos = fuente_chica = ImageFont.load_default()
+
+        # 3. QR GIGANTE (Igual que antes)
         qr = qrcode.QRCode(version=1, box_size=12, border=0)
         qr.add_data(f"https://marpi-motores.streamlit.app/?tag={tag}")
         qr.make(fit=True)
@@ -61,36 +72,27 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         img_qr = img_qr.resize((260, 260))
         etiqueta.paste(img_qr, (10, 20))
 
-        # 2. TEXTOS XL (Aprovechando los 32mm restantes)
-        # x_text empieza justo después del QR
-        x_text = 280 
+        # 4. TEXTOS GIGANTES (En los 32mm libres)
+        x_text = 280
         
-        # Función para escribir texto extra-grueso y grande
-        def draw_xl_text(pos, txt, strokes=4):
-            # Dibujamos el texto varias veces desplazado para engrosarlo
-            for i in range(strokes):
-                draw.text((pos[0]+i, pos[1]), txt, fill=0)
+        # MARPI MOTORES
+        draw.text((x_text, 10), "MARPI MOTORES", font=fuente_titulo, fill=0)
+        draw.line([x_text, 60, 580, 60], fill=0, width=5)
 
-        # MARPI MOTORES (Encabezado destacado)
-        draw_xl_text((x_text, 15), "MARPI MOTORES")
-        draw.line([x_text, 50, 580, 50], fill=0, width=6) # Línea divisoria gruesa
-
-        # DATOS TÉCNICOS (Mucho más grandes y espaciados)
-        draw_xl_text((x_text, 70),  f"TAG: {str(tag).upper()}")
-        draw_xl_text((x_text, 125), f"S/N: {str(serie).upper()}")
-        draw_xl_text((x_text, 180), f"POT: {str(potencia).upper()}")
+        # DATOS (Ahora sí, usando el parámetro font=)
+        draw.text((x_text, 75),  f"TAG: {str(tag).upper()}", font=fuente_datos, fill=0)
+        draw.text((x_text, 135), f"S/N: {str(serie).upper()}", font=fuente_datos, fill=0)
+        draw.text((x_text, 195), f"POT: {str(potencia).upper()}", font=fuente_datos, fill=0)
         
-        # Separador inferior opcional
-        draw.line([x_text, 235, 580, 235], fill=0, width=2)
-        draw_xl_text((x_text, 250), "MANT. PREDICTIVO")
+        draw.text((x_text, 255), "MANT. PREDICTIVO", font=fuente_chica, fill=0)
 
-        # 3. Preparar para descarga
+        # 5. Guardar
         buf = BytesIO()
         etiqueta.save(buf, format="PNG")
         return buf.getvalue()
 
     except Exception as e:
-        print(f"Error en diseño XL: {e}")
+        st.error(f"Error en diseño: {e}")
         return None
         
 def calcular_grasa_marpi(rodamiento):
@@ -816,6 +818,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
