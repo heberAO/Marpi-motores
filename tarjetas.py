@@ -47,77 +47,46 @@ def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, extra
     return f'<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><button onclick="{js_code}" style="{st_btn}">📥 GUARDAR REPORTE COMPLETO</button>'
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
-        # 1. Tamaño exacto 60x40mm (480x320 px)
+        # 1. Ajustamos el lienzo a 60x30mm con buena resolución
         ancho, alto = 480, 240
         etiqueta = Image.new('L', (ancho, alto), 255)
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. Generar QR
-        url = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={tag}"
+        # 2. Generar QR MÁS GRANDE (Cambiamos box_size de 5 a 8)
         qr = qrcode.QRCode(
             version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_H,
-            box_size=5, 
+            error_correction=qrcode.constants.ERROR_CORRECT_L, # Menos corrección = QR más simple y grande
+            box_size=8, # <-- Aumentamos el tamaño de los puntos
             border=1
         )
-        qr.add_data(url)
+        qr.add_data(f"https://marpi-motores.streamlit.app/?tag={tag}")
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('L')
-
-        # 3. Reinsertar el Logo MARPI (Asegurate que logo.png esté en la carpeta)
-        if os.path.exists("logo.png"):
-            logo = Image.open("logo.png").convert("L")
-            logo_dim = 55 # Tamaño para que se vea bien la M
-            logo = logo.resize((logo_dim, logo_dim), Image.Resampling.LANCZOS)
-            
-            qr_w, qr_h = img_qr.size
-            pos = ((qr_w - logo_dim) // 2, (qr_h - logo_dim) // 2)
-            
-            # Parche blanco para que el logo resalte
-            parche = Image.new('L', (logo_dim + 10, logo_dim + 10), 255)
-            img_qr.paste(parche, (pos[0]-5, pos[1]-5))
-            img_qr.paste(logo, pos)
-
-        # 4. Posicionamiento
-        # Pegamos el QR a la izquierda
-        etiqueta.paste(img_qr, (20, (alto - img_qr.size[1]) // 2))
-
-        # Línea divisoria central
-        draw.line([230, 35, 230, 220], fill=0, width=4)
-
-        # 5. Textos (Convertidos a string para evitar errores)
-        x_text = 250
         
-        # Título
-        draw.text((x_text, 40), "MARPI MOTORES S.R.L.", fill=0)
-        draw.line([x_text, 58, 450, 58], fill=0, width=2)
+        # Redimensionamos el QR para que ocupe casi todo el alto (aprox 220px de los 240px)
+        img_qr = img_qr.resize((210, 210), Image.Resampling.LANCZOS)
 
-        # Datos - Usamos str() para que no falle con números
-        draw.text((x_text, 80), "IDENTIFICACIÓN:", fill=0)
-        draw.text((x_text, 100), f"TAG: {str(tag).upper()}", fill=0)
+        # 3. Posicionamiento (Pegado al borde izquierdo)
+        etiqueta.paste(img_qr, (10, 15))
+
+        # 4. Textos más grandes y hacia la derecha
+        x_text = 230
         
-        draw.text((x_text, 150), "DATOS TÉCNICOS:", fill=0)
-        draw.text((x_text, 175), f"SERIE: {str(serie).upper()}", fill=0)
-        draw.text((x_text, 205), f"POTENCIA: {str(potencia).upper()}", fill=0)
+        # Usamos una fuente más robusta si es posible, o simplemente ajustamos posiciones
+        draw.text((x_text, 20), "MARPI MOTORES", fill=0) # Título arriba
+        draw.line([x_text, 45, 460, 45], fill=0, width=3)
 
-        draw.text((320, 210), "SERVICE OFICIAL", fill=0)
+        draw.text((x_text, 70), f"TAG: {str(tag).upper()}", fill=0)
+        draw.text((x_text, 115), f"S/N: {str(serie).upper()}", fill=0)
+        draw.text((x_text, 160), f"POT: {str(potencia).upper()}", fill=0)
+        
+        draw.text((x_text, 210), "MANT. PREDICTIVO", fill=0)
 
-        # Marco exterior
-        draw.rectangle([5, 5, ancho-5, alto-5], outline=0, width=3)
-
-        # 6. Conversión final
+        # 5. Conversión final
         final_bw = etiqueta.convert('1')
         buf = BytesIO()
         final_bw.save(buf, format="PNG")
         return buf.getvalue()
-
-    except Exception as e:
-        st.error(f"Error en diseño: {e}")
-        return None
-    except Exception as e:
-        st.error(f"Error de legibilidad: {e}")
-        return None
-st.set_page_config(page_title="Marpi Motores", layout="wide")
 
 def calcular_grasa_marpi(rodamiento):
     """Calcula gramos de grasa según el modelo del rodamiento."""
@@ -838,6 +807,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
