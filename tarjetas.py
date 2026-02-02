@@ -496,7 +496,7 @@ elif modo == "Historial y QR":
                                 win.document.write('@page {{ size: 60mm 30mm; margin: 0 !important; }}');
                                 win.document.write('body {{ margin: 0; padding: 0; overflow: hidden; }}');
                                 // 'fill' estira la imagen a los bordes y 'scale' la agranda un 5% extra para evitar bordes blancos
-                                win.document.write('img {{ width: 60mm; height: 30mm; image-rendering: pixelated; image-rendering: crisp-edges; }}');
+                                win.document.write('img { width: 60mm; height: 30mm; object-fit: contain; image-rendering: pixelated; }');
                                 win.document.write('</style></head><body>');
                                 win.document.write('<img src="data:image/png;base64,{b64_img}" onload="setTimeout(() => {{ window.print(); window.close(); }}, 300);">');
                                 win.document.write('</body></html>');
@@ -809,6 +809,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
