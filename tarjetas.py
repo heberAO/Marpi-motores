@@ -46,46 +46,47 @@ def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, extra
     """
     return f'<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><button onclick="{js_code}" style="{st_btn}">📥 GUARDAR REPORTE COMPLETO</button>'
 def generar_etiqueta_honeywell(tag, serie, potencia):
-    try: # <--- AGREGAMOS EL TRY AQUÍ
-        # 1. Configuración de lienzo
-        ancho, alto = 600, 300 
-        etiqueta = Image.new('L', (ancho, alto), 255)
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        # 1. Lienzo en blanco (600x300 px para 203dpi)
+        # Usamos '1' para blanco y negro puro desde el inicio
+        ancho, alto = 600, 300
+        etiqueta = Image.new('1', (ancho, alto), 1)
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. Generar QR GIGANTE (Lo incluimos para que no falte)
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=14, 
-            border=0
-        )
+        # 2. QR Gigante
+        qr = qrcode.QRCode(version=1, box_size=12, border=0)
         qr.add_data(f"https://marpi-motores.streamlit.app/?tag={tag}")
         qr.make(fit=True)
-        img_qr = qr.make_image(fill_color="black", back_color="white").convert('L')
-        img_qr = img_qr.resize((280, 280), Image.Resampling.LANCZOS)
-        etiqueta.paste(img_qr, (5, 10))
+        img_qr = qr.make_image(fill_color="black", back_color="white").convert('1')
+        img_qr = img_qr.resize((260, 260))
+        etiqueta.paste(img_qr, (10, 20)) # Posición izquierda
 
-        # 3. Textos con "Negrita Manual" para legibilidad
-        x_text = 300
-        def draw_bold_text(pos, text):
-            draw.text(pos, text, fill=0)
-            draw.text((pos[0]+1, pos[1]), text, fill=0) # Refuerzo de trazo
+        # 3. Textos - Dibujamos con desplazamiento para simular Negrita
+        x_text = 280
+        def texto_grande(pos, txt):
+            # Dibujamos 3 veces con 1px de diferencia para que sea bien grueso
+            for off in range(3):
+                draw.text((pos[0]+off, pos[1]), txt, fill=0)
 
-        draw_bold_text((x_text, 30), "MARPI MOTORES")
-        draw.line([x_text, 65, 580, 65], fill=0, width=5) 
+        # Encabezado
+        texto_grande((x_text, 20), "MARPI MOTORES")
+        draw.line([x_text, 55, 580, 55], fill=0, width=4)
 
-        draw_bold_text((x_text, 90), f"TAG: {str(tag).upper()}")
-        draw_bold_text((x_text, 150), f"S/N: {str(serie).upper()}")
-        draw_bold_text((x_text, 210), f"POT: {str(potencia).upper()}")
+        # Datos (Aumentamos espacio entre líneas para que no se amontone)
+        texto_grande((x_text, 80),  f"TAG: {str(tag).upper()}")
+        texto_grande((x_text, 140), f"S/N: {str(serie).upper()}")
+        texto_grande((x_text, 200), f"POT: {str(potencia).upper()}")
+        
+        texto_grande((x_text, 260), "MANT. PREDICTIVO")
 
-        # 4. Conversión y salida
-        final_bw = etiqueta.convert('1', dither=Image.NONE)
+        # 4. Guardar
         buf = BytesIO()
-        final_bw.save(buf, format="PNG")
+        etiqueta.save(buf, format="PNG")
         return buf.getvalue()
 
-    except Exception as e: # <--- EL EXCEPT AHORA SÍ TIENE SU TRY
-        print(f"Error en etiqueta: {e}")
+    except Exception as e:
+        print(f"Error: {e}")
         return None
         
 def calcular_grasa_marpi(rodamiento):
@@ -808,6 +809,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
