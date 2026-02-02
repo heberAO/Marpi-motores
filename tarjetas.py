@@ -473,32 +473,32 @@ elif modo == "Historial y QR":
                     )
                     
                     if img_bytes:
+                        # --- BLOQUE DEL BOTÓN CORREGIDO ---
                         import base64
-                        b64_img = base64.b64encode(img_bytes).decode()
+                        b64_img = base64.encodebytes(img_bytes).decode('utf-8')
                         
-                        # Todo lo que sigue es una sola cadena de texto (String) para Python
                         boton_html = f"""
                         <div style="width: 100%; text-align: center;">
-                            <button id="btnPrint" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif;">
-                                🖨️ IMPRIMIR ETIQUETA EN PC42+
+                            <button id="btnMarpi" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif; font-size:16px;">
+                                🖨️ IMPRIMIR ETIQUETA GIGANTE
                             </button>
                         </div>
+                    
                         <script>
-                        document.getElementById('btnPrint').onclick = function() {{
-                            const win = window.open('', '', 'width=227,height=113'); // Tamaño exacto en píxeles para 60x30mm
+                        document.getElementById('btnMarpi').onclick = function() {{
+                            const win = window.open('', '', 'width=800,height=600');
                             win.document.write('<html><head><style>');
-                            # 1. Forzamos el tamaño del papel y eliminamos cualquier margen de página
-                            win.document.write('@page {{ size: 60mm 30mm; margin: 0 !important; }}'); 
-                            win.document.write('body {{ margin: 0; padding: 0; }}');
-                            # 2. EL TRUCO: Forzamos a la imagen a ser exactamente de 60x30 sin respetar bordes
+                            // Doble llave para que Python no se confunda
+                            win.document.write('@page {{ size: 60mm 30mm; margin: 0 !important; }}');
+                            win.document.write('body {{ margin: 0; padding: 0; background: white; }}');
                             win.document.write('img {{ width: 60mm; height: 30mm; display: block; object-fit: fill; image-rendering: pixelated; }}');
                             win.document.write('</style></head><body>');
                             win.document.write('<img src="data:image/png;base64,{b64_img}">');
                             win.document.write('</body></html>');
                             win.document.close();
                             
-                            // Esperamos a que la imagen cargue antes de imprimir
-                            setTimeout(() => {{
+                            // Pequeña pausa para asegurar la carga
+                            setTimeout(function() {{
                                 win.focus();
                                 win.print();
                                 win.close();
@@ -506,7 +506,10 @@ elif modo == "Historial y QR":
                         }};
                         </script>
                         """
-                        st.components.v1.html(boton_html, height=100)
+    
+                        import streamlit.components.v1 as components
+                        components.html(boton_html, height=100)
+                        
                     
                     st.divider()
 elif modo == "Relubricacion":
@@ -808,6 +811,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
