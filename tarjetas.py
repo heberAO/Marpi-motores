@@ -46,38 +46,47 @@ def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, extra
     """
     return f'<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><button onclick="{js_code}" style="{st_btn}">📥 GUARDAR REPORTE COMPLETO</button>'
 def generar_etiqueta_honeywell(tag, serie, potencia):
-    # Subimos la resolución (600x300 es ideal para 203 dpi de la PC42)
-    ancho, alto = 600, 300 
-    etiqueta = Image.new('L', (ancho, alto), 255)
-    draw = ImageDraw.Draw(etiqueta)
+    try: # <--- AGREGAMOS EL TRY AQUÍ
+        # 1. Configuración de lienzo
+        ancho, alto = 600, 300 
+        etiqueta = Image.new('L', (ancho, alto), 255)
+        draw = ImageDraw.Draw(etiqueta)
 
-    # ... (código del QR igual que antes) ...
+        # 2. Generar QR GIGANTE (Lo incluimos para que no falte)
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=14, 
+            border=0
+        )
+        qr.add_data(f"https://marpi-motores.streamlit.app/?tag={tag}")
+        qr.make(fit=True)
+        img_qr = qr.make_image(fill_color="black", back_color="white").convert('L')
+        img_qr = img_qr.resize((280, 280), Image.Resampling.LANCZOS)
+        etiqueta.paste(img_qr, (5, 10))
 
-    # TEXTOS: Usar coordenadas que aprovechen el espacio
-    x_text = 290
-    
-    # IMPORTANTE: Si podés, cargá una fuente TrueType (.ttf) para que sea más gruesa
-    # Si usas la fuente por defecto, dibujala dos veces (un píxel al lado) para darle grosor
-    def draw_bold_text(pos, text, size=0):
-        draw.text(pos, text, fill=0)
-        draw.text((pos[0]+1, pos[1]), text, fill=0) # Efecto negrita manual
+        # 3. Textos con "Negrita Manual" para legibilidad
+        x_text = 300
+        def draw_bold_text(pos, text):
+            draw.text(pos, text, fill=0)
+            draw.text((pos[0]+1, pos[1]), text, fill=0) # Refuerzo de trazo
 
-    draw_bold_text((x_text, 30), "MARPI MOTORES")
-    draw.line([x_text, 65, 580, 65], fill=0, width=5) # Línea más gruesa
+        draw_bold_text((x_text, 30), "MARPI MOTORES")
+        draw.line([x_text, 65, 580, 65], fill=0, width=5) 
 
-    draw_bold_text((x_text, 90), f"TAG: {str(tag).upper()}")
-    draw_bold_text((x_text, 150), f"S/N: {str(serie).upper()}")
-    draw_bold_text((x_text, 210), f"POT: {str(potencia).upper()}")
+        draw_bold_text((x_text, 90), f"TAG: {str(tag).upper()}")
+        draw_bold_text((x_text, 150), f"S/N: {str(serie).upper()}")
+        draw_bold_text((x_text, 210), f"POT: {str(potencia).upper()}")
 
-    # Convertir a Blanco y Negro PURO (1-bit)
-    # Esto elimina los bordes grises que hacen que el texto se vea borroso
-    final_bw = etiqueta.convert('1', dither=Image.NONE)
-    
-    buf = BytesIO()
-    final_bw.save(buf, format="PNG")
-    return buf.getvalue()
-    except Exception as e:
-        st.error(f"Error al cargar datos: {e}")
+        # 4. Conversión y salida
+        final_bw = etiqueta.convert('1', dither=Image.NONE)
+        buf = BytesIO()
+        final_bw.save(buf, format="PNG")
+        return buf.getvalue()
+
+    except Exception as e: # <--- EL EXCEPT AHORA SÍ TIENE SU TRY
+        print(f"Error en etiqueta: {e}")
+        return None
         
 def calcular_grasa_marpi(rodamiento):
     """Calcula gramos de grasa según el modelo del rodamiento."""
@@ -486,7 +495,7 @@ elif modo == "Historial y QR":
                                 win.document.write('@page {{ size: 60mm 30mm; margin: 0 !important; }}');
                                 win.document.write('body {{ margin: 0; padding: 0; overflow: hidden; }}');
                                 // 'fill' estira la imagen a los bordes y 'scale' la agranda un 5% extra para evitar bordes blancos
-                                win.document.write('img {{ width: 60mm; height: 30mm; object-fit: fill; transform: scale(1.05); transform-origin: top left; }}');
+                                win.document.write('img {{ width: 60mm; height: 30mm; image-rendering: pixelated; image-rendering: crisp-edges; }}');
                                 win.document.write('</style></head><body>');
                                 win.document.write('<img src="data:image/png;base64,{b64_img}" onload="setTimeout(() => {{ window.print(); window.close(); }}, 300);">');
                                 win.document.write('</body></html>');
@@ -799,6 +808,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
