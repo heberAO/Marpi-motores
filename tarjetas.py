@@ -495,51 +495,41 @@ elif modo == "Historial y QR":
                         info_extra, 
                         f_limpia.get('Descripcion', '-')
                     )
-                    
                     components.html(html_boton, height=80)
                     # --- GENERAR IMAGEN DE ETIQUETA ---
-                    img_data = generar_etiqueta_honeywell(
-                        tag_h, 
-                        f_limpia.get('N_Serie', '-'), 
-                        f_limpia.get('Potencia', '-')
-                    )
-                    img_bytes = generar_etiqueta_honeywell(tag_h, f_limpia.get('N_Serie', '-'), f_limpia.get('Potencia', '-'))
-                    
-                    if img_bytes:
-                        # 2. Convertimos los bytes a Base64 para que el navegador los entienda
-                        # --- 1. GENERAR IMAGEN UNA SOLA VEZ ---
-                    img_bytes = generar_etiqueta_honeywell(
-                        tag_h, 
-                        f_limpia.get('N_Serie', '-'), 
-                        f_limpia.get('Potencia', '-')
-                    )
-                        import base64
-                        b64_img = base64.b64encode(img_bytes).decode()
-                        
-                        # Usamos triple comilla para que no haya conflictos con las comillas del JS
-                        boton_html = f"""
-                        <div style="width: 100%; text-align: center;">
-                            <button id="btnPrint" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif;">
-                                🖨️ IMPRIMIR ETIQUETA (60x30)
-                            </button>
-                        </div>
-                        
-                        <script>
-                        document.getElementById('btnPrint').onclick = function() {{
-                            const win = window.open('', '', 'height=400,width=600');
-                            win.document.write('<html><head><style>');
-                            win.document.write('@page {{ size: 60mm 30mm; margin: 0; }}');
-                            win.document.write('body {{ margin: 0; display: flex; justify-content: center; align-items: center; }}');
-                            win.document.write('img {{ width: 60mm; height: 30mm; object-fit: contain; }}');
-                            win.document.write('</style></head><body>');
-                            win.document.write('<img src="data:image/png;base64,{b64_img}" onload="window.print();window.close();">');
-                            win.document.write('</body></html>');
-                            win.document.close();
-                        }};
-                        </script>
-                        """
-                        
-                        st.components.v1.html(boton_html, height=100)
+                        img_data = generar_etiqueta_honeywell(
+                            tag_h, 
+                            f_limpia.get('N_Serie', '-'), 
+                            f_limpia.get('Potencia', '-')
+                        )
+                        if img_bytes:
+                        # TODO ESTE BLOQUE DEBE ESTAR IDENTADO (MÁS A LA DERECHA)
+                            import base64
+                            b64_img = base64.b64encode(img_bytes).decode()
+                            
+                            # Definimos el HTML del botón
+                            boton_html = f"""
+                            <div style="width: 100%; text-align: center;">
+                                <button id="btnPrint" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif;">
+                                    🖨️ IMPRIMIR ETIQUETA (60x30)
+                                </button>
+                            </div>
+                            <script>
+                            document.getElementById('btnPrint').onclick = function() {{
+                                const win = window.open('', '', 'height=400,width=600');
+                                win.document.write('<html><head><style>');
+                                win.document.write('@page {{ size: 60mm 30mm; margin: 0; }}');
+                                win.document.write('body {{ margin: 0; display: flex; justify-content: center; align-items: center; }}');
+                                win.document.write('img {{ width: 60mm; height: 30mm; object-fit: contain; }}');
+                                win.document.write('</style></head><body>');
+                                win.document.write('<img src="data:image/png;base64,{b64_img}" onload="window.print();window.close();">');
+                                win.document.write('</body></html>');
+                                win.document.close();
+                            }};
+                            </script>
+                            """
+                            # Mostramos el componente
+                            st.components.v1.html(boton_html, height=100)
                     
                     st.divider()
 elif modo == "Relubricacion":
@@ -841,6 +831,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
