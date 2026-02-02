@@ -503,34 +503,65 @@ elif modo == "Historial y QR":
                         f_limpia.get('N_Serie', '-'), 
                         f_limpia.get('Potencia', '-')
                     )
-                    # --- DENTRO DE TU BUCLE DE TARJETAS ---
-                    # 1. Generamos la imagen con tu función
                     img_bytes = generar_etiqueta_honeywell(tag_h, f_limpia.get('N_Serie', '-'), f_limpia.get('Potencia', '-'))
                     
                     if img_bytes:
                         # 2. Convertimos los bytes a Base64 para que el navegador los entienda
-                        import base64
-                        b64_img = base64.b64encode(img_bytes).decode()
+                        # --- 1. GENERAR IMAGEN UNA SOLA VEZ ---
+                    img_bytes = generar_etiqueta_honeywell(
+                        tag_h, 
+                        f_limpia.get('N_Serie', '-'), 
+                        f_limpia.get('Potencia', '-')
+                    )
+
+                    # --- 3. BOTÓN DE IMPRESIÓN DIRECTA (MÉTODO IFRAME) ---
+                    import base64
+                    b64_img = base64.b64encode(img_bytes).decode()
+                    
+                    # Este código crea un 'iframe' invisible que contiene solo la etiqueta
+                    # Al tocar el botón, solo se imprime el contenido de ese iframe
+                    component_code = f"""
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <button onclick="printEtiqueta()" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family: sans-serif;">
+                            🖨️ ENVIAR A PC42+ (SIN DESCARGAR)
+                        </button>
+                    </div>
+                    
+                    <iframe id="printFrame" style="display:none;"></iframe>
+                    
+                    <script>
+                    function printEtiqueta() {{
+                        const frame = document.getElementById('printFrame');
+                        const content = `
+                            <html>
+                                <head>
+                                    <style>
+                                        @page {{ size: 60mm 30mm; margin: 0; }}
+                                        body {{ margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; }}
+                                        img {{ width: 60mm; height: 30mm; }}
+                                    </style>
+                                </head>
+                                <body>
+                                    <img src="data:image/png;base64,{b64_img}" onload="window.focus(); setTimeout(() => {{ window.print(); }}, 200);">
+                                </body>
+                            </html>
+                        `;
+                        const doc = frame.contentWindow.document;
+                        doc.open();
+                        doc.write(content);
+                        doc.close();
                         
-                        # 3. Creamos el HTML que solo muestra la imagen y manda a imprimir
-                        js_print = f"""
-                        const win = window.open('', '', 'height=300,width=500');
-                        win.document.write('<html><head><style>');
-                        win.document.write('@page {{ size: 60mm 30mm; margin: 0; }}');
-                        win.document.write('body {{ margin: 0; display: flex; justify-content: center; align-items: center; }}');
-                        win.document.write('img {{ width: 60mm; height: 30mm; object-fit: contain; }}');
-                        win.document.write('</style></head><body>');
-                        win.document.write('<img src="data:image/png;base64,{b64_img}" onload="window.print();window.close();">');
-                        win.document.write('</body></html>');
-                        win.document.close();
-                        """
-                        
-                        # 4. Mostramos el botón
-                        st.components.v1.html(f'''
-                            <button onclick="{js_print}" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">
-                                🖨️ IMPRIMIR ETIQUETA (60x30)
-                            </button>
-                        ''', height=80)    
+                        // Ejecutamos la impresión del contenido del iframe
+                        setTimeout(() => {{
+                            frame.contentWindow.focus();
+                            frame.contentWindow.print();
+                        }}, 500);
+                    }}
+                    </script>
+                    """
+                    
+                    st.components.v1.html(component_code, height=90)
+                    
                     st.divider()
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -831,6 +862,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
