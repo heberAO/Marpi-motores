@@ -517,15 +517,22 @@ elif modo == "Historial y QR":
                         </div>
                         <script>
                         document.getElementById('btnPrint').onclick = function() {{
-                            const win = window.open('', '', 'height=400,width=600');
+                            const win = window.open('', '', 'width=227,height=113'); // Tamaño exacto en píxeles para 60x30mm
                             win.document.write('<html><head><style>');
-                            win.document.write('@page {{ size: 60mm 30mm; margin: 0; }}');
-                            win.document.write('body {{ margin: 0; padding: 0; background: white; }}');
-                            win.document.write('img {{ width: 60mm; height: 30mm; image-rendering: pixelated; filter: contrast(200%); }}');
+                            win.document.write('@media print {{ @page {{ size: 60mm 30mm; margin: 0; }} body {{ margin: 0; }} }}');
+                            win.document.write('body {{ margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; background: white; }}');
+                            win.document.write('img {{ width: 60mm; height: 30mm; display: block; }}');
                             win.document.write('</style></head><body>');
-                            win.document.write('<img src="data:image/png;base64,{b64_img}" onload="window.print();window.close();">');
+                            win.document.write('<img src="data:image/png;base64,{b64_img}">');
                             win.document.write('</body></html>');
                             win.document.close();
+                            
+                            // Esperamos a que la imagen cargue antes de imprimir
+                            setTimeout(() => {{
+                                win.focus();
+                                win.print();
+                                win.close();
+                            }}, 500);
                         }};
                         </script>
                         """
@@ -831,6 +838,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
