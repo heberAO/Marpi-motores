@@ -55,38 +55,54 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         etiqueta = Image.new('1', (600, 300), 1)
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. QR LIMPIO (Lado Izquierdo)
-        qr = qrcode.QRCode(version=1, box_size=11, border=1)
+        # 2. QR de Alta Densidad (Versión 3 o superior para que el logo no lo tape)
+        qr = qrcode.QRCode(
+            version=3, 
+            error_correction=qrcode.constants.ERROR_CORRECT_H, 
+            box_size=12, 
+            border=1
+        )
         qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={tag}")
         qr.make(fit=True)
-        img_qr = qr.make_image(fill_color="black", back_color="white").convert('1')
-        img_qr = img_qr.resize((240, 240))
-        etiqueta.paste(img_qr, (20, 10)) # Posición izquierda
-
-        # 3. ÁREA DE LOGO Y NOMBRE (Lado Derecho)
-        x_logo = 300
         
-        # Dibujamos un logo estilizado de MARPI (Círculo con M)
-        # Esto replica lo que tenés en el PDF pero a un costado
-        draw.ellipse([380, 20, 520, 160], outline=0, width=5) # Círculo del logo
+        # Convertimos a RGB para poder dibujar el logo con nitidez antes de pasar a B/N
+        img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
+        q_w, q_h = img_qr.size
         
+        # 3. Dibujar el Logo de Marpi en el centro
+        draw_qr = ImageDraw.Draw(img_qr)
+        centro = q_w // 2
+        radio_circulo = q_w // 6  # Tamaño equilibrado para no romper el QR
+        
+        # Círculo blanco de fondo
+        draw_qr.ellipse([centro-radio_circulo, centro-radio_circulo, 
+                         centro+radio_circulo, centro+radio_circulo], fill="white")
+        # Borde del círculo
+        draw_qr.ellipse([centro-radio_circulo, centro-radio_circulo, 
+                         centro+radio_circulo, centro+radio_circulo], outline="black", width=3)
+        
+        # Letra 'M' del logo
         try:
-            f_m = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 90)
-            f_txt = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 32)
+            f_m = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 55)
+            draw_qr.text((centro-22, centro-34), "M", fill="black", font=f_m)
         except:
-            f_m = f_txt = ImageFont.load_default()
+            draw_qr.text((centro-10, centro-10), "M", fill="black")
 
-        # La 'M' gigante en el círculo
-        draw.text((410, 40), "M", font=f_m, fill=0)
-        
-        # Nombre de la empresa abajo, ocupando todo el ancho
-        draw.text((300, 180), "MARPI", font=f_txt, fill=0)
-        draw.text((270, 225), "ELECTRICIDAD", font=f_txt, fill=0)
+        # 4. Redimensionar y Pegar
+        img_qr = img_qr.resize((230, 230)).convert('1')
+        etiqueta.paste(img_qr, (185, 5)) # Centrado horizontal en los 600px
 
-        # Línea divisoria decorativa
-        draw.line([280, 20, 280, 280], fill=0, width=2)
+        # 5. Texto Inferior: MARPI ELECTRICIDAD
+        try:
+            f_footer = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 40)
+        except:
+            f_footer = ImageFont.load_default()
 
-        # 4. Retornar
+        # Dibujamos el texto bien centrado abajo
+        texto = "MARPI ELECTRICIDAD"
+        draw.text((95, 245), texto, font=f_footer, fill=0)
+
+        # 6. Salida
         buf = BytesIO()
         etiqueta.save(buf, format="PNG")
         return buf.getvalue()
@@ -817,6 +833,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
