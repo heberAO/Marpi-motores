@@ -47,42 +47,39 @@ def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, extra
     return f'<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><button onclick="{js_code}" style="{st_btn}">📥 GUARDAR REPORTE COMPLETO</button>'
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
-        # 1. Ajustamos el lienzo a 60x30mm con buena resolución
-        ancho, alto = 480, 240
+        # Aumentamos la resolución base para que no salga pixelado
+        ancho, alto = 600, 300 
         etiqueta = Image.new('L', (ancho, alto), 255)
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. Generar QR MÁS GRANDE (Cambiamos box_size de 5 a 8)
+        # Generar QR GIGANTE
         qr = qrcode.QRCode(
             version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L, # Menos corrección = QR más simple y grande
-            box_size=8, # <-- Aumentamos el tamaño de los puntos
-            border=1
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=15, # <-- Mucho más grande
+            border=0     # <-- Cero margen interno en el QR
         )
-        qr.add_data(f"https://marpi-motores.streamlit.app/?tag={tag}")
+        url_app = f"https://marpi-motores.streamlit.app/?tag={tag}"
+        qr.add_data(url_app)
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('L')
         
-        # Redimensionamos el QR para que ocupe casi todo el alto (aprox 220px de los 240px)
-        img_qr = img_qr.resize((210, 210), Image.Resampling.LANCZOS)
+        # Redimensionar el QR para que ocupe casi todo el alto (280px de los 300px)
+        img_qr = img_qr.resize((280, 280), Image.Resampling.LANCZOS)
 
-        # 3. Posicionamiento (Pegado al borde izquierdo)
-        etiqueta.paste(img_qr, (10, 15))
+        # Pegar el QR bien a la izquierda y centrado verticalmente
+        etiqueta.paste(img_qr, (5, 10))
 
-        # 4. Textos más grandes y hacia la derecha
-        x_text = 230
+        # Textos a la derecha con fuentes más grandes
+        x_text = 300
+        draw.text((x_text, 30), "MARPI MOTORES", fill=0) # Ajustar tamaño de fuente si usas .ttf
+        draw.line([x_text, 65, 580, 65], fill=0, width=4)
+
+        draw.text((x_text, 90), f"TAG: {str(tag).upper()}", fill=0)
+        draw.text((x_text, 150), f"S/N: {str(serie).upper()}", fill=0)
+        draw.text((x_text, 210), f"POT: {str(potencia).upper()}", fill=0)
         
-        # Usamos una fuente más robusta si es posible, o simplemente ajustamos posiciones
-        draw.text((x_text, 20), "MARPI MOTORES", fill=0) # Título arriba
-        draw.line([x_text, 45, 460, 45], fill=0, width=3)
-
-        draw.text((x_text, 70), f"TAG: {str(tag).upper()}", fill=0)
-        draw.text((x_text, 115), f"S/N: {str(serie).upper()}", fill=0)
-        draw.text((x_text, 160), f"POT: {str(potencia).upper()}", fill=0)
-        
-        draw.text((x_text, 210), "MANT. PREDICTIVO", fill=0)
-
-        # 5. Conversión final
+        # Conversión a blanco y negro puro para la térmica
         final_bw = etiqueta.convert('1')
         buf = BytesIO()
         final_bw.save(buf, format="PNG")
@@ -490,9 +487,11 @@ elif modo == "Historial y QR":
                         document.getElementById('btnPrint').onclick = function() {{
                             const win = window.open('', '', 'width=227,height=113'); // Tamaño exacto en píxeles para 60x30mm
                             win.document.write('<html><head><style>');
-                            win.document.write('@media print {{ @page {{ size: 60mm 30mm; margin: 0; }} body {{ margin: 0; }} }}');
-                            win.document.write('body {{ margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; background: white; }}');
-                            win.document.write('img {{ width: 60mm; height: 30mm; display: block; }}');
+                            # 1. Forzamos el tamaño del papel y eliminamos cualquier margen de página
+                            win.document.write('@page {{ size: 60mm 30mm; margin: 0 !important; }}'); 
+                            win.document.write('body {{ margin: 0; padding: 0; }}');
+                            # 2. EL TRUCO: Forzamos a la imagen a ser exactamente de 60x30 sin respetar bordes
+                            win.document.write('img {{ width: 60mm; height: 30mm; display: block; object-fit: fill; image-rendering: pixelated; }}');
                             win.document.write('</style></head><body>');
                             win.document.write('<img src="data:image/png;base64,{b64_img}">');
                             win.document.write('</body></html>');
@@ -809,6 +808,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
