@@ -48,48 +48,70 @@ def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, extra
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
         from PIL import Image, ImageDraw, ImageFont
-        
-        # 1. Creamos el lienzo (600x300 px)
-        etiqueta = Image.new('1', (600, 300), 1)
+        import qrcode
+        from io import BytesIO
+
+        # 1. Lienzo de 60x30mm a 203dpi (aprox 480x240 para que sobre espacio)
+        # Lo hacemos un poco más chico que el lienzo total para evitar cortes
+        etiqueta = Image.new('1', (500, 250), 1)
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. Intentamos cargar una fuente de Windows (Arial Bold)
-        # Si falla, usará la básica (pero probemos con tamaños grandes)
-        try:
-            # En Windows la ruta suele ser esta. En Streamlit Cloud buscamos una default.
-            font_path = "arialbd.ttf" # Arial Bold
-            fuente_titulo = ImageFont.truetype(font_path, 45)
-            fuente_datos = ImageFont.truetype(font_path, 38)
-            fuente_chica = ImageFont.truetype(font_path, 28)
-        except:
-            fuente_titulo = fuente_datos = fuente_chica = ImageFont.load_default()
-
-        # 3. QR GIGANTE (Igual que antes)
-        qr = qrcode.QRCode(version=1, box_size=12, border=0)
+        # 2. GENERAR QR GIGANTE CON LOGO INTERNO
+        # Usamos Error Correction HIGH para que el logo no rompa el escaneo
+        qr = qrcode.QRCode(
+            version=3,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
+            box_size=15,
+            border=1
+        )
         qr.add_data(f"https://marpi-motores.streamlit.app/?tag={tag}")
         qr.make(fit=True)
-        img_qr = qr.make_image(fill_color="black", back_color="white").convert('1')
-        img_qr = img_qr.resize((260, 260))
-        etiqueta.paste(img_qr, (10, 20))
-
-        # 4. TEXTOS GIGANTES (En los 32mm libres)
-        x_text = 280
         
-        # MARPI MOTORES
-        draw.text((x_text, 10), "MARPI MOTORES", font=fuente_titulo, fill=0)
-        draw.line([x_text, 60, 580, 60], fill=0, width=5)
-
-        # DATOS (Ahora sí, usando el parámetro font=)
-        draw.text((x_text, 75),  f"TAG: {str(tag).upper()}", font=fuente_datos, fill=0)
-        draw.text((x_text, 135), f"S/N: {str(serie).upper()}", font=fuente_datos, fill=0)
-        draw.text((x_text, 195), f"POT: {str(potencia).upper()}", font=fuente_datos, fill=0)
+        # Convertimos el QR a imagen
+        img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
         
-        draw.text((x_text, 255), "MANT. PREDICTIVO", font=fuente_chica, fill=0)
+        # --- ACÁ VA EL LOGO ---
+        # Si tenés el archivo del logo, podés cargarlo. Si no, hacemos un círculo con la "M"
+        ancho_qr, alto_qr = img_qr.size
+        logo_size = ancho_qr // 4
+        
+        # Dibujamos un círculo blanco en el centro del QR para el logo
+        draw_qr = ImageDraw.Draw(img_qr)
+        centro = ancho_qr // 2
+        r = logo_size // 2
+        draw_qr.ellipse([centro-r, centro-r, centro+r, centro+r], fill="white")
+        
+        # Ponemos una "M" estilizada o texto corto
+        try:
+            f_logo = ImageFont.load_default(size=30)
+            draw_qr.text((centro-12, centro-15), "M", fill="black", font=f_logo)
+        except:
+            draw_qr.text((centro-5, centro-5), "M", fill="black")
 
-        # 5. Guardar
+        # Redimensionamos el QR para que sea el protagonista (220px de alto)
+        img_qr = img_qr.resize((200, 200)).convert('1')
+        
+        # Centramos el QR en la etiqueta (dejando espacio abajo para el texto)
+        etiqueta.paste(img_qr, (150, 5)) # Centrado horizontal en los 500px
+
+        # 3. TEXTO INFERIOR: MARPI ELECTRICIDAD
+        try:
+            # Intentamos usar una fuente gruesa del sistema
+            font_marpi = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 35)
+        except:
+            font_marpi = ImageFont.load_default()
+
+        # Dibujamos el nombre de la empresa bien grande abajo
+        texto = "MARPI ELECTRICIDAD"
+        draw.text((85, 210), texto, font=font_marpi, fill=0)
+
+        # 4. Salida
         buf = BytesIO()
         etiqueta.save(buf, format="PNG")
         return buf.getvalue()
+
+    except Exception as e:
+        return None
 
     except Exception as e:
         st.error(f"Error en diseño: {e}")
@@ -818,6 +840,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
