@@ -482,19 +482,21 @@ elif modo == "Historial y QR":
                         boton_html = f"""
                         <html>
                         <body>
-                            <button onclick="imprimir()" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif;">
-                                🖨️ IMPRIMIR ETIQUETA (60x30)
+                            <button onclick="imprimir()" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">
+                                🖨️ IMPRIMIR ETIQUETA GIGANTE
                             </button>
                     
                             <script>
                             function imprimir() {{
-                                var win = window.open('', '', 'width=600,height=400');
+                                var win = window.open('', '', 'width=800,height=600');
                                 win.document.write('<html><head><style>');
+                                // Forzamos el tamaño del papel y quitamos márgenes internos
                                 win.document.write('@page {{ size: 60mm 30mm; margin: 0 !important; }}');
-                                win.document.write('body {{ margin: 0; padding: 0; }}');
-                                win.document.write('img {{ width: 60mm; height: 30mm; object-fit: fill; }}');
+                                win.document.write('body {{ margin: 0; padding: 0; overflow: hidden; }}');
+                                // 'fill' estira la imagen a los bordes y 'scale' la agranda un 5% extra para evitar bordes blancos
+                                win.document.write('img {{ width: 60mm; height: 30mm; object-fit: fill; transform: scale(1.05); transform-origin: top left; }}');
                                 win.document.write('</style></head><body>');
-                                win.document.write('<img src="data:image/png;base64,{b64_img}" onload="window.print(); window.close();">');
+                                win.document.write('<img src="data:image/png;base64,{b64_img}" onload="setTimeout(() => {{ window.print(); window.close(); }}, 300);">');
                                 win.document.write('</body></html>');
                                 win.document.close();
                             }}
@@ -502,7 +504,6 @@ elif modo == "Historial y QR":
                         </body>
                         </html>
                         """
-                        
                         st.components.v1.html(boton_html, height=100)
                                             
                     
@@ -806,6 +807,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
