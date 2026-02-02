@@ -518,9 +518,9 @@ elif modo == "Historial y QR":
                         document.getElementById('btnPrint').onclick = function() {{
                             const win = window.open('', '', 'height=400,width=600');
                             win.document.write('<html><head><style>');
-                            win.document.write('@page {{ size: 60mm 30mm; margin: 0; }}');
-                            win.document.write('body {{ margin: 0; display: flex; justify-content: center; align-items: center; }}');
-                            win.document.write('img {{ width: 60mm; height: 30mm; object-fit: contain; }}');
+                            win.document.write('@page { size: 60mm 30mm; margin: 0; }');
+                            win.document.write('body { margin: 0; padding: 0; background: white; }');
+                            win.document.write('img { width: 60mm; height: 30mm; image-rendering: pixelated; filter: contrast(200%); }');
                             win.document.write('</style></head><body>');
                             win.document.write('<img src="data:image/png;base64,{b64_img}" onload="window.print();window.close();">');
                             win.document.write('</body></html>');
@@ -830,6 +830,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
