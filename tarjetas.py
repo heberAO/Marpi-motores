@@ -497,30 +497,31 @@ elif modo == "Historial y QR":
                     )
                     components.html(html_boton, height=80)
                     # --- GENERAR IMAGEN DE ETIQUETA ---
+                    # --- 1. GENERAR IMAGEN ---
                     img_bytes = generar_etiqueta_honeywell(
                         tag_h, 
                         f_limpia.get('N_Serie', '-'), 
                         f_limpia.get('Potencia', '-')
                     )
                     
-                    # --- 2. SEGUNDO: PREGUNTAMOS SI SE CREÓ BIEN ---
                     if img_bytes:
                         import base64
                         b64_img = base64.b64encode(img_bytes).decode()
                         
+                        # Todo lo que sigue es una sola cadena de texto (String) para Python
                         boton_html = f"""
                         <div style="width: 100%; text-align: center;">
                             <button id="btnPrint" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif;">
-                                🖨️ IMPRIMIR ETIQUETA (60x30)
+                                🖨️ IMPRIMIR ETIQUETA EN PC42+
                             </button>
                         </div>
                         <script>
                         document.getElementById('btnPrint').onclick = function() {{
                             const win = window.open('', '', 'height=400,width=600');
                             win.document.write('<html><head><style>');
-                            win.document.write('@page { size: 60mm 30mm; margin: 0; }');
-                            win.document.write('body { margin: 0; padding: 0; background: white; }');
-                            win.document.write('img { width: 60mm; height: 30mm; image-rendering: pixelated; filter: contrast(200%); }');
+                            win.document.write('@page {{ size: 60mm 30mm; margin: 0; }}');
+                            win.document.write('body {{ margin: 0; padding: 0; background: white; }}');
+                            win.document.write('img {{ width: 60mm; height: 30mm; image-rendering: pixelated; filter: contrast(200%); }}');
                             win.document.write('</style></head><body>');
                             win.document.write('<img src="data:image/png;base64,{b64_img}" onload="window.print();window.close();">');
                             win.document.write('</body></html>');
@@ -830,6 +831,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
