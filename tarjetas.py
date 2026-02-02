@@ -51,70 +51,65 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         import qrcode
         from io import BytesIO
 
-        # 1. Lienzo de 60x30mm a 203dpi (aprox 480x240 para que sobre espacio)
-        # Lo hacemos un poco más chico que el lienzo total para evitar cortes
-        etiqueta = Image.new('1', (500, 250), 1)
+        # 1. Lienzo optimizado para 60x30mm (proporción 2:1)
+        ancho, alto = 600, 300
+        etiqueta = Image.new('1', (ancho, alto), 1)
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. GENERAR QR GIGANTE CON LOGO INTERNO
-        # Usamos Error Correction HIGH para que el logo no rompa el escaneo
+        # 2. QR GIGANTE (Nivel de error Alto para permitir logo central)
         qr = qrcode.QRCode(
-            version=3,
+            version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
-            box_size=15,
+            box_size=18,  # Aumentamos el tamaño de los módulos
             border=1
         )
         qr.add_data(f"https://marpi-motores.streamlit.app/?tag={tag}")
         qr.make(fit=True)
         
-        # Convertimos el QR a imagen
+        # Crear imagen del QR
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
         
-        # --- ACÁ VA EL LOGO ---
-        # Si tenés el archivo del logo, podés cargarlo. Si no, hacemos un círculo con la "M"
-        ancho_qr, alto_qr = img_qr.size
-        logo_size = ancho_qr // 4
+        # --- LÓGICA DEL LOGO CENTRAL (Similar al PDF) ---
+        q_w, q_h = img_qr.size
+        logo_size = q_w // 4  # El logo ocupará el 25% del centro
         
-        # Dibujamos un círculo blanco en el centro del QR para el logo
+        # Espacio en blanco para el logo
         draw_qr = ImageDraw.Draw(img_qr)
-        centro = ancho_qr // 2
+        c = q_w // 2
         r = logo_size // 2
-        draw_qr.ellipse([centro-r, centro-r, centro+r, centro+r], fill="white")
+        draw_qr.rectangle([c-r, c-r, c+r, c+r], fill="white")
         
-        # Ponemos una "M" estilizada o texto corto
+        # Dibujamos la 'M' estilizada en el centro
         try:
-            f_logo = ImageFont.load_default(size=30)
-            draw_qr.text((centro-12, centro-15), "M", fill="black", font=f_logo)
+            # Intentamos usar una fuente robusta si está disponible
+            f_m = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 60)
+            draw_qr.text((c-25, c-35), "M", fill="black", font=f_m)
         except:
-            draw_qr.text((centro-5, centro-5), "M", fill="black")
+            draw_qr.text((c-10, c-10), "M", fill="black")
 
-        # Redimensionamos el QR para que sea el protagonista (220px de alto)
-        img_qr = img_qr.resize((200, 200)).convert('1')
+        # Ajustamos el QR al alto de la etiqueta dejando espacio para el texto inferior
+        img_qr = img_qr.resize((230, 230)).convert('1')
         
-        # Centramos el QR en la etiqueta (dejando espacio abajo para el texto)
-        etiqueta.paste(img_qr, (150, 5)) # Centrado horizontal en los 500px
+        # Pegamos el QR centrado horizontalmente
+        etiqueta.paste(img_qr, (185, 10))
 
         # 3. TEXTO INFERIOR: MARPI ELECTRICIDAD
         try:
-            # Intentamos usar una fuente gruesa del sistema
-            font_marpi = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 35)
+            font_footer = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 45)
         except:
-            font_marpi = ImageFont.load_default()
+            font_footer = ImageFont.load_default()
 
-        # Dibujamos el nombre de la empresa bien grande abajo
+        # Dibujamos el nombre centrado debajo del QR
         texto = "MARPI ELECTRICIDAD"
-        draw.text((85, 210), texto, font=font_marpi, fill=0)
+        # Centrado manual aproximado
+        draw.text((85, 240), texto, font=font_footer, fill=0)
 
-        # 4. Salida
+        # 4. Retornar imagen
         buf = BytesIO()
         etiqueta.save(buf, format="PNG")
         return buf.getvalue()
 
     except Exception as e:
-        return None
-
-    except Exception as e:
-        st.error(f"Error en diseño: {e}")
         return None
         
 def calcular_grasa_marpi(rodamiento):
@@ -840,6 +835,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
