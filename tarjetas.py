@@ -87,7 +87,9 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         buf = BytesIO()
         final_bw.save(buf, format="PNG")
         return buf.getvalue()
-
+    except Exception as e:
+        st.error(f"Error al cargar datos: {e}")
+        
 def calcular_grasa_marpi(rodamiento):
     """Calcula gramos de grasa según el modelo del rodamiento."""
     if not rodamiento or rodamiento in ["-", "S/D", "nan"]:
@@ -807,6 +809,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
