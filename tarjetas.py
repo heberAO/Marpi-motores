@@ -515,52 +515,34 @@ elif modo == "Historial y QR":
                     )
 
                     # --- 3. BOTÓN DE IMPRESIÓN DIRECTA (MÉTODO IFRAME) ---
+                    # --- 3. BOTÓN DE IMPRESIÓN DIRECTA (LIMPIO) ---
                     import base64
                     b64_img = base64.b64encode(img_bytes).decode()
                     
-                    # Este código crea un 'iframe' invisible que contiene solo la etiqueta
-                    # Al tocar el botón, solo se imprime el contenido de ese iframe
-                    component_code = f"""
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <button onclick="printEtiqueta()" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family: sans-serif;">
-                            🖨️ ENVIAR A PC42+ (SIN DESCARGAR)
+                    # Usamos triple comilla para que no haya conflictos con las comillas del JS
+                    boton_html = f"""
+                    <div style="width: 100%; text-align: center;">
+                        <button id="btnPrint" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif;">
+                            🖨️ IMPRIMIR ETIQUETA (60x30)
                         </button>
                     </div>
                     
-                    <iframe id="printFrame" style="display:none;"></iframe>
-                    
                     <script>
-                    function printEtiqueta() {{
-                        const frame = document.getElementById('printFrame');
-                        const content = `
-                            <html>
-                                <head>
-                                    <style>
-                                        @page {{ size: 60mm 30mm; margin: 0; }}
-                                        body {{ margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; }}
-                                        img {{ width: 60mm; height: 30mm; }}
-                                    </style>
-                                </head>
-                                <body>
-                                    <img src="data:image/png;base64,{b64_img}" onload="window.focus(); setTimeout(() => {{ window.print(); }}, 200);">
-                                </body>
-                            </html>
-                        `;
-                        const doc = frame.contentWindow.document;
-                        doc.open();
-                        doc.write(content);
-                        doc.close();
-                        
-                        // Ejecutamos la impresión del contenido del iframe
-                        setTimeout(() => {{
-                            frame.contentWindow.focus();
-                            frame.contentWindow.print();
-                        }}, 500);
-                    }}
+                    document.getElementById('btnPrint').onclick = function() {{
+                        const win = window.open('', '', 'height=400,width=600');
+                        win.document.write('<html><head><style>');
+                        win.document.write('@page {{ size: 60mm 30mm; margin: 0; }}');
+                        win.document.write('body {{ margin: 0; display: flex; justify-content: center; align-items: center; }}');
+                        win.document.write('img {{ width: 60mm; height: 30mm; object-fit: contain; }}');
+                        win.document.write('</style></head><body>');
+                        win.document.write('<img src="data:image/png;base64,{b64_img}" onload="window.print();window.close();">');
+                        win.document.write('</body></html>');
+                        win.document.close();
+                    }};
                     </script>
                     """
                     
-                    st.components.v1.html(component_code, height=90)
+                    st.components.v1.html(boton_html, height=100)
                     
                     st.divider()
 elif modo == "Relubricacion":
@@ -862,6 +844,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
