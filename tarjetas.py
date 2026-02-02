@@ -48,7 +48,7 @@ def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, extra
 def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
         # 1. Tamaño exacto 60x40mm (480x320 px)
-        ancho, alto = 480, 320
+        ancho, alto = 480, 240
         etiqueta = Image.new('L', (ancho, alto), 255)
         draw = ImageDraw.Draw(etiqueta)
 
@@ -83,7 +83,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         etiqueta.paste(img_qr, (20, (alto - img_qr.size[1]) // 2))
 
         # Línea divisoria central
-        draw.line([230, 35, 230, 285], fill=0, width=4)
+        draw.line([230, 35, 230, 220], fill=0, width=4)
 
         # 5. Textos (Convertidos a string para evitar errores)
         x_text = 250
@@ -100,7 +100,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         draw.text((x_text, 175), f"SERIE: {str(serie).upper()}", fill=0)
         draw.text((x_text, 205), f"POTENCIA: {str(potencia).upper()}", fill=0)
 
-        draw.text((320, 285), "SERVICE OFICIAL", fill=0)
+        draw.text((320, 210), "SERVICE OFICIAL", fill=0)
 
         # Marco exterior
         draw.rectangle([5, 5, ancho-5, alto-5], outline=0, width=3)
@@ -503,17 +503,34 @@ elif modo == "Historial y QR":
                         f_limpia.get('N_Serie', '-'), 
                         f_limpia.get('Potencia', '-')
                     )
-
-                    # --- MOSTRAR Y DESCARGAR ---
-                    with st.expander("🏷️ Ver Etiqueta para Impresión"):
-                        st.image(img_data, caption="Vista previa 60x30mm")
-                        st.download_button(
-                            label="📥 Descargar Etiqueta para PC42t",
-                            data=img_data,
-                            file_name=f"Etiqueta_{tag_h}.png",
-                            mime="image/png",
-                            use_container_width=True
-                        )
+                    # --- DENTRO DE TU BUCLE DE TARJETAS ---
+                    # 1. Generamos la imagen con tu función
+                    img_bytes = generar_etiqueta_honeywell(tag_h, f_limpia.get('N_Serie', '-'), f_limpia.get('Potencia', '-'))
+                    
+                    if img_bytes:
+                        # 2. Convertimos los bytes a Base64 para que el navegador los entienda
+                        import base64
+                        b64_img = base64.b64encode(img_bytes).decode()
+                        
+                        # 3. Creamos el HTML que solo muestra la imagen y manda a imprimir
+                        js_print = f"""
+                        const win = window.open('', '', 'height=300,width=500');
+                        win.document.write('<html><head><style>');
+                        win.document.write('@page {{ size: 60mm 30mm; margin: 0; }}');
+                        win.document.write('body {{ margin: 0; display: flex; justify-content: center; align-items: center; }}');
+                        win.document.write('img {{ width: 60mm; height: 30mm; object-fit: contain; }}');
+                        win.document.write('</style></head><body>');
+                        win.document.write('<img src="data:image/png;base64,{b64_img}" onload="window.print();window.close();">');
+                        win.document.write('</body></html>');
+                        win.document.close();
+                        """
+                        
+                        # 4. Mostramos el botón
+                        st.components.v1.html(f'''
+                            <button onclick="{js_print}" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">
+                                🖨️ IMPRIMIR ETIQUETA (60x30)
+                            </button>
+                        ''', height=80)    
                     st.divider()
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -814,6 +831,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
