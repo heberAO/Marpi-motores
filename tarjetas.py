@@ -65,7 +65,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
 
         # 3. LADO DERECHO: LOGO + N° MOTOR
         x_derecha = 310
-        ancho_maximo = 270 # El espacio disponible a la derecha
+        ancho_maximo = 275 # Espacio disponible para que no se salga de la etiqueta
         
         try:
             logo_original = Image.open("logo.png").convert('RGBA')
@@ -73,33 +73,32 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
             w_percent = (base_width / float(logo_original.size[0]))
             h_size = int((float(logo_original.size[1]) * float(w_percent)))
             logo_resurced = logo_original.resize((base_width, h_size), Image.Resampling.LANCZOS)
-            
             etiqueta.paste(logo_resurced, (x_derecha, 45), logo_resurced)
             y_pos_nro = 45 + h_size + 35 
         except:
             y_pos_nro = 150
 
-        # 4. FUNCIÓN DE AJUSTE AUTOMÁTICO DE TAMAÑO
+        # 4. LÓGICA DE AJUSTE DE TAMAÑO (VERSIÓN ROBUSTA)
         texto_nro = f"N°: {str(serie).upper()}"
-        tamanio_fuente = 40  # Empezamos con un tamaño generoso
-        path_fuente = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        tamanio_fuente = 40 # Tamaño inicial deseado
+        
+        # Intentamos cargar la fuente, si falla usamos la de por defecto
+        try:
+            fuente_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+            # Bucle para reducir tamaño hasta que el ancho sea menor al máximo
+            while tamanio_fuente > 10:
+                fuente_nro = ImageFont.truetype(fuente_path, tamanio_fuente)
+                # Medimos el ancho usando getlength (más preciso para fuentes truetype)
+                ancho_texto = draw.textlength(texto_nro, font=fuente_nro)
+                
+                if ancho_texto <= ancho_maximo:
+                    break
+                tamanio_fuente -= 2
+        except:
+            # Si falla la carga de fuente, usamos el ajuste básico
+            fuente_nro = ImageFont.load_default()
 
-        # Bucle para reducir el tamaño si el texto es muy largo
-        while tamanio_fuente > 10:
-            try:
-                fuente_nro = ImageFont.truetype(path_fuente, tamanio_fuente)
-            except:
-                fuente_nro = ImageFont.load_default()
-            
-            # Medimos cuánto ocupa el texto con este tamaño
-            bbox = draw.textbbox((0, 0), texto_nro, font=fuente_nro)
-            ancho_texto = bbox[2] - bbox[0]
-            
-            if ancho_texto <= ancho_maximo:
-                break # Si cabe, salimos del bucle
-            tamanio_fuente -= 2 # Si no cabe, achicamos 2 puntos y probamos de nuevo
-
-        # Dibujamos el Número de Motor ya ajustado
+        # Dibujamos el Número de Motor centrado en su columna o alineado a la izquierda
         draw.text((x_derecha + 5, y_pos_nro), texto_nro, font=fuente_nro, fill=(0,0,0))
 
         # 5. CONVERSIÓN PARA HONEYWELL
@@ -110,6 +109,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         return buf.getvalue()
 
     except Exception as e:
+        print(f"Error: {e}")
         return None
         
 def calcular_grasa_marpi(rodamiento):
@@ -835,6 +835,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
