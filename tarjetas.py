@@ -55,7 +55,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         etiqueta = Image.new('RGB', (600, 300), (255, 255, 255))
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. GENERAR QR (Lado Izquierdo) - Se mantiene igual
+        # 2. QR (Lado Izquierdo) - Se mantiene fijo
         qr = qrcode.QRCode(version=1, box_size=12, border=1)
         qr.add_data(f"https://marpi-motores.streamlit.app/?tag={tag}")
         qr.make(fit=True)
@@ -63,34 +63,37 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         img_qr = img_qr.resize((260, 260))
         etiqueta.paste(img_qr, (20, 20))
 
-        # 3. INSERTAR LOGO OFICIAL (Lado Derecho - Parte Superior)
+        # 3. LADO DERECHO: LOGO + N° MOTOR
         x_derecha = 310
         try:
+            # Cargamos el logo oficial
             logo_original = Image.open("logo.png.png").convert('RGBA')
-            base_width = 280
+            base_width = 270 # Tamaño armónico
             w_percent = (base_width / float(logo_original.size[0]))
             h_size = int((float(logo_original.size[1]) * float(w_percent)))
             logo_resurced = logo_original.resize((base_width, h_size), Image.Resampling.LANCZOS)
             
-            # Lo pegamos un poco más arriba para dejar aire abajo
-            etiqueta.paste(logo_resurced, (x_derecha, 40), logo_resurced)
-            y_texto = 40 + h_size + 30 # Punto de inicio para el N° de motor
+            # Pegamos el logo un poco arriba del centro para dejar espacio al número
+            etiqueta.paste(logo_resurced, (x_derecha, 50), logo_resurced)
+            # El número irá justo debajo del logo
+            y_numero = 50 + h_size + 30 
         except Exception as e:
-            y_texto = 150
+            y_numero = 150
             draw.text((x_derecha, 100), "MARPI ELECTRICIDAD", fill=(0,0,0))
 
-        # 4. INSERTAR N° DE MOTOR (Mismo estilo de letra grande y negrita)
+        # 4. FUENTE PARA EL N° DE MOTOR (Legible y Armónica)
         try:
-            # Fuente gruesa para que combine con el logo
-            fuente_nro = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 40)
+            # Usamos un tamaño de 35 que es grande pero no "pisa" al logo
+            fuente_serie = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 35)
         except:
-            fuente_nro = ImageFont.load_default()
+            fuente_serie = ImageFont.load_default()
 
-        # Dibujamos el N° de motor bien grande debajo del logo
+        # Dibujamos el N° de motor debajo del logo
+        # Usamos .upper() para que se vea más imponente
         texto_nro = f"N°: {str(serie).upper()}"
-        draw.text((x_derecha + 10, y_texto), texto_nro, font=fuente_nro, fill=(0,0,0))
+        draw.text((x_derecha + 10, y_numero), texto_nro, font=fuente_serie, fill=(0,0,0))
 
-        # 5. CONVERSIÓN PARA IMPRESORA TÉRMICA
+        # 5. CONVERSIÓN FINAL A B/N (Sin pérdida de calidad)
         final_bw = etiqueta.convert('1', dither=Image.NONE)
         
         buf = BytesIO()
@@ -98,7 +101,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         return buf.getvalue()
 
     except Exception as e:
-        print(f"Error general: {e}")
+        print(f"Error: {e}")
         return None
         
 def calcular_grasa_marpi(rodamiento):
@@ -824,6 +827,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
