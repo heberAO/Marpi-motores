@@ -218,13 +218,13 @@ if modo == "Nuevo Registro":
     
     if "form_key" not in st.session_state:
         st.session_state.form_key = 0
-
+    datos_auto = st.session_state.get('datos_motor_auto', {})
     fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
     with st.form(key=f"alta_motor_{st.session_state.form_key}"):
         # --- CAMPOS DE ENTRADA (Mismo diseño anterior) ---
         c1, c2, c3 = st.columns([2, 2, 1])
-        t = c1.text_input("TAG/ID MOTOR").upper()
-        sn = c2.text_input("N° de Serie").upper()
+        t = c1.text_input("TAG/ID MOTOR", value=datos_auto.get('tag', '')).upper()
+        sn = c2.text_input("N° de Serie", value=datos_auto.get('serie', '')).upper()
         resp = c3.text_input("Responsable")
 
         c4, c5, c6, c7, c8 = st.columns(5)
@@ -349,16 +349,31 @@ elif modo == "Historial y QR":
             # --- BOTONES DE ACCIÓN RÁPIDA ---
             st.subheader("➕ Nueva Tarea")
             c1, c2, c3 = st.columns(3)
+            
+            # Extraemos los datos actuales del motor seleccionado para pasarlos al formulario
+            # 'historial_motor' ya lo filtraste arriba, tomamos la última fila
+            if not historial_motor.empty:
+                motor_info = historial_motor.iloc[-1]
+                datos_para_pasar = {
+                    'tag': motor_info.get('Tag', ''),
+                    'serie': motor_info.get('N_Serie', ''),b 
+                    'potencia': motor_info.get('Potencia', ''),
+                    'nombre': motor_info.get('Nombre_Empresa', '') # Ajusta al nombre de tu columna
+                }
+            
             with c1:
                 if st.button("🛠️ Reparar", use_container_width=True):
+                    st.session_state.datos_motor_auto = datos_para_pasar # <--- MEMORIA
                     st.session_state.seleccion_manual = "Nuevo Registro"
                     st.rerun()
             with c2:
                 if st.button("🛢️ Engrasar", use_container_width=True):
+                    st.session_state.datos_motor_auto = datos_para_pasar # <--- MEMORIA
                     st.session_state.seleccion_manual = "Relubricacion"
                     st.rerun()
             with c3:
                 if st.button("⚡ Megar", use_container_width=True):
+                    st.session_state.datos_motor_auto = datos_para_pasar # <--- MEMORIA
                     st.session_state.seleccion_manual = "Mediciones de Campo"
                     st.rerun() 
 
@@ -835,6 +850,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
