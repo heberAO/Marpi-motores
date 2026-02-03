@@ -51,7 +51,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         import qrcode
         from io import BytesIO
 
-        # 1. Lienzo (600x300 px) - Proporción exacta para 60x30mm
+        # 1. Lienzo (600x300 px)
         etiqueta = Image.new('RGB', (600, 300), (255, 255, 255))
         draw = ImageDraw.Draw(etiqueta)
 
@@ -63,36 +63,46 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         img_qr = img_qr.resize((260, 260))
         etiqueta.paste(img_qr, (20, 20))
 
-        # 3. LADO DERECHO: LOGO + N° MOTOR (Armonizado)
+        # 3. LADO DERECHO: LOGO + N° MOTOR
         x_derecha = 310
+        ancho_maximo = 270 # El espacio disponible a la derecha
         
-        # Insertar Logo
         try:
             logo_original = Image.open("logo.png").convert('RGBA')
-            # Tamaño equilibrado para que no "pise" los bordes
             base_width = 270 
             w_percent = (base_width / float(logo_original.size[0]))
             h_size = int((float(logo_original.size[1]) * float(w_percent)))
             logo_resurced = logo_original.resize((base_width, h_size), Image.Resampling.LANCZOS)
             
-            # Posición superior derecha
             etiqueta.paste(logo_resurced, (x_derecha, 45), logo_resurced)
-            y_pos_nro = 45 + h_size + 35 # Espacio armónico debajo del logo
+            y_pos_nro = 45 + h_size + 35 
         except:
             y_pos_nro = 150
 
-        # 4. CONFIGURACIÓN DE LETRA PARA EL N° DE MOTOR
-        try:
-            # Usamos un tamaño de 35 que es muy legible pero elegante
-            fuente_nro = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 35)
-        except:
-            fuente_nro = ImageFont.load_default()
-
-        # Dibujamos el Número de Motor
+        # 4. FUNCIÓN DE AJUSTE AUTOMÁTICO DE TAMAÑO
         texto_nro = f"N°: {str(serie).upper()}"
-        draw.text((x_derecha + 15, y_pos_nro), texto_nro, font=fuente_nro, fill=(0,0,0))
+        tamanio_fuente = 40  # Empezamos con un tamaño generoso
+        path_fuente = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
-        # 5. CONVERSIÓN PARA HONEYWELL (Blanco y Negro Puro)
+        # Bucle para reducir el tamaño si el texto es muy largo
+        while tamanio_fuente > 10:
+            try:
+                fuente_nro = ImageFont.truetype(path_fuente, tamanio_fuente)
+            except:
+                fuente_nro = ImageFont.load_default()
+            
+            # Medimos cuánto ocupa el texto con este tamaño
+            bbox = draw.textbbox((0, 0), texto_nro, font=fuente_nro)
+            ancho_texto = bbox[2] - bbox[0]
+            
+            if ancho_texto <= ancho_maximo:
+                break # Si cabe, salimos del bucle
+            tamanio_fuente -= 2 # Si no cabe, achicamos 2 puntos y probamos de nuevo
+
+        # Dibujamos el Número de Motor ya ajustado
+        draw.text((x_derecha + 5, y_pos_nro), texto_nro, font=fuente_nro, fill=(0,0,0))
+
+        # 5. CONVERSIÓN PARA HONEYWELL
         final_bw = etiqueta.convert('1', dither=Image.NONE)
         
         buf = BytesIO()
@@ -825,6 +835,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
