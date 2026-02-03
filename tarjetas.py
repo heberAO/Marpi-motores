@@ -50,47 +50,42 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         from PIL import Image, ImageDraw, ImageFont
         import qrcode
         from io import BytesIO
+        import requests
 
-        # 1. Lienzo (600x300 px para 60x30mm)
-        # Usamos modo 'L' (grises) inicialmente para mejor renderizado de la 'M'
-        etiqueta = Image.new('L', (600, 300), 255)
+        # 1. Lienzo (600x300 px)
+        etiqueta = Image.new('RGB', (600, 300), (255, 255, 255))
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. QR LIMPIO (Lado Izquierdo)
+        # 2. GENERAR QR (Lado Izquierdo)
         qr = qrcode.QRCode(version=1, box_size=12, border=1)
         qr.add_data(f"https://marpi-motores.streamlit.app/?tag={tag}")
         qr.make(fit=True)
-        img_qr = qr.make_image(fill_color="black", back_color="white").convert('L')
+        img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
         img_qr = img_qr.resize((260, 260))
         etiqueta.paste(img_qr, (20, 20))
 
-        # 3. LADO DERECHO: LOGO ORIGINAL (Basado en tu PDF)
-        x_centro_derecha = 440 
-        
+        # 3. INSERTAR LOGO OFICIAL (Lado Derecho)
         try:
-            # Usamos una fuente con serifa (como la del logo) para la 'M'
-            f_m_logo = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf", 130)
-            f_sub_logo = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf", 22)
-            f_empresa = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf", 35)
-        except:
-            f_m_logo = f_sub_logo = f_empresa = ImageFont.load_default()
+            # Cargamos el logo que subiste (logo.png.png)
+            # Nota: Asegúrate de que el archivo esté en la misma carpeta que este script
+            logo_original = Image.open("logo.png.png").convert('RGBA')
+            
+            # Redimensionamos el logo para que quepa bien (aprox 260px de ancho)
+            base_width = 280
+            w_percent = (base_width / float(logo_original.size[0]))
+            h_size = int((float(logo_original.size[1]) * float(w_percent)))
+            logo_resurced = logo_original.resize((base_width, h_size), Image.Resampling.LANCZOS)
+            
+            # Pegamos el logo en la mitad derecha, centrado verticalmente
+            y_pos = (300 - h_size) // 2
+            etiqueta.paste(logo_resurced, (310, y_pos), logo_resurced)
+        except Exception as e:
+            # Si no encuentra el archivo, escribe el nombre para no dejar la etiqueta vacía
+            draw.text((320, 130), "LOGO NO ENCONTRADO", fill=(0,0,0))
+            print(f"Error cargando logo: {e}")
 
-        # Dibujamos la 'M' con el estilo de tu archivo
-        # La dibujamos dos veces para que sea bien negra y robusta
-        draw.text((x_centro_derecha - 55, 30), "M", font=f_m_logo, fill=0)
-        
-        # El texto pequeño que va justo debajo de la 'M' en el logo
-        draw.text((x_centro_derecha - 50, 160), "MARPI MOTORES SRL", font=f_sub_logo, fill=0)
-
-        # 4. NOMBRE DE LA EMPRESA (MARPI ELECTRICIDAD)
-        draw.line([320, 195, 560, 195], fill=0, width=3)
-        draw.text((330, 215), "MARPI", font=f_empresa, fill=0)
-        draw.text((310, 255), "ELECTRICIDAD", font=f_empresa, fill=0)
-
-        # Línea divisoria vertical
-        draw.line([295, 20, 295, 280], fill=0, width=2)
-
-        # 5. Conversión final a Blanco y Negro puro para la térmica
+        # 4. CONVERSIÓN PARA IMPRESORA TÉRMICA
+        # Pasamos a blanco y negro puro para evitar manchas grises
         final_bw = etiqueta.convert('1', dither=Image.NONE)
         
         buf = BytesIO()
@@ -98,9 +93,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         return buf.getvalue()
 
     except Exception as e:
-        return None
-
-    except Exception as e:
+        print(f"Error general: {e}")
         return None
         
 def calcular_grasa_marpi(rodamiento):
@@ -826,6 +819,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
