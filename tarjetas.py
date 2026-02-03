@@ -55,50 +55,50 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         etiqueta = Image.new('RGB', (600, 300), (255, 255, 255))
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. QR GIGANTE (Lado Izquierdo)
-        qr = qrcode.QRCode(version=1, box_size=12, border=1)
+        # 2. QR GIGANTE Y CENTRADO (Como el formato anterior)
+        qr = qrcode.QRCode(
+            version=1, 
+            error_correction=qrcode.constants.ERROR_CORRECT_H, 
+            box_size=12, 
+            border=1
+        )
         qr.add_data(f"https://marpi-motores.streamlit.app/?tag={tag}")
         qr.make(fit=True)
+        
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
-        img_qr = img_qr.resize((260, 260))
-        etiqueta.paste(img_qr, (20, 20))
-
-        # 3. LADO DERECHO (Logo + Identificación)
-        x_derecha = 310
         
-        # Carga de Logo
+        # Logo en el centro del QR (el que ya te funcionaba)
+        q_w, q_h = img_qr.size
+        draw_qr = ImageDraw.Draw(img_qr)
+        centro = q_w // 2
+        r = q_w // 6
+        draw_qr.ellipse([centro-r, centro-r, centro+r, centro+r], fill="white", outline="black", width=2)
         try:
-            logo = Image.open("logo.png.png").convert('RGBA')
-            # Ajustamos ancho del logo
-            base_w = 260
-            w_percent = (base_w / float(logo.size[0]))
-            h_size = int((float(logo.size[1]) * float(w_percent)))
-            logo = logo.resize((base_w, h_size), Image.Resampling.LANCZOS)
-            etiqueta.paste(logo, (x_derecha, 20), logo)
-            y_offset = 20 + h_size + 20 # Espacio dinámico debajo del logo
+            f_m = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 50)
+            draw_qr.text((centro-20, centro-32), "M", fill="black", font=f_m)
         except:
-            y_offset = 120 # Fallback si no hay logo
+            draw_qr.text((centro-10, centro-10), "M", fill="black")
 
-        # 4. FUENTE UNIFICADA (Estilo Marpi Electricidad)
+        img_qr = img_qr.resize((200, 200)).convert('1')
+        etiqueta.paste(img_qr, (200, 5)) # QR Centrado arriba
+
+        # 3. TEXTOS INFERIORES (MARPI ELECTRICIDAD + N° MOTOR)
         try:
-            # Usamos la misma fuente Bold para todo el bloque de texto
-            font_destacada = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 38)
-            font_sub = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 25)
+            # Misma configuración de letra para ambos
+            font_grande = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 38)
         except:
-            font_destacada = font_sub = ImageFont.load_default()
+            font_grande = ImageFont.load_default()
 
-        # Dibujamos "MARPI ELECTRICIDAD"
-        draw.text((x_derecha, y_offset), "MARPI", font=font_destacada, fill=(0,0,0))
-        draw.text((x_derecha, y_offset + 40), "ELECTRICIDAD", font=font_destacada, fill=(0,0,0))
-        
-        # Línea divisoria interna
-        draw.line([x_derecha, y_offset + 90, 580, y_offset + 90], fill=(0,0,0), width=3)
+        # MARPI ELECTRICIDAD (Centrado abajo del QR)
+        texto_empresa = "MARPI ELECTRICIDAD"
+        draw.text((90, 210), texto_empresa, font=font_grande, fill=(0,0,0))
 
-        # 5. N° DE MOTOR (Con la misma configuración de letra)
+        # N° DE MOTOR (Justo debajo, misma letra)
         texto_nro = f"N°: {str(serie).upper()}"
-        draw.text((x_derecha, y_offset + 105), texto_nro, font=font_destacada, fill=(0,0,0))
+        # Calculamos centro aproximado para el número
+        draw.text((180, 255), texto_nro, font=font_grande, fill=(0,0,0))
 
-        # 6. CONVERSIÓN FINAL
+        # 4. CONVERSIÓN FINAL
         final_bw = etiqueta.convert('1', dither=Image.NONE)
         
         buf = BytesIO()
@@ -831,6 +831,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
