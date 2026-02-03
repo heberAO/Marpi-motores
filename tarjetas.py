@@ -55,50 +55,42 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         etiqueta = Image.new('RGB', (600, 300), (255, 255, 255))
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. QR GIGANTE Y CENTRADO (Como el formato anterior)
-        qr = qrcode.QRCode(
-            version=1, 
-            error_correction=qrcode.constants.ERROR_CORRECT_H, 
-            box_size=12, 
-            border=1
-        )
+        # 2. GENERAR QR (Lado Izquierdo) - Se mantiene igual
+        qr = qrcode.QRCode(version=1, box_size=12, border=1)
         qr.add_data(f"https://marpi-motores.streamlit.app/?tag={tag}")
         qr.make(fit=True)
-        
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
-        
-        # Logo en el centro del QR (el que ya te funcionaba)
-        q_w, q_h = img_qr.size
-        draw_qr = ImageDraw.Draw(img_qr)
-        centro = q_w // 2
-        r = q_w // 6
-        draw_qr.ellipse([centro-r, centro-r, centro+r, centro+r], fill="white", outline="black", width=2)
+        img_qr = img_qr.resize((260, 260))
+        etiqueta.paste(img_qr, (20, 20))
+
+        # 3. INSERTAR LOGO OFICIAL (Lado Derecho - Parte Superior)
+        x_derecha = 310
         try:
-            f_m = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 50)
-            draw_qr.text((centro-20, centro-32), "M", fill="black", font=f_m)
-        except:
-            draw_qr.text((centro-10, centro-10), "M", fill="black")
+            logo_original = Image.open("logo.png.png").convert('RGBA')
+            base_width = 280
+            w_percent = (base_width / float(logo_original.size[0]))
+            h_size = int((float(logo_original.size[1]) * float(w_percent)))
+            logo_resurced = logo_original.resize((base_width, h_size), Image.Resampling.LANCZOS)
+            
+            # Lo pegamos un poco más arriba para dejar aire abajo
+            etiqueta.paste(logo_resurced, (x_derecha, 40), logo_resurced)
+            y_texto = 40 + h_size + 30 # Punto de inicio para el N° de motor
+        except Exception as e:
+            y_texto = 150
+            draw.text((x_derecha, 100), "MARPI ELECTRICIDAD", fill=(0,0,0))
 
-        img_qr = img_qr.resize((200, 200)).convert('1')
-        etiqueta.paste(img_qr, (200, 5)) # QR Centrado arriba
-
-        # 3. TEXTOS INFERIORES (MARPI ELECTRICIDAD + N° MOTOR)
+        # 4. INSERTAR N° DE MOTOR (Mismo estilo de letra grande y negrita)
         try:
-            # Misma configuración de letra para ambos
-            font_grande = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 38)
+            # Fuente gruesa para que combine con el logo
+            fuente_nro = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 40)
         except:
-            font_grande = ImageFont.load_default()
+            fuente_nro = ImageFont.load_default()
 
-        # MARPI ELECTRICIDAD (Centrado abajo del QR)
-        texto_empresa = "MARPI ELECTRICIDAD"
-        draw.text((90, 210), texto_empresa, font=font_grande, fill=(0,0,0))
-
-        # N° DE MOTOR (Justo debajo, misma letra)
+        # Dibujamos el N° de motor bien grande debajo del logo
         texto_nro = f"N°: {str(serie).upper()}"
-        # Calculamos centro aproximado para el número
-        draw.text((180, 255), texto_nro, font=font_grande, fill=(0,0,0))
+        draw.text((x_derecha + 10, y_texto), texto_nro, font=fuente_nro, fill=(0,0,0))
 
-        # 4. CONVERSIÓN FINAL
+        # 5. CONVERSIÓN PARA IMPRESORA TÉRMICA
         final_bw = etiqueta.convert('1', dither=Image.NONE)
         
         buf = BytesIO()
@@ -106,6 +98,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         return buf.getvalue()
 
     except Exception as e:
+        print(f"Error general: {e}")
         return None
         
 def calcular_grasa_marpi(rodamiento):
@@ -831,6 +824,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
