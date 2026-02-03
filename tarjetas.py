@@ -51,58 +51,50 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         import qrcode
         from io import BytesIO
 
-        # 1. Lienzo (600x300 px)
+        # 1. Lienzo de alta definición (600x300 px)
         etiqueta = Image.new('1', (600, 300), 1)
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. QR de Alta Densidad (Versión 3 o superior para que el logo no lo tape)
+        # 2. QR LIMPIO (Lado Izquierdo)
         qr = qrcode.QRCode(
-            version=3, 
-            error_correction=qrcode.constants.ERROR_CORRECT_H, 
+            version=1, 
+            error_correction=qrcode.constants.ERROR_CORRECT_L, 
             box_size=12, 
             border=1
         )
+        # La URL dinámica para que funcione el escaneo 
         qr.add_data(f"https://marpi-motores.streamlit.app/?tag={tag}")
         qr.make(fit=True)
         
-        # Convertimos a RGB para poder dibujar el logo con nitidez antes de pasar a B/N
-        img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
-        q_w, q_h = img_qr.size
+        img_qr = qr.make_image(fill_color="black", back_color="white").convert('1')
+        img_qr = img_qr.resize((260, 260))
+        etiqueta.paste(img_qr, (20, 20)) # Posición izquierda
+
+        # 3. LADO DERECHO: LOGO Y TEXTO
+        x_logo = 310
         
-        # 3. Dibujar el Logo de Marpi en el centro
-        draw_qr = ImageDraw.Draw(img_qr)
-        centro = q_w // 2
-        radio_circulo = q_w // 6  # Tamaño equilibrado para no romper el QR
-        
-        # Círculo blanco de fondo
-        draw_qr.ellipse([centro-radio_circulo, centro-radio_circulo, 
-                         centro+radio_circulo, centro+radio_circulo], fill="white")
-        # Borde del círculo
-        draw_qr.ellipse([centro-radio_circulo, centro-radio_circulo, 
-                         centro+radio_circulo, centro+radio_circulo], outline="black", width=3)
-        
-        # Letra 'M' del logo
+        # Intentamos cargar una fuente gruesa para MARPI ELECTRICIDAD
         try:
-            f_m = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 55)
-            draw_qr.text((centro-22, centro-34), "M", fill="black", font=f_m)
+            font_bold = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 35)
+            font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 25)
         except:
-            draw_qr.text((centro-10, centro-10), "M", fill="black")
+            font_bold = font_small = ImageFont.load_default()
 
-        # 4. Redimensionar y Pegar
-        img_qr = img_qr.resize((230, 230)).convert('1')
-        etiqueta.paste(img_qr, (185, 5)) # Centrado horizontal en los 600px
+        # Dibujamos el logo estilizado (como el de MARPI MOTORES SRL) 
+        # Un círculo con la 'M' que representa tu marca 
+        draw.ellipse([380, 20, 530, 170], outline=0, width=4)
+        
+        # La 'M' grande en el centro del círculo
+        draw.text((415, 45), "M", font=font_bold, fill=0)
+        
+        # Nombre de la empresa bien claro 
+        draw.text((x_logo + 40, 190), "MARPI", font=font_bold, fill=0)
+        draw.text((x_logo, 240), "ELECTRICIDAD", font=font_bold, fill=0)
 
-        # 5. Texto Inferior: MARPI ELECTRICIDAD
-        try:
-            f_footer = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 40)
-        except:
-            f_footer = ImageFont.load_default()
+        # Línea divisoria central para darle orden
+        draw.line([295, 30, 295, 270], fill=0, width=2)
 
-        # Dibujamos el texto bien centrado abajo
-        texto = "MARPI ELECTRICIDAD"
-        draw.text((95, 245), texto, font=f_footer, fill=0)
-
-        # 6. Salida
+        # 4. Retornar imagen
         buf = BytesIO()
         etiqueta.save(buf, format="PNG")
         return buf.getvalue()
@@ -833,6 +825,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
