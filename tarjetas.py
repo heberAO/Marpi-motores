@@ -356,7 +356,7 @@ elif modo == "Historial y QR":
                 motor_info = historial_motor.iloc[-1]
                 datos_para_pasar = {
                     'tag': motor_info.get('Tag', ''),
-                    'serie': motor_info.get('N_Serie', ''),b 
+                    'serie': motor_info.get('N_Serie', ''),
                     'potencia': motor_info.get('Potencia', ''),
                     'nombre': motor_info.get('Nombre_Empresa', '') # Ajusta al nombre de tu columna
                 }
@@ -850,6 +850,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
