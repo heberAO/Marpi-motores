@@ -62,7 +62,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
             box_size=12, 
             border=1
         )
-        qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={tag}")
+        qr.add_data(f"https://marpi-motores.streamlit.app/?tag={tag}")
         qr.make(fit=True)
         
         # Convertimos a RGB para poder dibujar el logo con nitidez antes de pasar a B/N
@@ -833,6 +833,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
