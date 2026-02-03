@@ -50,42 +50,55 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         from PIL import Image, ImageDraw, ImageFont
         import qrcode
         from io import BytesIO
-        import requests
 
         # 1. Lienzo (600x300 px)
         etiqueta = Image.new('RGB', (600, 300), (255, 255, 255))
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. GENERAR QR (Lado Izquierdo)
+        # 2. QR GIGANTE (Lado Izquierdo)
         qr = qrcode.QRCode(version=1, box_size=12, border=1)
-        qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={tag}")
+        qr.add_data(f"https://marpi-motores.streamlit.app/?tag={tag}")
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
         img_qr = img_qr.resize((260, 260))
         etiqueta.paste(img_qr, (20, 20))
 
-        # 3. INSERTAR LOGO OFICIAL (Lado Derecho)
+        # 3. LADO DERECHO (Logo + Identificación)
+        x_derecha = 310
+        
+        # Carga de Logo
         try:
-            # Cargamos el logo que subiste (logo.png.png)
-            # Nota: Asegúrate de que el archivo esté en la misma carpeta que este script
-            logo_original = Image.open("logo.png").convert('RGBA')
-            
-            # Redimensionamos el logo para que quepa bien (aprox 260px de ancho)
-            base_width = 280
-            w_percent = (base_width / float(logo_original.size[0]))
-            h_size = int((float(logo_original.size[1]) * float(w_percent)))
-            logo_resurced = logo_original.resize((base_width, h_size), Image.Resampling.LANCZOS)
-            
-            # Pegamos el logo en la mitad derecha, centrado verticalmente
-            y_pos = (300 - h_size) // 2
-            etiqueta.paste(logo_resurced, (310, y_pos), logo_resurced)
-        except Exception as e:
-            # Si no encuentra el archivo, escribe el nombre para no dejar la etiqueta vacía
-            draw.text((320, 130), "LOGO NO ENCONTRADO", fill=(0,0,0))
-            print(f"Error cargando logo: {e}")
+            logo = Image.open("logo.png.png").convert('RGBA')
+            # Ajustamos ancho del logo
+            base_w = 260
+            w_percent = (base_w / float(logo.size[0]))
+            h_size = int((float(logo.size[1]) * float(w_percent)))
+            logo = logo.resize((base_w, h_size), Image.Resampling.LANCZOS)
+            etiqueta.paste(logo, (x_derecha, 20), logo)
+            y_offset = 20 + h_size + 20 # Espacio dinámico debajo del logo
+        except:
+            y_offset = 120 # Fallback si no hay logo
 
-        # 4. CONVERSIÓN PARA IMPRESORA TÉRMICA
-        # Pasamos a blanco y negro puro para evitar manchas grises
+        # 4. FUENTE UNIFICADA (Estilo Marpi Electricidad)
+        try:
+            # Usamos la misma fuente Bold para todo el bloque de texto
+            font_destacada = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 38)
+            font_sub = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 25)
+        except:
+            font_destacada = font_sub = ImageFont.load_default()
+
+        # Dibujamos "MARPI ELECTRICIDAD"
+        draw.text((x_derecha, y_offset), "MARPI", font=font_destacada, fill=(0,0,0))
+        draw.text((x_derecha, y_offset + 40), "ELECTRICIDAD", font=font_destacada, fill=(0,0,0))
+        
+        # Línea divisoria interna
+        draw.line([x_derecha, y_offset + 90, 580, y_offset + 90], fill=(0,0,0), width=3)
+
+        # 5. N° DE MOTOR (Con la misma configuración de letra)
+        texto_nro = f"N°: {str(serie).upper()}"
+        draw.text((x_derecha, y_offset + 105), texto_nro, font=font_destacada, fill=(0,0,0))
+
+        # 6. CONVERSIÓN FINAL
         final_bw = etiqueta.convert('1', dither=Image.NONE)
         
         buf = BytesIO()
@@ -93,7 +106,6 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         return buf.getvalue()
 
     except Exception as e:
-        print(f"Error general: {e}")
         return None
         
 def calcular_grasa_marpi(rodamiento):
@@ -819,6 +831,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
