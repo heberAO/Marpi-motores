@@ -68,7 +68,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         try:
             # Cargamos el logo que subiste (logo.png.png)
             # Nota: Asegúrate de que el archivo esté en la misma carpeta que este script
-            logo_original = Image.open("logo.png.png").convert('RGBA')
+            logo_original = Image.open("logo.png").convert('RGBA')
             
             # Redimensionamos el logo para que quepa bien (aprox 260px de ancho)
             base_width = 280
@@ -819,6 +819,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
