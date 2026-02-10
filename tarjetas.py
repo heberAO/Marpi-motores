@@ -348,24 +348,28 @@ elif modo == "Historial y QR":
   
 
         if seleccion:
+            # 1. Extraemos los datos necesarios
             serie_buscada = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
-            historial_motor = df_completo[df_completo['N_Serie'].astype(str).str.strip() == serie_buscada.strip()].copy()
-            ultimo_tag = historial_motor.iloc[-1]['Tag']
-            st.session_state.tag_fijo = ultimo_tag 
+            historial_motor = df_completo[df_completo['N_Serie'].astype(str) == serie_buscada].copy()
             
-            # --- PANEL SUPERIOR: QR Y DATOS ---
+            # 2. Definimos las variables para la interfaz
+            ultimo_tag = historial_motor.iloc[-1]['Tag']
+            st.session_state.tag_fijo = ultimo_tag
+            
+            # --- PANEL SUPERIOR ---
             with st.container(border=True):
                 col_qr, col_info = st.columns([1, 2])
-                sn_para_url = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
-                url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={sn_para_url}" 
+                
+                # Usamos la serie para el QR (vínculo eterno)
+                url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_buscada}"
                 qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
                 
                 with col_qr:
                     st.image(qr_api, width=120)
                 with col_info:
-                    st.subheader(f"Ⓜ️ {buscado}")
-                    sn_txt = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else 'S/D'
-                    st.caption(f"Número de Serie: {sn_txt}")
+                    # AQUÍ ESTABA EL ERROR: Usamos ultimo_tag ahora
+                    st.subheader(f"Ⓜ️ {ultimo_tag}")
+                    st.caption(f"Número de Serie: {serie_buscada}")
 
             # --- BOTONES DE ACCIÓN RÁPIDA ---
             st.subheader("➕ Nueva Tarea")
@@ -871,6 +875,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
