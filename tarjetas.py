@@ -55,8 +55,9 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         etiqueta = Image.new('RGB', (600, 300), (255, 255, 255))
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. QR (LADO IZQUIERDO) - Formato fijo
+       # 2. QR (LADO IZQUIERDO) - Ahora vinculado a la SERIE
         qr = qrcode.QRCode(version=1, box_size=12, border=1)
+        # EL CAMBIO CLAVE:
         qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie}")
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
@@ -864,6 +865,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
