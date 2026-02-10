@@ -854,9 +854,13 @@ elif modo == "Mediciones de Campo":
                     "RPM": info.get("RPM", "-"),
                     "Descripcion": f"Prueba: {equipo_megado} a {tension_prueba}. {obs}",
                     # Aislamiento Tierra
-                    "RT_TV1": tv1, "RT_TU1": tu1, "RT_TW1": tw1,
+                    "RT_TU": v_rt_tu,
+                    "RT_TV": v_rt_tv,
+                    "RT_TW": v_rt_tw,
                     # Entre bobinas
-                    "RB_WV1": wv1, "RB_WU1": wu1, "RB_VU1": vu1,
+                    "RB_UV": v_rb_uv,
+                    "RB_VW": v_rb_vw,
+                    "RB_UW": v_rb_uw,
                     # Continuidad
                     "RI_U1U2": u1u2, "RI_V1V2": v1v2, "RI_W1W2": w1w2,
                     # Línea
@@ -884,6 +888,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
