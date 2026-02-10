@@ -273,9 +273,12 @@ if modo == "Nuevo Registro":
                 # 2. Convertir a DataFrame la nueva fila
                 df_nueva = pd.DataFrame([nueva_fila])
 
-                # 3. UNIR Y ACTUALIZAR (Paso crítico)
-                # Usamos st.session_state para asegurar que el cambio persista
+                # 3. UNIR Y ACTUALIZAR (Lógica de Historial Conectado)
+                if not df_completo.empty and sn in df_completo['N_Serie'].astype(str).values:
+                    st.info(f"Vínculo detectado: Agregando nueva intervención al historial del motor SN: {sn}")
+                # Concatenamos la nueva fila al historial general
                 df_actualizado = pd.concat([df_completo, df_nueva], ignore_index=True)
+                df_actualizado = df_actualizado.drop_duplicates()
                 
                 try:
                     # Intentar subir a Google Sheets
@@ -317,7 +320,8 @@ elif modo == "Historial y QR":
         df_completo['Busqueda_Combo'] = (
             df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
         )
-        opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
+        opciones_unicas = df_completo.drop_duplicates(subset=['N_Serie'])['Busqueda_Combo'].tolist()
+        opciones = [""] + sorted(opciones_unicas)
         
         # Leemos los parámetros de la URL (pueden venir por tag o por serie)
         query_tag = st.query_params.get("tag", "").upper()
@@ -344,9 +348,10 @@ elif modo == "Historial y QR":
   
 
         if seleccion:
-            buscado = seleccion.split(" | ")[0].strip()
-            st.session_state.tag_fijo = buscado
-            historial_motor = df_completo[df_completo['Tag'] == buscado].copy()
+           serie_buscada = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
+           historial_motor = df_completo[df_completo['N_Serie'].astype(str).str.strip() == serie_buscada.strip()].copy()
+           ultimo_tag = historial_motor.iloc[-1]['Tag']
+           st.session_state.tag_fijo = ultimo_tag 
             
             # --- PANEL SUPERIOR: QR Y DATOS ---
             with st.container(border=True):
@@ -866,6 +871,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
