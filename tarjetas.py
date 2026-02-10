@@ -348,11 +348,13 @@ elif modo == "Historial y QR":
   
 
         if seleccion:
-            # 1. Extraemos los datos necesarios
+            # 1. Sacamos la serie de la selección
             serie_buscada = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
+            
+            # 2. Filtramos el historial completo
             historial_motor = df_completo[df_completo['N_Serie'].astype(str) == serie_buscada].copy()
             
-            # 2. Definimos las variables para la interfaz
+            # 3. Definimos el nombre actual (reemplaza al viejo 'buscado')
             ultimo_tag = historial_motor.iloc[-1]['Tag']
             st.session_state.tag_fijo = ultimo_tag
             
@@ -415,7 +417,7 @@ elif modo == "Historial y QR":
                     # 2. Variables de texto
                     tarea = str(f_limpia.get('Tipo_Tarea', '-')).strip()
                     fecha = str(f_limpia.get('Fecha', '-'))
-                    tag_h = str(f_limpia.get('Tag', buscado))
+                    tag_h = str(f_limpia.get('Tag', ultimo_tag))
                     resp_h = str(f_limpia.get('Responsable', '-'))
                     
                     if tarea == "-" or tarea.lower() == "nan":
@@ -875,6 +877,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
