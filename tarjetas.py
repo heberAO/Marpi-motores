@@ -351,7 +351,8 @@ elif modo == "Historial y QR":
             # --- PANEL SUPERIOR: QR Y DATOS ---
             with st.container(border=True):
                 col_qr, col_info = st.columns([1, 2])
-                url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={f_limpia.get('N_Serie', '')}" 
+                sn_para_url = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
+                url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={sn_para_url}" 
                 qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
                 
                 with col_qr:
@@ -865,6 +866,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
