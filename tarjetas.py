@@ -57,7 +57,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
 
         # 2. QR (LADO IZQUIERDO) - Formato fijo
         qr = qrcode.QRCode(version=1, box_size=12, border=1)
-        qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={tag}")
+        qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie}")
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
         img_qr = img_qr.resize((260, 260))
@@ -312,21 +312,35 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Buscador
+        # 1. Buscador mejorado
         df_completo['Busqueda_Combo'] = (
             df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
         )
         opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
         
+        # Leemos los parámetros de la URL (pueden venir por tag o por serie)
         query_tag = st.query_params.get("tag", "").upper()
+        query_serie = st.query_params.get("serie", "").upper() # <--- NUEVO
+        
         idx_q = 0
-        if query_tag:
+        
+        # Lógica de detección automática
+        if query_serie:
+            # Si el QR es de los nuevos (por Serie), buscamos el SN en las opciones
+            for i, op in enumerate(opciones):
+                if f"SN: {query_serie}" in op:
+                    idx_q = i
+                    break
+        elif query_tag:
+            # Si el QR es de los viejos (por TAG), buscamos al inicio
             for i, op in enumerate(opciones):
                 if op.startswith(query_tag + " |"):
                     idx_q = i
                     break
         
+        # El selectbox ahora se posiciona solo, venga por donde venga el usuario
         seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
+  
 
         if seleccion:
             buscado = seleccion.split(" | ")[0].strip()
@@ -336,7 +350,7 @@ elif modo == "Historial y QR":
             # --- PANEL SUPERIOR: QR Y DATOS ---
             with st.container(border=True):
                 col_qr, col_info = st.columns([1, 2])
-                url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={buscado}" 
+                url_app = qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie}")
                 qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
                 
                 with col_qr:
@@ -850,6 +864,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
