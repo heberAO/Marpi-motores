@@ -348,10 +348,10 @@ elif modo == "Historial y QR":
   
 
         if seleccion:
-           serie_buscada = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
-           historial_motor = df_completo[df_completo['N_Serie'].astype(str).str.strip() == serie_buscada.strip()].copy()
-           ultimo_tag = historial_motor.iloc[-1]['Tag']
-           st.session_state.tag_fijo = ultimo_tag 
+            serie_buscada = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
+            historial_motor = df_completo[df_completo['N_Serie'].astype(str).str.strip() == serie_buscada.strip()].copy()
+            ultimo_tag = historial_motor.iloc[-1]['Tag']
+            st.session_state.tag_fijo = ultimo_tag 
             
             # --- PANEL SUPERIOR: QR Y DATOS ---
             with st.container(border=True):
@@ -871,6 +871,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
