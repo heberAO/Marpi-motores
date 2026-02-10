@@ -796,18 +796,25 @@ elif modo == "Mediciones de Campo":
 
         st.divider()
         
-        # --- SECCIÓN 2: TODAS LAS MEDICIONES (Recuperadas) ---
+        # 1. Definimos las opciones (podés ajustarlas a tu gusto)
+        opciones_megado = ["-", "0", "1", "5", "10", "20", "50", "100", "200", "500", "1000", "INF"]
+        
+        # --- SECCIÓN 2: TODAS LAS MEDICIONES ---
         st.subheader("📊 Megado a Tierra (Aislamiento GΩ)")
         c1, c2, c3 = st.columns(3)
-        tv1 = c1.text_input("T - V1")
-        tu1 = c2.text_input("T - U1")
-        tw1 = c3.text_input("T - W1")
+        
+        # Usamos st.selectbox en lugar de text_input
+        # index=0 hace que por defecto aparezca el "-"
+        v_rt_tv = c1.selectbox("T - V1", opciones_megado, index=0)
+        v_rt_tu = c2.selectbox("T - U1", opciones_megado, index=0)
+        v_rt_tw = c3.selectbox("T - W1", opciones_megado, index=0)
         
         st.subheader("📊 Megado entre Bobinas (GΩ)")
         c4, c5, c6 = st.columns(3)
-        wv1 = c4.text_input("W1 - V1")
-        wu1 = c5.text_input("W1 - U1")
-        vu1 = c6.text_input("V1 - U1")
+        
+        v_rb_vw = c4.selectbox("W1 - V1", opciones_megado, index=0)
+        v_rb_uw = c5.selectbox("W1 - U1", opciones_megado, index=0)
+        v_rb_uv = c6.selectbox("V1 - U1", opciones_megado, index=0)
 
         st.subheader("📏 Resistencia Interna (Continuidad Ω)")
         c7, c8, c9 = st.columns(3)
@@ -877,6 +884,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
