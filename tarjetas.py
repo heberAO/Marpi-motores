@@ -56,10 +56,15 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         draw = ImageDraw.Draw(etiqueta)
 
        # 2. QR (LADO IZQUIERDO) - Ahora vinculado a la SERIE
+        # 2. QR (LADO IZQUIERDO)
         qr = qrcode.QRCode(version=1, box_size=12, border=1)
-        # EL CAMBIO CLAVE:
-        qr.add_data(# Asegúrate de que se vea así exactamente:
-        url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie.strip()}"
+        
+        # Primero definimos la URL (fuera del add_data)
+        url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={str(serie).strip()}"
+        
+        # Ahora le pasamos la variable al QR
+        qr.add_data(url_app)
+        
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
         img_qr = img_qr.resize((260, 260))
