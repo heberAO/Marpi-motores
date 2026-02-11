@@ -11,11 +11,6 @@ import qrcode
 from PIL import Image, ImageDraw, ImageFont
 import streamlit.components.v1 as components
 
-if "serie" in st.query_params:
-    st.session_state.modo = "Historial y QR"
-    # Guardamos la serie para que el buscador la use
-    st.session_state.serie_qr = st.query_params.get("serie")
-
 def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, extra, obs):
     st_btn = 'width:100%;background:#007bff;color:white;padding:15px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-family:sans-serif;'
     
@@ -61,11 +56,9 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         draw = ImageDraw.Draw(etiqueta)
 
        # 2. QR (LADO IZQUIERDO) - Ahora vinculado a la SERIE
-        # 2. QR (LADO IZQUIERDO)
         qr = qrcode.QRCode(version=1, box_size=12, border=1)
-        serie_limpia = str(serie).strip().upper()
-        url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_limpia}"
-        qr.add_data(url_app)
+        # EL CAMBIO CLAVE:
+        qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie}")
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
         img_qr = img_qr.resize((260, 260))
@@ -323,77 +316,63 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Normalizamos los datos del Excel
-        # 1. Normalizamos todos los nombres de columnas a MAYÚSCULAS
-        df_completo.columns = [c.strip().upper() for c in df_completo.columns]
-
-        # 2. BUSCADOR INTELIGENTE DE 'TAG'
-        # Si no existe 'TAG', buscamos alternativas comunes
-        if "Tag" not in df_completo.columns:
-            alternativas = ["NOMBRE", "ID", "MOTOR", "IDENTIFICACION", "EQUIPO"]
-            for alt in alternativas:
-                if alt in df_completo.columns:
-                    df_completo = df_completo.rename(columns={alt: "Tag"})
-                    break
-        
-        # 3. VERIFICACIÓN FINAL
-        if "Tag" not in df_completo.columns or "N_Serie" not in df_completo.columns:
-            st.error("⚠️ Error crítico: No encuentro las columnas necesarias.")
-            st.write("Columnas detectadas en tu Excel:", list(df_completo.columns))
-            st.stop() # Detenemos la app aquí para que no tire el NameError
-
-        # 4. Ahora sí, limpiamos los datos con seguridad
-        df_completo['Tag'] = df_completo['Tag'].astype(str).str.strip().upper()
-        df_completo['N_Serie'] = df_completo['N_Serie'].astype(str).str.strip().upper()
-        df_completo['N_Serie'] = df_completo['N_Serie'] # Para mantener compatibilidad
-
-        # 5. Creamos la columna de búsqueda
+        # 1. Buscador mejorado
         df_completo['Busqueda_Combo'] = (
-            df_completo['Tag'] + " | SN: " + df_completo['N_SERIE']
+            df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
         )
-        p_serie = st.query_params.get("Serie", "").strip().upper()
+        opciones_unicas = df_completo.drop_duplicates(subset=['N_Serie'])['Busqueda_Combo'].tolist()
+        opciones = [""] + sorted(opciones_unicas)
+        
+        # Leemos los parámetros de la URL (pueden venir por tag o por serie)
+        query_tag = st.query_params.get("tag", "").upper()
+        query_serie = st.query_params.get("serie", "").upper() # <--- NUEVO
         
         idx_q = 0
-        if p_serie:
-            # Buscamos en qué posición de la lista está ese número de serie
+        
+        # Lógica de detección automática
+        if query_serie:
+            # Si el QR es de los nuevos (por Serie), buscamos el SN en las opciones
             for i, op in enumerate(opciones):
-                if f"SN: {p_serie}" in op:
+                if f"SN: {query_serie}" in op:
+                    idx_q = i
+                    break
+        elif query_tag:
+            # Si el QR es de los viejos (por TAG), buscamos al inicio
+            for i, op in enumerate(opciones):
+                if op.startswith(query_tag + " |"):
                     idx_q = i
                     break
         
-        # 4. EL SELECTBOX (Ahora con el índice inteligente)
-        seleccion = st.selectbox(
-            "Busca por Tag o N° de Serie:", 
-            opciones, 
-            index=idx_q,
-            key="selector_motor_principal"
-        )
+        # El selectbox ahora se posiciona solo, venga por donde venga el usuario
+        seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
+  
+
         if seleccion:
-            # Extraemos la serie de la selección (ej: de "MOTOR 1 | SN: 123" sacamos "123")
-            serie_final = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
+            # 1. Sacamos la serie de la selección
+            serie_buscada = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
             
-            # Buscamos TODAS las filas que tengan esa serie (lo viejo y lo nuevo)
-            historial_motor = df_completo[df_completo['N_SERIE'] == serie_final].copy()
+            # 2. Filtramos el historial completo
+            historial_motor = df_completo[df_completo['N_Serie'].astype(str) == serie_buscada].copy()
             
-            if not historial_motor.empty:
-                # Tomamos el último Tag registrado para el título
-                ultimo_tag = historial_motor.iloc[-1]['TAG']
-                st.session_state.tag_fijo = ultimo_tag
+            # 3. Definimos el nombre actual (reemplaza al viejo 'buscado')
+            ultimo_tag = historial_motor.iloc[-1]['Tag']
+            st.session_state.tag_fijo = ultimo_tag
+            
+            # --- PANEL SUPERIOR ---
+            with st.container(border=True):
+                col_qr, col_info = st.columns([1, 2])
                 
-                # --- CABECERA DEL MOTOR ---
-                with st.container(border=True):
-                    c_qr, c_info = st.columns([1, 2])
-                    
-                    # El QR que se muestra en pantalla (siempre apunta a la serie)
-                    url_qr = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_final}"
-                    api_qr = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_qr}"
-                    
-                    with c_qr:
-                        st.image(api_qr, width=120)
-                    with c_info:
-                        st.subheader(f"Ⓜ️ {ultimo_tag}")
-                        st.info(f"Número de Serie: **{serie_final}**")
-                        st.caption(f"Total de intervenciones: {len(historial_motor)}")
+                # Usamos la serie para el QR (vínculo eterno)
+                url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_buscada}"
+                qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
+                
+                with col_qr:
+                    st.image(qr_api, width=120)
+                with col_info:
+                    # AQUÍ ESTABA EL ERROR: Usamos ultimo_tag ahora
+                    st.subheader(f"Ⓜ️ {ultimo_tag}")
+                    st.caption(f"Número de Serie: {serie_buscada}")
+
             # --- BOTONES DE ACCIÓN RÁPIDA ---
             st.subheader("➕ Nueva Tarea")
             c1, c2, c3 = st.columns(3)
@@ -817,25 +796,18 @@ elif modo == "Mediciones de Campo":
 
         st.divider()
         
-        # 1. Definimos las opciones (podés ajustarlas a tu gusto)
-        opciones_megado = ["-", "0", "1", "5", "10", "20", "50", "100", "200", "500", "1000", "INF"]
-        
-        # --- SECCIÓN 2: TODAS LAS MEDICIONES ---
+        # --- SECCIÓN 2: TODAS LAS MEDICIONES (Recuperadas) ---
         st.subheader("📊 Megado a Tierra (Aislamiento GΩ)")
         c1, c2, c3 = st.columns(3)
-        
-        # Usamos st.selectbox en lugar de text_input
-        # index=0 hace que por defecto aparezca el "-"
-        v_rt_tv = c1.selectbox("T - V1", opciones_megado, index=0)
-        v_rt_tu = c2.selectbox("T - U1", opciones_megado, index=0)
-        v_rt_tw = c3.selectbox("T - W1", opciones_megado, index=0)
+        tv1 = c1.text_input("T - V1")
+        tu1 = c2.text_input("T - U1")
+        tw1 = c3.text_input("T - W1")
         
         st.subheader("📊 Megado entre Bobinas (GΩ)")
         c4, c5, c6 = st.columns(3)
-        
-        v_rb_vw = c4.selectbox("W1 - V1", opciones_megado, index=0)
-        v_rb_uw = c5.selectbox("W1 - U1", opciones_megado, index=0)
-        v_rb_uv = c6.selectbox("V1 - U1", opciones_megado, index=0)
+        wv1 = c4.text_input("W1 - V1")
+        wu1 = c5.text_input("W1 - U1")
+        vu1 = c6.text_input("V1 - U1")
 
         st.subheader("📏 Resistencia Interna (Continuidad Ω)")
         c7, c8, c9 = st.columns(3)
@@ -875,13 +847,9 @@ elif modo == "Mediciones de Campo":
                     "RPM": info.get("RPM", "-"),
                     "Descripcion": f"Prueba: {equipo_megado} a {tension_prueba}. {obs}",
                     # Aislamiento Tierra
-                    "RT_TU": v_rt_tu,
-                    "RT_TV": v_rt_tv,
-                    "RT_TW": v_rt_tw,
+                    "RT_TV1": tv1, "RT_TU1": tu1, "RT_TW1": tw1,
                     # Entre bobinas
-                    "RB_UV": v_rb_uv,
-                    "RB_VW": v_rb_vw,
-                    "RB_UW": v_rb_uw,
+                    "RB_WV1": wv1, "RB_WU1": wu1, "RB_VU1": vu1,
                     # Continuidad
                     "RI_U1U2": u1u2, "RI_V1V2": v1v2, "RI_W1W2": w1w2,
                     # Línea
