@@ -535,42 +535,40 @@ elif modo == "Historial y QR":
                         f_limpia.get('Potencia', '-')
                     )
                     
-                    if img_bytes:
-                        # --- BLOQUE DEL BOTÓN CORREGIDO ---
-                        # 1. Preparar la imagen
-                        # --- 1. PREPARAR LA IMAGEN ---
+                    img_bytes_h = generar_etiqueta_honeywell(
+                        tag_h, 
+                        f_limpia.get('N_Serie', '-'), 
+                        f_limpia.get('Potencia', '-')
+                    )
+                    
+                    if img_bytes_h:
                         import base64
-                        b64_img = base64.b64encode(img_bytes).decode('utf-8')
+                        b64_img_h = base64.b64encode(img_bytes_h).decode('utf-8')
                         
-                        # --- 2. EL BLOQUE DEL BOTÓN (TODO JUNTO AQUÍ) ---
-                        boton_html = f"""
-                        <div style="width: 100%; text-align: center;">
-                            <button id="btnMarpi" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif;">
-                                🖨️ IMPRIMIR ETIQUETA MEJORADA
+                        # HTML del botón verde de Honeywell
+                        boton_honeywell_html = f"""
+                        <div style="width: 100%; text-align: center; margin-top: 5px;">
+                            <button id="btnH_{idx}" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif;">
+                                🖨️ IMPRIMIR ETIQUETA HONEYWELL
                             </button>
                         </div>
                         
                         <script>
-                        document.getElementById('btnMarpi').onclick = function() {{
+                        document.getElementById('btnH_{idx}').onclick = function() {{
                             const win = window.open('', '', 'width=800,height=600');
                             win.document.write('<html><head><style>');
-                            
-                            // AQUÍ ES DONDE VAN LAS LÍNEAS QUE DABAN ERROR (DENTRO DEL SCRIPT)
                             win.document.write('@page {{ size: 60mm 30mm; margin: 0 !important; }}');
                             win.document.write('body {{ margin: 0; padding: 0; }}');
                             win.document.write('img {{ width: 60mm; height: 30mm; object-fit: contain; image-rendering: pixelated; }}');
-                            
                             win.document.write('</style></head><body>');
-                            win.document.write('<img src="data:image/png;base64,{b64_img}" onload="setTimeout(() => {{ window.print(); window.close(); }}, 500);">');
+                            win.document.write('<img src="data:image/png;base64,{b64_img_h}" onload="setTimeout(() => {{ window.print(); window.close(); }}, 500);">');
                             win.document.write('</body></html>');
                             win.document.close();
                         }};
                         </script>
                         """
-                        
-                        # --- 3. MOSTRAR EN STREAMLIT ---
-                        import streamlit.components.v1 as components
-                        components.html(boton_html, height=100)
+                        # Mostramos el componente
+                        components.html(boton_honeywell_html, height=100)
                                             
                     
                     st.divider()
@@ -873,6 +871,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
