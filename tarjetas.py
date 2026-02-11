@@ -154,28 +154,34 @@ except Exception as e:
     st.error(f"Error de conexión: {e}")
     df_completo = pd.DataFrame()
 
-# --- 4. LÓGICA DE REDIRECCIÓN QR ---
-# --- 1. INICIALIZACIÓN DE VARIABLES DE ARRANQUE ---
-query_params = st.query_params
-indice_inicio = 0  # <--- VALOR POR DEFECTO (Esto evita el NameError)
+# 1. CARGA DE DATOS (Asegúrate que esto pase primero)
+df_completo = cargar_datos() # O como se llame tu función de carga
 
+# 2. INICIALIZACIÓN DE VARIABLES
+if 'motor_seleccionado' not in st.session_state:
+    st.session_state.motor_seleccionado = None
+
+# 3. LÓGICA DE CAPTURA DEL QR (LA CLAVE)
+query_params = st.query_params
+indice_inicio = 0
 if "serie" in query_params:
     serie_buscada = str(query_params["serie"])
-    # Buscamos en el DataFrame si existe esa serie exacta
-    # (Asegúrate de que df_completo ya esté cargado antes de esto)
+    # Buscamos coincidencia exacta en la columna N_Serie
     filtro = df_completo[df_completo['N_Serie'].astype(str) == serie_buscada]
     
     if not filtro.empty:
-        motor_encontrado = filtro.iloc[0]
-        label_motor = f"{motor_encontrado['Tag']} | SN: {motor_encontrado['N_Serie']}"
+        motor = filtro.iloc[0]
+        # Creamos el texto exacto que aparece en tu lista desplegable (selectbox)
+        label_exacto = f"{motor['Tag']} | SN: {motor['N_Serie']}"
         
-        # Guardamos en session_state para que el selector lo reconozca
-        st.session_state.motor_seleccionado = label_motor
-        indice_inicio = 1 # Cambiamos a 1 para que el menú se mueva a "Historial" solo si encontró el motor
+        # Forzamos la selección en el estado de la aplicación
+        st.session_state.motor_seleccionado = label_exacto
+        # Cambiamos el índice para que se abra en "Historial" (asumiendo que es la opción 1)
+        indice_inicio = 1
 
 # --- 5. MENÚ LATERAL ---
 opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
-
+seleccion_menu = st.sidebar.selectbox("Menú", opciones_menu, index=indice_inicio)
 with st.sidebar:
     if os.path.exists("logo.png"): st.image("logo.png", width=150)
     st.title("⚡ MARPI MOTORES")
@@ -881,6 +887,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
