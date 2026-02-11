@@ -316,43 +316,49 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Lista de opciones (aseguramos que sean strings)
-        df_completo['Busqueda_Combo'] = (
-            df_completo['Tag'].astype(str).str.strip() + " | SN: " + df_completo['N_Serie'].astype(str).str.strip()
-        )
-        opciones_unicas = df_completo.drop_duplicates(subset=['N_Serie'])['Busqueda_Combo'].tolist()
-        opciones = [""] + sorted(opciones_unicas)
-        
-        # 2. CAPTURA UNIVERSAL (Lee lo que sea que tenga el QR pegado)
-        # Probamos todas las llaves posibles: tag, Tag, TAG, serie, Serie...
-        qr_valor = (st.query_params.get("tag") or st.query_params.get("Tag") or 
-                    st.query_params.get("TAG") or st.query_params.get("serie") or 
-                    st.query_params.get("Serie"))
+        # 1. Aseguramos que N_Serie sea siempre texto para que no falle la búsqueda
+        df_completo['N_Serie'] = df_completo['N_Serie'].astype(str).str.strip()
+        df_completo['Tag'] = df_completo['Tag'].astype(str).str.strip()
 
+        # 2. Lista de opciones para el selector
+        df_completo['Busqueda_Combo'] = df_completo['Tag'] + " | SN: " + df_completo['N_Serie']
+        opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
+        
+        # 3. CAPTURA DEL QR (Compatible con tus pegatinas de planta)
+        # Priorizamos 'tag' porque es lo que suelen tener tus QR viejos
+        qr_valor = st.query_params.get("tag") or st.query_params.get("serie") or st.query_params.get("Serie")
+        
         idx_automatico = 0 
-        
         if qr_valor:
-            valor_buscado = str(qr_valor).strip().upper()
-            for i, texto_opcion in enumerate(opciones):
-                # Buscamos si el valor del QR viejo coincide con alguna parte de la opción
-                if valor_buscado in texto_opcion.upper():
-                    idx_automatico = i
-                    break
-        
-        # 3. SELECTOR (Con index automático para que el historial cargue solo)
+            v_qr = str(qr_valor).strip().upper()
+            for i, op in enumerate(opciones):
+                # Dividimos la opción para comparar por separado y no confundir
+                # op_tag es lo que está antes del '|', op_sn es lo que está después de 'SN: '
+                partes = op.split(" | SN: ")
+                if len(partes) == 2:
+                    op_tag = partes[0].upper()
+                    op_sn = partes[1].upper()
+                    
+                    # Si el QR coincide exactamente con el TAG o con la SERIE, lo marcamos
+                    if v_qr == op_tag or v_qr == op_sn:
+                        idx_automatico = i
+                        break
+
+        # 4. SELECTOR
         seleccion = st.selectbox(
             "Busca por TAG o N° de Serie:", 
             opciones, 
             index=idx_automatico, 
-            key="buscador_final_compatible"
+            key="buscador_blindado_marpi"
         )
 
         if seleccion:
-            # 1. Sacamos la serie de la selección
-            serie_buscada = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
+            # EXTRAER SERIE REAL: Tomamos lo que está después de 'SN: '
+            # Esto evita que se confunda si el TAG tiene números parecidos a la serie
+            serie_exacta = seleccion.split(" | SN: ")[1]
             
-            # 2. Filtramos el historial completo
-            historial_motor = df_completo[df_completo['N_Serie'].astype(str).str.strip() == str(serie_buscada).strip()].copy()
+            # FILTRO DE BASE DE DATOS (Exacto)
+            historial_motor = df_completo[df_completo['N_Serie'] == serie_exacta].copy()
             
             # 3. Definimos el nombre actual (reemplaza al viejo 'buscado')
             ultimo_tag = historial_motor.iloc[-1]['Tag']
@@ -877,6 +883,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
