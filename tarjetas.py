@@ -58,13 +58,9 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
        # 2. QR (LADO IZQUIERDO) - Ahora vinculado a la SERIE
         # 2. QR (LADO IZQUIERDO)
         qr = qrcode.QRCode(version=1, box_size=12, border=1)
-        
-        # Primero definimos la URL (fuera del add_data)
-        url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={str(serie).strip()}"
-        
-        # Ahora le pasamos la variable al QR
+        serie_limpia = str(serie).strip().upper()
+        url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_limpia}"
         qr.add_data(url_app)
-        
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
         img_qr = img_qr.resize((260, 260))
@@ -337,15 +333,12 @@ elif modo == "Historial y QR":
         
         # Lógica de detección automática
         if query_serie:
-            # Si el QR es de los nuevos (por Serie), buscamos el SN en las opciones
+            query_serie = query_serie.strip() # Limpiamos por las dudas
             for i, op in enumerate(opciones):
-                if f"SN: {query_serie}" in op:
-                    idx_q = i
-                    break
-        elif query_tag:
-            # Si el QR es de los viejos (por TAG), buscamos al inicio
-            for i, op in enumerate(opciones):
-                if op.startswith(query_tag + " |"):
+                # Extraemos la parte de la serie de la opción actual para comparar limpio contra limpio
+                parte_sn = op.split('SN: ')[1].strip().upper() if 'SN: ' in op else ''
+                
+                if query_serie == parte_sn:
                     idx_q = i
                     break
         
@@ -894,6 +887,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
