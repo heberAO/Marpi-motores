@@ -325,15 +325,16 @@ elif modo == "Historial y QR":
         
         # Leemos los parámetros de la URL (pueden venir por tag o por serie)
         query_tag = st.query_params.get("tag", "").upper()
-        qr_detectado = st.query_params.get("serie") or st.query_params.get("Serie")
+        qr_detectado = st.query_params.get("serie") or st.query_params.get("Serie") or st.query_params.get("tag")
 
         idx_automatico = 0 # Por defecto, el buscador empieza en blanco
         
         # 2. SI HAY QR, BUSCAMOS EN QUÉ POSICIÓN ESTÁ ESE MOTOR
         if qr_detectado:
-            serie_qr = str(qr_detectado).strip().upper()
+            val_qr = str(qr_detectado).strip().upper()
             for i, nombre_motor in enumerate(opciones):
-                if f"SN: {serie_qr}" in nombre_motor.upper():
+                # Buscamos si el valor del QR está en el TAG o en el SN de la lista
+                if val_qr in nombre_motor.upper():
                     idx_automatico = i
                     break
         
@@ -351,7 +352,7 @@ elif modo == "Historial y QR":
             serie_buscada = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
             
             # 2. Filtramos el historial completo
-            historial_motor = df_completo[df_completo['N_Serie'].astype(str) == serie_buscada].copy()
+            historial_motor = df_completo[df_completo['N_Serie'].astype(str).str.strip() == str(serie_buscada).strip()].copy()
             
             # 3. Definimos el nombre actual (reemplaza al viejo 'buscado')
             ultimo_tag = historial_motor.iloc[-1]['Tag']
@@ -876,6 +877,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
