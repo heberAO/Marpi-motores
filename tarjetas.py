@@ -49,68 +49,43 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
     try:
         from PIL import Image, ImageDraw, ImageFont
         import qrcode
-        from io import BytesIO
+        import io
 
-        # 1. Lienzo (600x300 px)
-        etiqueta = Image.new('RGB', (600, 300), (255, 255, 255))
-        draw = ImageDraw.Draw(etiqueta)
+        # 1. Crear lienzo blanco (60mm x 30mm a 300dpi aprox -> 709x354 px)
+        img = Image.new('RGB', (709, 354), color=(255, 255, 255))
+        draw = ImageDraw.Draw(img)
 
-       # 2. QR (LADO IZQUIERDO) - Ahora vinculado a la SERIE
-        qr = qrcode.QRCode(version=1, box_size=12, border=1)
-        # EL CAMBIO CLAVE:
-        qr.add_data(url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={serie_final}")
+        # 2. Intentar cargar fuente, si falla usa la básica
+        try:
+            font_bold = ImageFont.truetype("arialbd.ttf", 60)
+            font_small = ImageFont.truetype("arial.ttf", 40)
+        except:
+            font_bold = ImageFont.load_default()
+            font_small = ImageFont.load_default()
+
+        # 3. Generar el QR (con el link que ya arreglamos antes)
+        qr_url = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={serie}"
+        qr = qrcode.QRCode(box_size=10, border=1)
+        qr.add_data(qr_url)
         qr.make(fit=True)
-        img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
-        img_qr = img_qr.resize((260, 260))
-        etiqueta.paste(img_qr, (20, 20))
+        qr_img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
+        qr_img = qr_img.resize((280, 280))
+        img.paste(qr_img, (20, 37))
 
-        # 3. LADO DERECHO: LOGO + N° MOTOR
-        x_derecha = 310
-        ancho_maximo = 275 # Espacio disponible para que no se salga de la etiqueta
-        
-        try:
-            logo_original = Image.open("logo.png").convert('RGBA')
-            base_width = 270 
-            w_percent = (base_width / float(logo_original.size[0]))
-            h_size = int((float(logo_original.size[1]) * float(w_percent)))
-            logo_resurced = logo_original.resize((base_width, h_size), Image.Resampling.LANCZOS)
-            etiqueta.paste(logo_resurced, (x_derecha, 45), logo_resurced)
-            y_pos_nro = 45 + h_size + 35 
-        except:
-            y_pos_nro = 150
+        # 4. Dibujar textos
+        draw.text((320, 50), f"TAG: {tag}", fill=(0, 0, 0), font=font_bold)
+        draw.text((320, 140), f"S/N: {serie}", fill=(0, 0, 0), font=font_small)
+        draw.text((320, 210), f"POT: {potencia}", fill=(0, 0, 0), font=font_small)
+        draw.rectangle([0, 0, 708, 353], outline=(0, 0, 0), width=3) # Borde
 
-        # 4. LÓGICA DE AJUSTE DE TAMAÑO (VERSIÓN ROBUSTA)
-        texto_nro = f"N°: {str(serie).upper()}"
-        tamanio_fuente = 40 # Tamaño inicial deseado
-        
-        # Intentamos cargar la fuente, si falla usamos la de por defecto
-        try:
-            fuente_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-            # Bucle para reducir tamaño hasta que el ancho sea menor al máximo
-            while tamanio_fuente > 10:
-                fuente_nro = ImageFont.truetype(fuente_path, tamanio_fuente)
-                # Medimos el ancho usando getlength (más preciso para fuentes truetype)
-                ancho_texto = draw.textlength(texto_nro, font=fuente_nro)
-                
-                if ancho_texto <= ancho_maximo:
-                    break
-                tamanio_fuente -= 2
-        except:
-            # Si falla la carga de fuente, usamos el ajuste básico
-            fuente_nro = ImageFont.load_default()
-
-        # Dibujamos el Número de Motor centrado en su columna o alineado a la izquierda
-        draw.text((x_derecha + 5, y_pos_nro), texto_nro, font=fuente_nro, fill=(0,0,0))
-
-        # 5. CONVERSIÓN PARA HONEYWELL
-        final_bw = etiqueta.convert('1', dither=Image.NONE)
-        
-        buf = BytesIO()
-        final_bw.save(buf, format="PNG")
+        # 5. Convertir a Bytes
+        buf = io.BytesIO()
+        img.save(buf, format='PNG')
         return buf.getvalue()
 
     except Exception as e:
-        print(f"Error: {e}")
+        # Si algo falla, Streamlit nos dirá qué es
+        st.error(f"Error interno en la función de etiqueta: {e}")
         return None
         
 def calcular_grasa_marpi(rodamiento):
@@ -541,10 +516,7 @@ elif modo == "Historial y QR":
                         f_limpia.get('N_Serie', '-'), 
                         f_limpia.get('Potencia', '-')
                     )
-                    if img_bytes_h is None:
-                        st.error("⚠️ La función de etiqueta devolvió vacío (None)")
-                    else:
-                        st.success("✅ Imagen generada correctamente")
+                    
                     # Ahora el IF coincide con la variable de arriba
                     if img_bytes_h:
                         import base64
@@ -869,6 +841,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
