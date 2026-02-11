@@ -544,7 +544,8 @@ elif modo == "Historial y QR":
                         f_limpia.get('N_Serie', '-'), 
                         f_limpia.get('Potencia', '-')
                     )
-                    
+                    # --- EL BOTÓN DE HONEYWELL (Usando las variables correctas) ---
+                    img_bytes_h = generar_etiqueta_honeywell(ultimo_tag, serie_final, potencia_motor)
                     if img_bytes_h:
                         import base64
                         b64_img_h = base64.b64encode(img_bytes_h).decode('utf-8')
@@ -867,6 +868,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
