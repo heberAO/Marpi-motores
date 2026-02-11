@@ -316,69 +316,60 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Aseguramos que N_Serie sea siempre texto para que no falle la búsqueda
+        # 1. Limpieza de datos para evitar errores de búsqueda
         df_completo['N_Serie'] = df_completo['N_Serie'].astype(str).str.strip()
         df_completo['Tag'] = df_completo['Tag'].astype(str).str.strip()
 
-        # 2. Lista de opciones para el selector
+        # 2. Crear lista de opciones
         df_completo['Busqueda_Combo'] = df_completo['Tag'] + " | SN: " + df_completo['N_Serie']
         opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
         
-        # 3. CAPTURA DEL QR (Compatible con tus pegatinas de planta)
-        # Priorizamos 'tag' porque es lo que suelen tener tus QR viejos
+        # 3. CAPTURA DE QR (Prioridad a tus etiquetas de planta)
         qr_valor = st.query_params.get("tag") or st.query_params.get("serie") or st.query_params.get("Serie")
         
         idx_automatico = 0 
         if qr_valor:
             v_qr = str(qr_valor).strip().upper()
             for i, op in enumerate(opciones):
-                # Dividimos la opción para comparar por separado y no confundir
-                # op_tag es lo que está antes del '|', op_sn es lo que está después de 'SN: '
-                partes = op.split(" | SN: ")
-                if len(partes) == 2:
-                    op_tag = partes[0].upper()
-                    op_sn = partes[1].upper()
-                    
-                    # Si el QR coincide exactamente con el TAG o con la SERIE, lo marcamos
-                    if v_qr == op_tag or v_qr == op_sn:
-                        idx_automatico = i
-                        break
+                if v_qr in op.upper():
+                    idx_automatico = i
+                    break
 
-        # 4. SELECTOR
+        # 4. EL SELECTOR
         seleccion = st.selectbox(
             "Busca por TAG o N° de Serie:", 
             opciones, 
             index=idx_automatico, 
-            key="buscador_blindado_marpi"
+            key="buscador_marpi_estable"
         )
 
         if seleccion:
-            # EXTRAER SERIE REAL: Tomamos lo que está después de 'SN: '
-            # Esto evita que se confunda si el TAG tiene números parecidos a la serie
-            serie_exacta = seleccion.split(" | SN: ")[1]
+            # EXTRAEMOS LA SERIE (Es el único dato que no cambia)
+            # Usamos split y tomamos la parte de la derecha para no confundir con el TAG
+            serie_final = seleccion.split(" | SN: ")[1] if " | SN: " in seleccion else ""
             
-            # FILTRO DE BASE DE DATOS (Exacto)
-            historial_motor = df_completo[df_completo['N_Serie'] == serie_exacta].copy()
+            # FILTRAR EL HISTORIAL
+            historial_motor = df_completo[df_completo['N_Serie'] == serie_final].copy()
             
-            # 3. Definimos el nombre actual (reemplaza al viejo 'buscado')
-            ultimo_tag = historial_motor.iloc[-1]['Tag']
-            st.session_state.tag_fijo = ultimo_tag
-            
-            # --- PANEL SUPERIOR ---
-            with st.container(border=True):
-                col_qr, col_info = st.columns([1, 2])
+            if not historial_motor.empty:
+                # Definir ultimo_tag para las tarjetas de abajo
+                ultimo_tag = str(historial_motor.iloc[-1]['Tag'])
                 
-                # Usamos la serie para el QR (vínculo eterno)
-                url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_buscada}"
-                qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
-                
-                with col_qr:
-                    st.image(qr_api, width=120)
-                with col_info:
-                    # AQUÍ ESTABA EL ERROR: Usamos ultimo_tag ahora
-                    st.subheader(f"Ⓜ️ {ultimo_tag}")
-                    st.caption(f"Número de Serie: {serie_buscada}")
+                # --- PANEL SUPERIOR Y QR ---
+                with st.container(border=True):
+                    col_qr, col_info = st.columns([1, 2])
+                    
+                    # Generamos el link usando la serie_final que acabamos de extraer
+                    url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_final}"
+                    qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
+                    
+                    with col_qr:
+                        st.image(qr_api, width=120)
+                    with col_info:
+                        st.subheader(f"Ⓜ️ {ultimo_tag}")
+                        st.info(f"Número de Serie: **{serie_final}**")
 
+                # De aquí en adelante sigue tu código de 'st.divider()' y el bucle 'for idx, fila in hist_m.iterrows():'
             # --- BOTONES DE ACCIÓN RÁPIDA ---
             st.subheader("➕ Nueva Tarea")
             c1, c2, c3 = st.columns(3)
@@ -883,6 +874,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
