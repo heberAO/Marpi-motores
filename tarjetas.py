@@ -316,74 +316,64 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Detectamos cómo se llaman tus columnas realmente para no tirar error
-        # Pasamos todo a mayúsculas solo para comparar
-        cols = {c.upper().strip(): c for c in df_completo.columns}
-        col_tag = cols.get("Tag") or cols.get("NOMBRE") or df_completo.columns[0]
-        col_serie = cols.get("N_Serie") or cols.get("SERIE") or cols.get("N° SERIE") or df_completo.columns[1]
+        # 1. Forzamos los nombres de columnas para que el código no adivine
+        # Esto limpia espacios y asegura que podamos llamarlas por nombre fijo
+        df_completo.columns = [str(c).strip().upper() for c in df_completo.columns]
+        
+        # 2. Definimos nombres fijos (Asegurate que en tu Excel se llamen así o parecido)
+        # Si en tu Excel es 'N_SERIE', cámbialo acá abajo:
+        C_TAG = "TAG" 
+        C_SERIE = "N_SERIE" 
 
-        # 2. Preparamos las opciones del buscador
+        # 3. Creamos la lista de opciones para el selector
+        # Usamos .get() para que no explote si la columna falta un segundo
         df_completo['Busqueda_Combo'] = (
-            df_completo[col_tag].astype(str).str.strip().str.upper() + 
+            df_completo[C_TAG].astype(str).str.strip().str.upper() + 
             " | SN: " + 
-            df_completo[col_serie].astype(str).str.strip().str.upper()
+            df_completo[C_SERIE].astype(str).str.strip().str.upper()
         )
         
-        opciones_unicas = sorted(df_completo.drop_duplicates(subset=[col_serie])['Busqueda_Combo'].tolist())
+        opciones_unicas = sorted(df_completo.drop_duplicates(subset=[C_SERIE])['Busqueda_Combo'].tolist())
         opciones = [""] + opciones_unicas
 
-        # 3. LEEMOS LA URL (Buscamos Serie O Tag)
-        q_serie = st.query_params.get("serie", "").strip().upper()
-        q_tag = st.query_params.get("tag", "").strip().upper()
+        # 4. CAPTURA DE QR (Prioridad absoluta)
+        # Leemos 'serie' de la URL
+        p_serie = st.query_params.get("serie", "").strip().upper()
         
         idx_q = 0
-        
-        # PRIORIDAD 1: Buscar por Serie (QR Nuevos)
-        if q_serie:
+        if p_serie:
             for i, op in enumerate(opciones):
-                if f"SN: {q_serie}" in op:
+                if f"SN: {p_serie}" in op:
                     idx_q = i
                     break
         
-        # PRIORIDAD 2: Si no hubo serie, buscar por Tag (QR Viejos)
-        if idx_q == 0 and q_tag:
-            for i, op in enumerate(opciones):
-                if op.startswith(f"{q_tag} |"):
-                    idx_q = i
-                    break
-
-        # 4. El Buscador se posiciona solo
+        # 5. EL SELECTOR
         seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
 
         if seleccion:
-            # 1. Extraemos la serie (esta es nuestra variable clave)
+            # Extraemos la serie de la selección del usuario
             serie_extraida = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
             
-            # 2. Filtramos el historial usando la serie extraída
-            hist_m = df_completo[df_completo[col_serie].astype(str).str.strip().str.upper() == serie_extraida].copy()
+            # FILTRO CRITICO: Solo mostramos lo que coincida exactamente con esa serie
+            hist_m = df_completo[df_completo[C_SERIE].astype(str).str.strip().str.upper() == serie_extraida].copy()
             
-            # 3. Obtenemos el Tag más reciente (el último del historial)
             if not hist_m.empty:
-                ultimo_tag = str(hist_m.iloc[-1][col_tag])
-            else:
-                ultimo_tag = seleccion.split(' | ')[0] # Respaldo por si falla el filtro
-
-            st.success(f"Viendo historial de: {seleccion}")
-            
-            # --- PANEL SUPERIOR ---
-            with st.container(border=True):
-                col_qr, col_info = st.columns([1, 2])
+                # El Tag más nuevo es el de la última fila cargada
+                ultimo_tag = str(hist_m.iloc[-1][C_TAG])
                 
-                # CORRECCIÓN DE URL: Usamos 'serie_extraida' y 'serie' en minúsculas en la URL
-                url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_extraida}"
-                qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
-                
-                with col_qr:
-                    st.image(qr_api, width=120)
-                with col_info:
-                    # Usamos las variables que sí existen: ultimo_tag y serie_extraida
-                    st.subheader(f"Ⓜ️ {ultimo_tag}")
-                    st.caption(f"Número de Serie: {serie_extraida}")
+                with st.container(border=True):
+                    col_qr, col_info = st.columns([1, 2])
+                    
+                    # URL para el QR impreso (siempre con 'serie')
+                    url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_extraida}"
+                    qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
+                    
+                    with col_qr:
+                        st.image(qr_api, width=120)
+                    with col_info:
+                        st.subheader(f"Ⓜ️ {ultimo_tag}")
+                        st.caption(f"Número de Serie: {serie_extraida}")
+                        st.write(f"Historial de reparaciones: {len(hist_m)}")
 
             # --- BOTONES DE ACCIÓN RÁPIDA ---
             st.subheader("➕ Nueva Tarea")
@@ -889,6 +879,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
