@@ -535,15 +535,16 @@ elif modo == "Historial y QR":
                         f_limpia.get('Descripcion', '-')
                     )
                     components.html(html_boton, height=80)
-                    # --- GENERAR IMAGEN DE ETIQUETA ---
-                    # --- 1. GENERAR IMAGEN ---
-                    # --- 1. GENERAR IMAGEN (Aseguramos el nombre img_bytes_h) ---
+                    
                     img_bytes_h = generar_etiqueta_honeywell(
                         tag_h, 
                         f_limpia.get('N_Serie', '-'), 
                         f_limpia.get('Potencia', '-')
                     )
-                    
+                    if img_bytes_h is None:
+                        st.error("⚠️ La función de etiqueta devolvió vacío (None)")
+                    else:
+                        st.success("✅ Imagen generada correctamente")
                     # Ahora el IF coincide con la variable de arriba
                     if img_bytes_h:
                         import base64
@@ -868,6 +869,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
