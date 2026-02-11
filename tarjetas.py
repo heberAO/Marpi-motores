@@ -537,14 +537,18 @@ elif modo == "Historial y QR":
                     components.html(html_boton, height=80)
                     # --- GENERAR IMAGEN DE ETIQUETA ---
                     # --- 1. GENERAR IMAGEN ---
+                    # --- 1. GENERAR IMAGEN (Aseguramos el nombre img_bytes_h) ---
                     img_bytes_h = generar_etiqueta_honeywell(
                         tag_h, 
                         f_limpia.get('N_Serie', '-'), 
                         f_limpia.get('Potencia', '-')
                     )
+                    
+                    # Ahora el IF coincide con la variable de arriba
                     if img_bytes_h:
                         import base64
                         b64_img_h = base64.b64encode(img_bytes_h).decode('utf-8')
+                        
                         boton_h_html = f"""
                         <div style="text-align: center;">
                             <button id="btnH_{idx}" style="width:100%; background:#28a745; color:white; padding:8px; border:none; border-radius:5px; font-weight:bold; cursor:pointer; height:38px; font-size:12px;">
@@ -864,6 +868,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
