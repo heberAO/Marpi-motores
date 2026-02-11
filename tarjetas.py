@@ -345,22 +345,23 @@ elif modo == "Historial y QR":
             key="buscador_marpi_universal"
         )
         if seleccion:
-            # EXTRAEMOS LA SERIE (Es el único dato que no cambia)
-            # Usamos split y tomamos la parte de la derecha para no confundir con el TAG
+            # 1. Extraemos la serie correctamente (evitamos el NameError)
             serie_final = seleccion.split(" | SN: ")[1] if " | SN: " in seleccion else ""
             
-            # FILTRAR EL HISTORIAL
+            # 2. Filtramos la base de datos
             historial_motor = df_completo[df_completo['N_Serie'] == serie_final].copy()
             
             if not historial_motor.empty:
-                # Definir ultimo_tag para las tarjetas de abajo
-                ultimo_tag = str(historial_motor.iloc[-1]['Tag'])
-                
-                # --- PANEL SUPERIOR Y QR ---
+                # 3. Definimos las variables necesarias para el reporte y el botón
+                motor_info = historial_motor.iloc[-1]
+                ultimo_tag = str(motor_info.get('Tag', 'S/D'))
+                potencia_motor = str(motor_info.get('Potencia', '-'))
+
+                # --- PANEL SUPERIOR ---
                 with st.container(border=True):
                     col_qr, col_info = st.columns([1, 2])
                     
-                    # Generamos el link usando la serie_final que acabamos de extraer
+                    # Generamos el link para el QR de pantalla
                     url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={serie_final}"
                     qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
                     
@@ -369,8 +370,9 @@ elif modo == "Historial y QR":
                     with col_info:
                         st.subheader(f"Ⓜ️ {ultimo_tag}")
                         st.info(f"Número de Serie: **{serie_final}**")
-                    # --- EL BOTÓN DE HONEYWELL AQUÍ ARRIBA ---
-                    img_bytes_h = generar_etiqueta_honeywell(ultimo_tag, serie_buscada, motor_info.get('Potencia', '-'))    
+
+                # --- EL BOTÓN DE HONEYWELL (Usando las variables correctas) ---
+                img_bytes_h = generar_etiqueta_honeywell(ultimo_tag, serie_final, potencia_motor)    
             # --- BOTONES DE ACCIÓN RÁPIDA ---
             st.subheader("➕ Nueva Tarea")
             c1, c2, c3 = st.columns(3)
@@ -544,33 +546,25 @@ elif modo == "Historial y QR":
                     )
                     
                     if img_bytes_h:
-                        import base64
-                        b64_img_h = base64.b64encode(img_bytes_h).decode('utf-8')
-                        
-                        # HTML del botón verde de Honeywell
-                        boton_honeywell_html = f"""
-                        <div style="width: 100%; text-align: center; margin-top: 5px;">
-                            <button id="btnH_{idx}" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif;">
-                                🖨️ IMPRIMIR ETIQUETA HONEYWELL
-                            </button>
-                        </div>
-                        
-                        <script>
-                        document.getElementById('btnH_{idx}').onclick = function() {{
-                            const win = window.open('', '', 'width=800,height=600');
-                            win.document.write('<html><head><style>');
-                            win.document.write('@page {{ size: 60mm 30mm; margin: 0 !important; }}');
-                            win.document.write('body {{ margin: 0; padding: 0; }}');
-                            win.document.write('img {{ width: 60mm; height: 30mm; object-fit: contain; image-rendering: pixelated; }}');
-                            win.document.write('</style></head><body>');
-                            win.document.write('<img src="data:image/png;base64,{b64_img_h}" onload="setTimeout(() => {{ window.print(); window.close(); }}, 500);">');
-                            win.document.write('</body></html>');
-                            win.document.close();
-                        }};
-                        </script>
-                        """
-                        # Mostramos el componente
-                        components.html(boton_honeywell_html, height=100)
+                    import base64
+                    b64_img_h = base64.b64encode(img_bytes_h).decode('utf-8')
+                    boton_h_html = f"""
+                    <div style="text-align: center; margin: 10px 0;">
+                        <button id="btnH_top" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif;">
+                            🖨️ IMPRIMIR ETIQUETA HONEYWELL
+                        </button>
+                    </div>
+                    <script>
+                    document.getElementById('btnH_top').onclick = function() {{
+                        const win = window.open('', '', 'width=800,height=600');
+                        win.document.write('<html><head><style>@page {{ size: 60mm 30mm; margin: 0; }} img {{ width: 60mm; height: 30mm; }}</style></head><body>');
+                        win.document.write('<img src="data:image/png;base64,{b64_img_h}" onload="setTimeout(() => {{ window.print(); window.close(); }}, 500);">');
+                        win.document.write('</body></html>');
+                        win.document.close();
+                    }};
+                    </script>
+                    """
+                    components.html(boton_h_html, height=80)
                                             
                     
                     st.divider()
@@ -873,6 +867,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
