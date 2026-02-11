@@ -316,17 +316,12 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Forzamos los nombres de columnas para que el código no adivine
-        # Esto limpia espacios y asegura que podamos llamarlas por nombre fijo
         df_completo.columns = [str(c).strip().upper() for c in df_completo.columns]
-        
-        # 2. Definimos nombres fijos (Asegurate que en tu Excel se llamen así o parecido)
-        # Si en tu Excel es 'N_SERIE', cámbialo acá abajo:
+
         C_TAG = "TAG" 
         C_SERIE = "N_SERIE" 
 
         # 3. Creamos la lista de opciones para el selector
-        # Usamos .get() para que no explote si la columna falta un segundo
         df_completo['Busqueda_Combo'] = (
             df_completo[C_TAG].astype(str).str.strip().str.upper() + 
             " | SN: " + 
@@ -337,15 +332,28 @@ elif modo == "Historial y QR":
         opciones = [""] + opciones_unicas
 
         # 4. CAPTURA DE QR (Prioridad absoluta)
-        # Leemos 'serie' de la URL
-        p_serie = st.query_params.get("serie", "").strip().upper()
+        parametros = st.query_params
+        p_serie = parametros.get("serie", "").strip().upper()
         
-        idx_q = 0
+        # 4. BUSCAMOS LA POSICIÓN (Índice)
+        idx_q = 0 # Por defecto, posición vacía
         if p_serie:
             for i, op in enumerate(opciones):
+                # Buscamos si la serie que viene del QR está dentro de alguna opción del buscador
                 if f"SN: {p_serie}" in op:
                     idx_q = i
                     break
+            # Si después de buscar no encontramos la serie, avisamos al usuario
+            if idx_q == 0:
+                st.warning(f"⚠️ El QR indica la serie {p_serie}, pero no se encuentra en el Excel.")
+
+        # 5. EL SELECTOR (Con la 'key' y el 'index' automático)
+        seleccion = st.selectbox(
+            "Busca por TAG o N° de Serie:", 
+            opciones, 
+            index=idx_q, 
+            key="selector_historial_final"
+        )        
         # 5. EL SELECTOR
         seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
 
@@ -879,6 +887,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
