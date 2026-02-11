@@ -537,11 +537,14 @@ elif modo == "Historial y QR":
                     )
                     components.html(html_boton, height=80)
                     
-                    img_bytes_h = generar_etiqueta_honeywell(
-                        tag_h, 
-                        f_limpia.get('N_Serie', '-'), 
-                        f_limpia.get('Potencia', '-')
-                    )
+                try:
+                    # Intentamos sacar los datos de 'datos_para_pasar' (que es lo más seguro)
+                    # Si no existe, usamos los del motor seleccionado
+                    s_print = datos_para_pasar.get('serie', '-')
+                    t_print = datos_para_pasar.get('tag', '-')
+                    p_print = datos_para_pasar.get('potencia', '-')
+                    
+                    img_bytes_h = generar_etiqueta_honeywell(t_print, s_print, p_print)
                     
                     # Ahora el IF coincide con la variable de arriba
                     if img_bytes_h:
@@ -867,6 +870,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
