@@ -58,7 +58,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
        # 2. QR (LADO IZQUIERDO) - Ahora vinculado a la SERIE
         qr = qrcode.QRCode(version=1, box_size=12, border=1)
         # EL CAMBIO CLAVE:
-        qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_final}")
+        qr.add_data(url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={serie_final}")
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
         img_qr = img_qr.resize((260, 260))
@@ -361,7 +361,7 @@ elif modo == "Historial y QR":
                     col_qr, col_info = st.columns([1, 2])
                     
                     # Generamos el link usando la serie_final que acabamos de extraer
-                    url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_final}"
+                    url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={serie_final}"
                     qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
                     
                     with col_qr:
@@ -873,6 +873,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
