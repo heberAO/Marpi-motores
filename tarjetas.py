@@ -540,19 +540,19 @@ elif modo == "Historial y QR":
                     
                     # --- BOTÓN HONEYWELL (EL VERDE) - CORREGIDO Y ALINEADO ---
                     try:
-                        # USAMOS f_limpia PARA QUE TOME LOS DATOS DE CADA FILA DEL HISTORIAL
-                        s_print = str(f_limpia.get('N_Serie', '-'))
-                        t_print = str(f_limpia.get('Tag', '-'))
-                        p_print = str(f_limpia.get('Potencia', '-'))
+                        # Usamos f_limpia que es la variable que YA existe en tu bucle for
+                        s_local = str(f_limpia.get('N_Serie', '-'))
+                        t_local = str(f_limpia.get('Tag', tag_h))
+                        p_local = str(f_limpia.get('Potencia', '-'))
                         
-                        img_bytes_h = generar_etiqueta_honeywell(t_print, s_print, p_print)
+                        img_bytes_h = generar_etiqueta_honeywell(t_local, s_local, p_local)
                         
                         if img_bytes_h:
                             import base64
                             b64_img_h = base64.b64encode(img_bytes_h).decode('utf-8')
                             
                             boton_h_html = f"""
-                            <div style="text-align: center; margin-top: -10px;">
+                            <div style="text-align: center; margin-top: -15px;">
                                 <button id="btnH_{idx}" style="width:100%; background:#28a745; color:white; padding:8px; border:none; border-radius:5px; font-weight:bold; cursor:pointer; height:38px; font-size:12px; font-family: sans-serif;">
                                     🖨️ IMPRIMIR ETIQUETA HONEYWELL
                                 </button>
@@ -569,7 +569,8 @@ elif modo == "Historial y QR":
                             """
                             components.html(boton_h_html, height=50)
                     except Exception as e:
-                        st.caption(f"Error en etiqueta: {e}")
+                        # Si falla, te mostrará qué variable falta, pero no romperá la app
+                        st.caption(f"Aviso: No se pudo generar etiqueta individual: {e}")
 
                     st.divider()
 elif modo == "Relubricacion":
@@ -871,6 +872,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
