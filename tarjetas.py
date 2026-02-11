@@ -316,47 +316,52 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Buscador mejorado
+        # 1. Detectamos cómo se llaman tus columnas realmente para no tirar error
+        # Pasamos todo a mayúsculas solo para comparar
+        cols = {c.upper().strip(): c for c in df_completo.columns}
+        col_tag = cols.get("TAG") or cols.get("NOMBRE") or df_completo.columns[0]
+        col_serie = cols.get("N_SERIE") or cols.get("SERIE") or cols.get("N° SERIE") or df_completo.columns[1]
+
+        # 2. Preparamos las opciones del buscador
         df_completo['Busqueda_Combo'] = (
-            df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
+            df_completo[col_tag].astype(str).str.strip().str.upper() + 
+            " | SN: " + 
+            df_completo[col_serie].astype(str).str.strip().str.upper()
         )
-        opciones_unicas = df_completo.drop_duplicates(subset=['N_Serie'])['Busqueda_Combo'].tolist()
-        opciones = [""] + sorted(opciones_unicas)
         
-        # Leemos los parámetros de la URL (pueden venir por tag o por serie)
-        query_tag = st.query_params.get("tag", "").upper()
-        query_serie = st.query_params.get("serie", "").upper() # <--- NUEVO
+        opciones_unicas = sorted(df_completo.drop_duplicates(subset=[col_serie])['Busqueda_Combo'].tolist())
+        opciones = [""] + opciones_unicas
+
+        # 3. LEEMOS LA URL (Buscamos Serie O Tag)
+        q_serie = st.query_params.get("serie", "").strip().upper()
+        q_tag = st.query_params.get("tag", "").strip().upper()
         
         idx_q = 0
         
-        # Lógica de detección automática
-        if query_serie:
-            # Si el QR es de los nuevos (por Serie), buscamos el SN en las opciones
+        # PRIORIDAD 1: Buscar por Serie (QR Nuevos)
+        if q_serie:
             for i, op in enumerate(opciones):
-                if f"SN: {query_serie}" in op:
-                    idx_q = i
-                    break
-        elif query_tag:
-            # Si el QR es de los viejos (por TAG), buscamos al inicio
-            for i, op in enumerate(opciones):
-                if op.startswith(query_tag + " |"):
+                if f"SN: {q_serie}" in op:
                     idx_q = i
                     break
         
-        # El selectbox ahora se posiciona solo, venga por donde venga el usuario
+        # PRIORIDAD 2: Si no hubo serie, buscar por Tag (QR Viejos)
+        if idx_q == 0 and q_tag:
+            for i, op in enumerate(opciones):
+                if op.startswith(f"{q_tag} |"):
+                    idx_q = i
+                    break
+
+        # 4. El Buscador se posiciona solo
         seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
-  
 
         if seleccion:
-            # 1. Sacamos la serie de la selección
-            serie_buscada = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
+            # Extraemos la serie para filtrar todo el historial de ese motor
+            serie_extraida = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
+            hist_m = df_completo[df_completo[col_serie].astype(str).str.strip().str.upper() == serie_extraida].copy()
             
-            # 2. Filtramos el historial completo
-            historial_motor = df_completo[df_completo['N_Serie'].astype(str) == serie_buscada].copy()
-            
-            # 3. Definimos el nombre actual (reemplaza al viejo 'buscado')
-            ultimo_tag = historial_motor.iloc[-1]['Tag']
-            st.session_state.tag_fijo = ultimo_tag
+            # ... (Aquí sigue tu código para mostrar las tarjetas del historial) ...
+            st.success(f"Viendo historial de: {seleccion}")
             
             # --- PANEL SUPERIOR ---
             with st.container(border=True):
@@ -877,6 +882,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
