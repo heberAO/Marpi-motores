@@ -146,7 +146,6 @@ if "archivo_nombre" not in st.session_state:
 # Inicializamos variables de estado
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
 if "modo_manual" not in st.session_state: st.session_state.modo_manual = False
-# --- 3. CONEXIÓN A DATOS ---
 # --- 1. CONEXIÓN A DATOS ---
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
@@ -160,7 +159,6 @@ if "motor_seleccionado" not in st.session_state:
     st.session_state.motor_seleccionado = None
 
 # --- 1. CAPTURA DE PARÁMETROS (QR) ---
-# Usamos st.query_params que es la forma oficial de Streamlit
 params = st.query_params
 qr_valor = params.get("serie") or params.get("tag") or params.get("Serie") or params.get("Tag")
 
@@ -168,7 +166,6 @@ indice_inicio = 0  # Por defecto abre en "Inicio"
 
 if qr_valor:
     # Buscamos el motor EXACTO en el Excel (comparando con N_Serie o con Tag)
-    # Convertimos a string para que no falle la comparación
     v_qr = str(qr_valor).strip().upper()
     
     filtro = df_completo[
@@ -406,8 +403,6 @@ elif modo == "Historial y QR":
             st.subheader("➕ Nueva Tarea")
             c1, c2, c3, c4 = st.columns(4)
             
-            # Extraemos los datos actuales del motor seleccionado para pasarlos al formulario
-            # 'historial_motor' ya lo filtraste arriba, tomamos la última fila
             if not historial_motor.empty:
                 motor_info = historial_motor.iloc[-1]
                 datos_para_pasar = {
@@ -553,7 +548,6 @@ elif modo == "Historial y QR":
                         info_extra += f"<br><b>📌 Notas:</b> {notas_ad}"
 
                     # Esta línea debe estar verticalmente igual a los 'if' de arriba
-                    # --- BOTÓN DE DESCARGA PRO (EL AZUL) ---
                     html_boton = boton_descarga_pro(
                         tag_h, 
                         fecha, 
@@ -605,7 +599,6 @@ elif modo == "Historial y QR":
                     st.divider()
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
-    # ... (el resto de tu código de lubricación)
     
     if "cnt_lub" not in st.session_state:
         st.session_state.cnt_lub = 0
@@ -902,6 +895,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
