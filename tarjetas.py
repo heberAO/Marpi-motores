@@ -325,28 +325,24 @@ elif modo == "Historial y QR":
         
         # Leemos los parámetros de la URL (pueden venir por tag o por serie)
         query_tag = st.query_params.get("tag", "").upper()
-        p_serie = st.query_params.get("serie") or st.query_params.get("Serie")
-        idx_q = 0
+        qr_detectado = st.query_params.get("serie") or st.query_params.get("Serie")
+
+        idx_automatico = 0 # Por defecto, el buscador empieza en blanco
         
-        if p_serie:
-            p_serie = str(p_serie).strip().upper()
-            # Recorremos las opciones del buscador para ver cuál coincide
-            for i, op in enumerate(opciones):
-                if f"SN: {p_serie}" in op.upper():
-                    idx_q = i
-                    break
-        elif query_tag:
-            # Si el QR es de los viejos (por TAG), buscamos al inicio
-            for i, op in enumerate(opciones):
-                if op.startswith(query_tag + " |"):
-                    idx_q = i
+        # 2. SI HAY QR, BUSCAMOS EN QUÉ POSICIÓN ESTÁ ESE MOTOR
+        if qr_detectado:
+            serie_qr = str(qr_detectado).strip().upper()
+            for i, nombre_motor in enumerate(opciones):
+                if f"SN: {serie_qr}" in nombre_motor.upper():
+                    idx_automatico = i
                     break
         
-        # El selectbox ahora se posiciona solo, venga por donde venga el usuario
+        # 3. EL BUSCADOR (La clave es el 'index')
         seleccion = st.selectbox(
             "Busca por TAG o N° de Serie:", 
             opciones, 
-            index=idx_q  # <--- ESTO es lo que hace que el QR funcione
+            index=idx_automatico, # <--- Si hay QR, esto ya no es 0, es la posición del motor
+            key="buscador_con_qr_pegado"
         )
           
 
@@ -880,6 +876,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
