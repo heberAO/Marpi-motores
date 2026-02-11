@@ -369,6 +369,8 @@ elif modo == "Historial y QR":
                     with col_info:
                         st.subheader(f"Ⓜ️ {ultimo_tag}")
                         st.info(f"Número de Serie: **{serie_final}**")
+                    # --- EL BOTÓN DE HONEYWELL AQUÍ ARRIBA ---
+                    img_bytes_h = generar_etiqueta_honeywell(ultimo_tag, serie_buscada, motor_info.get('Potencia', '-'))    
             # --- BOTONES DE ACCIÓN RÁPIDA ---
             st.subheader("➕ Nueva Tarea")
             c1, c2, c3 = st.columns(3)
@@ -871,6 +873,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
