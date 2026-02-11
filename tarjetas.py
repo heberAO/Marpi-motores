@@ -106,11 +106,11 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         final_bw = etiqueta.convert('1', dither=Image.NONE)
         
         buf = io.BytesIO()
-        img.save(buf, format='PNG')
+        # CAMBIO AQUÍ: Usamos 'etiqueta' que es el nombre que definiste arriba
+        etiqueta.save(buf, format='PNG') 
         return buf.getvalue()
 
     except Exception as e:
-        # Si algo falla, Streamlit nos dirá qué es
         st.error(f"Error interno en la función de etiqueta: {e}")
         return None
         
@@ -867,6 +867,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
