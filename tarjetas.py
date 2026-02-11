@@ -58,7 +58,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
        # 2. QR (LADO IZQUIERDO) - Ahora vinculado a la SERIE
         qr = qrcode.QRCode(version=1, box_size=12, border=1)
         # EL CAMBIO CLAVE:
-        qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={serie_final}")
+        qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie}&exact=1")
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
         img_qr = img_qr.resize((260, 260))
@@ -156,13 +156,21 @@ except Exception as e:
 
 # --- 4. LÓGICA DE REDIRECCIÓN QR ---
 query_params = st.query_params
-qr_tag = query_params.get("tag", "")
+if "serie" in query_params:
+    serie_buscada = str(query_params["serie"])
+    es_exacto = query_params.get("exact") == "1"
+    
+    if es_exacto:
+        # Buscamos el motor que sea IDÉNTICO a la serie
+        filtro_qr = df_completo[df_completo['N_Serie'].astype(str) == serie_buscada]
+    else:
+        # Busqueda normal (por si acaso)
+        filtro_qr = df_completo[df_completo['N_Serie'].astype(str).str.contains(serie_buscada, na=False)]
 
-# Si el QR trae un motor y el usuario no ha cambiado de pestaña manualmente
-if qr_tag and not st.session_state.modo_manual:
-    indice_inicio = 1 # Posición de "Historial y QR"
-else:
-    indice_inicio = 0
+    if not filtro_qr.empty:
+        motor_encontrado = filtro_qr.iloc[0]
+        # Seteamos el motor exacto en el selector
+        st.session_state.motor_seleccionado = f"{motor_encontrado['Tag']} | SN: {motor_encontrado['N_Serie']}"
 
 # --- 5. MENÚ LATERAL ---
 opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
@@ -872,6 +880,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
