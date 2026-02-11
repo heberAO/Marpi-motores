@@ -353,10 +353,7 @@ elif modo == "Historial y QR":
             opciones, 
             index=idx_q, 
             key="selector_historial_final"
-        )        
-        # 5. EL SELECTOR
-        seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
-
+        )
         if seleccion:
             # Extraemos la serie de la selección del usuario
             serie_extraida = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
@@ -887,6 +884,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
