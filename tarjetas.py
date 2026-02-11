@@ -324,26 +324,32 @@ elif modo == "Historial y QR":
     
     if not df_completo.empty:
         # 1. Normalizamos los datos del Excel
+        # 1. Normalizamos todos los nombres de columnas a MAYÚSCULAS
         df_completo.columns = [c.strip().upper() for c in df_completo.columns]
 
-        # 2. Ahora buscamos la columna aunque se llame 'N_SERIE', 'SERIE' o 'N_SERIE '
-        col_serie = "N_SERIE" if "N_SERIE" in df_completo.columns else "SERIE"
+        # 2. BUSCADOR INTELIGENTE DE 'TAG'
+        # Si no existe 'TAG', buscamos alternativas comunes
+        if "TAG" not in df_completo.columns:
+            alternativas = ["NOMBRE", "ID", "MOTOR", "IDENTIFICACION", "EQUIPO"]
+            for alt in alternativas:
+                if alt in df_completo.columns:
+                    df_completo = df_completo.rename(columns={alt: "TAG"})
+                    break
         
-        if col_serie in df_completo.columns:
-            # Renombramos a un nombre estándar para que el resto del código no falle
-            df_completo = df_completo.rename(columns={col_serie: "N_SERIE"})
-            # Ahora sí limpiamos los datos
-            df_completo['N_SERIE'] = df_completo['N_SERIE'].astype(str).str.strip().str.upper()
-            # Para mantener compatibilidad con tu código actual, creamos el alias
-            df_completo['N_Serie'] = df_completo['N_SERIE'] 
-        else:
-            st.error(f"⚠️ No se encontró la columna de Serie. Columnas detectadas: {list(df_completo.columns)}")
-        
-        # 2. Creamos la lista de opciones (Buscador)
+        # 3. VERIFICACIÓN FINAL
+        if "TAG" not in df_completo.columns or "N_SERIE" not in df_completo.columns:
+            st.error("⚠️ Error crítico: No encuentro las columnas necesarias.")
+            st.write("Columnas detectadas en tu Excel:", list(df_completo.columns))
+            st.stop() # Detenemos la app aquí para que no tire el NameError
+
+        # 4. Ahora sí, limpiamos los datos con seguridad
+        df_completo['TAG'] = df_completo['TAG'].astype(str).str.strip().upper()
+        df_completo['N_SERIE'] = df_completo['N_SERIE'].astype(str).str.strip().upper()
+        df_completo['N_Serie'] = df_completo['N_SERIE'] # Para mantener compatibilidad
+
+        # 5. Creamos la columna de búsqueda
         df_completo['Busqueda_Combo'] = (
-            df_completo['TAG'].astype(str).str.strip().upper() + 
-            " | SN: " + 
-            df_completo['N_Serie']
+            df_completo['TAG'] + " | SN: " + df_completo['N_SERIE']
         )
         p_serie = st.query_params.get("serie", "").strip().upper()
         
@@ -903,6 +909,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
