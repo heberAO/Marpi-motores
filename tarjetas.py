@@ -51,12 +51,6 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         import qrcode
         import io 
 
-        ef generar_etiqueta_honeywell(tag, serie, potencia):
-    try:
-        from PIL import Image, ImageDraw, ImageFont
-        import qrcode
-        from io import BytesIO
-
         # 1. Lienzo (600x300 px)
         etiqueta = Image.new('RGB', (600, 300), (255, 255, 255))
         draw = ImageDraw.Draw(etiqueta)
@@ -873,6 +867,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
