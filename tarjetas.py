@@ -329,29 +329,29 @@ elif modo == "Historial y QR":
 
         # 2. BUSCADOR INTELIGENTE DE 'TAG'
         # Si no existe 'TAG', buscamos alternativas comunes
-        if "TAG" not in df_completo.columns:
+        if "Tag" not in df_completo.columns:
             alternativas = ["NOMBRE", "ID", "MOTOR", "IDENTIFICACION", "EQUIPO"]
             for alt in alternativas:
                 if alt in df_completo.columns:
-                    df_completo = df_completo.rename(columns={alt: "TAG"})
+                    df_completo = df_completo.rename(columns={alt: "Tag"})
                     break
         
         # 3. VERIFICACIÓN FINAL
-        if "TAG" not in df_completo.columns or "N_SERIE" not in df_completo.columns:
+        if "Tag" not in df_completo.columns or "N_Serie" not in df_completo.columns:
             st.error("⚠️ Error crítico: No encuentro las columnas necesarias.")
             st.write("Columnas detectadas en tu Excel:", list(df_completo.columns))
             st.stop() # Detenemos la app aquí para que no tire el NameError
 
         # 4. Ahora sí, limpiamos los datos con seguridad
-        df_completo['TAG'] = df_completo['TAG'].astype(str).str.strip().upper()
-        df_completo['N_SERIE'] = df_completo['N_SERIE'].astype(str).str.strip().upper()
-        df_completo['N_Serie'] = df_completo['N_SERIE'] # Para mantener compatibilidad
+        df_completo['Tag'] = df_completo['Tag'].astype(str).str.strip().upper()
+        df_completo['N_Serie'] = df_completo['N_Serie'].astype(str).str.strip().upper()
+        df_completo['N_Serie'] = df_completo['N_Serie'] # Para mantener compatibilidad
 
         # 5. Creamos la columna de búsqueda
         df_completo['Busqueda_Combo'] = (
-            df_completo['TAG'] + " | SN: " + df_completo['N_SERIE']
+            df_completo['Tag'] + " | SN: " + df_completo['N_SERIE']
         )
-        p_serie = st.query_params.get("serie", "").strip().upper()
+        p_serie = st.query_params.get("Serie", "").strip().upper()
         
         idx_q = 0
         if p_serie:
@@ -363,7 +363,7 @@ elif modo == "Historial y QR":
         
         # 4. EL SELECTBOX (Ahora con el índice inteligente)
         seleccion = st.selectbox(
-            "Busca por TAG o N° de Serie:", 
+            "Busca por Tag o N° de Serie:", 
             opciones, 
             index=idx_q,
             key="selector_motor_principal"
@@ -909,6 +909,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
