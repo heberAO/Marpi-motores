@@ -537,7 +537,7 @@ elif modo == "Historial y QR":
                     components.html(html_boton, height=80)
                     # --- GENERAR IMAGEN DE ETIQUETA ---
                     # --- 1. GENERAR IMAGEN ---
-                    img_bytes = generar_etiqueta_honeywell(
+                    img_bytes_h = generar_etiqueta_honeywell(
                         tag_h, 
                         f_limpia.get('N_Serie', '-'), 
                         f_limpia.get('Potencia', '-')
@@ -864,6 +864,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
