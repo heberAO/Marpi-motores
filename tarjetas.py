@@ -570,7 +570,7 @@ elif modo == "Historial y QR":
                             components.html(boton_h_html, height=45)
                                             
                     
-                    st.divider()
+                        st.divider()
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     # ... (el resto de tu código de lubricación)
@@ -870,6 +870,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
