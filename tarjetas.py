@@ -147,6 +147,7 @@ if "archivo_nombre" not in st.session_state:
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
 if "modo_manual" not in st.session_state: st.session_state.modo_manual = False
 # --- 3. CONEXIÓN A DATOS ---
+# --- 1. CONEXIÓN A DATOS ---
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
     df_completo = conn.read(ttl=0)
@@ -154,29 +155,27 @@ except Exception as e:
     st.error(f"Error de conexión: {e}")
     df_completo = pd.DataFrame()
 
-# 1. CARGA DE DATOS (Asegúrate que esto pase primero)
-df_completo = cargar_datos() # O como se llame tu función de carga
-
-# 2. INICIALIZACIÓN DE VARIABLES
-if 'motor_seleccionado' not in st.session_state:
+# --- 2. INICIALIZACIÓN DE VARIABLES Y QR ---
+if "motor_seleccionado" not in st.session_state:
     st.session_state.motor_seleccionado = None
 
-# 3. LÓGICA DE CAPTURA DEL QR (LA CLAVE)
+# Capturamos parámetros de la URL (QR)
 query_params = st.query_params
-indice_inicio = 0
+indice_inicio = 0 # Por defecto abre en "Inicio"
+
 if "serie" in query_params:
     serie_buscada = str(query_params["serie"])
-    # Buscamos coincidencia exacta en la columna N_Serie
+    # Buscamos el motor EXACTO en el Excel
     filtro = df_completo[df_completo['N_Serie'].astype(str) == serie_buscada]
     
     if not filtro.empty:
         motor = filtro.iloc[0]
-        # Creamos el texto exacto que aparece en tu lista desplegable (selectbox)
+        # Creamos el nombre exacto como aparece en tu buscador
         label_exacto = f"{motor['Tag']} | SN: {motor['N_Serie']}"
         
-        # Forzamos la selección en el estado de la aplicación
+        # Guardamos en la memoria de la App
         st.session_state.motor_seleccionado = label_exacto
-        # Cambiamos el índice para que se abra en "Historial" (asumiendo que es la opción 1)
+        # Forzamos a que abra la pestaña de "Historial" (Indice 1)
         indice_inicio = 1
 
 # --- 5. MENÚ LATERAL ---
@@ -347,12 +346,10 @@ elif modo == "Historial y QR":
         if qr_valor:
             v_qr = str(qr_valor).strip().upper()
             for i, op in enumerate(opciones):
-                # IMPORTANTE: Buscamos el valor en TODA la cadena (Tag + Serie)
-                # Esto hace que encuentre tanto los QR que tienen el Nombre como los que tienen la Serie
                 if v_qr in op.upper():
                     idx_automatico = i
-                    break
-
+                    break            
+                    
         # 4. EL SELECTOR
         seleccion = st.selectbox(
             "Busca por TAG o N° de Serie:", 
@@ -887,6 +884,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
