@@ -11,6 +11,11 @@ import qrcode
 from PIL import Image, ImageDraw, ImageFont
 import streamlit.components.v1 as components
 
+if "serie" in st.query_params:
+    st.session_state.modo = "Historial y QR"
+    # Guardamos la serie para que el buscador la use
+    st.session_state.serie_qr = st.query_params.get("serie")
+
 def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, extra, obs):
     st_btn = 'width:100%;background:#007bff;color:white;padding:15px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-family:sans-serif;'
     
@@ -318,43 +323,35 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. LIMPIEZA TOTAL DE DATOS (Para evitar fallos de coincidencia)
-        df_completo['N_Serie'] = df_completo['N_Serie'].astype(str).str.strip().str.upper()
-        df_completo['Tag'] = df_completo['Tag'].astype(str).str.strip().str.upper()
-
-        # 2. CREAR COLUMNA DE BÚSQUEDA
+        # 1. Normalizamos los datos del Excel
+        df_completo['N_Serie'] = df_completo['N_Serie'].astype(str).str.strip().upper()
+        
+        # 2. Creamos la lista de opciones (Buscador)
         df_completo['Busqueda_Combo'] = (
-            df_completo['Tag'] + " | SN: " + df_completo['N_Serie']
+            df_completo['Tag'].astype(str).str.strip().upper() + 
+            " | SN: " + df_completo['N_Serie']
         )
+        opciones_unicas = sorted(df_completo.drop_duplicates(subset=['N_Serie'])['Busqueda_Combo'].tolist())
+        opciones = [""] + opciones_unicas
         
-        # 3. OPCIONES ÚNICAS
-        opciones_unicas = df_completo.drop_duplicates(subset=['N_Serie'])['Busqueda_Combo'].tolist()
-        opciones = [""] + sorted(opciones_unicas)
-        
-        # 4. LEER PARÁMETRO DE LA URL
-        # Usamos st.query_params directamente
-        params = st.query_params
-        query_serie = params.get("serie", "").strip().upper()
-        
+        # 3. LEER LA SERIE (Priorizamos la que guardamos en el Paso 1)
+        # Si no hay en session_state, buscamos en query_params
+        p_serie = st.session_state.get('serie_qr') or st.query_params.get("serie", "")
+        p_serie = str(p_serie).strip().upper()
+
         idx_q = 0
-        
-        # 5. LOGICA DE SELECCIÓN AUTOMÁTICA
-        if query_serie:
+        if p_serie and p_serie != "NONE":
             for i, op in enumerate(opciones):
-                # Extraemos la serie de la opción (ej: de "MOTOR 1 | SN: 123" sacamos "123")
-                if "SN: " in op:
-                    serie_en_lista = op.split("SN: ")[1].strip().upper()
-                    if query_serie == serie_en_lista:
-                        idx_q = i
-                        break
+                if op.endswith(f"SN: {p_serie}"):
+                    idx_q = i
+                    break
         
-        # 6. EL SELECTBOX (El corazón del problema)
-        # Forzamos a que el index sea idx_q
+        # 4. El Buscador se posiciona en idx_q
         seleccion = st.selectbox(
             "Busca por TAG o N° de Serie:", 
             opciones, 
             index=idx_q,
-            key="buscador_principal" # Agregamos una key fija
+            key="selector_motor"
         )
         if seleccion:
             # 1. Sacamos la serie de la selección
@@ -897,6 +894,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
