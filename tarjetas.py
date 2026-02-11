@@ -155,22 +155,23 @@ except Exception as e:
     df_completo = pd.DataFrame()
 
 # --- 4. LÓGICA DE REDIRECCIÓN QR ---
+# --- 1. INICIALIZACIÓN DE VARIABLES DE ARRANQUE ---
 query_params = st.query_params
+indice_inicio = 0  # <--- VALOR POR DEFECTO (Esto evita el NameError)
+
 if "serie" in query_params:
     serie_buscada = str(query_params["serie"])
-    es_exacto = query_params.get("exact") == "1"
+    # Buscamos en el DataFrame si existe esa serie exacta
+    # (Asegúrate de que df_completo ya esté cargado antes de esto)
+    filtro = df_completo[df_completo['N_Serie'].astype(str) == serie_buscada]
     
-    if es_exacto:
-        # Buscamos el motor que sea IDÉNTICO a la serie
-        filtro_qr = df_completo[df_completo['N_Serie'].astype(str) == serie_buscada]
-    else:
-        # Busqueda normal (por si acaso)
-        filtro_qr = df_completo[df_completo['N_Serie'].astype(str).str.contains(serie_buscada, na=False)]
-
-    if not filtro_qr.empty:
-        motor_encontrado = filtro_qr.iloc[0]
-        # Seteamos el motor exacto en el selector
-        st.session_state.motor_seleccionado = f"{motor_encontrado['Tag']} | SN: {motor_encontrado['N_Serie']}"
+    if not filtro.empty:
+        motor_encontrado = filtro.iloc[0]
+        label_motor = f"{motor_encontrado['Tag']} | SN: {motor_encontrado['N_Serie']}"
+        
+        # Guardamos en session_state para que el selector lo reconozca
+        st.session_state.motor_seleccionado = label_motor
+        indice_inicio = 1 # Cambiamos a 1 para que el menú se mueva a "Historial" solo si encontró el motor
 
 # --- 5. MENÚ LATERAL ---
 opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
@@ -880,6 +881,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
