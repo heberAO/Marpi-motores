@@ -325,15 +325,14 @@ elif modo == "Historial y QR":
         
         # Leemos los parámetros de la URL (pueden venir por tag o por serie)
         query_tag = st.query_params.get("tag", "").upper()
-        query_serie = st.query_params.get("serie", "").upper() # <--- NUEVO
-        
+        p_serie = st.query_params.get("serie") or st.query_params.get("Serie")
         idx_q = 0
         
-        # Lógica de detección automática
-        if query_serie:
-            # Si el QR es de los nuevos (por Serie), buscamos el SN en las opciones
+        if p_serie:
+            p_serie = str(p_serie).strip().upper()
+            # Recorremos las opciones del buscador para ver cuál coincide
             for i, op in enumerate(opciones):
-                if f"SN: {query_serie}" in op:
+                if f"SN: {p_serie}" in op.upper():
                     idx_q = i
                     break
         elif query_tag:
@@ -344,8 +343,12 @@ elif modo == "Historial y QR":
                     break
         
         # El selectbox ahora se posiciona solo, venga por donde venga el usuario
-        seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
-  
+        seleccion = st.selectbox(
+            "Busca por TAG o N° de Serie:", 
+            opciones, 
+            index=idx_q  # <--- ESTO es lo que hace que el QR funcione
+        )
+          
 
         if seleccion:
             # 1. Sacamos la serie de la selección
@@ -877,6 +880,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
