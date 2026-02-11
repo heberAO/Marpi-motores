@@ -318,34 +318,44 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Buscador mejorado
+        # 1. LIMPIEZA TOTAL DE DATOS (Para evitar fallos de coincidencia)
+        df_completo['N_Serie'] = df_completo['N_Serie'].astype(str).str.strip().str.upper()
+        df_completo['Tag'] = df_completo['Tag'].astype(str).str.strip().str.upper()
+
+        # 2. CREAR COLUMNA DE BÚSQUEDA
         df_completo['Busqueda_Combo'] = (
-            df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
+            df_completo['Tag'] + " | SN: " + df_completo['N_Serie']
         )
+        
+        # 3. OPCIONES ÚNICAS
         opciones_unicas = df_completo.drop_duplicates(subset=['N_Serie'])['Busqueda_Combo'].tolist()
         opciones = [""] + sorted(opciones_unicas)
         
-        # Leemos los parámetros de la URL (pueden venir por tag o por serie)
-        query_tag = st.query_params.get("tag", "").upper()
-        query_serie = st.query_params.get("serie", "").upper() # <--- NUEVO
+        # 4. LEER PARÁMETRO DE LA URL
+        # Usamos st.query_params directamente
+        params = st.query_params
+        query_serie = params.get("serie", "").strip().upper()
         
         idx_q = 0
         
-        # Lógica de detección automática
+        # 5. LOGICA DE SELECCIÓN AUTOMÁTICA
         if query_serie:
-            query_serie = query_serie.strip() # Limpiamos por las dudas
             for i, op in enumerate(opciones):
-                # Extraemos la parte de la serie de la opción actual para comparar limpio contra limpio
-                parte_sn = op.split('SN: ')[1].strip().upper() if 'SN: ' in op else ''
-                
-                if query_serie == parte_sn:
-                    idx_q = i
-                    break
+                # Extraemos la serie de la opción (ej: de "MOTOR 1 | SN: 123" sacamos "123")
+                if "SN: " in op:
+                    serie_en_lista = op.split("SN: ")[1].strip().upper()
+                    if query_serie == serie_en_lista:
+                        idx_q = i
+                        break
         
-        # El selectbox ahora se posiciona solo, venga por donde venga el usuario
-        seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
-  
-
+        # 6. EL SELECTBOX (El corazón del problema)
+        # Forzamos a que el index sea idx_q
+        seleccion = st.selectbox(
+            "Busca por TAG o N° de Serie:", 
+            opciones, 
+            index=idx_q,
+            key="buscador_principal" # Agregamos una key fija
+        )
         if seleccion:
             # 1. Sacamos la serie de la selección
             serie_buscada = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
@@ -887,6 +897,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
