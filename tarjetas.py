@@ -350,21 +350,25 @@ elif modo == "Historial y QR":
         # 5. EL SELECTOR
         seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
 
+        # 5. EL SELECTOR
+        seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
+
         if seleccion:
             # Extraemos la serie de la selección del usuario
             serie_extraida = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
             
-            # FILTRO CRITICO: Solo mostramos lo que coincida exactamente con esa serie
-            hist_m = df_completo[df_completo[C_SERIE].astype(str).str.strip().str.upper() == serie_extraida].copy()
+            # --- AQUÍ ESTÁ EL CAMBIO CLAVE: Usamos el nombre 'historial_motor' ---
+            historial_motor = df_completo[df_completo[C_SERIE].astype(str).str.strip().str.upper() == serie_extraida].copy()
             
-            if not hist_m.empty:
-                # El Tag más nuevo es el de la última fila cargada
-                ultimo_tag = str(hist_m.iloc[-1][C_TAG])
+            # Verificamos que no esté vacío antes de seguir
+            if not historial_motor.empty:
+                # El Tag más nuevo para mostrar en el título
+                ultimo_tag = str(historial_motor.iloc[-1][C_TAG])
                 
                 with st.container(border=True):
                     col_qr, col_info = st.columns([1, 2])
                     
-                    # URL para el QR impreso (siempre con 'serie')
+                    # URL para el QR (usando la serie extraída)
                     url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_extraida}"
                     qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
                     
@@ -372,8 +376,8 @@ elif modo == "Historial y QR":
                         st.image(qr_api, width=120)
                     with col_info:
                         st.subheader(f"Ⓜ️ {ultimo_tag}")
-                        st.caption(f"Número de Serie: {serie_extraida}")
-                        st.write(f"Historial de reparaciones: {len(hist_m)}")
+                        st.info(f"Número de Serie: **{serie_extraida}**")
+                        st.write(f"Historial de reparaciones: {len(historial_motor)}")
 
             # --- BOTONES DE ACCIÓN RÁPIDA ---
             st.subheader("➕ Nueva Tarea")
@@ -879,6 +883,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
