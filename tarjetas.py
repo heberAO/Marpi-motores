@@ -331,42 +331,41 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Limpieza de datos base
+        # 1. Limpieza de datos
         df_completo['N_Serie'] = df_completo['N_Serie'].astype(str).str.strip()
         df_completo['Tag'] = df_completo['Tag'].astype(str).str.strip()
 
-        # 2. Crear lista de opciones (TAG | SN: SERIE)
-        # Importante: No ordenar aquí para no perder la relación con el índice si fuera necesario
-        opciones_raw = (df_completo['Tag'] + " | SN: " + df_completo['N_Serie']).unique().tolist()
-        opciones = [""] + sorted(opciones_raw)
+        # 2. Crear lista de opciones EXACTAMENTE como las usás siempre
+        opciones_base = (df_completo['Tag'] + " | SN: " + df_completo['N_Serie']).unique().tolist()
+        opciones = [""] + sorted(opciones_base)
         
-        # 3. CAPTURA DE PARÁMETROS (QR)
-        # Intentamos obtener 'serie' o 'tag' de la URL
+        # 3. CAPTURA DE QR (Soporta etiquetas viejas y nuevas)
         params = st.query_params
-        qr_valor = params.get("serie") or params.get("tag") or params.get("Serie")
+        # Buscamos en todos los posibles nombres que puede traer el QR
+        qr_valor = params.get("serie") or params.get("tag") or params.get("Serie") or params.get("Tag")
         
-        idx_final = 0
+        # 4. BUSCAR EL ÍNDICE DEL MOTOR
+        idx_para_el_selector = 0 # Por defecto vacío
+        
         if qr_valor:
             v_qr = str(qr_valor).strip().upper()
-            
-            # Buscamos en la lista de opciones cuál coincide exactamente
             for i, op in enumerate(opciones):
                 if " | SN: " in op:
-                    # Extraemos la serie de la opción (ej: "8508")
-                    serie_en_lista = op.split(" | SN: ")[1].strip().upper()
+                    # Separamos para comparar exacto y que 8508 no sea GW68508
+                    partes = op.split(" | SN: ")
+                    tag_lista = partes[0].strip().upper()
+                    serie_lista = partes[1].strip().upper()
                     
-                    # COMPARACIÓN EXACTA PARA EVITAR GW68508
-                    if v_qr == serie_en_lista:
-                        idx_final = i
+                    if v_qr == serie_lista or v_qr == tag_lista:
+                        idx_para_el_selector = i
                         break
         
-        # 4. EL SELECTOR ÚNICO
-        # Usamos st.session_state para forzar que el valor se mantenga
+        # 5. EL SELECTOR (Solo uno, vinculado al QR)
         seleccion = st.selectbox(
             "🔍 Seleccione o Busque el Motor:", 
             opciones, 
-            index=idx_final,
-            key="buscador_marpi_principal"
+            index=idx_para_el_selector,
+            key="buscador_marpi_final"
         )
         if seleccion:
             # 1. Extraemos la serie correctamente (evitamos el NameError)
@@ -895,6 +894,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
