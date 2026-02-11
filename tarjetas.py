@@ -159,23 +159,31 @@ except Exception as e:
 if "motor_seleccionado" not in st.session_state:
     st.session_state.motor_seleccionado = None
 
-# Capturamos parámetros de la URL (QR)
-query_params = st.query_params
-indice_inicio = 0 # Por defecto abre en "Inicio"
+# --- 1. CAPTURA DE PARÁMETROS (QR) ---
+# Usamos st.query_params que es la forma oficial de Streamlit
+params = st.query_params
+qr_valor = params.get("serie") or params.get("tag") or params.get("Serie") or params.get("Tag")
 
-if "serie" in query_params:
-    serie_buscada = str(query_params["serie"])
-    # Buscamos el motor EXACTO en el Excel
-    filtro = df_completo[df_completo['N_Serie'].astype(str) == serie_buscada]
+indice_inicio = 0  # Por defecto abre en "Inicio"
+
+if qr_valor:
+    # Buscamos el motor EXACTO en el Excel (comparando con N_Serie o con Tag)
+    # Convertimos a string para que no falle la comparación
+    v_qr = str(qr_valor).strip().upper()
+    
+    filtro = df_completo[
+        (df_completo['N_Serie'].astype(str).str.upper() == v_qr) | 
+        (df_completo['Tag'].astype(str).str.upper() == v_qr)
+    ]
     
     if not filtro.empty:
         motor = filtro.iloc[0]
-        # Creamos el nombre exacto como aparece en tu buscador
+        # Creamos el nombre exacto como debe aparecer en el buscador
         label_exacto = f"{motor['Tag']} | SN: {motor['N_Serie']}"
         
-        # Guardamos en la memoria de la App
+        # Guardamos en el estado para que el buscador lo reconozca
         st.session_state.motor_seleccionado = label_exacto
-        # Forzamos a que abra la pestaña de "Historial" (Indice 1)
+        # Forzamos el salto a la pestaña de Historial
         indice_inicio = 1
 
 # --- 5. MENÚ LATERAL ---
@@ -894,6 +902,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
