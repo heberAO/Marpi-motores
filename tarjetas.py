@@ -523,6 +523,7 @@ elif modo == "Historial y QR":
                         info_extra += f"<br><b>📌 Notas:</b> {notas_ad}"
 
                     # Esta línea debe estar verticalmente igual a los 'if' de arriba
+                    # --- BOTÓN DE DESCARGA PRO (EL AZUL) ---
                     html_boton = boton_descarga_pro(
                         tag_h, 
                         fecha, 
@@ -537,24 +538,23 @@ elif modo == "Historial y QR":
                     )
                     components.html(html_boton, height=80)
                     
+                    # --- BOTÓN HONEYWELL (EL VERDE) - CORREGIDO Y ALINEADO ---
                     try:
-                        # Intentamos sacar los datos de 'datos_para_pasar' (que es lo más seguro)
-                        # Si no existe, usamos los del motor seleccionado
-                        s_print = datos_para_pasar.get('serie', '-')
-                        t_print = datos_para_pasar.get('tag', '-')
-                        p_print = datos_para_pasar.get('potencia', '-')
+                        # USAMOS f_limpia PARA QUE TOME LOS DATOS DE CADA FILA DEL HISTORIAL
+                        s_print = str(f_limpia.get('N_Serie', '-'))
+                        t_print = str(f_limpia.get('Tag', '-'))
+                        p_print = str(f_limpia.get('Potencia', '-'))
                         
                         img_bytes_h = generar_etiqueta_honeywell(t_print, s_print, p_print)
                         
-                        # Ahora el IF coincide con la variable de arriba
                         if img_bytes_h:
                             import base64
                             b64_img_h = base64.b64encode(img_bytes_h).decode('utf-8')
                             
                             boton_h_html = f"""
-                            <div style="text-align: center;">
-                                <button id="btnH_{idx}" style="width:100%; background:#28a745; color:white; padding:8px; border:none; border-radius:5px; font-weight:bold; cursor:pointer; height:38px; font-size:12px;">
-                                    🖨️ ETIQUETA
+                            <div style="text-align: center; margin-top: -10px;">
+                                <button id="btnH_{idx}" style="width:100%; background:#28a745; color:white; padding:8px; border:none; border-radius:5px; font-weight:bold; cursor:pointer; height:38px; font-size:12px; font-family: sans-serif;">
+                                    🖨️ IMPRIMIR ETIQUETA HONEYWELL
                                 </button>
                             </div>
                             <script>
@@ -567,10 +567,11 @@ elif modo == "Historial y QR":
                             }};
                             </script>
                             """
-                            components.html(boton_h_html, height=45)
-                                            
-                    
-                        st.divider()
+                            components.html(boton_h_html, height=50)
+                    except Exception as e:
+                        st.caption(f"Error en etiqueta: {e}")
+
+                    st.divider()
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     # ... (el resto de tu código de lubricación)
@@ -870,6 +871,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
