@@ -371,11 +371,9 @@ elif modo == "Historial y QR":
                         st.subheader(f"Ⓜ️ {ultimo_tag}")
                         st.info(f"Número de Serie: **{serie_final}**")
 
-                # --- EL BOTÓN DE HONEYWELL (Usando las variables correctas) ---
-                img_bytes_h = generar_etiqueta_honeywell(ultimo_tag, serie_final, potencia_motor)    
             # --- BOTONES DE ACCIÓN RÁPIDA ---
             st.subheader("➕ Nueva Tarea")
-            c1, c2, c3 = st.columns(3)
+            c1, c2, c3, c4 = st.columns(4)
             
             # Extraemos los datos actuales del motor seleccionado para pasarlos al formulario
             # 'historial_motor' ya lo filtraste arriba, tomamos la última fila
@@ -403,7 +401,13 @@ elif modo == "Historial y QR":
                     st.session_state.datos_motor_auto = datos_para_pasar # <--- MEMORIA
                     st.session_state.seleccion_manual = "Mediciones de Campo"
                     st.rerun() 
-
+            # --- LA COLUMNA DEL BOTÓN HONEYWELL ---
+            with c4:
+                img_bytes_h = generar_etiqueta_honeywell(
+                    str(datos_para_pasar['tag']), 
+                    str(datos_para_pasar['serie']), 
+                    str(datos_para_pasar['potencia'])
+                )
             st.divider()
             st.subheader("📜 Historial de Intervenciones")
             
@@ -538,14 +542,6 @@ elif modo == "Historial y QR":
                         f_limpia.get('N_Serie', '-'), 
                         f_limpia.get('Potencia', '-')
                     )
-                    
-                    img_bytes_h = generar_etiqueta_honeywell(
-                        tag_h, 
-                        f_limpia.get('N_Serie', '-'), 
-                        f_limpia.get('Potencia', '-')
-                    )
-                    # --- EL BOTÓN DE HONEYWELL (Usando las variables correctas) ---
-                    img_bytes_h = generar_etiqueta_honeywell(ultimo_tag, serie_final, potencia_motor)
                     if img_bytes_h:
                         import base64
                         b64_img_h = base64.b64encode(img_bytes_h).decode('utf-8')
@@ -868,6 +864,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
