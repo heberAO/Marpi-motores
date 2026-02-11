@@ -332,15 +332,25 @@ elif modo == "Historial y QR":
         opciones = [""] + opciones_unicas
 
         # 4. CAPTURA DE QR (Prioridad absoluta)
-        parametros = st.query_params
-        p_serie = parametros.get("serie", "").strip().upper()
+        q_serie = st.query_params.get("serie") or st.query_params.get("Serie") or st.query_params.get("N_Serie")
+        q_tag = st.query_params.get("tag") or st.query_params.get("Tag") or st.query_params.get("TAG")
+
+        idx_q = 0
         
-        # 4. BUSCAMOS LA POSICIÓN (Índice)
-        idx_q = 0 # Por defecto, posición vacía
-        if p_serie:
+        # Si el QR pegado tiene SERIE:
+        if q_serie:
+            q_serie = str(q_serie).strip().upper()
             for i, op in enumerate(opciones):
-                # Buscamos si la serie que viene del QR está dentro de alguna opción del buscador
-                if f"SN: {p_serie}" in op:
+                if f"SN: {q_serie}" in op:
+                    idx_q = i
+                    break
+        
+        # Si el QR pegado tiene TAG (y no encontró serie):
+        if idx_q == 0 and q_tag:
+            q_tag = str(q_tag).strip().upper()
+            for i, op in enumerate(opciones):
+                # Buscamos si la opción empieza con el TAG del QR
+                if op.startswith(f"{q_tag} |"):
                     idx_q = i
                     break
             # Si después de buscar no encontramos la serie, avisamos al usuario
@@ -352,7 +362,7 @@ elif modo == "Historial y QR":
             "Busca por TAG o N° de Serie:", 
             opciones, 
             index=idx_q, 
-            key="selector_historial_final"
+            key="buscador_motores_universal"
         )
         if seleccion:
             # Extraemos la serie de la selección del usuario
@@ -884,6 +894,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
