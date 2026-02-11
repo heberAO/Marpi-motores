@@ -331,6 +331,8 @@ elif modo == "Historial y QR":
         if qr_valor:
             v_qr = str(qr_valor).strip().upper()
             for i, op in enumerate(opciones):
+                # IMPORTANTE: Buscamos el valor en TODA la cadena (Tag + Serie)
+                # Esto hace que encuentre tanto los QR que tienen el Nombre como los que tienen la Serie
                 if v_qr in op.upper():
                     idx_automatico = i
                     break
@@ -340,9 +342,8 @@ elif modo == "Historial y QR":
             "Busca por TAG o N° de Serie:", 
             opciones, 
             index=idx_automatico, 
-            key="buscador_marpi_estable"
+            key="buscador_marpi_universal"
         )
-
         if seleccion:
             # EXTRAEMOS LA SERIE (Es el único dato que no cambia)
             # Usamos split y tomamos la parte de la derecha para no confundir con el TAG
@@ -872,6 +873,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
