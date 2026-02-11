@@ -331,31 +331,42 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Limpieza de datos para evitar errores de búsqueda
+        # 1. Limpieza de datos base
         df_completo['N_Serie'] = df_completo['N_Serie'].astype(str).str.strip()
         df_completo['Tag'] = df_completo['Tag'].astype(str).str.strip()
 
-        # 2. Crear lista de opciones
-        df_completo['Busqueda_Combo'] = df_completo['Tag'] + " | SN: " + df_completo['N_Serie']
-        opciones = [""] + sorted(df_completo['Busqueda_Combo'].unique().tolist())
+        # 2. Crear lista de opciones (TAG | SN: SERIE)
+        # Importante: No ordenar aquí para no perder la relación con el índice si fuera necesario
+        opciones_raw = (df_completo['Tag'] + " | SN: " + df_completo['N_Serie']).unique().tolist()
+        opciones = [""] + sorted(opciones_raw)
         
-        # 3. CAPTURA DE QR (Prioridad a tus etiquetas de planta)
-        qr_valor = st.query_params.get("tag") or st.query_params.get("serie") or st.query_params.get("Serie")
+        # 3. CAPTURA DE PARÁMETROS (QR)
+        # Intentamos obtener 'serie' o 'tag' de la URL
+        params = st.query_params
+        qr_valor = params.get("serie") or params.get("tag") or params.get("Serie")
         
-        idx_automatico = 0 
+        idx_final = 0
         if qr_valor:
             v_qr = str(qr_valor).strip().upper()
+            
+            # Buscamos en la lista de opciones cuál coincide exactamente
             for i, op in enumerate(opciones):
-                if v_qr in op.upper():
-                    idx_automatico = i
-                    break            
+                if " | SN: " in op:
+                    # Extraemos la serie de la opción (ej: "8508")
+                    serie_en_lista = op.split(" | SN: ")[1].strip().upper()
                     
-        # 4. EL SELECTOR
+                    # COMPARACIÓN EXACTA PARA EVITAR GW68508
+                    if v_qr == serie_en_lista:
+                        idx_final = i
+                        break
+        
+        # 4. EL SELECTOR ÚNICO
+        # Usamos st.session_state para forzar que el valor se mantenga
         seleccion = st.selectbox(
-            "Busca por TAG o N° de Serie:", 
+            "🔍 Seleccione o Busque el Motor:", 
             opciones, 
-            index=idx_automatico, 
-            key="buscador_marpi_universal"
+            index=idx_final,
+            key="buscador_marpi_principal"
         )
         if seleccion:
             # 1. Extraemos la serie correctamente (evitamos el NameError)
@@ -884,6 +895,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
