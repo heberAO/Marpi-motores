@@ -546,25 +546,25 @@ elif modo == "Historial y QR":
                     )
                     
                     if img_bytes_h:
-                    import base64
-                    b64_img_h = base64.b64encode(img_bytes_h).decode('utf-8')
-                    boton_h_html = f"""
-                    <div style="text-align: center; margin: 10px 0;">
-                        <button id="btnH_top" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif;">
-                            🖨️ IMPRIMIR ETIQUETA HONEYWELL
-                        </button>
-                    </div>
-                    <script>
-                    document.getElementById('btnH_top').onclick = function() {{
-                        const win = window.open('', '', 'width=800,height=600');
-                        win.document.write('<html><head><style>@page {{ size: 60mm 30mm; margin: 0; }} img {{ width: 60mm; height: 30mm; }}</style></head><body>');
-                        win.document.write('<img src="data:image/png;base64,{b64_img_h}" onload="setTimeout(() => {{ window.print(); window.close(); }}, 500);">');
-                        win.document.write('</body></html>');
-                        win.document.close();
-                    }};
-                    </script>
-                    """
-                    components.html(boton_h_html, height=80)
+                        import base64
+                        b64_img_h = base64.b64encode(img_bytes_h).decode('utf-8')
+                        boton_h_html = f"""
+                        <div style="text-align: center; margin: 10px 0;">
+                            <button id="btnH_top" style="width:100%; background:#28a745; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-family:sans-serif;">
+                                🖨️ IMPRIMIR ETIQUETA HONEYWELL
+                            </button>
+                        </div>
+                        <script>
+                        document.getElementById('btnH_top').onclick = function() {{
+                            const win = window.open('', '', 'width=800,height=600');
+                            win.document.write('<html><head><style>@page {{ size: 60mm 30mm; margin: 0; }} img {{ width: 60mm; height: 30mm; }}</style></head><body>');
+                            win.document.write('<img src="data:image/png;base64,{b64_img_h}" onload="setTimeout(() => {{ window.print(); window.close(); }}, 500);">');
+                            win.document.write('</body></html>');
+                            win.document.close();
+                        }};
+                        </script>
+                        """
+                        components.html(boton_h_html, height=80)
                                             
                     
                     st.divider()
@@ -867,6 +867,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
