@@ -58,7 +58,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
        # 2. QR (LADO IZQUIERDO) - Ahora vinculado a la SERIE
         qr = qrcode.QRCode(version=1, box_size=12, border=1)
         # EL CAMBIO CLAVE:
-        url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={str(Serie_buscada).strip()}"
+        qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie}")
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
         img_qr = img_qr.resize((260, 260))
@@ -316,79 +316,62 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        df_completo.columns = [str(c).strip().upper() for c in df_completo.columns]
-
-        C_TAG = "TAG" 
-        C_SERIE = "N_SERIE" 
-
-        # 3. Creamos la lista de opciones para el selector
+        # 1. Buscador mejorado
         df_completo['Busqueda_Combo'] = (
-            df_completo[C_TAG].astype(str).str.strip().str.upper() + 
-            " | SN: " + 
-            df_completo[C_SERIE].astype(str).str.strip().str.upper()
+            df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
         )
+        opciones_unicas = df_completo.drop_duplicates(subset=['N_Serie'])['Busqueda_Combo'].tolist()
+        opciones = [""] + sorted(opciones_unicas)
         
-        opciones_unicas = sorted(df_completo.drop_duplicates(subset=[C_SERIE])['Busqueda_Combo'].tolist())
-        opciones = [""] + opciones_unicas
-
-        # 4. CAPTURA DE QR (Prioridad absoluta)
-        q_serie = st.query_params.get("serie") or st.query_params.get("Serie") or st.query_params.get("N_Serie")
-        q_tag = st.query_params.get("tag") or st.query_params.get("Tag") or st.query_params.get("TAG")
-
+        # Leemos los parámetros de la URL (pueden venir por tag o por serie)
+        query_tag = st.query_params.get("tag", "").upper()
+        query_serie = st.query_params.get("serie", "").upper() # <--- NUEVO
+        
         idx_q = 0
         
-        # Si el QR pegado tiene SERIE:
-        if q_serie:
-            q_serie = str(q_serie).strip().upper()
+        # Lógica de detección automática
+        if query_serie:
+            # Si el QR es de los nuevos (por Serie), buscamos el SN en las opciones
             for i, op in enumerate(opciones):
-                if f"SN: {q_serie}" in op:
+                if f"SN: {query_serie}" in op:
+                    idx_q = i
+                    break
+        elif query_tag:
+            # Si el QR es de los viejos (por TAG), buscamos al inicio
+            for i, op in enumerate(opciones):
+                if op.startswith(query_tag + " |"):
                     idx_q = i
                     break
         
-        # Si el QR pegado tiene TAG (y no encontró serie):
-        if idx_q == 0 and q_tag:
-            q_tag = str(q_tag).strip().upper()
-            for i, op in enumerate(opciones):
-                # Buscamos si la opción empieza con el TAG del QR
-                if op.startswith(f"{q_tag} |"):
-                    idx_q = i
-                    break
-            # Si después de buscar no encontramos la serie, avisamos al usuario
-            if idx_q == 0:
-                st.warning(f"⚠️ El QR indica la serie {p_serie}, pero no se encuentra en el Excel.")
+        # El selectbox ahora se posiciona solo, venga por donde venga el usuario
+        seleccion = st.selectbox("Busca por TAG o N° de Serie:", opciones, index=idx_q)
+  
 
-        # 5. EL SELECTOR (Con la 'key' y el 'index' automático)
-        seleccion = st.selectbox(
-            "Busca por TAG o N° de Serie:", 
-            opciones, 
-            index=idx_q, 
-            key="buscador_motores_universal"
-        )
         if seleccion:
-            # Extraemos la serie de la selección del usuario
-            serie_extraida = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
+            # 1. Sacamos la serie de la selección
+            serie_buscada = seleccion.split('SN: ')[1] if 'SN: ' in seleccion else ''
             
-            # --- AQUÍ ESTÁ EL CAMBIO CLAVE: Usamos el nombre 'historial_motor' ---
-            historial_motor = df_completo[df_completo[C_SERIE].astype(str).str.strip().str.upper() == serie_extraida].copy()
+            # 2. Filtramos el historial completo
+            historial_motor = df_completo[df_completo['N_Serie'].astype(str) == serie_buscada].copy()
             
-            # Verificamos que no esté vacío antes de seguir
-            if not historial_motor.empty:
-                # El Tag más nuevo para mostrar en el título
-                ultimo_tag = str(historial_motor.iloc[-1][C_TAG])
+            # 3. Definimos el nombre actual (reemplaza al viejo 'buscado')
+            ultimo_tag = historial_motor.iloc[-1]['Tag']
+            st.session_state.tag_fijo = ultimo_tag
+            
+            # --- PANEL SUPERIOR ---
+            with st.container(border=True):
+                col_qr, col_info = st.columns([1, 2])
                 
-                with st.container(border=True):
-                    col_qr, col_info = st.columns([1, 2])
-                    
-                    # URL para el QR (usando la serie extraída)
-                    url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_extraida}"
-                    qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
-                    
-                    with col_qr:
-                        st.image(qr_api, width=120)
-                    with col_info:
-                        st.subheader(f"Ⓜ️ {ultimo_tag}")
-                        st.info(f"Número de Serie: **{serie_extraida}**")
-                        st.write(f"Historial de reparaciones: {len(historial_motor)}")
+                # Usamos la serie para el QR (vínculo eterno)
+                url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_buscada}"
+                qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
+                
+                with col_qr:
+                    st.image(qr_api, width=120)
+                with col_info:
+                    # AQUÍ ESTABA EL ERROR: Usamos ultimo_tag ahora
+                    st.subheader(f"Ⓜ️ {ultimo_tag}")
+                    st.caption(f"Número de Serie: {serie_buscada}")
 
             # --- BOTONES DE ACCIÓN RÁPIDA ---
             st.subheader("➕ Nueva Tarea")
