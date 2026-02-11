@@ -58,7 +58,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
        # 2. QR (LADO IZQUIERDO) - Ahora vinculado a la SERIE
         qr = qrcode.QRCode(version=1, box_size=12, border=1)
         # EL CAMBIO CLAVE:
-        qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie}")
+        url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={str(Serie_buscada).strip()}"
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
         img_qr = img_qr.resize((260, 260))
@@ -319,8 +319,8 @@ elif modo == "Historial y QR":
         # 1. Detectamos cómo se llaman tus columnas realmente para no tirar error
         # Pasamos todo a mayúsculas solo para comparar
         cols = {c.upper().strip(): c for c in df_completo.columns}
-        col_tag = cols.get("TAG") or cols.get("NOMBRE") or df_completo.columns[0]
-        col_serie = cols.get("N_SERIE") or cols.get("SERIE") or cols.get("N° SERIE") or df_completo.columns[1]
+        col_tag = cols.get("Tag") or cols.get("NOMBRE") or df_completo.columns[0]
+        col_serie = cols.get("N_Serie") or cols.get("SERIE") or cols.get("N° SERIE") or df_completo.columns[1]
 
         # 2. Preparamos las opciones del buscador
         df_completo['Busqueda_Combo'] = (
@@ -368,7 +368,7 @@ elif modo == "Historial y QR":
                 col_qr, col_info = st.columns([1, 2])
                 
                 # Usamos la serie para el QR (vínculo eterno)
-                url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_buscada}"
+                url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?Serie={Serie_buscada}"
                 qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
                 
                 with col_qr:
@@ -882,6 +882,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
