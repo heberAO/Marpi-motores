@@ -316,36 +316,36 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Buscador mejorado
+        # 1. Lista de opciones (aseguramos que sean strings)
         df_completo['Busqueda_Combo'] = (
-            df_completo['Tag'].astype(str) + " | SN: " + df_completo['N_Serie'].astype(str)
+            df_completo['Tag'].astype(str).str.strip() + " | SN: " + df_completo['N_Serie'].astype(str).str.strip()
         )
         opciones_unicas = df_completo.drop_duplicates(subset=['N_Serie'])['Busqueda_Combo'].tolist()
         opciones = [""] + sorted(opciones_unicas)
         
-        # Leemos los parámetros de la URL (pueden venir por tag o por serie)
-        query_tag = st.query_params.get("tag", "").upper()
-        qr_detectado = st.query_params.get("serie") or st.query_params.get("Serie") or st.query_params.get("tag")
+        # 2. CAPTURA UNIVERSAL (Lee lo que sea que tenga el QR pegado)
+        # Probamos todas las llaves posibles: tag, Tag, TAG, serie, Serie...
+        qr_valor = (st.query_params.get("tag") or st.query_params.get("Tag") or 
+                    st.query_params.get("TAG") or st.query_params.get("serie") or 
+                    st.query_params.get("Serie"))
 
-        idx_automatico = 0 # Por defecto, el buscador empieza en blanco
+        idx_automatico = 0 
         
-        # 2. SI HAY QR, BUSCAMOS EN QUÉ POSICIÓN ESTÁ ESE MOTOR
-        if qr_detectado:
-            val_qr = str(qr_detectado).strip().upper()
-            for i, nombre_motor in enumerate(opciones):
-                # Buscamos si el valor del QR está en el TAG o en el SN de la lista
-                if val_qr in nombre_motor.upper():
+        if qr_valor:
+            valor_buscado = str(qr_valor).strip().upper()
+            for i, texto_opcion in enumerate(opciones):
+                # Buscamos si el valor del QR viejo coincide con alguna parte de la opción
+                if valor_buscado in texto_opcion.upper():
                     idx_automatico = i
                     break
         
-        # 3. EL BUSCADOR (La clave es el 'index')
+        # 3. SELECTOR (Con index automático para que el historial cargue solo)
         seleccion = st.selectbox(
             "Busca por TAG o N° de Serie:", 
             opciones, 
-            index=idx_automatico, # <--- Si hay QR, esto ya no es 0, es la posición del motor
-            key="buscador_con_qr_pegado"
+            index=idx_automatico, 
+            key="buscador_final_compatible"
         )
-          
 
         if seleccion:
             # 1. Sacamos la serie de la selección
@@ -877,6 +877,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
