@@ -164,28 +164,29 @@ df_completo = cargar_datos_google()
 if "motor_seleccionado" not in st.session_state:
     st.session_state.motor_seleccionado = None
 
-# --- 1. CAPTURA DE PARÁMETROS (QR) ---
 params = st.query_params
-qr_detectado = params.get("serie") or params.get("tag") or params.get("Serie") or params.get("Tag")
-indice_inicio = 1 if qr_detectado else 1 # Siempre al historial por defecto
+
+# Consolidamos el valor del QR en una sola variable llamada qr_valor
+qr_valor = params.get("serie") or params.get("tag") or params.get("Serie") or params.get("Tag")
+
+# Decidimos a qué pestaña ir (1 es Historial)
+indice_inicio = 1 
+
+# --- 2. FILTRO DE MOTOR POR QR ---
+# Solo ejecutamos el filtro si realmente existe un qr_valor
 if qr_valor:
-    # Buscamos el motor EXACTO en el Excel (comparando con N_Serie o con Tag)
     v_qr = str(qr_valor).strip().upper()
     
-    filtro = df_completo[
-        (df_completo['N_Serie'].astype(str).str.upper() == v_qr) | 
-        (df_completo['Tag'].astype(str).str.upper() == v_qr)
-    ]
-    
-    if not filtro.empty:
-        motor = filtro.iloc[0]
-        # Creamos el nombre exacto como debe aparecer en el buscador
-        label_exacto = f"{motor['Tag']} | SN: {motor['N_Serie']}"
+    # Verificamos que el DataFrame no esté vacío antes de filtrar
+    if not df_completo.empty:
+        filtro = df_completo[
+            (df_completo['N_Serie'].astype(str).str.upper() == v_qr) | 
+            (df_completo['Tag'].astype(str).str.upper() == v_qr)
+        ]
         
-        # Guardamos en el estado para que el buscador lo reconozca
-        st.session_state.motor_seleccionado = label_exacto
-        # Forzamos el salto a la pestaña de Historial
-        indice_inicio = 1
+        # Si encontró algo, lo guardamos en el session_state
+        if not filtro.empty:
+            st.session_state.motor_seleccionado = filtro.iloc[-1]
 # --- 5. MENÚ LATERAL (VERSIÓN FINAL CORREGIDA) ---
 opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
 
@@ -1039,6 +1040,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
