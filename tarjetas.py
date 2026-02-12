@@ -186,17 +186,19 @@ if qr_valor:
         # Si encontró algo, lo guardamos en el session_state
         if not filtro.empty:
             st.session_state.motor_seleccionado = filtro.iloc[-1]
-# --- 5. MENÚ LATERAL (VERSIÓN FINAL CORREGIDA) ---
+# --- 5. MENÚ LATERAL (SOLUCIÓN DEFINITIVA) ---
 opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
 
-# --- AGREGADO: Lógica para saltar de pestaña mediante botones ---
+# 1. DETECCIÓN DE SALTO (Prioridad máxima)
+# Si venimos desde un botón del historial, forzamos la selección manual
 if st.session_state.get('forzar_pestana') is not None:
     idx_destino = st.session_state.forzar_pestana
     st.session_state.seleccion_manual = opciones_menu[idx_destino]
-    st.session_state.forzar_pestana = None # Limpiamos el forzado
+    st.session_state.forzar_pestana = None # Limpiamos para permitir navegación libre
 
-# 1. Sincronización inicial con el QR (Solo si no hay una selección previa)
+# 2. Sincronización inicial (Solo si la app arranca de cero)
 if "seleccion_manual" not in st.session_state:
+    # Usamos el indice_inicio definido arriba (que es 1 por defecto)
     st.session_state.seleccion_manual = opciones_menu[indice_inicio]
 
 with st.sidebar:
@@ -204,14 +206,14 @@ with st.sidebar:
         st.image("logo.png", width=150)
     st.title("⚡ MARPI MOTORES")
     
-    # 3. El Selector de Modo (Radio)
-    # Buscamos en qué posición está la selección actual para que el radio lo marque
+    # CALCULAMOS EL ÍNDICE BASADO EN EL ESTADO DE LA SESIÓN
     try:
-        # Usamos .index() para que el radio siempre sepa dónde estar parado
+        # Esto hace que el radio se mueva solo cuando cambia st.session_state.seleccion_manual
         idx_radio = opciones_menu.index(st.session_state.seleccion_manual)
     except:
-        idx_radio = 1 # Si falla, por defecto al Historial
+        idx_radio = 1
 
+    # IMPORTANTE: El radio debe tener el index=idx_radio
     modo = st.radio(
         "SELECCIONE:", 
         opciones_menu,
@@ -219,14 +221,15 @@ with st.sidebar:
         key="radio_navegacion_principal"
     )
     
-    # Actualizamos la selección manual con lo que el usuario toque
-    st.session_state.seleccion_manual = modo
+    # Si el usuario toca el radio manualmente, actualizamos el estado
+    if modo != st.session_state.seleccion_manual:
+        st.session_state.seleccion_manual = modo
+        st.rerun() # Forzamos recarga para que las secciones lean el nuevo modo
 
     # --- BOTÓN DE RESET TOTAL ---
     if st.button("🧹 Resetear Navegación"):
         st.query_params.clear()
-        # Limpiamos variables clave para que el buscador se resetee
-        for k in ['datos_motor_auto', 'motor_registrado', 'etiqueta_lista', 'seleccion_manual']:
+        for k in ['datos_motor_auto', 'motor_registrado', 'etiqueta_lista', 'seleccion_manual', 'autorizado']:
             if k in st.session_state: del st.session_state[k]
         st.rerun()
 # --- 6. VALIDACIÓN DE CONTRASEÑA ---
@@ -883,6 +886,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
