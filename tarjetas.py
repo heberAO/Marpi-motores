@@ -185,7 +185,6 @@ if qr_valor:
 
 # --- 5. MENÚ LATERAL ---
 opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
-seleccion_menu = st.sidebar.selectbox("Menú", opciones_menu, index=indice_inicio)
 with st.sidebar:
     if os.path.exists("logo.png"): st.image("logo.png", width=150)
     st.title("⚡ MARPI MOTORES")
@@ -203,10 +202,29 @@ with st.sidebar:
     # Actualizamos la memoria con lo que el usuario toque físicamente
     st.session_state.seleccion_manual = modo
     
-    # Si el usuario hace click en el menú, bloqueamos la redirección del QR para que pueda navegar
-    if st.sidebar.button("Resetear Navegación"):
-        st.session_state.modo_manual = True
+    # --- BOTÓN DE RESET TOTAL ---
+    if st.sidebar.button("🧹 Resetear Navegación"):
+        # 1. Limpiar la URL (Quita ?serie=8508)
         st.query_params.clear()
+
+        # 2. Lista de variables que queremos borrar de la memoria
+        variables_a_borrar = [
+            'motor_seleccionado',      # El motor que encontró el QR
+            'motor_desde_qr',          # La variable temporal del QR
+            'buscador_marpi_principal', # La Key del selectbox del historial
+            'buscador_unico_marpi',     # (Por las dudas si quedó alguna vieja)
+            'indice_inicio'            # Para que vuelva al menú "Inicio"
+        ]
+
+        # 3. Borramos cada una si existe
+        for key in variables_a_borrar:
+            if key in st.session_state:
+                del st.session_state[key]
+        
+        # 4. Aseguramos que el modo manual esté apagado (o encendido, según tu lógica)
+        st.session_state.modo_manual = True 
+
+        # 5. Recargamos la página desde cero
         st.rerun()
 
 # --- 6. VALIDACIÓN DE CONTRASEÑA (VERSIÓN CORREGIDA) ---
@@ -895,6 +913,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
