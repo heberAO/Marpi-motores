@@ -250,7 +250,6 @@ elif modo == "Mediciones de Campo":
     # ... resto de campos de mediciones ...
 
 elif modo == "Historial y QR":
-    # ... tu código de historial (donde están los botones de acción rápida) ...
 # --- BOTONES DE ACCIÓN RÁPIDA (RUTAS CORREGIDAS) ---
         st.divider()
         st.write("### ⚡ Acciones Rápidas")
@@ -270,53 +269,47 @@ elif modo == "Historial y QR":
                 'r_loa': str(motor_info.get('Rodamiento_LOA', ''))
             }
 
-        # 1. Botón LUBRICAR -> Va a "Relubricacion" (Índice 2)
+       # 1. Botón LUBRICAR -> Va a "Relubricacion" (Índice 2)
         with col_A:
-            if st.button("🛢️ Lubricar", use_container_width=True):
+            if st.button("🛢️ Lubricar", use_container_width=True, key="btn_lub_hist"):
                 preparar_datos_motor()
-                st.session_state.forzar_pestana = 2  # <--- Cambiado a Relubricación
+                st.session_state.forzar_pestana = 2
                 st.rerun()
         
         # 2. Botón MEGAR -> Va a "Mediciones de Campo" (Índice 3)
         with col_B:
-            if st.button("🔌 Megar", use_container_width=True):
+            if st.button("🔌 Megar", use_container_width=True, key="btn_meg_hist"):
                 preparar_datos_motor()
-                st.session_state.forzar_pestana = 3  # <--- Cambiado a Mediciones
+                st.session_state.forzar_pestana = 3
                 st.rerun()
                 
         # 3. Botón REPARAR -> Va a "Nuevo Registro" (Índice 0)
         with col_C:
-            if st.button("🛠️ Reparación / Alta", use_container_width=True):
+            # ELIMINÉ EL BOTÓN DUPLICADO QUE TENÍAS
+            if st.button("🛠️ Reparación / Alta", use_container_width=True, key="btn_rep_hist"):
                 preparar_datos_motor()
-                st.session_state.forzar_pestana = 0  # <--- Este sí va al Registro Inicial
+                st.session_state.forzar_pestana = 0
                 st.rerun()
-                
-        # 3. Botón REPARAR -> Va a "Nuevo Registro" (Índice 0)
-        with col_C:
-            if st.button("🛠️ Reparación / Alta", use_container_width=True):
-                preparar_datos_motor()
-                st.session_state.forzar_pestana = 0  # <--- Este sí va al Registro Inicial
-                st.rerun()
-
-# --- 6. VALIDACIÓN DE CONTRASEÑA (VERSIÓN CORREGIDA) ---
-if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
-    if "autorizado" not in st.session_state:
-        st.session_state.autorizado = False
-
-    if not st.session_state.autorizado:
-        st.title("🔒 Acceso Restringido")
-        st.info("Esta sección es solo para personal de MARPI.")
         
-        # Usamos un formulario para que el botón funcione mejor
-        with st.form("login_marpi"):
-            clave = st.text_input("Contraseña:", type="password")
-            btn_entrar = st.form_submit_button("Validar Ingreso")
-            
-            if btn_entrar:
-                if clave == "MARPI2026":
-                    st.session_state.autorizado = True
-                    st.success("✅ Acceso concedido")
-                    st.rerun()
+        # --- 6. VALIDACIÓN DE CONTRASEÑA (VERSIÓN CORREGIDA) ---
+        if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
+            if "autorizado" not in st.session_state:
+                st.session_state.autorizado = False
+        
+            if not st.session_state.autorizado:
+                st.title("🔒 Acceso Restringido")
+                st.info("Esta sección es solo para personal de MARPI.")
+                
+                # Usamos un formulario para que el botón funcione mejor
+                with st.form("login_marpi"):
+                    clave = st.text_input("Contraseña:", type="password")
+                    btn_entrar = st.form_submit_button("Validar Ingreso")
+                    
+                    if btn_entrar:
+                        if clave == "MARPI2026":
+                            st.session_state.autorizado = True
+                            st.success("✅ Acceso concedido")
+                            st.rerun()
                 else:
                     st.error("⚠️ Clave incorrecta")
         
@@ -1029,6 +1022,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
