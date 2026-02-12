@@ -445,8 +445,9 @@ elif modo == "Historial y QR":
                         st.subheader(f"Ⓜ️ {ultimo_tag}")
                         st.info(f"Número de Serie: **{serie_final}**")
 
-                # --- 5. FUNCIÓN DE NAVEGACIÓN Y BOTONES (SIN REPETIR) ---
+                # --- 5. FUNCIÓN DE NAVEGACIÓN Y BOTONES (CORREGIDA) ---
                 def enviar_a_formulario_con_datos(tarea_tipo):
+                    # Cargamos los datos en el diccionario que lee el formulario
                     st.session_state['datos_motor_auto'] = {
                         'tag': str(motor_info.get('Tag', '')),
                         'serie': str(motor_info.get('N_Serie', '')),
@@ -459,23 +460,29 @@ elif modo == "Historial y QR":
                         'r_loa': str(motor_info.get('Rodamiento_LOA', '')),
                         'tarea': tarea_tipo
                     }
-                    st.session_state.forzar_pestana = 0 # Ajusta según el índice de tu pestaña de Registro
+                    # IMPORTANTE: Cambia este número según el orden de tus pestañas:
+                    # 0 si "Nuevo Registro" es la primera pestaña.
+                    # 1 si es la segunda, etc.
+                    st.session_state.forzar_pestana = 0 
+                    
+                    # Marcamos que venimos desde el historial para que el formulario sepa que debe precargar
+                    st.session_state['ejecutar_precarga'] = True
+                    
                     st.rerun()
-
+                
                 st.divider()
                 st.write("### ⚡ Acciones Rápidas")
                 col_A, col_B, col_C = st.columns(3)
                 
                 with col_A:
-                    if st.button("🛢️ Lubricar", use_container_width=True):
+                    if st.button("🛢️ Lubricar", use_container_width=True, key="btn_lub_hist"):
                         enviar_a_formulario_con_datos("Lubricación")
                 with col_B:
-                    if st.button("🔌 Megar", use_container_width=True):
+                    if st.button("🔌 Megar", use_container_width=True, key="btn_meg_hist"):
                         enviar_a_formulario_con_datos("Megado")
                 with col_C:
-                    if st.button("📝 Otra Tarea", use_container_width=True):
+                    if st.button("📝 Reparación", use_container_width=True, key="btn_rep_hist"):
                         enviar_a_formulario_con_datos("Reparación General")
-
                 # --- 6. HISTORIAL DE INTERVENCIONES (MANTENIENDO TU FORMATO) ---
                 st.divider()
                 st.subheader("📜 Historial de Intervenciones")
@@ -883,6 +890,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
