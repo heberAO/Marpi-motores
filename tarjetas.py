@@ -576,102 +576,117 @@ elif modo == "Historial y QR":
                     st.divider()
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
+    
+    # 1. Recuperar datos del QR/Historial
     datos_auto = st.session_state.get('datos_motor_auto', {})
+    tag_qr = datos_auto.get('tag', '')
+    serie_qr = datos_auto.get('serie', '')
     
-    # Ahora usamos esos datos en los inputs de esta hoja
-    t = st.text_input("TAG", value=datos_auto.get('tag', ''), key="tag_relub_input")
-    sn = st.text_input("N° Serie", value=datos_auto.get('serie', ''), key="serie_relub_input")
-    
-    if "cnt_lub" not in st.session_state:
-        st.session_state.cnt_lub = 0
     if "form_id" not in st.session_state:
         st.session_state.form_id = 0
 
+    # 2. Buscador / Selector de Motor
     df_lista = df_completo.copy()
-    # 1. Creamos la lista combinando TAG y N_Serie (tal como en Historial)
-    df_lista['Busqueda_Combo'] = (
-        df_lista['Tag'].astype(str) + " | SN: " + df_lista['N_Serie'].astype(str)
-    )
-    # 2. Generamos las opciones para el selectbox
+    df_lista['Busqueda_Combo'] = df_lista['Tag'].astype(str) + " | SN: " + df_lista['N_Serie'].astype(str)
     opciones_combo = [""] + sorted(df_lista['Busqueda_Combo'].unique().tolist())
-    # 3. Buscador mejorado
-    seleccion_full = st.selectbox(
-        "Seleccione el Motor (busque por TAG o N° de Serie)", 
-        options=opciones_combo,
-        key=f"busqueda_{st.session_state.form_id}"
-    )
-    # 4. Extraemos el TAG puro para que el resto de tu código siga funcionando igual
-    tag_seleccionado = seleccion_full.split(" | ")[0].strip() if seleccion_full else ""
     
-    # --- LÓGICA DE AVISO DE RODAMIENTOS (Rodamiento_LA y Rodamiento_LOA) ---
-    if tag_seleccionado != "":
-        # Extraemos la fila del motor
-        info_motor = df_lista[df_lista['Tag'] == tag_seleccionado].iloc[0]
+    # Si venimos de QR, intentamos pre-seleccionar en el buscador
+    indice_predef = 0
+    if tag_qr:
+        for i, opt in enumerate(opciones_combo):
+            if opt.startswith(tag_qr):
+                indice_predef = i
+                break
+
+    seleccion_full = st.selectbox(
+        "Seleccione el Motor (confirmar unidad)", 
+        options=opciones_combo,
+        index=indice_predef,
+        key=f"busqueda_relub_{st.session_state.form_id}"
+    )
+
+    tag_seleccionado = seleccion_full.split(" | ")[0].strip() if seleccion_full else ""
+
+    # 3. Lógica de Rodamientos y Cálculos
+    if tag_seleccionado:
+        # Extraemos la info del motor seleccionado
+        info_motor = df_lista[df_lista['Tag'] == tag_seleccionado].iloc[-1]
         
-        # Leemos los valores y los pasamos a mayúsculas para no fallar en la comparación
-        rod_la = str(info_motor.get('Rodamiento_LA', 'NO DEFINIDO')).upper()
-        rod_loa = str(info_motor.get('Rodamiento_LOA', 'NO DEFINIDO')).upper()
+        rod_la_base = str(info_motor.get('Rodamiento_LA', '')).upper()
+        rod_loa_base = str(info_motor.get('Rodamiento_LOA', '')).upper()
+        v_serie = str(info_motor.get('N_Serie', ''))
 
         st.markdown("---")
-        st.markdown(f"### ⚙️ Configuración de Rodamientos")
-        
-        # Mostramos los datos actuales al técnico
         col_la, col_loa = st.columns(2)
-        col_la.metric("Lado Acople (LA)", rod_la)
-        col_loa.metric("Lado Opuesto (LOA)", rod_loa)
+        col_la.metric("Lado Acople (LA)", rod_la_base)
+        col_loa.metric("Lado Opuesto (LOA)", rod_loa_base)
 
-        # Analizamos si alguno es sellado (2RS o ZZ)
-        es_sellado_la = any(x in rod_la for x in ["2RS", "ZZ"])
-        es_sellado_loa = any(x in rod_loa for x in ["2RS", "ZZ"])
-
-        if es_sellado_la or es_sellado_loa:
-            st.error("🚫 **AVISO DE SEGURIDAD: NO LUBRICAR**")
-            if es_sellado_la and es_sellado_loa:
-                st.write("Ambos rodamientos son **sellados de por vida**. Intentar lubricarlos puede dañar los sellos.")
-            else:
-                st.write(f"Al menos uno de los rodamientos ({rod_la if es_sellado_la else rod_loa}) es sellado.")
-        
-        elif "RS" in rod_la or "RS" in rod_loa:
-            st.warning("⚠️ **ATENCIÓN: RODAMIENTO RS**")
-            st.write("Sello de goma de un solo lado. Verifique si el punto de engrase está habilitado.")
-        
+        # Verificación de sellados
+        es_sellado = any(x in rod_la_base or x in rod_loa_base for x in ["2RS", "ZZ"])
+        if es_sellado:
+            st.error("🚫 **AVISO: RODAMIENTOS SELLADOS. NO LUBRICAR.**")
         else:
             st.success("✅ **EQUIPO APTO PARA LUBRICACIÓN**")
-            
-            # Usamos la función maestra definida arriba
-            g_la_calc = calcular_grasa_marpi(rod_la)
-            g_loa_calc = calcular_grasa_marpi(rod_loa)
-            
-        st.markdown("---")
 
-    # Variables de carga
-    v_la, v_loa, v_serie = "", "", ""
+        st.divider()
 
-    # 3. Búsqueda Directa (Sin filtros complejos)
-    if tag_seleccionado != "":
-        # Filtramos todas las filas de ese TAG
-        datos_motor = df_lista[df_lista['Tag'] == tag_seleccionado]
+        # 4. Inputs de edición (por si el rodamiento cambió)
+        c1, c2 = st.columns(2)
+        rod_la_edit = c1.text_input("Rodamiento LA Actual", value=rod_la_base, key="edit_la")
+        rod_loa_edit = c2.text_input("Rodamiento LOA Actual", value=rod_loa_base, key="edit_loa")
         
-        if not datos_motor.empty:
-            # Buscamos el último Rodamiento_LA que NO esté vacío
-            filtro_la = datos_motor['Rodamiento_LA'].replace(['', 'nan', 'None', '0', 0], pd.NA).dropna()
-            if not filtro_la.empty:
-                v_la = str(filtro_la.iloc[-1])
+        gr_la_sug = calcular_grasa_marpi(rod_la_edit)
+        gr_loa_sug = calcular_grasa_marpi(rod_loa_edit)
+        
+        c1.caption(f"Sugerido: {gr_la_sug}g")
+        c2.caption(f"Sugerido: {gr_loa_sug}g")
+
+        # 5. FORMULARIO DE CIERRE
+        with st.form(key=f"final_lub_{st.session_state.form_id}"):
+            tecnico = st.text_input("Técnico Responsable")
             
-            # Buscamos el último Rodamiento_LOA que NO esté vacío
-            filtro_loa = datos_motor['Rodamiento_LOA'].replace(['', 'nan', 'None', '0', 0], pd.NA).dropna()
-            if not filtro_loa.empty:
-                v_loa = str(filtro_loa.iloc[-1])
+            col_g1, col_g2 = st.columns(2)
+            gr_real_la = col_g1.number_input("Gramos Reales LA", value=float(gr_la_sug))
+            gr_real_loa = col_g2.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
+            
+            grasa_t = st.selectbox("Grasa Utilizada", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus"])
+            notas = st.text_area("Observaciones / Notas")
+            
+            submit = st.form_submit_button("💾 REGISTRAR LUBRICACIÓN")
 
-            # Buscamos el último N° de Serie
-            filtro_s = datos_motor['N_Serie'].replace(['', 'nan', 'None'], pd.NA).dropna()
-            if not filtro_s.empty:
-                v_serie = str(filtro_s.iloc[-1])
-
-            # EL CARTELITO VERDE (Para que sepas que lo encontró)
-            st.success(f"✅ Motor: {tag_seleccionado} | LA: {v_la} | LOA: {v_loa}")
-        else:
-            st.warning("⚠️ No se encontraron datos para este TAG.")
+            if submit:
+                if tecnico:
+                    nueva_fila = {
+                        "Fecha": date.today().strftime("%d/%m/%Y"),
+                        "Tag": tag_seleccionado,
+                        "N_Serie": v_serie,
+                        "Potencia": info_motor.get('Potencia', 'S/D'),
+                        "Tipo_Tarea": "Relubricacion",
+                        "Responsable": tecnico,
+                        "Rodamiento_LA": rod_la_edit,
+                        "Rodamiento_LOA": rod_loa_edit,
+                        "Gramos_LA": gr_real_la,
+                        "Gramos_LOA": gr_real_loa,
+                        "Tipo_Grasa": grasa_t,
+                        "Notas": notas,
+                        "Descripcion": f"LUBRICACIÓN REALIZADA: {grasa_t}"
+                    }
+                    
+                    # Guardar en GSheets
+                    df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
+                    conn.update(data=df_final)
+                    
+                    st.success(f"✅ ¡Lubricación de {tag_seleccionado} guardada!")
+                    st.balloons()
+                    st.cache_data.clear()
+                    st.session_state.form_id += 1
+                    import time
+                    time.sleep(2)
+                    st.rerun()
+                else:
+                    st.error("⚠️ Por favor ingrese el nombre del Responsable.")
+    else:
+        st.info("Seleccione un motor o escanee un código QR para comenzar.")
 
     st.divider()
 
@@ -881,6 +896,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
