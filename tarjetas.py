@@ -445,28 +445,23 @@ elif modo == "Historial y QR":
                         st.subheader(f"Ⓜ️ {ultimo_tag}")
                         st.info(f"Número de Serie: **{serie_final}**")
 
-                # --- 5. FUNCIÓN DE NAVEGACIÓN Y BOTONES (CORREGIDA) ---
                 def enviar_a_formulario_con_datos(tarea_tipo):
-                    # Cargamos los datos en el diccionario que lee el formulario
                     st.session_state['datos_motor_auto'] = {
                         'tag': str(motor_info.get('Tag', '')),
                         'serie': str(motor_info.get('N_Serie', '')),
                         'potencia': str(motor_info.get('Potencia', '')),
-                        'tension': str(motor_info.get('Tension', '')),
-                        'corriente': str(motor_info.get('Corriente', '')),
                         'rpm': str(motor_info.get('RPM', '-')),
-                        'carcasa': str(motor_info.get('Carcasa', '')),
                         'r_la': str(motor_info.get('Rodamiento_LA', '')),
-                        'r_loa': str(motor_info.get('Rodamiento_LOA', '')),
-                        'tarea': tarea_tipo
+                        'r_loa': str(motor_info.get('Rodamiento_LOA', ''))
                     }
-                    # IMPORTANTE: Cambia este número según el orden de tus pestañas:
-                    # 0 si "Nuevo Registro" es la primera pestaña.
-                    # 1 si es la segunda, etc.
-                    st.session_state.forzar_pestana = 0 
                     
-                    # Marcamos que venimos desde el historial para que el formulario sepa que debe precargar
-                    st.session_state['ejecutar_precarga'] = True
+                    # --- ASIGNACIÓN DE DESTINO ---
+                    if tarea_tipo == "Lubricación":
+                        st.session_state.forzar_pestana = 2  # Va a "Relubricacion"
+                    elif tarea_tipo == "Megado":
+                        st.session_state.forzar_pestana = 3  # Va a "Mediciones de Campo"
+                    else:
+                        st.session_state.forzar_pestana = 0  # Va a "Nuevo Registro" (Reparación)
                     
                     st.rerun()
                 
@@ -890,6 +885,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
