@@ -188,62 +188,45 @@ if qr_valor:
         st.session_state.motor_seleccionado = label_exacto
         # Forzamos el salto a la pestaña de Historial
         indice_inicio = 1
-# --- 5. MENÚ LATERAL ---
-opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
-
-with st.sidebar:
-    if os.path.exists("logo.png"): 
-        st.image("logo.png", width=150)
-    st.title("⚡ MARPI MOTORES")
-    
-    # 1. LÓGICA DE SALTO: Prioridad a los botones de acción ("Lubricar", etc.)
-    if st.session_state.get('forzar_pestana') is not None:
-        # Si un botón nos mandó aquí, usamos ese índice
-        indice_a_usar = st.session_state.forzar_pestana
-        st.session_state.seleccion_manual = opciones_menu[indice_a_usar]
-        # Limpiamos el aviso de "forzar" para que no se bloquee en esa pestaña
-        st.session_state.forzar_pestana = None 
-    
-    # 2. LÓGICA DE QR: Si es la primera vez que entra y hay QR
-    elif "seleccion_manual" not in st.session_state:
-        st.session_state.seleccion_manual = opciones_menu[indice_inicio]
-
-    # 3. EL SELECTOR (Usamos Radio o Selectbox según prefieras)
-    # Buscamos el índice actual de la selección en la lista
-    idx_actual = opciones_menu.index(st.session_state.seleccion_manual)
-    
-    modo = st.radio(
-        "SELECCIONE:", 
-        opciones_menu,
-        index=idx_actual
-    )
-    # 4. ACTUALIZACIÓN: Guardamos lo que el usuario eligió manualmente
-    st.session_state.seleccion_manual = modo
-    
-    # --- BOTÓN DE RESET TOTAL ---
-    if st.sidebar.button("🧹 Resetear Navegación"):
-        # 1. Limpiar la URL (Quita ?serie=8508)
-        st.query_params.clear()
-
-        # 2. Lista de variables que queremos borrar de la memoria
-        variables_a_borrar = [
-            'motor_seleccionado',      # El motor que encontró el QR
-            'motor_desde_qr',          # La variable temporal del QR
-            'buscador_marpi_principal', # La Key del selectbox del historial
-            'buscador_unico_marpi',     # (Por las dudas si quedó alguna vieja)
-            'indice_inicio'            # Para que vuelva al menú "Inicio"
-        ]
-
-        # 3. Borramos cada una si existe
-        for key in variables_a_borrar:
-            if key in st.session_state:
-                del st.session_state[key]
+# --- BOTONES DE ACCIÓN RÁPIDA (RUTAS CORREGIDAS) ---
+        st.divider()
+        st.write("### ⚡ Acciones Rápidas")
+        col_A, col_B, col_C = st.columns(3)
         
-        # 4. Aseguramos que el modo manual esté apagado (o encendido, según tu lógica)
-        st.session_state.modo_manual = True 
+        # Función para cargar datos comunes en la memoria
+        def preparar_datos_motor():
+            st.session_state['datos_motor_auto'] = {
+                'tag': str(motor_info.get('Tag', '')),
+                'serie': str(motor_info.get('N_Serie', '')),
+                'potencia': str(motor_info.get('Potencia', '')),
+                'tension': str(motor_info.get('Tension', '')),
+                'corriente': str(motor_info.get('Corriente', '')),
+                'rpm': str(motor_info.get('RPM', '-')),
+                'carcasa': str(motor_info.get('Carcasa', '')),
+                'r_la': str(motor_info.get('Rodamiento_LA', '')),
+                'r_loa': str(motor_info.get('Rodamiento_LOA', ''))
+            }
 
-        # 5. Recargamos la página desde cero
-        st.rerun()
+        # 1. Botón LUBRICAR -> Va a "Relubricacion" (Índice 2)
+        with col_A:
+            if st.button("🛢️ Lubricar", use_container_width=True):
+                preparar_datos_motor()
+                st.session_state.forzar_pestana = 2  # <--- Cambiado a Relubricación
+                st.rerun()
+        
+        # 2. Botón MEGAR -> Va a "Mediciones de Campo" (Índice 3)
+        with col_B:
+            if st.button("🔌 Megar", use_container_width=True):
+                preparar_datos_motor()
+                st.session_state.forzar_pestana = 3  # <--- Cambiado a Mediciones
+                st.rerun()
+                
+        # 3. Botón REPARAR -> Va a "Nuevo Registro" (Índice 0)
+        with col_C:
+            if st.button("🛠️ Reparación / Alta", use_container_width=True):
+                preparar_datos_motor()
+                st.session_state.forzar_pestana = 0  # <--- Este sí va al Registro Inicial
+                st.rerun()
 
 # --- 6. VALIDACIÓN DE CONTRASEÑA (VERSIÓN CORREGIDA) ---
 if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
@@ -971,6 +954,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
