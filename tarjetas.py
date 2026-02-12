@@ -164,9 +164,8 @@ df_completo = cargar_datos_google()
 if "motor_seleccionado" not in st.session_state:
     st.session_state.motor_seleccionado = None
 
+# --- SOLO DETECCIÓN (No dibujes nada aquí) ---
 params = st.query_params
-
-# Consolidamos el valor del QR en una sola variable llamada qr_valor
 qr_valor = params.get("serie") or params.get("tag") or params.get("Serie") or params.get("Tag")
 
 # Decidimos a qué pestaña ir (1 es Historial)
@@ -274,82 +273,7 @@ elif modo == "Mediciones de Campo":
     sn = c2.text_input("N° Serie", value=datos_auto.get('serie', ''))
     # ... resto de campos de mediciones ...
 
-elif modo == "Historial y QR":
-    st.title("🔍 Consulta y Gestión de Motores")
-    
-    # --- 1. LÓGICA DEL BUSCADOR (DEBE IR PRIMERO) ---
-    if not df_completo.empty:
-        # Limpieza de datos
-        df_completo['N_Serie'] = df_completo['N_Serie'].astype(str).str.strip()
-        df_completo['Tag'] = df_completo['Tag'].astype(str).str.strip()
 
-        # Crear lista de opciones
-        opciones_base = (df_completo['Tag'] + " | SN: " + df_completo['N_Serie']).unique().tolist()
-        opciones = [""] + sorted(opciones_base)
-        
-        # Sincronizar con QR (usando qr_valor que definimos al inicio del script)
-        idx_buscador = 0
-        if 'qr_valor' in globals() and qr_valor:
-            v_qr = str(qr_valor).strip().upper()
-            for i, op in enumerate(opciones):
-                if v_qr in op.upper():
-                    idx_buscador = i
-                    break
-        
-        # DIBUJAMOS EL BUSCADOR
-        seleccion = st.selectbox(
-            "🔍 Seleccione o Busque el Motor:", 
-            opciones, 
-            index=idx_buscador,
-            key="buscador_principal"
-        )
-
-        # --- 2. MOSTRAR INFORMACIÓN SI HAY SELECCIÓN ---
-        if seleccion and seleccion != "":
-            serie_sel = seleccion.split(" | SN: ")[1]
-            # Filtramos los datos de ese motor específico
-            motor_info = df_completo[df_completo['N_Serie'] == serie_sel].iloc[-1]
-            
-            # Aquí dibujarías tu ficha técnica (st.write, etc.)
-            st.success(f"Motor seleccionado: {motor_info['Tag']}")
-
-            # --- 3. BOTONES DE ACCIÓN RÁPIDA (DENTRO DEL IF SELECCION) ---
-            st.divider()
-            st.write("### ⚡ Acciones Rápidas")
-            col_A, col_B, col_C = st.columns(3)
-            
-            def preparar_datos_motor():
-                st.session_state['datos_motor_auto'] = {
-                    'tag': str(motor_info.get('Tag', '')),
-                    'serie': str(motor_info.get('N_Serie', '')),
-                    'potencia': str(motor_info.get('Potencia', '')),
-                    'tension': str(motor_info.get('Tension', '')),
-                    'corriente': str(motor_info.get('Corriente', '')),
-                    'rpm': str(motor_info.get('RPM', '-')),
-                    'carcasa': str(motor_info.get('Carcasa', '')),
-                    'r_la': str(motor_info.get('Rodamiento_LA', '')),
-                    'r_loa': str(motor_info.get('Rodamiento_LOA', ''))
-                }
-
-            with col_A:
-                if st.button("🛢️ Lubricar", use_container_width=True, key="btn_lub"):
-                    preparar_datos_motor()
-                    st.session_state.forzar_pestana = 2
-                    st.rerun()
-            with col_B:
-                if st.button("🔌 Megar", use_container_width=True, key="btn_meg"):
-                    preparar_datos_motor()
-                    st.session_state.forzar_pestana = 3
-                    st.rerun()
-            with col_C:
-                if st.button("🛠️ Reparación", use_container_width=True, key="btn_rep"):
-                    preparar_datos_motor()
-                    st.session_state.forzar_pestana = 0
-                    st.rerun()
-        else:
-            st.info("💡 Por favor, busque un motor arriba o escanee un código QR.")
-    else:
-        st.error("No se encontraron datos en la base de datos.")
 # --- 5. SECCIONES (CON AUTOCOMPLETADO) ---
 if modo == "Nuevo Registro":
     st.title("📝 Alta y Registro Inicial")
@@ -480,26 +404,23 @@ elif modo == "Historial y QR":
         opciones_base = (df_completo['Tag'] + " | SN: " + df_completo['N_Serie']).unique().tolist()
         opciones = [""] + sorted(opciones_base)
         
-        # 3. LÓGICA DE RECONOCIMIENTO DE QR (IMPORTANTE)
-        # Leemos el valor que viene en la URL
+        # 3. LÓGICA DE RECONOCIMIENTO DE QR
         params = st.query_params
         qr_valor = params.get("serie") or params.get("tag") or params.get("Serie") or params.get("Tag")
         
-        idx_buscador = 0 # Por defecto, buscador vacío
-        
+        idx_buscador = 0
         if qr_valor:
             v_qr = str(qr_valor).strip().upper()
-            # Buscamos en qué posición de la lista 'opciones' está ese motor
             for i, op in enumerate(opciones):
-                if v_qr in op.upper(): # Si el motor está en la opción, lo seleccionamos
+                if v_qr in op.upper():
                     idx_buscador = i
                     break
         
-        # 4. EL SELECTOR (Ahora con el índice sincronizado)
+        # 4. EL SELECTOR ÚNICO
         seleccion = st.selectbox(
             "🔍 Seleccione o Busque el Motor:", 
             opciones, 
-            index=idx_buscador, # <--- Aquí es donde se conecta con el QR
+            index=idx_buscador, 
             key="buscador_final_marpi"
         )
 
@@ -509,16 +430,12 @@ elif modo == "Historial y QR":
             historial_motor = df_completo[df_completo['N_Serie'] == serie_final].copy()
             
             if not historial_motor.empty:
-                # 3. Definimos las variables necesarias para el reporte y el botón
                 motor_info = historial_motor.iloc[-1]
                 ultimo_tag = str(motor_info.get('Tag', 'S/D'))
-                potencia_motor = str(motor_info.get('Potencia', '-'))
 
                 # --- PANEL SUPERIOR ---
                 with st.container(border=True):
                     col_qr, col_info = st.columns([1, 2])
-                    
-                    # Generamos el link para el QR de pantalla
                     url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={serie_final}"
                     qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
                     
@@ -528,85 +445,53 @@ elif modo == "Historial y QR":
                         st.subheader(f"Ⓜ️ {ultimo_tag}")
                         st.info(f"Número de Serie: **{serie_final}**")
 
-            # --- BOTONES DE ACCIÓN RÁPIDA (PUENTE) ---
-            st.divider()
-            st.write("### ⚡ Acciones Rápidas")
-            col_A, col_B, col_C = st.columns(3)
-        
-            def enviar_a_formulario(tarea_tipo):
-                # Guardamos los datos en la memoria para el formulario
-                st.session_state.precarga_tag = str(motor_datos['Tag'])
-                st.session_state.precarga_serie = str(motor_datos['N_Serie'])
-                st.session_state.precarga_potencia = str(motor_datos['Potencia'])
-                st.session_state.precarga_rpm = str(motor_datos['RPM'])
-                st.session_state.precarga_tarea = tarea_tipo
+                # --- 5. FUNCIÓN DE NAVEGACIÓN Y BOTONES (SIN REPETIR) ---
+                def enviar_a_formulario_con_datos(tarea_tipo):
+                    st.session_state['datos_motor_auto'] = {
+                        'tag': str(motor_info.get('Tag', '')),
+                        'serie': str(motor_info.get('N_Serie', '')),
+                        'potencia': str(motor_info.get('Potencia', '')),
+                        'tension': str(motor_info.get('Tension', '')),
+                        'corriente': str(motor_info.get('Corriente', '')),
+                        'rpm': str(motor_info.get('RPM', '-')),
+                        'carcasa': str(motor_info.get('Carcasa', '')),
+                        'r_la': str(motor_info.get('Rodamiento_LA', '')),
+                        'r_loa': str(motor_info.get('Rodamiento_LOA', '')),
+                        'tarea': tarea_tipo
+                    }
+                    st.session_state.forzar_pestana = 0 # Ajusta según el índice de tu pestaña de Registro
+                    st.rerun()
+
+                st.divider()
+                st.write("### ⚡ Acciones Rápidas")
+                col_A, col_B, col_C = st.columns(3)
                 
-                # Forzamos el cambio de pestaña a "Nuevo Registro" (asumiendo que es índice 2)
-                st.session_state.forzar_pestana = 2 
-                st.rerun()
-    
-            # --- BOTONES DE ACCIÓN RÁPIDA (PUENTE) ---
-            st.divider()
-            st.write("### ⚡ Acciones Rápidas")
-            col_A, col_B, col_C = st.columns(3)
-            
-            # Función unificada para pasar datos
-            def enviar_a_formulario_con_datos(tarea_tipo):
-                st.session_state['datos_motor_auto'] = {
-                    'tag': str(motor_info.get('Tag', '')),
-                    'serie': str(motor_info.get('N_Serie', '')),
-                    'potencia': str(motor_info.get('Potencia', '')),
-                    'tension': str(motor_info.get('Tension', '')),
-                    'corriente': str(motor_info.get('Corriente', '')),
-                    'rpm': str(motor_info.get('RPM', '-')),
-                    'carcasa': str(motor_info.get('Carcasa', '')),
-                    'r_la': str(motor_info.get('Rodamiento_LA', '')),
-                    'r_loa': str(motor_info.get('Rodamiento_LOA', '')),
-                    'tarea': tarea_tipo  # Opcional por si quieres usarlo luego
-                }
-                # Forzamos el salto a la pestaña "Nuevo Registro" (índice 0 en tu nueva lista)
-                st.session_state.forzar_pestana = 0 
-                st.rerun()
-    
-            # Botón LUBRICAR
-            with col_A:
-                if st.button("🛢️ Lubricar", use_container_width=True):
-                    enviar_a_formulario_con_datos("Lubricación")
-            
-            # Botón MEGAR
-            with col_B:
-                if st.button("🔌 Megar", use_container_width=True):
-                    enviar_a_formulario_con_datos("Megado")
-                    
-            # Botón OTRO
-            with col_C:
-                if st.button("📝 Otra Tarea", use_container_width=True):
-                    enviar_a_formulario_con_datos("Reparación General")
+                with col_A:
+                    if st.button("🛢️ Lubricar", use_container_width=True):
+                        enviar_a_formulario_con_datos("Lubricación")
+                with col_B:
+                    if st.button("🔌 Megar", use_container_width=True):
+                        enviar_a_formulario_con_datos("Megado")
+                with col_C:
+                    if st.button("📝 Otra Tarea", use_container_width=True):
+                        enviar_a_formulario_con_datos("Reparación General")
+
+                # --- 6. HISTORIAL DE INTERVENCIONES (MANTENIENDO TU FORMATO) ---
                 st.divider()
                 st.subheader("📜 Historial de Intervenciones")
                 
-                if not historial_motor.empty:
-                    hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
-    
-                    for idx, fila in hist_m.iterrows():
-                        # 1. Limpiamos los datos
-                        f_limpia = fila.fillna('-') 
-                        
-                        # 2. Variables de texto
-                        tarea = str(f_limpia.get('Tipo_Tarea', '-')).strip()
-                        fecha = str(f_limpia.get('Fecha', '-'))
-                        tag_h = str(f_limpia.get('Tag', ultimo_tag))
-                        resp_h = str(f_limpia.get('Responsable', '-'))
+                hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
+                for idx, fila in hist_m.iterrows():
+                    f_limpia = fila.fillna('-')
+                    tarea = str(f_limpia.get('Tipo_Tarea', '-')).strip()
+                    fecha = str(f_limpia.get('Fecha', '-'))
+                    tag_h = str(f_limpia.get('Tag', ultimo_tag))
+                    resp_h = str(f_limpia.get('Responsable', '-'))
                     
-                    if tarea == "-" or tarea.lower() == "nan":
-                        titulo_card = "📝 Registro / Mantenimiento"
-                    else:
-                        titulo_card = f"🗓️ {tarea}"
+                    titulo_card = f"🗓️ {tarea}" if tarea not in ["-", "nan"] else "📝 Registro / Mantenimiento"
 
-                    # --- INICIO DEL CONTENEDOR PARA CAPTURA ---
-                    # Envolvemos TODO tu diseño en este div para que la foto lo encuentre
+                    # --- INICIO DEL CONTENEDOR PARA CAPTURA (Fondo oscuro preservado) ---
                     st.markdown(f'<div id="ficha_{idx}" style="background-color: #0e1117; padding: 10px;">', unsafe_allow_html=True)
-                    
                     with st.container(border=True):
                         st.markdown(f"### {titulo_card} - {fecha}")
                         st.markdown(f"**🆔 TAG:** `{tag_h}`  |  **👤 RESP:** `{resp_h}`")
@@ -618,17 +503,14 @@ elif modo == "Historial y QR":
                             st.write(f"**Serie:** {f_limpia.get('N_Serie', '-')}")
                             st.write(f"**Potencia:** {f_limpia.get('Potencia', '-')}")
                             st.write(f"**RPM:** {f_limpia.get('RPM', '-')}")
-                    
+                        
                         with col2:
                             if "Lubricación" in tarea or "Relubricacion" in tarea:
                                 st.markdown("**🛢️ Detalle Lubricación:**")
                                 st.info(f"**LA:** {f_limpia.get('Rodamiento_LA', '-')} ({f_limpia.get('Gramos_LA', '0')}g)\n\n**LOA:** {f_limpia.get('Rodamiento_LOA', '-')} ({f_limpia.get('Gramos_LOA', '0')}g)")
-                            elif "Mediciones" in tarea:
+                            elif "Mediciones" in tarea or "Megado" in tarea:
                                 st.markdown("**⚡ Resumen Eléctrico:**")
-                                m_tierra = f_limpia.get('RT_TU1', '-')
-                                st.warning(f"**Aislamiento T-U1:**\n\n{m_tierra} GΩ")
-                                
-                                # Nota: Los expanders pueden salir cerrados en la captura, es normal en HTML2Canvas
+                                st.warning(f"**Aislamiento T-U1:**\n\n{f_limpia.get('RT_TU1', '-')} GΩ")
                                 with st.expander("🔍 Ver todas las Medidas"):
                                     m1, m2, m3 = st.columns(3)
                                     with m1:
@@ -641,7 +523,6 @@ elif modo == "Historial y QR":
                                         st.caption(f"U1-U2: {f_limpia.get('RI_U1U2', '-')}")
                                         st.caption(f"W1-W2: {f_limpia.get('RI_W1W2', '-')}")
                             else:
-                                # Estas líneas deben estar más a la derecha que el else
                                 st.markdown("**🛠️ Detalles Técnicos:**")
                                 st.success(f"**Rod. LA:** {f_limpia.get('Rodamiento_LA', '-')}\n\n**Rod. LOA:** {f_limpia.get('Rodamiento_LOA', '-')}")
 
@@ -651,83 +532,39 @@ elif modo == "Historial y QR":
                         
                         if str(f_limpia.get('Trabajos_Externos', '-')) not in ['-', 'nan', '']:
                             st.info(f"**🏗️ Taller Externo:** {f_limpia.get('Trabajos_Externos')}")
-                        
                         if str(f_limpia.get('Notas', '-')) not in ['-', 'nan', '']:
                             st.caption(f"**📌 Notas:** {f_limpia.get('Notas')}")
-
-                    # Estas tres líneas se alinean con el 'with' de arriba
                     st.markdown('</div>', unsafe_allow_html=True) 
-                    
-                   # --- PREPARAMOS LOS DETALLES PARA LA FOTO ---
+
+                    # --- LÓGICA DE DETALLES PARA FOTO Y BOTONES ---
+                    campos_electricos = ['RT_TU1', 'RT_TV1', 'RT_TW1', 'RB_WV1', 'RB_VU1', 'RB_UW1', 'RI_U1U2', 'RI_V1V2', 'RI_W1W2', 'RI_U1V1', 'RI_V1W1', 'RI_W1U1']
                     detalles_foto = ""
-                    
                     if "Mediciones" in tarea or "Megado" in tarea:
-                        # Lista de todas las mediciones posibles (las 15 que mencionas)
-                        campos_electricos = [
-                            'RT_TU1', 'RT_TV1', 'RT_TW1', 
-                            'RB_WV1', 'RB_VU1', 'RB_UW1',
-                            'RI_U1U2', 'RI_V1V2', 'RI_W1W2',
-                            'RI_U1V1', 'RI_V1W1', 'RI_W1U1' # Agregá aquí los que falten hasta completar los 15
-                        ]
                         detalles_foto = "<b>Mediciones Eléctricas:</b><br>"
                         for i, c in enumerate(campos_electricos):
-                            valor = f_limpia.get(c, '-')
-                            if valor != '-':
-                                detalles_foto += f"{c}: {valor} | "
-                                # Cada 3 mediciones, mete un salto de línea para que sea legible
-                                if (i + 1) % 3 == 0:
-                                    detalles_foto += "<br>"
-                    
+                            v = f_limpia.get(c, '-')
+                            if v != '-': detalles_foto += f"{c}: {v} | "
+                            if (i + 1) % 3 == 0: detalles_foto += "<br>"
                     elif "Lubricación" in tarea or "Relubricacion" in tarea:
-                        detalles_foto = f"<b>Rodamiento LA:</b> {f_limpia.get('Rodamiento_LA')} ({f_limpia.get('Gramos_LA')}g)<br>"
-                        detalles_foto += f"<b>Rodamiento LOA:</b> {f_limpia.get('Rodamiento_LOA')} ({f_limpia.get('Gramos_LOA')}g)"
-                    
+                        detalles_foto = f"<b>Rodamiento LA:</b> {f_limpia.get('Rodamiento_LA')} ({f_limpia.get('Gramos_LA')}g)<br><b>Rodamiento LOA:</b> {f_limpia.get('Rodamiento_LOA')} ({f_limpia.get('Gramos_LOA')}g)"
                     else:
                         detalles_foto = f"Rod. LA: {f_limpia.get('Rodamiento_LA', '-')} | Rod. LOA: {f_limpia.get('Rodamiento_LOA', '-')}"
 
-                    # --- AGREGAMOS TRABAJOS EXTERNOS Y NOTAS SI EXISTEN ---
-                    info_extra = ""
-                    taller = str(f_limpia.get('Trabajos_Externos', '-'))
-                    notas_ad = str(f_limpia.get('Notas', '-'))
-                    
-                    if taller not in ['-', 'nan', '']:
-                        info_extra += f"<br><b>🏗️ Taller Externo:</b> {taller}"
-                    if notas_ad not in ['-', 'nan', '']:
-                        info_extra += f"<br><b>📌 Notas:</b> {notas_ad}"
-
-                    # Esta línea debe estar verticalmente igual a los 'if' de arriba
-                    html_boton = boton_descarga_pro(
-                        tag_h, 
-                        fecha, 
-                        tarea, 
-                        resp_h, 
-                        f_limpia.get('N_Serie', '-'), 
-                        f_limpia.get('Potencia', '-'), 
-                        f_limpia.get('RPM', '-'),
-                        detalles_foto, 
-                        info_extra, 
-                        f_limpia.get('Descripcion', '-')
-                    )
+                    # Botón de Descarga
+                    html_boton = boton_descarga_pro(tag_h, fecha, tarea, resp_h, f_limpia.get('N_Serie', '-'), f_limpia.get('Potencia', '-'), f_limpia.get('RPM', '-'), detalles_foto, "", f_limpia.get('Descripcion', '-'))
                     components.html(html_boton, height=80)
                     
-                    # --- BOTÓN HONEYWELL (EL VERDE) - CORREGIDO Y ALINEADO ---
+                    # Botón Honeywell
                     try:
-                        # Usamos f_limpia que es la variable que YA existe en tu bucle for
                         s_local = str(f_limpia.get('N_Serie', '-'))
-                        t_local = str(f_limpia.get('Tag', tag_h))
                         p_local = str(f_limpia.get('Potencia', '-'))
-                        
-                        img_bytes_h = generar_etiqueta_honeywell(t_local, s_local, p_local)
-                        
+                        img_bytes_h = generar_etiqueta_honeywell(tag_h, s_local, p_local)
                         if img_bytes_h:
                             import base64
                             b64_img_h = base64.b64encode(img_bytes_h).decode('utf-8')
-                            
                             boton_h_html = f"""
                             <div style="text-align: center; margin-top: -15px;">
-                                <button id="btnH_{idx}" style="width:100%; background:#28a745; color:white; padding:8px; border:none; border-radius:5px; font-weight:bold; cursor:pointer; height:38px; font-size:12px; font-family: sans-serif;">
-                                    🖨️ IMPRIMIR ETIQUETA HONEYWELL
-                                </button>
+                                <button id="btnH_{idx}" style="width:100%; background:#28a745; color:white; padding:8px; border:none; border-radius:5px; font-weight:bold; cursor:pointer; height:38px; font-size:12px;">🖨️ IMPRIMIR ETIQUETA HONEYWELL</button>
                             </div>
                             <script>
                             document.getElementById('btnH_{idx}').onclick = function() {{
@@ -737,13 +574,9 @@ elif modo == "Historial y QR":
                                 win.document.write('</body></html>');
                                 win.document.close();
                             }};
-                            </script>
-                            """
+                            </script>"""
                             components.html(boton_h_html, height=50)
-                    except Exception as e:
-                        # Si falla, te mostrará qué variable falta, pero no romperá la app
-                        st.caption(f"Aviso: No se pudo generar etiqueta individual: {e}")
-
+                    except: pass
                     st.divider()
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
@@ -1050,6 +883,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
