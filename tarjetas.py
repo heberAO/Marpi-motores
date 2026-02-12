@@ -463,47 +463,40 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Limpieza de datos
+        # 1. Limpieza rápida de datos
         df_completo['N_Serie'] = df_completo['N_Serie'].astype(str).str.strip()
         df_completo['Tag'] = df_completo['Tag'].astype(str).str.strip()
 
-        # 2. Crear lista de opciones EXACTAMENTE como las usás siempre
+        # 2. Crear lista de opciones
         opciones_base = (df_completo['Tag'] + " | SN: " + df_completo['N_Serie']).unique().tolist()
         opciones = [""] + sorted(opciones_base)
         
-        # 3. CAPTURA DE QR (Soporta etiquetas viejas y nuevas)
+        # 3. LÓGICA DE RECONOCIMIENTO DE QR (IMPORTANTE)
+        # Leemos el valor que viene en la URL
         params = st.query_params
-        # Buscamos en todos los posibles nombres que puede traer el QR
         qr_valor = params.get("serie") or params.get("tag") or params.get("Serie") or params.get("Tag")
         
-        # 4. BUSCAR EL ÍNDICE DEL MOTOR
-        idx_para_el_selector = 0 # Por defecto vacío
+        idx_buscador = 0 # Por defecto, buscador vacío
         
         if qr_valor:
             v_qr = str(qr_valor).strip().upper()
+            # Buscamos en qué posición de la lista 'opciones' está ese motor
             for i, op in enumerate(opciones):
-                if " | SN: " in op:
-                    # Separamos para comparar exacto y que 8508 no sea GW68508
-                    partes = op.split(" | SN: ")
-                    tag_lista = partes[0].strip().upper()
-                    serie_lista = partes[1].strip().upper()
-                    
-                    if v_qr == serie_lista or v_qr == tag_lista:
-                        idx_para_el_selector = i
-                        break
+                if v_qr in op.upper(): # Si el motor está en la opción, lo seleccionamos
+                    idx_buscador = i
+                    break
         
-        # 5. EL SELECTOR (Solo uno, vinculado al QR)
+        # 4. EL SELECTOR (Ahora con el índice sincronizado)
         seleccion = st.selectbox(
             "🔍 Seleccione o Busque el Motor:", 
             opciones, 
-            index=idx_para_el_selector,
-            key="buscador_marpi_final"
+            index=idx_buscador, # <--- Aquí es donde se conecta con el QR
+            key="buscador_final_marpi"
         )
+
         if seleccion:
-            # 1. Extraemos la serie correctamente (evitamos el NameError)
+            # Extraemos la serie para filtrar el historial
             serie_final = seleccion.split(" | SN: ")[1] if " | SN: " in seleccion else ""
-            
-            # 2. Filtramos la base de datos
             historial_motor = df_completo[df_completo['N_Serie'] == serie_final].copy()
             
             if not historial_motor.empty:
@@ -1048,6 +1041,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
