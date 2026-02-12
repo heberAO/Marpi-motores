@@ -147,15 +147,17 @@ if "archivo_nombre" not in st.session_state:
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
 if "modo_manual" not in st.session_state: st.session_state.modo_manual = False
 # --- FUNCIÓN DE CARGA OPTIMIZADA ---
-@st.cache_data(ttl=10) # Guarda los datos en memoria por 10 segundos
+# --- 1. CONEXIÓN GLOBAL (Afuera de las funciones) ---
+conn = st.connection("gsheets", type=GSheetsConnection)
+
+@st.cache_data(ttl=10) 
 def cargar_datos_google():
     try:
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        # ttl=0 aquí asegura que SIEMPRE traiga lo fresco cuando se cumple el tiempo del cache
+        # Ya no definimos conn aquí adentro, usamos la de afuera
         return conn.read(ttl=0) 
     except Exception as e:
         st.error(f"⚠️ Error conectando a Google Sheets: {e}")
-        return pd.DataFrame() # Retorna tabla vacía para no romper la app
+        return pd.DataFrame()
 
 # --- USO DE LA FUNCIÓN ---
 df_completo = cargar_datos_google()
@@ -672,14 +674,17 @@ elif modo == "Relubricacion":
                         "Descripcion": f"LUBRICACIÓN REALIZADA: {grasa_t}"
                     }
                     
-                    # Guardar en GSheets
-                    df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
-                    conn.update(data=df_final)
+                    # 3. Guardado (USANDO LA VARIABLE GLOBAL 'conn')
+                    df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                     
-                    st.success(f"✅ ¡Lubricación de {tag_seleccionado} guardada!")
+                    # Ya no necesitas poner: conn = st.connection(...) aquí
+                    conn.update(data=df_final)
+    
+                    # 5. Interfaz y reinicio
+                    st.success(f"✅ Registro de {tag_actual} guardado con éxito.")
                     st.balloons()
+                    
                     st.cache_data.clear()
-                    st.session_state.form_id += 1
                     import time
                     time.sleep(2)
                     st.rerun()
@@ -876,26 +881,35 @@ elif modo == "Mediciones de Campo":
                     "ML_L1L2": l1l2, "ML_L1L3": l1l3, "ML_L2L3": l2l3
                 }
 
+                # 3. Guardado usando la conexión global 'conn'
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_final) 
                 
+                # 4. Limpieza y éxito
                 st.cache_data.clear()
                 st.success(f"✅ ¡Todo guardado! Reporte listo para {t}")
                 st.balloons()
+                
+                # Opcional: un pequeño sleep y rerun para refrescar la tabla
+                import time
+                time.sleep(1.5)
+                st.rerun()
             else:
                 st.error("⚠️ Falta TAG o Responsable.")
 
     # 3. BOTÓN DE DESCARGA (Fuera del formulario)
+    # Importante: Asegúrate de que 't' esté disponible aquí o usa st.session_state
     if st.session_state.get("pdf_buffer") is not None:
         st.download_button(
             label=f"📥 Descargar Reporte",
             data=st.session_state.pdf_buffer,
-            file_name=f"Reporte_{t}.pdf",
+            file_name=f"Reporte_{t if 't' in locals() else 'Motor'}.pdf",
             mime="application/pdf"
         )
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
