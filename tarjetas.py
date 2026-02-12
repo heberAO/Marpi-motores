@@ -186,54 +186,44 @@ if qr_valor:
         # Si encontró algo, lo guardamos en el session_state
         if not filtro.empty:
             st.session_state.motor_seleccionado = filtro.iloc[-1]
-# --- 5. MENÚ LATERAL (SOLUCIÓN FINAL DE NAVEGACIÓN) ---
+# --- 5. MENÚ LATERAL (ROBUSTO) ---
 opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
 
-# 1. LÓGICA DE SALTO (PRIORIDAD MÁXIMA)
-# Esto revisa si un botón ("Lubricar", "Megar", etc.) mandó una orden de cambio.
-if st.session_state.get('forzar_pestana') is not None:
-    idx_destino = st.session_state.forzar_pestana
-    # Forzamos la variable que controla el radio
-    st.session_state.seleccion_manual = opciones_menu[idx_destino]
-    # Limpiamos la orden para que no se quede trabado ahí siempre
-    st.session_state.forzar_pestana = None 
-    # Recargamos la página INMEDIATAMENTE para que el menú se actualice visualmente
-    st.rerun()
-
-# 2. Sincronización inicial por defecto
-if "seleccion_manual" not in st.session_state:
-    st.session_state.seleccion_manual = opciones_menu[1] # Por defecto: Historial
+# Inicializar la memoria de navegación si no existe
+if "navegacion_actual" not in st.session_state:
+    st.session_state.navegacion_actual = "Historial y QR"
 
 with st.sidebar:
     if os.path.exists("logo.png"): 
         st.image("logo.png", width=150)
     st.title("⚡ MARPI MOTORES")
     
-    # 3. Calculamos dónde debe estar el selector
+    # Buscamos en qué posición (0, 1, 2, 3) está la página guardada en memoria
     try:
-        idx_actual = opciones_menu.index(st.session_state.seleccion_manual)
-    except:
-        idx_actual = 1
+        idx_defecto = opciones_menu.index(st.session_state.navegacion_actual)
+    except ValueError:
+        idx_defecto = 1 # Por defecto Historial
 
-    # 4. El Selector (Radio)
-    modo = st.radio(
-        "SELECCIONE:", 
-        opciones_menu,
-        index=idx_actual,
-        key="navegacion_principal"
+    # Creamos el menú usando ese índice
+    seleccion = st.radio(
+        "Ir a:", 
+        opciones_menu, 
+        index=idx_defecto
     )
-    
-    # 5. Si el usuario cambia el menú manualmente con el mouse
-    if modo != st.session_state.seleccion_manual:
-        st.session_state.seleccion_manual = modo
+
+    # Si el usuario hace CLIC manual en el menú, actualizamos la memoria
+    if seleccion != st.session_state.navegacion_actual:
+        st.session_state.navegacion_actual = seleccion
         st.rerun()
 
     # Botón de Reset
     if st.button("🧹 Inicio / Reset"):
-        st.query_params.clear()
-        for k in list(st.session_state.keys()):
-            del st.session_state[k]
+        st.session_state.clear()
         st.rerun()
+
+# Asignamos la variable 'modo' para que el resto de tu código funcione igual
+modo = st.session_state.navegacion_actual
+
 # --- 6. VALIDACIÓN DE CONTRASEÑA ---
 if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
     if "autorizado" not in st.session_state:
@@ -448,26 +438,26 @@ elif modo == "Historial y QR":
                         st.subheader(f"Ⓜ️ {ultimo_tag}")
                         st.info(f"Número de Serie: **{serie_final}**")
 
+                # Dentro de la sección Historial y QR...
+
                 def enviar_a_formulario_con_datos(tarea_tipo):
-                    # Guardamos los datos del motor actual en la memoria
+                    # 1. Guardar datos del motor
                     st.session_state['datos_motor_auto'] = {
                         'tag': str(motor_info.get('Tag', '')),
                         'serie': str(motor_info.get('N_Serie', '')),
-                        'potencia': str(motor_info.get('Potencia', '')),
-                        'rpm': str(motor_info.get('RPM', '-')),
-                        'r_la': str(motor_info.get('Rodamiento_LA', '')),
-                        'r_loa': str(motor_info.get('Rodamiento_LOA', ''))
+                        # ... resto de tus datos ...
                     }
                     
-                    # Definimos a dónde saltar según el botón
+                    # 2. CAMBIAR LA PÁGINA PERMANENTEMENTE
                     if tarea_tipo == "Lubricación":
-                        st.session_state.forzar_pestana = 2  # Salta a "Relubricacion"
+                        st.session_state.navegacion_actual = "Relubricacion"
                     elif tarea_tipo == "Megado":
-                        st.session_state.forzar_pestana = 3  # Salta a "Mediciones de Campo"
+                        st.session_state.navegacion_actual = "Mediciones de Campo"
                     else:
-                        st.session_state.forzar_pestana = 0  # Salta a "Nuevo Registro"
+                        st.session_state.navegacion_actual = "Nuevo Registro"
                     
-                    st.rerun() # Esto dispara la recarga que captura el menú de arriba
+                    # 3. Recargar para que el cambio surta efecto
+                    st.rerun()
                 
                 st.divider()
                 st.write("### ⚡ Acciones Rápidas")
@@ -891,6 +881,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
