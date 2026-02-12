@@ -781,17 +781,21 @@ elif modo == "Mediciones de Campo":
     
     # 1. Inicialización de Memoria
     if 'pdf_buffer' not in st.session_state: st.session_state.pdf_buffer = None
-    if 'current_tag' not in st.session_state: st.session_state.current_tag = "Sin_Tag"
     if "cnt_meg" not in st.session_state: st.session_state.cnt_meg = 0
         
-    tag_inicial = st.session_state.get('tag_fijo', '')
-
+    # Recuperamos datos si vienen del historial
+    datos_auto = st.session_state.get('datos_motor_auto', {})
+    tag_inicial = datos_auto.get('tag', '')
+    serie_inicial = datos_auto.get('serie', '')
+    
+    # --- FORMULARIO ---
     with st.form(f"form_megado_{st.session_state.cnt_meg}"):
         col1, col2, col3 = st.columns(3)
-        # AGREGAMOS 'key' únicas aquí también
-        t = col1.text_input("TAG del Motor:", value=tag_inicial, key="tag_mediciones_input").upper()
-        n_serie = col2.text_input("N° de Serie:", value=n_serie_sug, key="serie_mediciones_input")
-        resp = col3.text_input("Responsable:", key="resp_mediciones_input")
+        
+        # Agregamos las keys únicas para evitar el error de Duplicate ID
+        t = col1.text_input("TAG del Motor:", value=tag_inicial, key="tag_med_field").upper()
+        n_serie = col2.text_input("N° de Serie:", value=n_serie_sug, key="serie_med_field")
+        resp = col3.text_input("Responsable:", key="resp_med_field")
         
         # Recuperar N° Serie automáticamente
         n_serie_sug = ""
@@ -887,6 +891,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
