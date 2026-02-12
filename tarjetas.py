@@ -227,6 +227,13 @@ if qr_valor:
                 preparar_datos_motor()
                 st.session_state.forzar_pestana = 0  # <--- Este sí va al Registro Inicial
                 st.rerun()
+                
+        # 3. Botón REPARAR -> Va a "Nuevo Registro" (Índice 0)
+        with col_C:
+            if st.button("🛠️ Reparación / Alta", use_container_width=True):
+                preparar_datos_motor()
+                st.session_state.forzar_pestana = 0  # <--- Este sí va al Registro Inicial
+                st.rerun()
 
 # --- 6. VALIDACIÓN DE CONTRASEÑA (VERSIÓN CORREGIDA) ---
 if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
@@ -656,6 +663,11 @@ elif modo == "Historial y QR":
                     st.divider()
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
+    datos_auto = st.session_state.get('datos_motor_auto', {})
+    
+    # Ahora usamos esos datos en los inputs de esta hoja
+    t = st.text_input("TAG", value=datos_auto.get('tag', ''))
+    sn = st.text_input("N° Serie", value=datos_auto.get('serie', ''))
     
     if "cnt_lub" not in st.session_state:
         st.session_state.cnt_lub = 0
@@ -954,6 +966,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
