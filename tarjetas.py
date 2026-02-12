@@ -579,10 +579,14 @@ elif modo == "Historial y QR":
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     
-    # 1. Recuperar datos del QR/Historial
+    v_la = ""
+    v_loa = ""
+    v_serie = ""
+    info_motor = {} # Diccionario vacío por seguridad
+
+    # 2. Recuperar datos del QR/Historial
     datos_auto = st.session_state.get('datos_motor_auto', {})
     tag_qr = datos_auto.get('tag', '')
-    serie_qr = datos_auto.get('serie', '')
     
     if "form_id" not in st.session_state:
         st.session_state.form_id = 0
@@ -909,6 +913,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
