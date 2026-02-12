@@ -189,9 +189,14 @@ if qr_valor:
 # --- 5. MENÚ LATERAL (VERSIÓN FINAL CORREGIDA) ---
 opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
 
+# --- AGREGADO: Lógica para saltar de pestaña mediante botones ---
+if st.session_state.get('forzar_pestana') is not None:
+    idx_destino = st.session_state.forzar_pestana
+    st.session_state.seleccion_manual = opciones_menu[idx_destino]
+    st.session_state.forzar_pestana = None # Limpiamos el forzado
+
 # 1. Sincronización inicial con el QR (Solo si no hay una selección previa)
 if "seleccion_manual" not in st.session_state:
-    # Usamos el indice_inicio que viene de la lógica del QR al principio del script
     st.session_state.seleccion_manual = opciones_menu[indice_inicio]
 
 with st.sidebar:
@@ -199,16 +204,10 @@ with st.sidebar:
         st.image("logo.png", width=150)
     st.title("⚡ MARPI MOTORES")
     
-    # 2. Lógica para saltar de pestaña mediante botones (Lubricar/Megar/Reparar)
-    if st.session_state.get('forzar_pestana') is not None:
-        idx_destino = st.session_state.forzar_pestana
-        st.session_state.seleccion_manual = opciones_menu[idx_destino]
-        # Limpiamos el forzado para permitir navegación libre después
-        st.session_state.forzar_pestana = None 
-
     # 3. El Selector de Modo (Radio)
     # Buscamos en qué posición está la selección actual para que el radio lo marque
     try:
+        # Usamos .index() para que el radio siempre sepa dónde estar parado
         idx_radio = opciones_menu.index(st.session_state.seleccion_manual)
     except:
         idx_radio = 1 # Si falla, por defecto al Historial
@@ -227,10 +226,9 @@ with st.sidebar:
     if st.button("🧹 Resetear Navegación"):
         st.query_params.clear()
         # Limpiamos variables clave para que el buscador se resetee
-        for k in ['datos_motor_auto', 'motor_registrado', 'etiqueta_lista']:
+        for k in ['datos_motor_auto', 'motor_registrado', 'etiqueta_lista', 'seleccion_manual']:
             if k in st.session_state: del st.session_state[k]
         st.rerun()
-
 # --- 6. VALIDACIÓN DE CONTRASEÑA ---
 if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
     if "autorizado" not in st.session_state:
@@ -885,6 +883,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
