@@ -188,6 +188,69 @@ if qr_valor:
         st.session_state.motor_seleccionado = label_exacto
         # Forzamos el salto a la pestaña de Historial
         indice_inicio = 1
+# --- 5. MENÚ LATERAL ---
+opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
+
+if "seleccion_manual" not in st.session_state:
+    st.session_state.seleccion_manual = opciones_menu[indice_inicio]
+
+with st.sidebar:
+    if os.path.exists("logo.png"): 
+        st.image("logo.png", width=150)
+    st.title("⚡ MARPI MOTORES")
+    
+    if st.session_state.get('forzar_pestana') is not None:
+        st.session_state.seleccion_manual = opciones_menu[st.session_state.forzar_pestana]
+        st.session_state.forzar_pestana = None 
+    
+    idx_actual = opciones_menu.index(st.session_state.seleccion_manual)
+    modo = st.radio("SELECCIONE:", opciones_menu, index=idx_actual)
+    st.session_state.seleccion_manual = modo
+
+# --- 6. VALIDACIÓN DE CONTRASEÑA ---
+if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
+    if "autorizado" not in st.session_state:
+        st.session_state.autorizado = False
+
+    if not st.session_state.autorizado:
+        st.title("🔒 Acceso Restringido")
+        st.info("Esta sección es solo para personal de MARPI.")
+        with st.form("login_marpi"):
+            clave = st.text_input("Contraseña:", type="password")
+            if st.form_submit_button("Validar Ingreso"):
+                if clave == "MARPI2026":
+                    st.session_state.autorizado = True
+                    st.rerun()
+                else:
+                    st.error("⚠️ Clave incorrecta")
+        st.stop() # <--- AQUÍ SE DETIENE SOLO SI NO ESTÁ LOGUEADO
+
+# --- 7. SECCIONES (Aquí es donde el código continúa si pasó el stop) ---
+
+datos_auto = st.session_state.get('datos_motor_auto', {})
+
+if modo == "Nuevo Registro":
+    st.title("📝 Alta y Registro Inicial")
+    # ... tu código de formulario de registro ...
+
+elif modo == "Relubricacion":
+    st.title("🛢️ Registro de Relubricación")
+    # AUTOCOMPLETADO PARA LUBRICACIÓN
+    c1, c2 = st.columns(2)
+    t = c1.text_input("TAG", value=datos_auto.get('tag', ''))
+    sn = c2.text_input("N° Serie", value=datos_auto.get('serie', ''))
+    # ... resto de campos de lubricación ...
+
+elif modo == "Mediciones de Campo":
+    st.title("🔌 Mediciones Eléctricas de Campo")
+    # AUTOCOMPLETADO PARA MEDICIONES
+    c1, c2 = st.columns(2)
+    t = c1.text_input("TAG", value=datos_auto.get('tag', ''))
+    sn = c2.text_input("N° Serie", value=datos_auto.get('serie', ''))
+    # ... resto de campos de mediciones ...
+
+elif modo == "Historial y QR":
+    # ... tu código de historial (donde están los botones de acción rápida) ...
 # --- BOTONES DE ACCIÓN RÁPIDA (RUTAS CORREGIDAS) ---
         st.divider()
         st.write("### ⚡ Acciones Rápidas")
@@ -234,33 +297,7 @@ if qr_valor:
                 preparar_datos_motor()
                 st.session_state.forzar_pestana = 0  # <--- Este sí va al Registro Inicial
                 st.rerun()
-# --- 5. MENÚ LATERAL (Aseguramos que 'modo' siempre exista) ---
-opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
 
-# INICIALIZACIÓN: Esto evita el NameError
-if "seleccion_manual" not in st.session_state:
-    st.session_state.seleccion_manual = opciones_menu[indice_inicio]
-
-with st.sidebar:
-    if os.path.exists("logo.png"): 
-        st.image("logo.png", width=150)
-    st.title("⚡ MARPI MOTORES")
-    
-    # 1. LÓGICA DE SALTO
-    if st.session_state.get('forzar_pestana') is not None:
-        indice_a_usar = st.session_state.forzar_pestana
-        st.session_state.seleccion_manual = opciones_menu[indice_a_usar]
-        st.session_state.forzar_pestana = None 
-    
-    # 2. DEFINICIÓN DE MODO (Debe estar aquí, antes de cualquier IF que use 'modo')
-    idx_actual = opciones_menu.index(st.session_state.seleccion_manual)
-    
-    modo = st.radio(
-        "SELECCIONE:", 
-        opciones_menu,
-        index=idx_actual
-    )
-    st.session_state.seleccion_manual = modo
 # --- 6. VALIDACIÓN DE CONTRASEÑA (VERSIÓN CORREGIDA) ---
 if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
     if "autorizado" not in st.session_state:
@@ -992,6 +1029,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
