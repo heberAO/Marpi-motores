@@ -632,66 +632,61 @@ elif modo == "Relubricacion":
 
         st.divider()
 
-        # 4. Inputs de edición (por si el rodamiento cambió)
-        c1, c2 = st.columns(2)
-        rod_la_edit = c1.text_input("Rodamiento LA Actual", value=rod_la_base, key="edit_la")
-        rod_loa_edit = c2.text_input("Rodamiento LOA Actual", value=rod_loa_base, key="edit_loa")
-        
-        gr_la_sug = calcular_grasa_marpi(rod_la_edit)
-        gr_loa_sug = calcular_grasa_marpi(rod_loa_edit)
-        
-        c1.caption(f"Sugerido: {gr_la_sug}g")
-        c2.caption(f"Sugerido: {gr_loa_sug}g")
-
-        # 5. FORMULARIO DE CIERRE
-        with st.form(key=f"final_lub_{st.session_state.form_id}"):
-            tecnico = st.text_input("Técnico Responsable")
-            
-            col_g1, col_g2 = st.columns(2)
-            gr_real_la = col_g1.number_input("Gramos Reales LA", value=float(gr_la_sug))
-            gr_real_loa = col_g2.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
-            
-            grasa_t = st.selectbox("Grasa Utilizada", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus"])
-            notas = st.text_area("Observaciones / Notas")
-            
-            submit = st.form_submit_button("💾 REGISTRAR LUBRICACIÓN")
-
-            if submit:
-                if tecnico:
-                    nueva_fila = {
-                        "Fecha": date.today().strftime("%d/%m/%Y"),
-                        "Tag": tag_seleccionado,
-                        "N_Serie": v_serie,
-                        "Potencia": info_motor.get('Potencia', 'S/D'),
-                        "Tipo_Tarea": "Relubricacion",
-                        "Responsable": tecnico,
-                        "Rodamiento_LA": rod_la_edit,
-                        "Rodamiento_LOA": rod_loa_edit,
-                        "Gramos_LA": gr_real_la,
-                        "Gramos_LOA": gr_real_loa,
-                        "Tipo_Grasa": grasa_t,
-                        "Notas": notas,
-                        "Descripcion": f"LUBRICACIÓN REALIZADA: {grasa_t}"
-                    }
-                    
-                    # 3. Guardado (USANDO LA VARIABLE GLOBAL 'conn')
-                    df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-                    
-                    # Ya no necesitas poner: conn = st.connection(...) aquí
-                    conn.update(data=df_final)
+    # 5. INPUTS DE EDICIÓN Y FORMULARIO (Siempre existen gracias al paso 1)
+    col1, col2 = st.columns(2)
+    # Si el rodamiento es distinto al de la placa, el técnico lo cambia aquí:
+    rod_la_edit = col1.text_input("Rodamiento LA Real", value=rod_la_base, key="edit_la").upper()
+    rod_loa_edit = col2.text_input("Rodamiento LOA Real", value=rod_loa_base, key="edit_loa").upper()
     
-                    # 5. Interfaz y reinicio
-                    st.success(f"✅ Registro de {tag_actual} guardado con éxito.")
-                    st.balloons()
-                    
-                    st.cache_data.clear()
-                    import time
-                    time.sleep(2)
-                    st.rerun()
-                else:
-                    st.error("⚠️ Por favor ingrese el nombre del Responsable.")
-    else:
-        st.info("Seleccione un motor o escanee un código QR para comenzar.")
+    # Calculamos gramos en tiempo real usando tu función
+    gr_la_sug = calcular_grasa_marpi(rod_la_edit)
+    gr_loa_sug = calcular_grasa_marpi(rod_loa_edit)
+    
+    col1.caption(f"Sugerido: {gr_la_sug} g")
+    col2.caption(f"Sugerido: {gr_loa_sug} g")
+
+    # 6. FORMULARIO DE CIERRE
+    with st.form(key=f"final_form_{st.session_state.form_id}"):
+        tecnico = st.text_input("Técnico Responsable")
+        
+        cg1, cg2 = st.columns(2)
+        gr_real_la = cg1.number_input("Gramos Reales LA", value=float(gr_la_sug) if gr_la_sug else 0.0)
+        gr_real_loa = cg2.number_input("Gramos Reales LOA", value=float(gr_loa_sug) if gr_loa_sug else 0.0)
+        
+        grasa_t = st.selectbox("Grasa Utilizada", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus"])
+        notas = st.text_area("Observaciones")
+        
+        if st.form_submit_button("💾 REGISTRAR LUBRICACIÓN"):
+            if tag_seleccionado and tecnico:
+                nueva = {
+                    "Fecha": date.today().strftime("%d/%m/%Y"),
+                    "Tag": tag_seleccionado,
+                    "N_Serie": v_serie,
+                    "Potencia": info_motor.get('Potencia', 'S/D'),
+                    "Tipo_Tarea": "Relubricacion",
+                    "Responsable": tecnico,
+                    "Rodamiento_LA": rod_la_edit,
+                    "Rodamiento_LOA": rod_loa_edit,
+                    "Gramos_LA": gr_real_la,
+                    "Gramos_LOA": gr_real_loa,
+                    "Tipo_Grasa": grasa_t,
+                    "Notas": notas,
+                    "Descripcion": f"LUBRICACIÓN REALIZADA: {grasa_t}"
+                }
+                
+                # GUARDADO CON CONEXIÓN GLOBAL
+                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+                conn.update(data=df_final)
+
+                st.success("✅ Registro guardado con éxito")
+                st.balloons()
+                st.session_state.form_id += 1
+                st.cache_data.clear()
+                import time
+                time.sleep(2)
+                st.rerun()
+            else:
+                st.error("⚠️ Falta el TAG del motor o el nombre del Técnico.")
 
     st.divider()
 
@@ -909,6 +904,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
