@@ -310,8 +310,8 @@ elif modo == "Historial y QR":
                             st.session_state.autorizado = True
                             st.success("✅ Acceso concedido")
                             st.rerun()
-                else:
-                    st.error("⚠️ Clave incorrecta")
+            else:
+                st.error("⚠️ Clave incorrecta")
         
         st.stop() # Detiene la ejecución para que no se vea el resto
 
@@ -1022,6 +1022,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
