@@ -586,8 +586,8 @@ elif modo == "Relubricacion":
     datos_auto = st.session_state.get('datos_motor_auto', {})
     
     # Ahora usamos esos datos en los inputs de esta hoja
-    t = st.text_input("TAG", value=datos_auto.get('tag', ''))
-    sn = st.text_input("N° Serie", value=datos_auto.get('serie', ''))
+    t = st.text_input("TAG", value=datos_auto.get('tag', ''), key="tag_relub_input")
+    sn = st.text_input("N° Serie", value=datos_auto.get('serie', ''), key="serie_relub_input")
     
     if "cnt_lub" not in st.session_state:
         st.session_state.cnt_lub = 0
@@ -787,10 +787,11 @@ elif modo == "Mediciones de Campo":
     tag_inicial = st.session_state.get('tag_fijo', '')
 
     with st.form(f"form_megado_{st.session_state.cnt_meg}"):
-        # --- SECCIÓN 1: DATOS BÁSICOS ---
         col1, col2, col3 = st.columns(3)
-        t = col1.text_input("TAG del Motor:", value=tag_inicial).upper()
-        resp = col3.text_input("Responsable:")
+        # AGREGAMOS 'key' únicas aquí también
+        t = col1.text_input("TAG del Motor:", value=tag_inicial, key="tag_mediciones_input").upper()
+        n_serie = col2.text_input("N° de Serie:", value=n_serie_sug, key="serie_mediciones_input")
+        resp = col3.text_input("Responsable:", key="resp_mediciones_input")
         
         # Recuperar N° Serie automáticamente
         n_serie_sug = ""
@@ -886,6 +887,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
