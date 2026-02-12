@@ -784,8 +784,7 @@ elif modo == "Relubricacion":
                 st.rerun()
             else:
                 st.error("⚠️ Error: El TAG y el Responsable son obligatorios.")
-            except Exception as e:
-                st.error(f"Error al guardar: {e}")
+       
     st.divider()
     
     # 6. LOS BOTONES DE DESCARGA Y LIMPIEZA VAN AQUÍ AFUERA
@@ -922,6 +921,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
