@@ -769,6 +769,7 @@ elif modo == "Relubricacion":
                 
                 # 3. Guardado
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
+                conn = st.connection("gsheets", type=GSheetsConnection)
                 conn.update(data=df_final)
 
                 # 5. Interfaz de usuario
@@ -778,11 +779,13 @@ elif modo == "Relubricacion":
                 st.balloons()
                 
                 import time
-                time.sleep(1)
+                st.cache_data.clear()
+                time.sleep(2)
                 st.rerun()
             else:
                 st.error("⚠️ Error: El TAG y el Responsable son obligatorios.")
-      
+            except Exception as e:
+                st.error(f"Error al guardar: {e}")
     st.divider()
     
     # 6. LOS BOTONES DE DESCARGA Y LIMPIEZA VAN AQUÍ AFUERA
@@ -919,6 +922,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
