@@ -234,7 +234,33 @@ if qr_valor:
                 preparar_datos_motor()
                 st.session_state.forzar_pestana = 0  # <--- Este sí va al Registro Inicial
                 st.rerun()
+# --- 5. MENÚ LATERAL (Aseguramos que 'modo' siempre exista) ---
+opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
 
+# INICIALIZACIÓN: Esto evita el NameError
+if "seleccion_manual" not in st.session_state:
+    st.session_state.seleccion_manual = opciones_menu[indice_inicio]
+
+with st.sidebar:
+    if os.path.exists("logo.png"): 
+        st.image("logo.png", width=150)
+    st.title("⚡ MARPI MOTORES")
+    
+    # 1. LÓGICA DE SALTO
+    if st.session_state.get('forzar_pestana') is not None:
+        indice_a_usar = st.session_state.forzar_pestana
+        st.session_state.seleccion_manual = opciones_menu[indice_a_usar]
+        st.session_state.forzar_pestana = None 
+    
+    # 2. DEFINICIÓN DE MODO (Debe estar aquí, antes de cualquier IF que use 'modo')
+    idx_actual = opciones_menu.index(st.session_state.seleccion_manual)
+    
+    modo = st.radio(
+        "SELECCIONE:", 
+        opciones_menu,
+        index=idx_actual
+    )
+    st.session_state.seleccion_manual = modo
 # --- 6. VALIDACIÓN DE CONTRASEÑA (VERSIÓN CORREGIDA) ---
 if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
     if "autorizado" not in st.session_state:
@@ -966,6 +992,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
