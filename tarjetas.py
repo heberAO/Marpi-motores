@@ -275,71 +275,81 @@ elif modo == "Mediciones de Campo":
     # ... resto de campos de mediciones ...
 
 elif modo == "Historial y QR":
-# --- BOTONES DE ACCIÓN RÁPIDA (RUTAS CORREGIDAS) ---
-        st.divider()
-        st.write("### ⚡ Acciones Rápidas")
-        col_A, col_B, col_C = st.columns(3)
-        
-        # Función para cargar datos comunes en la memoria
-        def preparar_datos_motor():
-            st.session_state['datos_motor_auto'] = {
-                'tag': str(motor_info.get('Tag', '')),
-                'serie': str(motor_info.get('N_Serie', '')),
-                'potencia': str(motor_info.get('Potencia', '')),
-                'tension': str(motor_info.get('Tension', '')),
-                'corriente': str(motor_info.get('Corriente', '')),
-                'rpm': str(motor_info.get('RPM', '-')),
-                'carcasa': str(motor_info.get('Carcasa', '')),
-                'r_la': str(motor_info.get('Rodamiento_LA', '')),
-                'r_loa': str(motor_info.get('Rodamiento_LOA', ''))
-            }
+    st.title("🔍 Consulta y Gestión de Motores")
+    
+    # --- 1. LÓGICA DEL BUSCADOR (DEBE IR PRIMERO) ---
+    if not df_completo.empty:
+        # Limpieza de datos
+        df_completo['N_Serie'] = df_completo['N_Serie'].astype(str).str.strip()
+        df_completo['Tag'] = df_completo['Tag'].astype(str).str.strip()
 
-       # 1. Botón LUBRICAR -> Va a "Relubricacion" (Índice 2)
-        with col_A:
-            if st.button("🛢️ Lubricar", use_container_width=True, key="btn_lub_hist"):
-                preparar_datos_motor()
-                st.session_state.forzar_pestana = 2
-                st.rerun()
+        # Crear lista de opciones
+        opciones_base = (df_completo['Tag'] + " | SN: " + df_completo['N_Serie']).unique().tolist()
+        opciones = [""] + sorted(opciones_base)
         
-        # 2. Botón MEGAR -> Va a "Mediciones de Campo" (Índice 3)
-        with col_B:
-            if st.button("🔌 Megar", use_container_width=True, key="btn_meg_hist"):
-                preparar_datos_motor()
-                st.session_state.forzar_pestana = 3
-                st.rerun()
-                
-        # 3. Botón REPARAR -> Va a "Nuevo Registro" (Índice 0)
-        with col_C:
-            # ELIMINÉ EL BOTÓN DUPLICADO QUE TENÍAS
-            if st.button("🛠️ Reparación / Alta", use_container_width=True, key="btn_rep_hist"):
-                preparar_datos_motor()
-                st.session_state.forzar_pestana = 0
-                st.rerun()
+        # Sincronizar con QR (usando qr_valor que definimos al inicio del script)
+        idx_buscador = 0
+        if 'qr_valor' in globals() and qr_valor:
+            v_qr = str(qr_valor).strip().upper()
+            for i, op in enumerate(opciones):
+                if v_qr in op.upper():
+                    idx_buscador = i
+                    break
         
-        # --- 6. VALIDACIÓN DE CONTRASEÑA (VERSIÓN CORREGIDA) ---
-        if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
-            if "autorizado" not in st.session_state:
-                st.session_state.autorizado = False
-        
-            if not st.session_state.autorizado:
-                st.title("🔒 Acceso Restringido")
-                st.info("Esta sección es solo para personal de MARPI.")
-                
-                # Usamos un formulario para que el botón funcione mejor
-                with st.form("login_marpi"):
-                    clave = st.text_input("Contraseña:", type="password")
-                    btn_entrar = st.form_submit_button("Validar Ingreso")
-                    
-                    if btn_entrar:
-                        if clave == "MARPI2026":
-                            st.session_state.autorizado = True
-                            st.success("✅ Acceso concedido")
-                            st.rerun()
-            else:
-                st.error("⚠️ Clave incorrecta")
-        
-        st.stop() # Detiene la ejecución para que no se vea el resto
+        # DIBUJAMOS EL BUSCADOR
+        seleccion = st.selectbox(
+            "🔍 Seleccione o Busque el Motor:", 
+            opciones, 
+            index=idx_buscador,
+            key="buscador_principal"
+        )
 
+        # --- 2. MOSTRAR INFORMACIÓN SI HAY SELECCIÓN ---
+        if seleccion and seleccion != "":
+            serie_sel = seleccion.split(" | SN: ")[1]
+            # Filtramos los datos de ese motor específico
+            motor_info = df_completo[df_completo['N_Serie'] == serie_sel].iloc[-1]
+            
+            # Aquí dibujarías tu ficha técnica (st.write, etc.)
+            st.success(f"Motor seleccionado: {motor_info['Tag']}")
+
+            # --- 3. BOTONES DE ACCIÓN RÁPIDA (DENTRO DEL IF SELECCION) ---
+            st.divider()
+            st.write("### ⚡ Acciones Rápidas")
+            col_A, col_B, col_C = st.columns(3)
+            
+            def preparar_datos_motor():
+                st.session_state['datos_motor_auto'] = {
+                    'tag': str(motor_info.get('Tag', '')),
+                    'serie': str(motor_info.get('N_Serie', '')),
+                    'potencia': str(motor_info.get('Potencia', '')),
+                    'tension': str(motor_info.get('Tension', '')),
+                    'corriente': str(motor_info.get('Corriente', '')),
+                    'rpm': str(motor_info.get('RPM', '-')),
+                    'carcasa': str(motor_info.get('Carcasa', '')),
+                    'r_la': str(motor_info.get('Rodamiento_LA', '')),
+                    'r_loa': str(motor_info.get('Rodamiento_LOA', ''))
+                }
+
+            with col_A:
+                if st.button("🛢️ Lubricar", use_container_width=True, key="btn_lub"):
+                    preparar_datos_motor()
+                    st.session_state.forzar_pestana = 2
+                    st.rerun()
+            with col_B:
+                if st.button("🔌 Megar", use_container_width=True, key="btn_meg"):
+                    preparar_datos_motor()
+                    st.session_state.forzar_pestana = 3
+                    st.rerun()
+            with col_C:
+                if st.button("🛠️ Reparación", use_container_width=True, key="btn_rep"):
+                    preparar_datos_motor()
+                    st.session_state.forzar_pestana = 0
+                    st.rerun()
+        else:
+            st.info("💡 Por favor, busque un motor arriba o escanee un código QR.")
+    else:
+        st.error("No se encontraron datos en la base de datos.")
 # --- 5. SECCIONES (CON AUTOCOMPLETADO) ---
 if modo == "Nuevo Registro":
     st.title("📝 Alta y Registro Inicial")
@@ -1040,6 +1050,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
