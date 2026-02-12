@@ -188,24 +188,36 @@ if qr_valor:
         st.session_state.motor_seleccionado = label_exacto
         # Forzamos el salto a la pestaña de Historial
         indice_inicio = 1
-
 # --- 5. MENÚ LATERAL ---
 opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
+
 with st.sidebar:
-    if os.path.exists("logo.png"): st.image("logo.png", width=150)
+    if os.path.exists("logo.png"): 
+        st.image("logo.png", width=150)
     st.title("⚡ MARPI MOTORES")
     
-    # Si no existe la opción en memoria, usamos el índice del QR
-    if "seleccion_manual" not in st.session_state:
+    # 1. LÓGICA DE SALTO: Prioridad a los botones de acción ("Lubricar", etc.)
+    if st.session_state.get('forzar_pestana') is not None:
+        # Si un botón nos mandó aquí, usamos ese índice
+        indice_a_usar = st.session_state.forzar_pestana
+        st.session_state.seleccion_manual = opciones_menu[indice_a_usar]
+        # Limpiamos el aviso de "forzar" para que no se bloquee en esa pestaña
+        st.session_state.forzar_pestana = None 
+    
+    # 2. LÓGICA DE QR: Si es la primera vez que entra y hay QR
+    elif "seleccion_manual" not in st.session_state:
         st.session_state.seleccion_manual = opciones_menu[indice_inicio]
 
-    # El radio se alimenta de la variable 'seleccion_manual'
+    # 3. EL SELECTOR (Usamos Radio o Selectbox según prefieras)
+    # Buscamos el índice actual de la selección en la lista
+    idx_actual = opciones_menu.index(st.session_state.seleccion_manual)
+    
     modo = st.radio(
         "SELECCIONE:", 
         opciones_menu,
-        index=opciones_menu.index(st.session_state.seleccion_manual)
+        index=idx_actual
     )
-    # Actualizamos la memoria con lo que el usuario toque físicamente
+    # 4. ACTUALIZACIÓN: Guardamos lo que el usuario eligió manualmente
     st.session_state.seleccion_manual = modo
     
     # --- BOTÓN DE RESET TOTAL ---
@@ -257,32 +269,51 @@ if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
         
         st.stop() # Detiene la ejecución para que no se vea el resto
 
-# --- 5. SECCIONES (CON TUS CAMPOS ORIGINALES) ---
+# --- 5. SECCIONES (CON AUTOCOMPLETADO) ---
 if modo == "Nuevo Registro":
     st.title("📝 Alta y Registro Inicial")
     
     if "form_key" not in st.session_state:
         st.session_state.form_key = 0
+    
+    # 1. Recuperamos los datos que enviamos desde el Historial
     datos_auto = st.session_state.get('datos_motor_auto', {})
+    
     fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
+    
     with st.form(key=f"alta_motor_{st.session_state.form_key}"):
-        # --- CAMPOS DE ENTRADA (Mismo diseño anterior) ---
+        # --- CAMPOS DE ENTRADA ---
         c1, c2, c3 = st.columns([2, 2, 1])
+        # Llenamos TAG y Serie
         t = c1.text_input("TAG/ID MOTOR", value=datos_auto.get('tag', '')).upper()
         sn = c2.text_input("N° de Serie", value=datos_auto.get('serie', '')).upper()
         resp = c3.text_input("Responsable")
 
         c4, c5, c6, c7, c8 = st.columns(5)
-        p, v, cor = c4.text_input("Potencia"), c5.text_input("Tensión"), c6.text_input("Corriente")
-        r = c7.selectbox("RPM", ["-", "750", "1000", "1500", "3000"])
-        carc = c8.text_input("Carcasa/Frame")
+        # Llenamos Potencia, Tensión, Corriente y Carcasa automáticamente
+        p = c4.text_input("Potencia", value=datos_auto.get('potencia', ''))
+        v = c5.text_input("Tensión", value=datos_auto.get('tension', ''))
+        cor = c6.text_input("Corriente", value=datos_auto.get('corriente', ''))
+        
+        # Para el RPM (selectbox), buscamos si el valor existe en la lista
+        rpms_lista = ["-", "750", "1000", "1500", "3000"]
+        val_rpm = datos_auto.get('rpm', '-')
+        idx_rpm = rpms_lista.index(val_rpm) if val_rpm in rpms_lista else 0
+        r = c7.selectbox("RPM", rpms_lista, index=idx_rpm)
+        
+        carc = c8.text_input("Carcasa/Frame", value=datos_auto.get('carcasa', ''))
 
         st.subheader("⚙️ Rodamientos de Placa")
         r1, r2 = st.columns(2)
-        r_la, r_loa = r1.text_input("Rodamiento LA").upper(), r2.text_input("Rodamiento LOA").upper()
-        # Dentro del formulario de Reparación
+        # Llenamos los rodamientos automáticamente
+        r_la = r1.text_input("Rodamiento LA", value=datos_auto.get('r_la', '')).upper()
+        r_loa = r2.text_input("Rodamiento LOA", value=datos_auto.get('r_loa', '')).upper()
+        
         tipo_rodamiento = st.selectbox(
-            "Tipo de rodamientos instalados:",["Abierto (Sin sellos)","RS Sello de un solo lado", "2RS (Sello Caucho Sintetico - Hermético)", "ZZ (Blindaje Metálico)"])    
+            "Tipo de rodamientos instalados:",
+            ["Abierto (Sin sellos)","RS Sello de un solo lado", "2RS (Sello Caucho Sintetico - Hermético)", "ZZ (Blindaje Metálico)"]
+        )    
+
 
         st.subheader("⚡ Mediciones Eléctricas")
         m1, m2, m3 = st.columns(3)
@@ -423,56 +454,75 @@ elif modo == "Historial y QR":
                         st.subheader(f"Ⓜ️ {ultimo_tag}")
                         st.info(f"Número de Serie: **{serie_final}**")
 
-            # --- BOTONES DE ACCIÓN RÁPIDA ---
-            st.subheader("➕ Nueva Tarea")
-            c1, c2, c3, c4 = st.columns(4)
-            
-            if not historial_motor.empty:
-                motor_info = historial_motor.iloc[-1]
-                datos_para_pasar = {
-                    'tag': motor_info.get('Tag', ''),
-                    'serie': motor_info.get('N_Serie', ''),
-                    'potencia': motor_info.get('Potencia', ''),
-                    'nombre': motor_info.get('Nombre_Empresa', '') # Ajusta al nombre de tu columna
-                }
-            
-            with c1:
-                if st.button("🛠️ Reparar", use_container_width=True):
-                    st.session_state.datos_motor_auto = datos_para_pasar # <--- MEMORIA
-                    st.session_state.seleccion_manual = "Nuevo Registro"
-                    st.rerun()
-            with c2:
-                if st.button("🛢️ Engrasar", use_container_width=True):
-                    st.session_state.datos_motor_auto = datos_para_pasar # <--- MEMORIA
-                    st.session_state.seleccion_manual = "Relubricacion"
-                    st.rerun()
-            with c3:
-                if st.button("⚡ Megar", use_container_width=True):
-                    st.session_state.datos_motor_auto = datos_para_pasar # <--- MEMORIA
-                    st.session_state.seleccion_manual = "Mediciones de Campo"
-                    st.rerun() 
-            # --- LA COLUMNA DEL BOTÓN HONEYWELL ---
-            with c4:
-                img_bytes_h = generar_etiqueta_honeywell(
-                    str(datos_para_pasar['tag']), 
-                    str(datos_para_pasar['serie']), 
-                    str(datos_para_pasar['potencia'])
-                )
+            # --- BOTONES DE ACCIÓN RÁPIDA (PUENTE) ---
             st.divider()
-            st.subheader("📜 Historial de Intervenciones")
+            st.write("### ⚡ Acciones Rápidas")
+            col_A, col_B, col_C = st.columns(3)
+        
+            def enviar_a_formulario(tarea_tipo):
+                # Guardamos los datos en la memoria para el formulario
+                st.session_state.precarga_tag = str(motor_datos['Tag'])
+                st.session_state.precarga_serie = str(motor_datos['N_Serie'])
+                st.session_state.precarga_potencia = str(motor_datos['Potencia'])
+                st.session_state.precarga_rpm = str(motor_datos['RPM'])
+                st.session_state.precarga_tarea = tarea_tipo
+                
+                # Forzamos el cambio de pestaña a "Nuevo Registro" (asumiendo que es índice 2)
+                st.session_state.forzar_pestana = 2 
+                st.rerun()
+    
+            # --- BOTONES DE ACCIÓN RÁPIDA (PUENTE) ---
+            st.divider()
+            st.write("### ⚡ Acciones Rápidas")
+            col_A, col_B, col_C = st.columns(3)
             
-            if not historial_motor.empty:
-                hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
-
-                for idx, fila in hist_m.iterrows():
-                    # 1. Limpiamos los datos
-                    f_limpia = fila.fillna('-') 
+            # Función unificada para pasar datos
+            def enviar_a_formulario_con_datos(tarea_tipo):
+                st.session_state['datos_motor_auto'] = {
+                    'tag': str(motor_info.get('Tag', '')),
+                    'serie': str(motor_info.get('N_Serie', '')),
+                    'potencia': str(motor_info.get('Potencia', '')),
+                    'tension': str(motor_info.get('Tension', '')),
+                    'corriente': str(motor_info.get('Corriente', '')),
+                    'rpm': str(motor_info.get('RPM', '-')),
+                    'carcasa': str(motor_info.get('Carcasa', '')),
+                    'r_la': str(motor_info.get('Rodamiento_LA', '')),
+                    'r_loa': str(motor_info.get('Rodamiento_LOA', '')),
+                    'tarea': tarea_tipo  # Opcional por si quieres usarlo luego
+                }
+                # Forzamos el salto a la pestaña "Nuevo Registro" (índice 0 en tu nueva lista)
+                st.session_state.forzar_pestana = 0 
+                st.rerun()
+    
+            # Botón LUBRICAR
+            with col_A:
+                if st.button("🛢️ Lubricar", use_container_width=True):
+                    enviar_a_formulario_con_datos("Lubricación")
+            
+            # Botón MEGAR
+            with col_B:
+                if st.button("🔌 Megar", use_container_width=True):
+                    enviar_a_formulario_con_datos("Megado")
                     
-                    # 2. Variables de texto
-                    tarea = str(f_limpia.get('Tipo_Tarea', '-')).strip()
-                    fecha = str(f_limpia.get('Fecha', '-'))
-                    tag_h = str(f_limpia.get('Tag', ultimo_tag))
-                    resp_h = str(f_limpia.get('Responsable', '-'))
+            # Botón OTRO
+            with col_C:
+                if st.button("📝 Otra Tarea", use_container_width=True):
+                    enviar_a_formulario_con_datos("Reparación General")
+                st.divider()
+                st.subheader("📜 Historial de Intervenciones")
+                
+                if not historial_motor.empty:
+                    hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
+    
+                    for idx, fila in hist_m.iterrows():
+                        # 1. Limpiamos los datos
+                        f_limpia = fila.fillna('-') 
+                        
+                        # 2. Variables de texto
+                        tarea = str(f_limpia.get('Tipo_Tarea', '-')).strip()
+                        fecha = str(f_limpia.get('Fecha', '-'))
+                        tag_h = str(f_limpia.get('Tag', ultimo_tag))
+                        resp_h = str(f_limpia.get('Responsable', '-'))
                     
                     if tarea == "-" or tarea.lower() == "nan":
                         titulo_card = "📝 Registro / Mantenimiento"
@@ -921,6 +971,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
