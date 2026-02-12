@@ -166,10 +166,8 @@ if "motor_seleccionado" not in st.session_state:
 
 # --- 1. CAPTURA DE PARÁMETROS (QR) ---
 params = st.query_params
-qr_valor = params.get("serie") or params.get("tag") or params.get("Serie") or params.get("Tag")
-
-indice_inicio = 0  # Por defecto abre en "Inicio"
-
+qr_detectado = params.get("serie") or params.get("tag") or params.get("Serie") or params.get("Tag")
+indice_inicio = 1 if qr_detectado else 1 # Siempre al historial por defecto
 if qr_valor:
     # Buscamos el motor EXACTO en el Excel (comparando con N_Serie o con Tag)
     v_qr = str(qr_valor).strip().upper()
@@ -1041,6 +1039,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
