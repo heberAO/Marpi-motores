@@ -783,26 +783,28 @@ elif modo == "Mediciones de Campo":
     if 'pdf_buffer' not in st.session_state: st.session_state.pdf_buffer = None
     if "cnt_meg" not in st.session_state: st.session_state.cnt_meg = 0
         
-    # Recuperamos datos si vienen del historial
+    # 2. RECUPERACIÓN PREVIA (Fuera del form para evitar NameError)
     datos_auto = st.session_state.get('datos_motor_auto', {})
     tag_inicial = datos_auto.get('tag', '')
     serie_inicial = datos_auto.get('serie', '')
     
-    # --- FORMULARIO ---
+    n_serie_sug = serie_inicial
+    # Si tenemos un TAG pero no serie, buscamos en el DF antes de entrar al form
+    if tag_inicial and not n_serie_sug:
+        if not df_completo.empty:
+            busq = df_completo[df_completo['Tag'] == tag_inicial].tail(1)
+            if not busq.empty: 
+                n_serie_sug = str(busq['N_Serie'].values[0])
+    
+    # --- 3. FORMULARIO ---
     with st.form(f"form_megado_{st.session_state.cnt_meg}"):
         col1, col2, col3 = st.columns(3)
         
-        # Agregamos las keys únicas para evitar el error de Duplicate ID
+        # Agregamos las keys únicas y usamos n_serie_sug ya calculada
         t = col1.text_input("TAG del Motor:", value=tag_inicial, key="tag_med_field").upper()
+        # Eliminamos la duplicidad: un solo input para N° de Serie
         n_serie = col2.text_input("N° de Serie:", value=n_serie_sug, key="serie_med_field")
         resp = col3.text_input("Responsable:", key="resp_med_field")
-        
-        # Recuperar N° Serie automáticamente
-        n_serie_sug = ""
-        if t:
-            busq = df_completo[df_completo['Tag'] == t].tail(1)
-            if not busq.empty: n_serie_sug = str(busq['N_Serie'].values[0])
-        n_serie = col2.text_input("N° de Serie:", value=n_serie_sug)
 
         col_eq1, col_eq2 = st.columns(2)
         equipo_megado = col_eq1.selectbox("Equipo:", ["Megger MTR 105", "Fluke 1507", "Otro"])
@@ -810,7 +812,7 @@ elif modo == "Mediciones de Campo":
 
         st.divider()
         
-        # --- SECCIÓN 2: TODAS LAS MEDICIONES (Recuperadas) ---
+        # --- SECCIÓN 2: TODAS LAS MEDICIONES (Mantenidas exactamente igual) ---
         st.subheader("📊 Megado a Tierra (Aislamiento GΩ)")
         c1, c2, c3 = st.columns(3)
         tv1 = c1.text_input("T - V1")
@@ -842,7 +844,7 @@ elif modo == "Mediciones de Campo":
 
         obs = st.text_area("Observaciones")
 
-        # EL BOTÓN DE GUARDADO
+        # EL BOTÓN DE GUARDADO (Cierra el bloque with st.form)
         submitted = st.form_submit_button("💾 GUARDAR MEDICIONES")
         
         if submitted:
@@ -851,7 +853,6 @@ elif modo == "Mediciones de Campo":
                 busqueda = df_completo[df_completo['Tag'] == t].tail(1)
                 info = busqueda.iloc[0].to_dict() if not busqueda.empty else {}
                 
-                # Mapeamos TODAS las columnas que me pasaste
                 nueva_fila = {
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
                     "Tag": t, "N_Serie": n_serie, "Responsable": resp,
@@ -860,37 +861,34 @@ elif modo == "Mediciones de Campo":
                     "Tension": info.get("Tension", "-"),
                     "RPM": info.get("RPM", "-"),
                     "Descripcion": f"Prueba: {equipo_megado} a {tension_prueba}. {obs}",
-                    # Aislamiento Tierra
                     "RT_TV1": tv1, "RT_TU1": tu1, "RT_TW1": tw1,
-                    # Entre bobinas
                     "RB_WV1": wv1, "RB_WU1": wu1, "RB_VU1": vu1,
-                    # Continuidad
                     "RI_U1U2": u1u2, "RI_V1V2": v1v2, "RI_W1W2": w1w2,
-                    # Línea
                     "ML_L1": tl1, "ML_L2": tl2, "ML_L3": tl3,
                     "ML_L1L2": l1l2, "ML_L1L3": l1l3, "ML_L2L3": l2l3
                 }
 
-                # Guardar y generar PDF
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_final) 
                 
+                st.cache_data.clear()
                 st.success(f"✅ ¡Todo guardado! Reporte listo para {t}")
                 st.balloons()
             else:
                 st.error("⚠️ Falta TAG o Responsable.")
 
-    # 3. BOTÓN DE DESCARGA (Afuera)
+    # 3. BOTÓN DE DESCARGA (Fuera del formulario)
     if st.session_state.get("pdf_buffer") is not None:
         st.download_button(
             label=f"📥 Descargar Reporte",
             data=st.session_state.pdf_buffer,
-            file_name=f"Reporte_{tag_seleccionado}.pdf",
+            file_name=f"Reporte_{t}.pdf",
             mime="application/pdf"
         )
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
