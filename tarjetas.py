@@ -188,10 +188,12 @@ if qr_valor:
         st.session_state.motor_seleccionado = label_exacto
         # Forzamos el salto a la pestaña de Historial
         indice_inicio = 1
-# --- 5. MENÚ LATERAL ---
+# --- 5. MENÚ LATERAL (VERSIÓN FINAL CORREGIDA) ---
 opciones_menu = ["Nuevo Registro", "Historial y QR", "Relubricacion", "Mediciones de Campo"]
 
+# 1. Sincronización inicial con el QR (Solo si no hay una selección previa)
 if "seleccion_manual" not in st.session_state:
+    # Usamos el indice_inicio que viene de la lógica del QR al principio del script
     st.session_state.seleccion_manual = opciones_menu[indice_inicio]
 
 with st.sidebar:
@@ -199,13 +201,37 @@ with st.sidebar:
         st.image("logo.png", width=150)
     st.title("⚡ MARPI MOTORES")
     
+    # 2. Lógica para saltar de pestaña mediante botones (Lubricar/Megar/Reparar)
     if st.session_state.get('forzar_pestana') is not None:
-        st.session_state.seleccion_manual = opciones_menu[st.session_state.forzar_pestana]
+        idx_destino = st.session_state.forzar_pestana
+        st.session_state.seleccion_manual = opciones_menu[idx_destino]
+        # Limpiamos el forzado para permitir navegación libre después
         st.session_state.forzar_pestana = None 
+
+    # 3. El Selector de Modo (Radio)
+    # Buscamos en qué posición está la selección actual para que el radio lo marque
+    try:
+        idx_radio = opciones_menu.index(st.session_state.seleccion_manual)
+    except:
+        idx_radio = 1 # Si falla, por defecto al Historial
+
+    modo = st.radio(
+        "SELECCIONE:", 
+        opciones_menu,
+        index=idx_radio,
+        key="radio_navegacion_principal"
+    )
     
-    idx_actual = opciones_menu.index(st.session_state.seleccion_manual)
-    modo = st.radio("SELECCIONE:", opciones_menu, index=idx_actual)
+    # Actualizamos la selección manual con lo que el usuario toque
     st.session_state.seleccion_manual = modo
+
+    # --- BOTÓN DE RESET TOTAL ---
+    if st.button("🧹 Resetear Navegación"):
+        st.query_params.clear()
+        # Limpiamos variables clave para que el buscador se resetee
+        for k in ['datos_motor_auto', 'motor_registrado', 'etiqueta_lista']:
+            if k in st.session_state: del st.session_state[k]
+        st.rerun()
 
 # --- 6. VALIDACIÓN DE CONTRASEÑA ---
 if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
@@ -1022,6 +1048,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
