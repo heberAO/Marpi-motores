@@ -579,24 +579,23 @@ elif modo == "Historial y QR":
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     
-    v_la = ""
-    v_loa = ""
-    v_serie = ""
-    info_motor = {} # Diccionario vacío por seguridad
+    # 1. Inicialización de variables para evitar NameError
+    v_la, v_loa, v_serie = "", "", ""
+    info_motor = {}
 
-    # 2. Recuperar datos del QR/Historial
-    datos_auto = st.session_state.get('datos_motor_auto', {})
-    tag_qr = datos_auto.get('tag', '')
-    
     if "form_id" not in st.session_state:
         st.session_state.form_id = 0
 
-    # 2. Buscador / Selector de Motor
+    # 2. Recuperar datos del QR
+    datos_auto = st.session_state.get('datos_motor_auto', {})
+    tag_qr = datos_auto.get('tag', '')
+
+    # 3. Preparar el buscador único
     df_lista = df_completo.copy()
     df_lista['Busqueda_Combo'] = df_lista['Tag'].astype(str) + " | SN: " + df_lista['N_Serie'].astype(str)
     opciones_combo = [""] + sorted(df_lista['Busqueda_Combo'].unique().tolist())
     
-    # Si venimos de QR, intentamos pre-seleccionar en el buscador
+    # Lógica de pre-selección por QR
     indice_predef = 0
     if tag_qr:
         for i, opt in enumerate(opciones_combo):
@@ -605,7 +604,7 @@ elif modo == "Relubricacion":
                 break
 
     seleccion_full = st.selectbox(
-        "Seleccione el Motor (confirmar unidad)", 
+        "Seleccione el Motor para lubricar:", 
         options=opciones_combo,
         index=indice_predef,
         key=f"busqueda_relub_{st.session_state.form_id}"
@@ -613,22 +612,19 @@ elif modo == "Relubricacion":
 
     tag_seleccionado = seleccion_full.split(" | ")[0].strip() if seleccion_full else ""
 
-    # 3. Lógica de Rodamientos y Cálculos
+    # 4. Mostrar información y alertas SOLO si hay un motor seleccionado
     if tag_seleccionado:
-        # Extraemos la info del motor seleccionado
         info_motor = df_lista[df_lista['Tag'] == tag_seleccionado].iloc[-1]
-        
-        rod_la_base = str(info_motor.get('Rodamiento_LA', '')).upper()
-        rod_loa_base = str(info_motor.get('Rodamiento_LOA', '')).upper()
+        v_la = str(info_motor.get('Rodamiento_LA', '')).upper()
+        v_loa = str(info_motor.get('Rodamiento_LOA', '')).upper()
         v_serie = str(info_motor.get('N_Serie', ''))
 
         st.markdown("---")
         col_la, col_loa = st.columns(2)
-        col_la.metric("Lado Acople (LA)", rod_la_base)
-        col_loa.metric("Lado Opuesto (LOA)", rod_loa_base)
+        col_la.metric("Lado Acople (LA)", v_la)
+        col_loa.metric("Lado Opuesto (LOA)", v_loa)
 
-        # Verificación de sellados
-        es_sellado = any(x in rod_la_base or x in rod_loa_base for x in ["2RS", "ZZ"])
+        es_sellado = any(x in v_la or x in v_loa for x in ["2RS", "ZZ"])
         if es_sellado:
             st.error("🚫 **AVISO: RODAMIENTOS SELLADOS. NO LUBRICAR.**")
         else:
@@ -913,6 +909,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
