@@ -146,13 +146,19 @@ if "archivo_nombre" not in st.session_state:
 # Inicializamos variables de estado
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
 if "modo_manual" not in st.session_state: st.session_state.modo_manual = False
-# --- 1. CONEXIÓN A DATOS ---
-try:
-    conn = st.connection("gsheets", type=GSheetsConnection)
-    df_completo = conn.read(ttl=0)
-except Exception as e:
-    st.error(f"Error de conexión: {e}")
-    df_completo = pd.DataFrame()
+# --- FUNCIÓN DE CARGA OPTIMIZADA ---
+@st.cache_data(ttl=10) # Guarda los datos en memoria por 10 segundos
+def cargar_datos_google():
+    try:
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        # ttl=0 aquí asegura que SIEMPRE traiga lo fresco cuando se cumple el tiempo del cache
+        return conn.read(ttl=0) 
+    except Exception as e:
+        st.error(f"⚠️ Error conectando a Google Sheets: {e}")
+        return pd.DataFrame() # Retorna tabla vacía para no romper la app
+
+# --- USO DE LA FUNCIÓN ---
+df_completo = cargar_datos_google()
 
 # --- 2. INICIALIZACIÓN DE VARIABLES Y QR ---
 if "motor_seleccionado" not in st.session_state:
@@ -913,6 +919,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
