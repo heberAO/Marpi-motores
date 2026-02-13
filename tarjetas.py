@@ -11,7 +11,7 @@ import qrcode
 from PIL import Image, ImageDraw, ImageFont
 import streamlit.components.v1 as components
 
-def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, extra, obs):
+def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, Carcasa, detalles, extra, obs):
     st_btn = 'width:100%;background:#007bff;color:white;padding:15px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-family:sans-serif;'
     
     contenido = f"""
@@ -22,7 +22,7 @@ def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, detalles, extra
     <p><b>🛠️ TAREA:</b> {tarea} | <b>👤 RESP:</b> {resp}</p>
     <hr>
     <div style='background:#1a1c23;padding:10px;border-radius:5px;'>
-        <b>📋 DATOS DE PLACA:</b> Serie: {serie} | Pot: {pot} | RPM: {rpm}
+        <b>📋 DATOS DE PLACA:</b> Serie: {serie} | Pot: {pot} | RPM: {rpm} | <b>Frame: {carcasa}</b>
     </div>
     <div style='background:#1a1c23;padding:10px;border-radius:5px;margin:10px 0; font-size:13px;'>
         {detalles}
@@ -549,7 +549,7 @@ elif modo == "Historial y QR":
                         detalles_foto = f"Rod. LA: {f_limpia.get('Rodamiento_LA', '-')} | Rod. LOA: {f_limpia.get('Rodamiento_LOA', '-')}"
 
                     # Botón de Descarga
-                    html_boton = boton_descarga_pro(tag_h, fecha, tarea, resp_h, f_limpia.get('N_Serie', '-'), f_limpia.get('Potencia', '-'), f_limpia.get('RPM', '-'), f_limpia.get('FRAME', '-'), detalles_foto, "", f_limpia.get('Descripcion', '-'))
+                    html_boton = boton_descarga_pro(tag_h, fecha, tarea, resp_h, f_limpia.get('N_Serie', '-'), f_limpia.get('Potencia', '-'), f_limpia.get('RPM', '-'), f_limpia.get('Carcasa', '-'), detalles_foto, "", f_limpia.get('Descripcion', '-'))
                     components.html(html_boton, height=80)
                     
                     # Botón Honeywell
@@ -838,6 +838,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
