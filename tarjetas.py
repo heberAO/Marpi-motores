@@ -579,20 +579,22 @@ elif modo == "Historial y QR":
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     
-    # 1. INICIALIZACIÓN (Evita que el código explote si no hay motor seleccionado)
-    rod_la_base = ""
-    rod_loa_base = ""
+    # --- 1. INICIALIZACIÓN ABSOLUTA (Para evitar NameError) ---
+    v_la = ""
+    v_loa = ""
     v_serie = ""
     info_motor = {}
+    gr_la_sug = 0.0
+    gr_loa_sug = 0.0
 
     if "form_id" not in st.session_state:
         st.session_state.form_id = 0
 
-    # 2. DATOS DEL QR
+    # 2. Recuperar datos del QR/Historial
     datos_auto = st.session_state.get('datos_motor_auto', {})
     tag_qr = datos_auto.get('tag', '')
 
-    # 3. BUSCADOR UNIFICADO
+    # 3. Preparar el Buscador
     df_lista = df_completo.copy()
     df_lista['Busqueda_Combo'] = df_lista['Tag'].astype(str) + " | SN: " + df_lista['N_Serie'].astype(str)
     opciones_combo = [""] + sorted(df_lista['Busqueda_Combo'].unique().tolist())
@@ -605,7 +607,7 @@ elif modo == "Relubricacion":
                 break
 
     seleccion_full = st.selectbox(
-        "Seleccione el Motor para confirmar unidad:", 
+        "Seleccione el Motor (busque por TAG o N° de Serie)", 
         options=opciones_combo,
         index=indice_predef,
         key=f"busqueda_relub_{st.session_state.form_id}"
@@ -613,54 +615,52 @@ elif modo == "Relubricacion":
 
     tag_seleccionado = seleccion_full.split(" | ")[0].strip() if seleccion_full else ""
 
-    # 4. SOLO SI HAY MOTOR SELECCIONADO, BUSCAMOS LOS DATOS REALES
+    # --- 4. CARGA DE DATOS SI HAY SELECCIÓN ---
     if tag_seleccionado:
-        filas = df_lista[df_lista['Tag'] == tag_seleccionado]
-        if not filas.empty:
-            info_motor = filas.iloc[-1]
-            rod_la_base = str(info_motor.get('Rodamiento_LA', '')).upper().replace('NAN', '')
-            rod_loa_base = str(info_motor.get('Rodamiento_LOA', '')).upper().replace('NAN', '')
-            v_serie = str(info_motor.get('N_Serie', '')).replace('NAN', '')
+        fila_motor = df_lista[df_lista['Tag'] == tag_seleccionado]
+        if not fila_motor.empty:
+            info_motor = fila_motor.iloc[-1]
+            # Llenamos las variables con lo que hay en el Excel
+            v_la = str(info_motor.get('Rodamiento_LA', '')).replace('nan', '').upper()
+            v_loa = str(info_motor.get('Rodamiento_LOA', '')).replace('nan', '').upper()
+            v_serie = str(info_motor.get('N_Serie', '')).replace('nan', '')
 
-        st.markdown("---")
-        c_la, c_loa = st.columns(2)
-        c_la.metric("Rodamiento LA (Placa)", rod_la_base)
-        c_loa.metric("Rodamiento LOA (Placa)", rod_loa_base)
-
-        # Chequeo de seguridad
-        es_sellado = any(x in rod_la_base or x in rod_loa_base for x in ["2RS", "ZZ"])
-        if es_sellado:
-            st.error("🚫 **ATENCIÓN: RODAMIENTOS SELLADOS (NO LUBRICAR)**")
-        else:
-            st.success("✅ **EQUIPO APTO PARA LUBRICACIÓN**")
+            # Mostramos alertas de seguridad
+            st.markdown("---")
+            es_sellado = any(x in v_la or x in v_loa for x in ["2RS", "ZZ"])
+            if es_sellado:
+                st.error(f"🚫 **AVISO: RODAMIENTOS SELLADOS ({v_la} / {v_loa}). NO LUBRICAR.**")
+            else:
+                st.success("✅ **EQUIPO APTO PARA LUBRICACIÓN**")
 
     st.divider()
 
-    # 5. INPUTS DE EDICIÓN Y FORMULARIO (Siempre existen gracias al paso 1)
+    # --- 5. INPUTS DE RODAMIENTOS (v_la ya existe siempre aquí) ---
     col1, col2 = st.columns(2)
-    # Si el rodamiento es distinto al de la placa, el técnico lo cambia aquí:
-    rod_la_edit = col1.text_input("Rodamiento LA Real", value=rod_la_base, key="edit_la").upper()
-    rod_loa_edit = col2.text_input("Rodamiento LOA Real", value=rod_loa_base, key="edit_loa").upper()
     
-    # Calculamos gramos en tiempo real usando tu función
-    gr_la_sug = calcular_grasa_marpi(rod_la_edit)
-    gr_loa_sug = calcular_grasa_marpi(rod_loa_edit)
+    # Usamos text_input para que el técnico pueda corregir el rodamiento si es distinto al de placa
+    rod_la_final = col1.text_input("Rodamiento LA", value=v_la, key=f"la_input_{st.session_state.form_id}").upper()
+    rod_loa_final = col2.text_input("Rodamiento LOA", value=v_loa, key=f"loa_input_{st.session_state.form_id}").upper()
+    
+    # Calculamos gramos basados en lo que dice el input (por si se cambió el rodamiento)
+    gr_la_sug = calcular_grasa_marpi(rod_la_final)
+    gr_loa_sug = calcular_grasa_marpi(rod_loa_final)
     
     col1.caption(f"Sugerido: {gr_la_sug} g")
     col2.caption(f"Sugerido: {gr_loa_sug} g")
 
-    # 6. FORMULARIO DE CIERRE
-    with st.form(key=f"final_form_{st.session_state.form_id}"):
+    # --- 6. FORMULARIO FINAL ---
+    with st.form(key=f"form_lub_{st.session_state.form_id}"):
         tecnico = st.text_input("Técnico Responsable")
         
-        cg1, cg2 = st.columns(2)
-        gr_real_la = cg1.number_input("Gramos Reales LA", value=float(gr_la_sug) if gr_la_sug else 0.0)
-        gr_real_loa = cg2.number_input("Gramos Reales LOA", value=float(gr_loa_sug) if gr_loa_sug else 0.0)
+        c1, c2 = st.columns(2)
+        gr_real_la = c1.number_input("Gramos Reales LA", value=float(gr_la_sug))
+        gr_real_loa = c2.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
         
-        grasa_t = st.selectbox("Grasa Utilizada", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus"])
-        notas = st.text_area("Observaciones")
+        grasa_t = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus"])
+        notas = st.text_area("Notas / Observaciones")
         
-        if st.form_submit_button("💾 REGISTRAR LUBRICACIÓN"):
+        if st.form_submit_button("💾 GUARDAR REGISTRO"):
             if tag_seleccionado and tecnico:
                 nueva = {
                     "Fecha": date.today().strftime("%d/%m/%Y"),
@@ -669,8 +669,8 @@ elif modo == "Relubricacion":
                     "Potencia": info_motor.get('Potencia', 'S/D'),
                     "Tipo_Tarea": "Relubricacion",
                     "Responsable": tecnico,
-                    "Rodamiento_LA": rod_la_edit,
-                    "Rodamiento_LOA": rod_loa_edit,
+                    "Rodamiento_LA": rod_la_final,
+                    "Rodamiento_LOA": rod_loa_final,
                     "Gramos_LA": gr_real_la,
                     "Gramos_LOA": gr_real_loa,
                     "Tipo_Grasa": grasa_t,
@@ -678,89 +678,19 @@ elif modo == "Relubricacion":
                     "Descripcion": f"LUBRICACIÓN REALIZADA: {grasa_t}"
                 }
                 
-                # GUARDADO CON CONEXIÓN GLOBAL
+                # Guardado usando la conexión GLOBAL
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
 
-                st.success("✅ Registro guardado con éxito")
+                st.success(f"✅ ¡Registro de {tag_seleccionado} guardado!")
                 st.balloons()
-                st.session_state.form_id += 1
                 st.cache_data.clear()
+                st.session_state.form_id += 1
                 import time
                 time.sleep(2)
                 st.rerun()
             else:
-                st.error("⚠️ Falta el TAG del motor o el nombre del Técnico.")
-
-    st.divider()
-
-   # 4. Inputs de Rodamientos (Usa la fórmula de arriba de todo)
-    col1, col2 = st.columns(2)
-    with col1:
-        rod_la = st.text_input("Rodamiento LA", value=v_la, key=f"la_val_{st.session_state.form_id}").upper()
-        # LLAMADA CORREGIDA A LA FUNCIÓN UNIFICADA
-        gr_la_sug = calcular_grasa_marpi(rod_la)
-        st.metric("Sugerido LA", f"{gr_la_sug} g")
-
-    with col2:
-        rod_loa = st.text_input("Rodamiento LOA", value=v_loa, key=f"loa_val_{st.session_state.form_id}").upper()
-        # LLAMADA CORREGIDA
-        gr_loa_sug = calcular_grasa_marpi(rod_loa)
-        st.metric("Sugerido LOA", f"{gr_loa_sug} g")
-
-    # 5. Formulario Final
-    with st.form(key=f"form_lub_{st.session_state.form_id}"):
-        serie_confirm = st.text_input("Confirmar N° de Serie", value=v_serie)
-        tecnico = st.text_input("Técnico Responsable")
-        
-        c1, c2 = st.columns(2)
-        gr_real_la = c1.number_input("Gramos Reales LA", value=float(gr_la_sug))
-        gr_real_loa = c2.number_input("Gramos Reales LOA", value=float(gr_loa_sug))
-        
-        tipo_t = st.radio("Tarea", ["Preventivo", "Correctiva"])
-        grasa_t = st.selectbox("Grasa", ["SKF LGHP 2", "Mobil Polyrex EM", "Shell Gadus"])
-        notas = st.text_area("Notas")
-        
-        if st.form_submit_button("💾 GUARDAR"):
-            # 1. Identificación de TAG y Responsable
-            tag_actual = t if 't' in locals() else (tag_seleccionado if 'tag_seleccionado' in locals() else None)
-            resp_actual = resp if 'resp' in locals() else (tecnico if 'tecnico' in locals() else None)
-
-            if tag_actual and resp_actual:
-                # 2. Creación del diccionario
-                nueva = {
-                    "Fecha": date.today().strftime("%d/%m/%Y"),
-                    "Tag": tag_actual,
-                    "N_Serie": v_serie,
-                    "Potencia": info_motor.get('Potencia', 'S/D'),
-                    "Tipo_Tarea": "Relubricacion",
-                    "Responsable": resp_actual,
-                    "Rodamiento_LA": rod_la,
-                    "Rodamiento_LOA": rod_loa,
-                    "Gramos_LA": gr_real_la,
-                    "Gramos_LOA": gr_real_loa,
-                    "Tipo_Grasa": grasa_t,
-                    "Notas": notas,  # <--- CORREGIDO: Se agrega la columna exacta del Excel
-                    "Descripcion": f"LUBRICACIÓN REALIZADA: {grasa_t}"
-                }
-                
-                # 3. Guardado
-                df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
-                conn = st.connection("gsheets", type=GSheetsConnection)
-                conn.update(data=df_final)
-
-                # 5. Interfaz de usuario
-                st.session_state.tag_buffer = tag_actual
-                st.session_state.form_id += 1
-                st.success(f"✅ Registro de {tag_actual} guardado con éxito.")
-                st.balloons()
-                
-                import time
-                st.cache_data.clear()
-                time.sleep(2)
-                st.rerun()
-            else:
-                st.error("⚠️ Error: El TAG y el Responsable son obligatorios.")
+                st.error("⚠️ Falta seleccionar el Motor o ingresar el Técnico.")
        
     st.divider()
     
@@ -908,6 +838,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
