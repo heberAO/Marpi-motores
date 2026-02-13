@@ -501,7 +501,7 @@ elif modo == "Historial y QR":
                             st.write(f"**Serie:** {f_limpia.get('N_Serie', '-')}")
                             st.write(f"**Potencia:** {f_limpia.get('Potencia', '-')}")
                             st.write(f"**RPM:** {f_limpia.get('RPM', '-')}")
-                        
+                            st.write(f"**FRAME** {f_limpia.get('Carcasa', '-')}") 
                         with col2:
                             if "Lubricación" in tarea or "Relubricacion" in tarea:
                                 st.markdown("**🛢️ Detalle Lubricación:**")
@@ -838,6 +838,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
