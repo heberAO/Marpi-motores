@@ -295,10 +295,33 @@ if modo == "Nuevo Registro":
         v = c5.text_input("Tensión", value=datos_auto.get('tension', ''))
         cor = c6.text_input("Corriente", value=datos_auto.get('corriente', ''))
         
-        # Para el RPM (selectbox), buscamos si el valor existe en la lista
-        rpms_lista = ["-", "750", "1000", "1500", "3000"]
-        val_rpm = datos_auto.get('rpm', '-')
-        idx_rpm = rpms_lista.index(val_rpm) if val_rpm in rpms_lista else 0
+        # 1. Extraemos valores únicos de la base de datos, quitamos vacíos y convertimos a texto
+        if not df_completo.empty and 'RPM' in df_completo.columns:
+            # Obtenemos valores únicos, los pasamos a string y eliminamos 'nan'
+            rpms_db = df_completo['RPM'].astype(str).unique().tolist()
+            rpms_db = [val for val in rpms_db if val not in ['nan', '-', 'None', '']]
+        else:
+            rpms_db = []
+
+        # 2. Definimos valores base (por si la base de datos está vacía)
+        rpms_estandar = ["750", "1000", "1500", "3000"]
+        
+        # 3. Combinamos ambos, eliminamos duplicados y ordenamos de menor a mayor
+        # Usamos set() para que no se repitan y sorted() para el orden
+        rpms_lista = ["-"] + sorted(list(set(rpms_estandar + rpms_db)), key=lambda x: int(x) if x.isdigit() else 0)
+
+        # 4. Buscamos el valor que viene de datos_auto (del QR o Historial)
+        val_rpm = str(datos_auto.get('rpm', '-'))
+        
+        # Si el valor no está en la lista (caso raro), lo agregamos para que no de error
+        if val_rpm not in rpms_lista:
+            rpms_lista.append(val_rpm)
+            rpms_lista = sorted(rpms_lista, key=lambda x: int(x) if x.isdigit() else 0)
+
+        # 5. Calculamos el índice para el autocompletado
+        idx_rpm = rpms_lista.index(val_rpm)
+        
+        # 6. Mostramos el Selectbox final
         r = c7.selectbox("RPM", rpms_lista, index=idx_rpm)
         
         carc = c8.text_input("Carcasa/Frame", value=datos_auto.get('carcasa', ''))
@@ -343,6 +366,7 @@ if modo == "Nuevo Registro":
                     "Descripcion": desc,
                     "Trabajos_Externos": ext,  # <--- CORREGIDO: Antes podía faltar o tener otro nombre
                     "Tipo_Tarea": "Nuevo Registro"
+                    "Tipo_Sello": tipo_rodamiento,
                 }
 
                 # 2. Convertir a DataFrame la nueva fila
@@ -843,6 +867,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
