@@ -360,13 +360,13 @@ if modo == "Nuevo Registro":
                     "Potencia": p, "Tension": v, "Corriente": cor,
                     "RPM": r, "Carcasa": carc,
                     "Rodamiento_LA": r_la, "Rodamiento_LOA": r_loa,
+                    "Tipo_Sello": tipo_rodamiento,
                     "RT_TU": v_rt_tu, "RT_TV": v_rt_tv, "RT_TW": v_rt_tw,
                     "RB_UV": v_rb_uv, "RB_VW": v_rb_vw, "RB_UW": v_rb_uw,
                     "RI_U": v_ri_u, "RI_V": v_ri_v, "RI_W": v_ri_w,
                     "Descripcion": desc,
                     "Trabajos_Externos": ext,  # <--- CORREGIDO: Antes podía faltar o tener otro nombre
                     "Tipo_Tarea": "Nuevo Registro"
-                    "Tipo_Sello": tipo_rodamiento,
                 }
 
                 # 2. Convertir a DataFrame la nueva fila
@@ -867,6 +867,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
