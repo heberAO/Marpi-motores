@@ -244,30 +244,6 @@ if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
                     st.error("⚠️ Clave incorrecta")
         st.stop() # <--- AQUÍ SE DETIENE SOLO SI NO ESTÁ LOGUEADO
 
-# --- 7. SECCIONES (Aquí es donde el código continúa si pasó el stop) ---
-
-datos_auto = st.session_state.get('datos_motor_auto', {})
-
-if modo == "Nuevo Registro":
-    st.title("📝 Alta y Registro Inicial") 
-
-elif modo == "Relubricacion":
-    st.title("🛢️ Registro de Relubricación")
-    # AUTOCOMPLETADO PARA LUBRICACIÓN
-    c1, c2 = st.columns(2)
-    t = c1.text_input("TAG", value=datos_auto.get('tag', ''))
-    sn = c2.text_input("N° Serie", value=datos_auto.get('serie', ''))
-    # ... resto de campos de lubricación ...
-
-elif modo == "Mediciones de Campo":
-    st.title("🔌 Mediciones Eléctricas de Campo")
-    # AUTOCOMPLETADO PARA MEDICIONES
-    c1, c2 = st.columns(2)
-    t = c1.text_input("TAG", value=datos_auto.get('tag', ''))
-    sn = c2.text_input("N° Serie", value=datos_auto.get('serie', ''))
-    # ... resto de campos de mediciones ...
-
-
 # --- 5. SECCIONES (CON AUTOCOMPLETADO) ---
 if modo == "Nuevo Registro":
     st.title("📝 Alta y Registro Inicial")
@@ -866,6 +842,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
