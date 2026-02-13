@@ -249,6 +249,7 @@ if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
 datos_auto = st.session_state.get('datos_motor_auto', {})
 
 if modo == "Nuevo Registro":
+    st.title("📝 Alta y Registro Inicial") 
 
 elif modo == "Relubricacion":
     st.title("🛢️ Registro de Relubricación")
@@ -865,6 +866,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
