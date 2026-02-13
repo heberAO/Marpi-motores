@@ -457,6 +457,7 @@ elif modo == "Historial y QR":
             st.write(f"### 📑 Historial Completo de Movimientos")
             st.dataframe(df_historial[['Fecha', 'Tag', 'Responsable', 'Descripcion']], use_container_width=True)
 
+            
                 # Dentro de la sección Historial y QR...
 
                 def enviar_a_formulario_con_datos(tarea_tipo):
@@ -860,6 +861,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
