@@ -549,7 +549,7 @@ elif modo == "Historial y QR":
                         detalles_foto = f"Rod. LA: {f_limpia.get('Rodamiento_LA', '-')} | Rod. LOA: {f_limpia.get('Rodamiento_LOA', '-')}"
 
                     # Botón de Descarga
-                    html_boton = boton_descarga_pro(tag_h, fecha, tarea, resp_h, f_limpia.get('N_Serie', '-'), f_limpia.get('Potencia', '-'), f_limpia.get('RPM', '-'), f_limpia.get('Carcasa', '-'), detalles_foto, "", f_limpia.get('Descripcion', '-'))
+                    html_boton = boton_descarga_pro(tag_h, fecha, tarea, resp_h, f_limpia.get('N_Serie', '-'), f_limpia.get('Potencia', '-'), f_limpia.get('RPM', '-'), f_limpia.get('FRAME', '-'), detalles_foto, "", f_limpia.get('Descripcion', '-'))
                     components.html(html_boton, height=80)
                     
                     # Botón Honeywell
@@ -838,6 +838,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
