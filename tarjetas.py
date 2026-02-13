@@ -394,8 +394,15 @@ elif modo == "Historial y QR":
         df_completo['N_Serie'] = df_completo['N_Serie'].astype(str).str.strip()
         df_completo['Tag'] = df_completo['Tag'].astype(str).str.strip()
 
-        # 2. Crear lista de opciones
-        opciones_base = (df_completo['Tag'] + " | SN: " + df_completo['N_Serie']).unique().tolist()
+        # --- PASO 2: FILTRADO INTELIGENTE (Para no ver duplicados) ---
+        df_temp = df_completo.copy()
+        df_temp['Fecha_DT'] = pd.to_datetime(df_temp['Fecha'], dayfirst=True, errors='coerce')
+        df_temp = df_temp.sort_values('Fecha_DT', ascending=True)
+
+        # Mantenemos solo el último registro de cada Serie (el TAG más actual)
+        df_unicos = df_temp.drop_duplicates(subset=['N_Serie'], keep='last')
+
+        opciones_base = (df_unicos['Tag'] + " | SN: " + df_unicos['N_Serie']).tolist()
         opciones = [""] + sorted(opciones_base)
         
         # 3. LÓGICA DE RECONOCIMIENTO DE QR
@@ -410,22 +417,28 @@ elif modo == "Historial y QR":
                     idx_buscador = i
                     break
         
-        # 4. EL SELECTOR ÚNICO
-        seleccion = st.selectbox(
+        # 4. EL SELECTOR ÚNICO (Cambiamos el nombre a 'seleccion_motor' para que coincida abajo)
+        seleccion_motor = st.selectbox(
             "🔍 Seleccione o Busque el Motor:", 
             opciones, 
             index=idx_buscador, 
             key="buscador_final_marpi"
         )
 
-        if seleccion:
-            # Extraemos la serie para filtrar el historial
-            serie_final = seleccion.split(" | SN: ")[1] if " | SN: " in seleccion else ""
-            historial_motor = df_completo[df_completo['N_Serie'] == serie_final].copy()
+        # 5. MOSTRAR INFORMACIÓN SI HAY ALGO SELECCIONADO
+        if seleccion_motor != "": 
+            # Extraemos la serie del texto seleccionado
+            serie_a_buscar = seleccion_motor.split("SN: ")[1].strip()
             
-            if not historial_motor.empty:
-                motor_info = historial_motor.iloc[-1]
-                ultimo_tag = str(motor_info.get('Tag', 'S/D'))
+            # Filtramos la base COMPLETA buscando esa serie (Trae historial de tags viejos y nuevos)
+            df_historial = df_completo[df_completo['N_Serie'] == serie_a_buscar].copy()
+            # Convertimos fecha para ordenar visualmente el historial
+            df_historial['Fecha_DT'] = pd.to_datetime(df_historial['Fecha'], dayfirst=True, errors='coerce')
+            df_historial = df_historial.sort_values('Fecha_DT', ascending=False)
+            
+            # Obtenemos la info más reciente para el panel superior
+            motor_info = df_historial.iloc[0] # La primera fila es la más nueva por el sort_values
+            ultimo_tag = str(motor_info.get('Tag', 'S/D'))
 
                 # --- PANEL SUPERIOR ---
                 with st.container(border=True):
@@ -434,10 +447,15 @@ elif modo == "Historial y QR":
                     qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
                     
                     with col_qr:
-                        st.image(qr_api, width=120)
-                    with col_info:
-                        st.subheader(f"Ⓜ️ {ultimo_tag}")
-                        st.info(f"Número de Serie: **{serie_final}**")
+                    st.image(qr_api, width=120)
+                with col_info:
+                    st.subheader(f"Ⓜ️ {ultimo_tag}")
+                    st.info(f"Número de Serie: **{serie_a_buscar}**")
+                    st.write(f"**Ubicación/Desc:** {motor_info.get('Descripcion', '-')}")
+
+            # --- TABLA DE HISTORIAL ---
+            st.write(f"### 📑 Historial Completo de Movimientos")
+            st.dataframe(df_historial[['Fecha', 'Tag', 'Responsable', 'Descripcion']], use_container_width=True)
 
                 # Dentro de la sección Historial y QR...
 
@@ -842,6 +860,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
