@@ -456,25 +456,23 @@ elif modo == "Historial y QR":
             # --- TABLA DE HISTORIAL ---
             st.write(f"### 📑 Historial Completo de Movimientos")
             st.dataframe(df_historial[['Fecha', 'Tag', 'Responsable', 'Descripcion']], use_container_width=True)
-
             
                 # Dentro de la sección Historial y QR...
-
-                def enviar_a_formulario_con_datos(tarea_tipo):
-                    # 1. Guardar TODOS los datos del motor en el diccionario
+                def enviar_a_formulario_con_datos(tarea_tipo, info_motor):
+                    # Guardamos los datos en el session_state para que el otro formulario los lea
                     st.session_state['datos_motor_auto'] = {
-                        'tag': str(motor_info.get('Tag', '')),
-                        'serie': str(motor_info.get('N_Serie', '')),
-                        'potencia': str(motor_info.get('Potencia', '')),
-                        'tension': str(motor_info.get('Tension', '')),
-                        'corriente': str(motor_info.get('Corriente', '')),
-                        'rpm': str(motor_info.get('RPM', '-')),
-                        'carcasa': str(motor_info.get('Carcasa', '')), # O 'Frame' según tu Excel
-                        'r_la': str(motor_info.get('Rodamiento_LA', '')),
-                        'r_loa': str(motor_info.get('Rodamiento_LOA', ''))
+                        'tag': str(info_motor.get('Tag', '')),
+                        'serie': str(info_motor.get('N_Serie', '')),
+                        'potencia': str(info_motor.get('Potencia', '')),
+                        'tension': str(info_motor.get('Tension', '')),
+                        'corriente': str(info_motor.get('Corriente', '')),
+                        'rpm': str(info_motor.get('RPM', '-')),
+                        'carcasa': str(info_motor.get('Carcasa', '')),
+                        'r_la': str(info_motor.get('Rodamiento_LA', '')),
+                        'r_loa': str(info_motor.get('Rodamiento_LOA', ''))
                     }
                     
-                    # 2. Cambiar la navegación
+                    # Cambiamos de pestaña según el botón presionado
                     if tarea_tipo == "Lubricación":
                         st.session_state.navegacion_actual = "Relubricacion"
                     elif tarea_tipo == "Megado":
@@ -861,6 +859,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
