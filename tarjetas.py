@@ -11,21 +11,6 @@ import qrcode
 from PIL import Image, ImageDraw, ImageFont
 import streamlit.components.v1 as components
 
-def enviar_a_formulario_con_datos(tarea_tipo, info_motor):
-    st.session_state['datos_motor_auto'] = {
-        'tag': str(info_motor.get('Tag', '')),
-        'serie': str(info_motor.get('N_Serie', '')),
-        'potencia': str(info_motor.get('Potencia', '')),
-        'tension': str(info_motor.get('Tension', '')),
-        'corriente': str(info_motor.get('Corriente', '')),
-        'rpm': str(info_motor.get('RPM', '-')),
-        'carcasa': str(info_motor.get('Carcasa', '')),
-        'r_la': str(info_motor.get('Rodamiento_LA', '')),
-        'r_loa': str(info_motor.get('Rodamiento_LOA', ''))
-    }
-    st.session_state.navegacion_actual = "Relubricacion" if tarea_tipo == "Lubricación" else "Mediciones de Campo" if tarea_tipo == "Megado" else "Nuevo Registro"
-    st.rerun()
-
 def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, carcasa, detalles, extra, obs):
     st_btn = 'width:100%;background:#007bff;color:white;padding:15px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-family:sans-serif;'
     
@@ -73,7 +58,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
        # 2. QR (LADO IZQUIERDO) - Ahora vinculado a la SERIE
         qr = qrcode.QRCode(version=1, box_size=12, border=1)
         # EL CAMBIO CLAVE:
-        qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_a_buscar}&exact=1")
+        qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie}&exact=1")
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
         img_qr = img_qr.resize((260, 260))
@@ -409,15 +394,8 @@ elif modo == "Historial y QR":
         df_completo['N_Serie'] = df_completo['N_Serie'].astype(str).str.strip()
         df_completo['Tag'] = df_completo['Tag'].astype(str).str.strip()
 
-        # --- PASO 2: FILTRADO INTELIGENTE (Para no ver duplicados) ---
-        df_temp = df_completo.copy()
-        df_temp['Fecha_DT'] = pd.to_datetime(df_temp['Fecha'], dayfirst=True, errors='coerce')
-        df_temp = df_temp.sort_values('Fecha_DT', ascending=True)
-
-        # Mantenemos solo el último registro de cada Serie (el TAG más actual)
-        df_unicos = df_temp.drop_duplicates(subset=['N_Serie'], keep='last')
-
-        opciones_base = (df_unicos['Tag'] + " | SN: " + df_unicos['N_Serie']).tolist()
+        # 2. Crear lista de opciones
+        opciones_base = (df_completo['Tag'] + " | SN: " + df_completo['N_Serie']).unique().tolist()
         opciones = [""] + sorted(opciones_base)
         
         # 3. LÓGICA DE RECONOCIMIENTO DE QR
@@ -432,161 +410,176 @@ elif modo == "Historial y QR":
                     idx_buscador = i
                     break
         
-        # 4. EL SELECTOR ÚNICO (Cambiamos el nombre a 'seleccion_motor' para que coincida abajo)
-        seleccion_motor = st.selectbox(
+        # 4. EL SELECTOR ÚNICO
+        seleccion = st.selectbox(
             "🔍 Seleccione o Busque el Motor:", 
             opciones, 
             index=idx_buscador, 
             key="buscador_final_marpi"
         )
 
-        # 5. MOSTRAR INFORMACIÓN SI HAY ALGO SELECCIONADO
-        if seleccion_motor != "": 
-            serie_a_buscar = seleccion_motor.split("SN: ")[1].strip()
-            df_historial = df_completo[df_completo['N_Serie'] == serie_a_buscar].copy()
-            df_historial['Fecha_DT'] = pd.to_datetime(df_historial['Fecha'], dayfirst=True, errors='coerce')
-            df_historial = df_historial.sort_values('Fecha_DT', ascending=False)
+        if seleccion:
+            # Extraemos la serie para filtrar el historial
+            serie_final = seleccion.split(" | SN: ")[1] if " | SN: " in seleccion else ""
+            historial_motor = df_completo[df_completo['N_Serie'] == serie_final].copy()
             
-            motor_info = df_historial.iloc[0]
-            ultimo_tag = str(motor_info.get('Tag', 'S/D'))
+            if not historial_motor.empty:
+                motor_info = historial_motor.iloc[-1]
+                ultimo_tag = str(motor_info.get('Tag', 'S/D'))
 
-            # --- PANEL SUPERIOR CENTRADO ---
-            st.markdown("---")
-            with st.container(border=True):
-                # Usamos columnas laterales vacías para centrar el contenido (ratio 1:2:1)
-                izq, centro, der = st.columns([1, 3, 1])
-                
-                with centro:
-                    # Centramos imagen y texto con HTML
-                    st.markdown(f"""
-                        <div style="text-align: center;">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_a_buscar}" width="150">
-                            <h2 style="margin-bottom: 0;">Ⓜ️ {ultimo_tag}</h2>
-                            <p style="color: #00e676; font-weight: bold; font-size: 1.2em;">Serie: {serie_a_buscar}</p>
-                        </div>
-                    """, unsafe_allow_html=True)
+                # --- PANEL SUPERIOR ---
+                with st.container(border=True):
+                    col_qr, col_info = st.columns([1, 2])
+                    url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={serie_final}"
+                    qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
                     
-                    # Métricas en el centro
-                    m1, m2, m3 = st.columns(3)
-                    m1.metric("Potencia", motor_info.get('Potencia', 'S/D'))
-                    m2.metric("RPM", motor_info.get('RPM', 'S/D'))
-                    m3.metric("Frame", motor_info.get('Carcasa', 'S/D'))
+                    with col_qr:
+                        st.image(qr_api, width=120) 
+                    with col_info:
+                        st.subheader(f"Ⓜ️ {ultimo_tag}")
+                        st.info(f"Número de Serie: **{serie_final}**")
 
-            # --- BOTONES DE ACCIÓN RÁPIDA ---
-            st.write("### ⚡ Acciones Rápidas")
-            col_A, col_B, col_C = st.columns(3)
-            with col_A:
-                if st.button("🛢️ Lubricar", use_container_width=True):
-                    enviar_a_formulario_con_datos("Lubricación", motor_info)
-            with col_B:
-                if st.button("🔌 Megar", use_container_width=True):
-                    enviar_a_formulario_con_datos("Megado", motor_info)
-            with col_C:
-                if st.button("📝 Reparación", use_container_width=True):
-                    enviar_a_formulario_con_datos("Reparación", motor_info)
+                # Dentro de la sección Historial y QR...
 
-            # --- HISTORIAL DE FICHAS (Tus tarjetas oscuras) ---
-            st.divider()
-            st.subheader("📜 Historial de Intervenciones")
-                
-            hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
-            for idx, fila in hist_m.iterrows():
-                f_limpia = fila.fillna('-')
-                tarea = str(f_limpia.get('Tipo_Tarea', '-')).strip()
-                fecha = str(f_limpia.get('Fecha', '-'))
-                tag_h = str(f_limpia.get('Tag', ultimo_tag))
-                resp_h = str(f_limpia.get('Responsable', '-'))
+                def enviar_a_formulario_con_datos(tarea_tipo):
+                    # 1. Guardar TODOS los datos del motor en el diccionario
+                    st.session_state['datos_motor_auto'] = {
+                        'tag': str(motor_info.get('Tag', '')),
+                        'serie': str(motor_info.get('N_Serie', '')),
+                        'potencia': str(motor_info.get('Potencia', '')),
+                        'tension': str(motor_info.get('Tension', '')),
+                        'corriente': str(motor_info.get('Corriente', '')),
+                        'rpm': str(motor_info.get('RPM', '-')),
+                        'carcasa': str(motor_info.get('Carcasa', '')), # O 'Frame' según tu Excel
+                        'r_la': str(motor_info.get('Rodamiento_LA', '')),
+                        'r_loa': str(motor_info.get('Rodamiento_LOA', ''))
+                    }
                     
-                titulo_card = f"🗓️ {tarea}" if tarea not in ["-", "nan"] else "📝 Registro / Mantenimiento"
+                    # 2. Cambiar la navegación
+                    if tarea_tipo == "Lubricación":
+                        st.session_state.navegacion_actual = "Relubricacion"
+                    elif tarea_tipo == "Megado":
+                        st.session_state.navegacion_actual = "Mediciones de Campo"
+                    else:
+                        st.session_state.navegacion_actual = "Nuevo Registro"
+                    
+                    st.rerun()
+                
+                st.divider()
+                st.write("### ⚡ Acciones Rápidas")
+                col_A, col_B, col_C = st.columns(3)
+                
+                with col_A:
+                    if st.button("🛢️ Lubricar", use_container_width=True, key="btn_lub_hist"):
+                        enviar_a_formulario_con_datos("Lubricación")
+                with col_B:
+                    if st.button("🔌 Megar", use_container_width=True, key="btn_meg_hist"):
+                        enviar_a_formulario_con_datos("Megado")
+                with col_C:
+                    if st.button("📝 Reparación", use_container_width=True, key="btn_rep_hist"):
+                        enviar_a_formulario_con_datos("Reparación General")
+                # --- 6. HISTORIAL DE INTERVENCIONES (MANTENIENDO TU FORMATO) ---
+                st.divider()
+                st.subheader("📜 Historial de Intervenciones")
+                
+                hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
+                for idx, fila in hist_m.iterrows():
+                    f_limpia = fila.fillna('-')
+                    tarea = str(f_limpia.get('Tipo_Tarea', '-')).strip()
+                    fecha = str(f_limpia.get('Fecha', '-'))
+                    tag_h = str(f_limpia.get('Tag', ultimo_tag))
+                    resp_h = str(f_limpia.get('Responsable', '-'))
+                    
+                    titulo_card = f"🗓️ {tarea}" if tarea not in ["-", "nan"] else "📝 Registro / Mantenimiento"
 
                     # --- INICIO DEL CONTENEDOR PARA CAPTURA (Fondo oscuro preservado) ---
-                st.markdown(f'<div id="ficha_{idx}" style="background-color: #0e1117; padding: 10px;">', unsafe_allow_html=True)
-                with st.container(border=True):
-                    st.markdown(f"### {titulo_card} - {fecha}")
-                    st.markdown(f"**🆔 TAG:** `{tag_h}`  |  **👤 RESP:** `{resp_h}`")
-                    st.divider() 
+                    st.markdown(f'<div id="ficha_{idx}" style="background-color: #0e1117; padding: 10px;">', unsafe_allow_html=True)
+                    with st.container(border=True):
+                        st.markdown(f"### {titulo_card} - {fecha}")
+                        st.markdown(f"**🆔 TAG:** `{tag_h}`  |  **👤 RESP:** `{resp_h}`")
+                        st.divider() 
                         
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.markdown("**📋 Datos de Placa:**")
-                        st.write(f"**Serie:** {f_limpia.get('N_Serie', '-')}")
-                        st.write(f"**Potencia:** {f_limpia.get('Potencia', '-')}")
-                        st.write(f"**RPM:** {f_limpia.get('RPM', '-')}")
-                        st.write(f"**FRAME** {f_limpia.get('Carcasa', '-')}") 
-                    with col2:
-                        if "Lubricación" in tarea or "Relubricacion" in tarea:
-                            st.markdown("**🛢️ Detalle Lubricación:**")
-                            st.info(f"**LA:** {f_limpia.get('Rodamiento_LA', '-')} ({f_limpia.get('Gramos_LA', '0')}g)\n\n**LOA:** {f_limpia.get('Rodamiento_LOA', '-')} ({f_limpia.get('Gramos_LOA', '0')}g)")
-                        elif "Mediciones" in tarea or "Megado" in tarea:
-                            st.markdown("**⚡ Resumen Eléctrico:**")
-                            st.warning(f"**Aislamiento T-U1:**\n\n{f_limpia.get('RT_TU1', '-')} GΩ")
-                            with st.expander("🔍 Ver todas las Medidas"):
-                                m1, m2, m3 = st.columns(3)
-                                with m1:
-                                    st.caption(f"T-V1: {f_limpia.get('RT_TV1', '-')}")
-                                    st.caption(f"T-W1: {f_limpia.get('RT_TW1', '-')}")
-                                with m2:
-                                    st.caption(f"W1-V1: {f_limpia.get('RB_WV1', '-')}")
-                                    st.caption(f"V1-U1: {f_limpia.get('RB_VU1', '-')}")
-                                with m3:
-                                    st.caption(f"U1-U2: {f_limpia.get('RI_U1U2', '-')}")
-                                    st.caption(f"W1-W2: {f_limpia.get('RI_W1W2', '-')}")
-                    else:
-                        st.markdown("**🛠️ Detalles Técnicos:**")
-                        st.success(f"**Rod. LA:** {f_limpia.get('Rodamiento_LA', '-')}\n\n**Rod. LOA:** {f_limpia.get('Rodamiento_LOA', '-')}")
-                st.divider()
-                st.markdown("**📝 Descripción/Observaciones:**")
-                st.write(f_limpia.get('Descripcion', 'Sin notas adicionales.'))
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.markdown("**📋 Datos de Placa:**")
+                            st.write(f"**Serie:** {f_limpia.get('N_Serie', '-')}")
+                            st.write(f"**Potencia:** {f_limpia.get('Potencia', '-')}")
+                            st.write(f"**RPM:** {f_limpia.get('RPM', '-')}")
+                            st.write(f"**FRAME** {f_limpia.get('Carcasa', '-')}") 
+                        with col2:
+                            if "Lubricación" in tarea or "Relubricacion" in tarea:
+                                st.markdown("**🛢️ Detalle Lubricación:**")
+                                st.info(f"**LA:** {f_limpia.get('Rodamiento_LA', '-')} ({f_limpia.get('Gramos_LA', '0')}g)\n\n**LOA:** {f_limpia.get('Rodamiento_LOA', '-')} ({f_limpia.get('Gramos_LOA', '0')}g)")
+                            elif "Mediciones" in tarea or "Megado" in tarea:
+                                st.markdown("**⚡ Resumen Eléctrico:**")
+                                st.warning(f"**Aislamiento T-U1:**\n\n{f_limpia.get('RT_TU1', '-')} GΩ")
+                                with st.expander("🔍 Ver todas las Medidas"):
+                                    m1, m2, m3 = st.columns(3)
+                                    with m1:
+                                        st.caption(f"T-V1: {f_limpia.get('RT_TV1', '-')}")
+                                        st.caption(f"T-W1: {f_limpia.get('RT_TW1', '-')}")
+                                    with m2:
+                                        st.caption(f"W1-V1: {f_limpia.get('RB_WV1', '-')}")
+                                        st.caption(f"V1-U1: {f_limpia.get('RB_VU1', '-')}")
+                                    with m3:
+                                        st.caption(f"U1-U2: {f_limpia.get('RI_U1U2', '-')}")
+                                        st.caption(f"W1-W2: {f_limpia.get('RI_W1W2', '-')}")
+                            else:
+                                st.markdown("**🛠️ Detalles Técnicos:**")
+                                st.success(f"**Rod. LA:** {f_limpia.get('Rodamiento_LA', '-')}\n\n**Rod. LOA:** {f_limpia.get('Rodamiento_LOA', '-')}")
+
+                        st.divider()
+                        st.markdown("**📝 Descripción/Observaciones:**")
+                        st.write(f_limpia.get('Descripcion', 'Sin notas adicionales.'))
                         
-                if str(f_limpia.get('Trabajos_Externos', '-')) not in ['-', 'nan', '']:
-                    st.info(f"**🏗️ Taller Externo:** {f_limpia.get('Trabajos_Externos')}")
-                if str(f_limpia.get('Notas', '-')) not in ['-', 'nan', '']:
-                    st.caption(f"**📌 Notas:** {f_limpia.get('Notas')}")
-            st.markdown('</div>', unsafe_allow_html=True) 
+                        if str(f_limpia.get('Trabajos_Externos', '-')) not in ['-', 'nan', '']:
+                            st.info(f"**🏗️ Taller Externo:** {f_limpia.get('Trabajos_Externos')}")
+                        if str(f_limpia.get('Notas', '-')) not in ['-', 'nan', '']:
+                            st.caption(f"**📌 Notas:** {f_limpia.get('Notas')}")
+                    st.markdown('</div>', unsafe_allow_html=True) 
 
                     # --- LÓGICA DE DETALLES PARA FOTO Y BOTONES ---
-            campos_electricos = ['RT_TU1', 'RT_TV1', 'RT_TW1', 'RB_WV1', 'RB_VU1', 'RB_UW1', 'RI_U1U2', 'RI_V1V2', 'RI_W1W2', 'RI_U1V1', 'RI_V1W1', 'RI_W1U1']
-            detalles_foto = ""
-            if "Mediciones" in tarea or "Megado" in tarea:
-                detalles_foto = "<b>Mediciones Eléctricas:</b><br>"
-                for i, c in enumerate(campos_electricos):
-                    v = f_limpia.get(c, '-')
-                    if v != '-': detalles_foto += f"{c}: {v} | "
-                    if (i + 1) % 3 == 0: detalles_foto += "<br>"
-            elif "Lubricación" in tarea or "Relubricacion" in tarea:
-                detalles_foto = f"<b>Rodamiento LA:</b> {f_limpia.get('Rodamiento_LA')} ({f_limpia.get('Gramos_LA')}g)<br><b>Rodamiento LOA:</b> {f_limpia.get('Rodamiento_LOA')} ({f_limpia.get('Gramos_LOA')}g)"
-            else:
-                detalles_foto = f"Rod. LA: {f_limpia.get('Rodamiento_LA', '-')} | Rod. LOA: {f_limpia.get('Rodamiento_LOA', '-')}"
+                    campos_electricos = ['RT_TU1', 'RT_TV1', 'RT_TW1', 'RB_WV1', 'RB_VU1', 'RB_UW1', 'RI_U1U2', 'RI_V1V2', 'RI_W1W2', 'RI_U1V1', 'RI_V1W1', 'RI_W1U1']
+                    detalles_foto = ""
+                    if "Mediciones" in tarea or "Megado" in tarea:
+                        detalles_foto = "<b>Mediciones Eléctricas:</b><br>"
+                        for i, c in enumerate(campos_electricos):
+                            v = f_limpia.get(c, '-')
+                            if v != '-': detalles_foto += f"{c}: {v} | "
+                            if (i + 1) % 3 == 0: detalles_foto += "<br>"
+                    elif "Lubricación" in tarea or "Relubricacion" in tarea:
+                        detalles_foto = f"<b>Rodamiento LA:</b> {f_limpia.get('Rodamiento_LA')} ({f_limpia.get('Gramos_LA')}g)<br><b>Rodamiento LOA:</b> {f_limpia.get('Rodamiento_LOA')} ({f_limpia.get('Gramos_LOA')}g)"
+                    else:
+                        detalles_foto = f"Rod. LA: {f_limpia.get('Rodamiento_LA', '-')} | Rod. LOA: {f_limpia.get('Rodamiento_LOA', '-')}"
 
                     # Botón de Descarga
-            html_boton = boton_descarga_pro(tag_h, fecha, tarea, resp_h, f_limpia.get('N_Serie', '-'), f_limpia.get('Potencia', '-'), f_limpia.get('RPM', '-'), f_limpia.get('Carcasa', '-'), detalles_foto, "", f_limpia.get('Descripcion', '-'))
-            components.html(html_boton, height=80)
+                    html_boton = boton_descarga_pro(tag_h, fecha, tarea, resp_h, f_limpia.get('N_Serie', '-'), f_limpia.get('Potencia', '-'), f_limpia.get('RPM', '-'), f_limpia.get('Carcasa', '-'), detalles_foto, "", f_limpia.get('Descripcion', '-'))
+                    components.html(html_boton, height=80)
                     
                     # Botón Honeywell
-            try:
-                s_local = str(f_limpia.get('N_Serie', '-'))
-                p_local = str(f_limpia.get('Potencia', '-'))
-                img_bytes_h = generar_etiqueta_honeywell(tag_h, s_local, p_local)
-                if img_bytes_h:
-                    import base64
-                    b64_img_h = base64.b64encode(img_bytes_h).decode('utf-8')
-                    boton_h_html = f"""
-                    <div style="text-align: center; margin-top: -15px;">
-                        <button id="btnH_{idx}" style="width:100%; background:#28a745; color:white; padding:8px; border:none; border-radius:5px; font-weight:bold; cursor:pointer; height:38px; font-size:12px;">🖨️ IMPRIMIR ETIQUETA HONEYWELL</button>
-                    </div>
-                    <script>
-                    document.getElementById('btnH_{idx}').onclick = function() {{
-                       const win = window.open('', '', 'width=800,height=600');
-                       win.document.write('<html><head><style>@page {{ size: 60mm 30mm; margin: 0; }} img {{ width: 60mm; height: 30mm; }}</style></head><body>');
-                       win.document.write('<img src="data:image/png;base64,{b64_img_h}" onload="setTimeout(() => {{ window.print(); window.close(); }}, 500);">');
-                       win.document.write('</body></html>');
-                       win.document.close();
-                    }};
-                    </script>"""
-                    components.html(boton_h_html, height=50)
-            except: pass
-            st.divider()
-    
+                    try:
+                        s_local = str(f_limpia.get('N_Serie', '-'))
+                        p_local = str(f_limpia.get('Potencia', '-'))
+                        img_bytes_h = generar_etiqueta_honeywell(tag_h, s_local, p_local)
+                        if img_bytes_h:
+                            import base64
+                            b64_img_h = base64.b64encode(img_bytes_h).decode('utf-8')
+                            boton_h_html = f"""
+                            <div style="text-align: center; margin-top: -15px;">
+                                <button id="btnH_{idx}" style="width:100%; background:#28a745; color:white; padding:8px; border:none; border-radius:5px; font-weight:bold; cursor:pointer; height:38px; font-size:12px;">🖨️ IMPRIMIR ETIQUETA HONEYWELL</button>
+                            </div>
+                            <script>
+                            document.getElementById('btnH_{idx}').onclick = function() {{
+                                const win = window.open('', '', 'width=800,height=600');
+                                win.document.write('<html><head><style>@page {{ size: 60mm 30mm; margin: 0; }} img {{ width: 60mm; height: 30mm; }}</style></head><body>');
+                                win.document.write('<img src="data:image/png;base64,{b64_img_h}" onload="setTimeout(() => {{ window.print(); window.close(); }}, 500);">');
+                                win.document.write('</body></html>');
+                                win.document.close();
+                            }};
+                            </script>"""
+                            components.html(boton_h_html, height=50)
+                    except: pass
+                    st.divider()
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
     
@@ -849,6 +842,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
