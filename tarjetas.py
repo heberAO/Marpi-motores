@@ -447,38 +447,40 @@ elif modo == "Historial y QR":
                 qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
                     
                 with col_qr:
-                    st.image(qr_api, width=120, caption="QR del Equipo")
-                with col_info:
-                    st.subheader(f"Ⓜ️ {ultimo_tag}")
-                    st.info(f"Número de Serie: **{serie_a_buscar}**")
-                    st.write(f"**Ubicación/Desc:** {motor_info.get('Descripcion', '-')}")
+                        st.image(qr_api, width=120) 
+                    with col_info:
+                        st.subheader(f"Ⓜ️ {ultimo_tag}")
+                        st.info(f"Número de Serie: **{serie_final}**")
 
-            # --- TABLA DE HISTORIAL ---
-            st.write(f"### 📑 Historial Completo de Movimientos")
-            st.dataframe(df_historial[['Fecha', 'Tag', 'Responsable', 'Descripcion']], use_container_width=True)
-            
-               # --- FUNCIÓN GLOBAL (Debe ir aquí, sin espacios al inicio) ---
-            def enviar_a_formulario_con_datos(tarea_tipo, info_motor):
-                st.session_state['datos_motor_auto'] = {
-                    'tag': str(info_motor.get('Tag', '')),
-                    'serie': str(info_motor.get('N_Serie', '')),
-                    'potencia': str(info_motor.get('Potencia', '')),
-                    'tension': str(info_motor.get('Tension', '')),
-                    'corriente': str(info_motor.get('Corriente', '')),
-                    'rpm': str(info_motor.get('RPM', '-')),
-                    'carcasa': str(info_motor.get('Carcasa', '')),
-                    'r_la': str(info_motor.get('Rodamiento_LA', '')),
-                    'r_loa': str(info_motor.get('Rodamiento_LOA', ''))
-                }
+                # Dentro de la sección Historial y QR...
+
+                def enviar_a_formulario_con_datos(tarea_tipo):
+                    # 1. Guardar TODOS los datos del motor en el diccionario
+                    st.session_state['datos_motor_auto'] = {
+                        'tag': str(motor_info.get('Tag', '')),
+                        'serie': str(motor_info.get('N_Serie', '')),
+                        'potencia': str(motor_info.get('Potencia', '')),
+                        'tension': str(motor_info.get('Tension', '')),
+                        'corriente': str(motor_info.get('Corriente', '')),
+                        'rpm': str(motor_info.get('RPM', '-')),
+                        'carcasa': str(motor_info.get('Carcasa', '')), # O 'Frame' según tu Excel
+                        'r_la': str(motor_info.get('Rodamiento_LA', '')),
+                        'r_loa': str(motor_info.get('Rodamiento_LOA', ''))
+                    }
+                    
+                    # 2. Cambiar la navegación
+                    if tarea_tipo == "Lubricación":
+                        st.session_state.navegacion_actual = "Relubricacion"
+                    elif tarea_tipo == "Megado":
+                        st.session_state.navegacion_actual = "Mediciones de Campo"
+                    else:
+                        st.session_state.navegacion_actual = "Nuevo Registro"
+                    
+                    st.rerun()
                 
-                if tarea_tipo == "Lubricación":
-                    st.session_state.navegacion_actual = "Relubricacion"
-                elif tarea_tipo == "Megado":
-                    st.session_state.navegacion_actual = "Mediciones de Campo"
-                else:
-                    st.session_state.navegacion_actual = "Nuevo Registro"
-                
-                st.rerun()
+                st.divider()
+                st.write("### ⚡ Acciones Rápidas")
+                col_A, col_B, col_C = st.columns(3)
                 
                 with col_A:
                     if st.button("🛢️ Lubricar", use_container_width=True, key="btn_lub_hist"):
@@ -853,6 +855,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
