@@ -443,14 +443,20 @@ elif modo == "Historial y QR":
                 # Dentro de la sección Historial y QR...
 
                 def enviar_a_formulario_con_datos(tarea_tipo):
-                    # 1. Guardar datos del motor
+                    # 1. Guardar TODOS los datos del motor en el diccionario
                     st.session_state['datos_motor_auto'] = {
                         'tag': str(motor_info.get('Tag', '')),
                         'serie': str(motor_info.get('N_Serie', '')),
-                        # ... resto de tus datos ...
+                        'potencia': str(motor_info.get('Potencia', '')),
+                        'tension': str(motor_info.get('Tension', '')),
+                        'corriente': str(motor_info.get('Corriente', '')),
+                        'rpm': str(motor_info.get('RPM', '-')),
+                        'carcasa': str(motor_info.get('Carcasa', '')), # O 'Frame' según tu Excel
+                        'r_la': str(motor_info.get('Rodamiento_LA', '')),
+                        'r_loa': str(motor_info.get('Rodamiento_LOA', ''))
                     }
                     
-                    # 2. CAMBIAR LA PÁGINA PERMANENTEMENTE
+                    # 2. Cambiar la navegación
                     if tarea_tipo == "Lubricación":
                         st.session_state.navegacion_actual = "Relubricacion"
                     elif tarea_tipo == "Megado":
@@ -458,7 +464,6 @@ elif modo == "Historial y QR":
                     else:
                         st.session_state.navegacion_actual = "Nuevo Registro"
                     
-                    # 3. Recargar para que el cambio surta efecto
                     st.rerun()
                 
                 st.divider()
@@ -838,6 +843,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
