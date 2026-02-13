@@ -11,6 +11,21 @@ import qrcode
 from PIL import Image, ImageDraw, ImageFont
 import streamlit.components.v1 as components
 
+def enviar_a_formulario_con_datos(tarea_tipo, info_motor):
+    st.session_state['datos_motor_auto'] = {
+        'tag': str(info_motor.get('Tag', '')),
+        'serie': str(info_motor.get('N_Serie', '')),
+        'potencia': str(info_motor.get('Potencia', '')),
+        'tension': str(info_motor.get('Tension', '')),
+        'corriente': str(info_motor.get('Corriente', '')),
+        'rpm': str(info_motor.get('RPM', '-')),
+        'carcasa': str(info_motor.get('Carcasa', '')),
+        'r_la': str(info_motor.get('Rodamiento_LA', '')),
+        'r_loa': str(info_motor.get('Rodamiento_LOA', ''))
+    }
+    st.session_state.navegacion_actual = "Relubricacion" if tarea_tipo == "Lubricación" else "Mediciones de Campo" if tarea_tipo == "Megado" else "Nuevo Registro"
+    st.rerun()
+
 def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, carcasa, detalles, extra, obs):
     st_btn = 'width:100%;background:#007bff;color:white;padding:15px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-family:sans-serif;'
     
@@ -427,73 +442,52 @@ elif modo == "Historial y QR":
 
         # 5. MOSTRAR INFORMACIÓN SI HAY ALGO SELECCIONADO
         if seleccion_motor != "": 
-            # Extraemos la serie del texto seleccionado
             serie_a_buscar = seleccion_motor.split("SN: ")[1].strip()
-            
-            # Filtramos la base COMPLETA buscando esa serie (Trae historial de tags viejos y nuevos)
             df_historial = df_completo[df_completo['N_Serie'] == serie_a_buscar].copy()
-            # Convertimos fecha para ordenar visualmente el historial
             df_historial['Fecha_DT'] = pd.to_datetime(df_historial['Fecha'], dayfirst=True, errors='coerce')
             df_historial = df_historial.sort_values('Fecha_DT', ascending=False)
             
-            # Obtenemos la info más reciente para el panel superior
-            motor_info = df_historial.iloc[0] # La primera fila es la más nueva por el sort_values
+            motor_info = df_historial.iloc[0]
             ultimo_tag = str(motor_info.get('Tag', 'S/D'))
 
-            # --- PANEL SUPERIOR ---
+            # --- PANEL SUPERIOR CENTRADO ---
+            st.markdown("---")
             with st.container(border=True):
-                col_qr, col_info = st.columns([1, 2])
-                url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={serie_a_buscar}"
-                qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
-                    
-                with col_qr:
-                        st.image(qr_api, width=120) 
-                with col_info:
-                    st.subheader(f"Ⓜ️ {ultimo_tag}")
-                    st.info(f"Número de Serie: **{serie_final}**")
-
-                # Dentro de la sección Historial y QR...
-
-            def enviar_a_formulario_con_datos(tarea_tipo):
-                    # 1. Guardar TODOS los datos del motor en el diccionario
-                 st.session_state['datos_motor_auto'] = {
-                     'tag': str(motor_info.get('Tag', '')),
-                     'serie': str(motor_info.get('N_Serie', '')),
-                     'potencia': str(motor_info.get('Potencia', '')),
-                     'tension': str(motor_info.get('Tension', '')),
-                     'corriente': str(motor_info.get('Corriente', '')),
-                     'rpm': str(motor_info.get('RPM', '-')),
-                     'carcasa': str(motor_info.get('Carcasa', '')), # O 'Frame' según tu Excel
-                     'r_la': str(motor_info.get('Rodamiento_LA', '')),
-                     'r_loa': str(motor_info.get('Rodamiento_LOA', ''))
-                }
-                    
-                # 2. Cambiar la navegación
-                if tarea_tipo == "Lubricación":
-                    st.session_state.navegacion_actual = "Relubricacion"
-                elif tarea_tipo == "Megado":
-                    st.session_state.navegacion_actual = "Mediciones de Campo"
-                else:
-                    st.session_state.navegacion_actual = "Nuevo Registro"
-                    
-                st.rerun()
+                # Usamos columnas laterales vacías para centrar el contenido (ratio 1:2:1)
+                izq, centro, der = st.columns([1, 3, 1])
                 
-            st.divider()
+                with centro:
+                    # Centramos imagen y texto con HTML
+                    st.markdown(f"""
+                        <div style="text-align: center;">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie_a_buscar}" width="150">
+                            <h2 style="margin-bottom: 0;">Ⓜ️ {ultimo_tag}</h2>
+                            <p style="color: #00e676; font-weight: bold; font-size: 1.2em;">Serie: {serie_a_buscar}</p>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Métricas en el centro
+                    m1, m2, m3 = st.columns(3)
+                    m1.metric("Potencia", motor_info.get('Potencia', 'S/D'))
+                    m2.metric("RPM", motor_info.get('RPM', 'S/D'))
+                    m3.metric("Frame", motor_info.get('Carcasa', 'S/D'))
+
+            # --- BOTONES DE ACCIÓN RÁPIDA ---
             st.write("### ⚡ Acciones Rápidas")
             col_A, col_B, col_C = st.columns(3)
-                
-             with col_A:
-                 if st.button("🛢️ Lubricar", use_container_width=True, key="btn_lub_hist"):
-                        enviar_a_formulario_con_datos("Lubricación")
-             with col_B:
-                 if st.button("🔌 Megar", use_container_width=True, key="btn_meg_hist"):
-                        enviar_a_formulario_con_datos("Megado")
-             with col_C:
-                 if st.button("📝 Reparación", use_container_width=True, key="btn_rep_hist"):
-                        enviar_a_formulario_con_datos("Reparación General")
-                # --- 6. HISTORIAL DE INTERVENCIONES (MANTENIENDO TU FORMATO) ---
-             st.divider()
-             st.subheader("📜 Historial de Intervenciones")
+            with col_A:
+                if st.button("🛢️ Lubricar", use_container_width=True):
+                    enviar_a_formulario_con_datos("Lubricación", motor_info)
+            with col_B:
+                if st.button("🔌 Megar", use_container_width=True):
+                    enviar_a_formulario_con_datos("Megado", motor_info)
+            with col_C:
+                if st.button("📝 Reparación", use_container_width=True):
+                    enviar_a_formulario_con_datos("Reparación", motor_info)
+
+            # --- HISTORIAL DE FICHAS (Tus tarjetas oscuras) ---
+            st.divider()
+            st.subheader("📜 Historial de Intervenciones")
                 
              hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
              for idx, fila in hist_m.iterrows():
@@ -855,6 +849,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
