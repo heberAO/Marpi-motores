@@ -457,32 +457,28 @@ elif modo == "Historial y QR":
             st.write(f"### 📑 Historial Completo de Movimientos")
             st.dataframe(df_historial[['Fecha', 'Tag', 'Responsable', 'Descripcion']], use_container_width=True)
             
-            # Dentro de la sección Historial y QR...
-             def enviar_a_formulario_con_datos(tarea_tipo, info_motor):
-                 st.session_state['datos_motor_auto'] = {
-                     'tag': str(info_motor.get('Tag', '')),
-                     'serie': str(info_motor.get('N_Serie', '')),
-                     'potencia': str(info_motor.get('Potencia', '')),
-                     'tension': str(info_motor.get('Tension', '')),
-                     'corriente': str(info_motor.get('Corriente', '')),
-                     'rpm': str(info_motor.get('RPM', '-')),
-                     'carcasa': str(info_motor.get('Carcasa', '')),
-                     'r_la': str(info_motor.get('Rodamiento_LA', '')),
-                     'r_loa': str(info_motor.get('Rodamiento_LOA', ''))
-                }
-                
-                if tarea_tipo == "Lubricación":
-                    st.session_state.navegacion_actual = "Relubricacion"
-                elif tarea_tipo == "Megado":
-                    st.session_state.navegacion_actual = "Mediciones de Campo"
-                else:
-                    st.session_state.navegacion_actual = "Nuevo Registro"
-                
-                st.rerun()   
-                
-                st.divider()
-                st.write("### ⚡ Acciones Rápidas")
-                col_A, col_B, col_C = st.columns(3)
+   # --- FUNCIÓN GLOBAL (Debe ir aquí, sin espacios al inicio) ---
+def enviar_a_formulario_con_datos(tarea_tipo, info_motor):
+    st.session_state['datos_motor_auto'] = {
+        'tag': str(info_motor.get('Tag', '')),
+        'serie': str(info_motor.get('N_Serie', '')),
+        'potencia': str(info_motor.get('Potencia', '')),
+        'tension': str(info_motor.get('Tension', '')),
+        'corriente': str(info_motor.get('Corriente', '')),
+        'rpm': str(info_motor.get('RPM', '-')),
+        'carcasa': str(info_motor.get('Carcasa', '')),
+        'r_la': str(info_motor.get('Rodamiento_LA', '')),
+        'r_loa': str(info_motor.get('Rodamiento_LOA', ''))
+    }
+    
+    if tarea_tipo == "Lubricación":
+        st.session_state.navegacion_actual = "Relubricacion"
+    elif tarea_tipo == "Megado":
+        st.session_state.navegacion_actual = "Mediciones de Campo"
+    else:
+        st.session_state.navegacion_actual = "Nuevo Registro"
+    
+    st.rerun()
                 
                 with col_A:
                     if st.button("🛢️ Lubricar", use_container_width=True, key="btn_lub_hist"):
@@ -857,6 +853,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
