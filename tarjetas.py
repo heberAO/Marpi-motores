@@ -440,13 +440,13 @@ elif modo == "Historial y QR":
             motor_info = df_historial.iloc[0] # La primera fila es la más nueva por el sort_values
             ultimo_tag = str(motor_info.get('Tag', 'S/D'))
 
-                # --- PANEL SUPERIOR ---
-                with st.container(border=True):
-                    col_qr, col_info = st.columns([1, 2])
-                    url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={serie_final}"
-                    qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
+            # --- PANEL SUPERIOR ---
+            with st.container(border=True):
+                col_qr, col_info = st.columns([1, 2])
+                url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={serie_final}"
+                qr_api = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url_app}"
                     
-                    with col_qr:
+                with col_qr:
                     st.image(qr_api, width=120)
                 with col_info:
                     st.subheader(f"Ⓜ️ {ultimo_tag}")
@@ -860,6 +860,7 @@ elif modo == "Mediciones de Campo":
     
 st.markdown("---")
 st.caption("Sistema desarrollado y diseñado por Heber Ortiz | Marpi Electricidad ⚡")
+
 
 
 
