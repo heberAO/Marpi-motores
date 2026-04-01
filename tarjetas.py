@@ -77,7 +77,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
             etiqueta.paste(logo_resurced, (x_derecha, 45), logo_resurced)
             y_pos_nro = 45 + h_size + 35 
         except:
-            y_pos_nro = 150
+            y_pos_nro = 225
 
         # 4. LÓGICA DE AJUSTE DE TAMAÑO (VERSIÓN ROBUSTA)
         texto_nro = f"N°: {str(serie).upper()}"
