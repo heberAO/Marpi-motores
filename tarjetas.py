@@ -87,14 +87,14 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         try:
             fuente_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
             # Bucle para reducir tamaño hasta que el ancho sea menor al máximo
-            while tamanio_fuente > 10:
+            while tamanio_fuente > 20:
                 fuente_nro = ImageFont.truetype(fuente_path, tamanio_fuente)
                 # Medimos el ancho usando getlength (más preciso para fuentes truetype)
                 ancho_texto = draw.textlength(texto_nro, font=fuente_nro)
                 
                 if ancho_texto <= ancho_maximo:
                     break
-                tamanio_fuente -= 2
+                tamanio_fuente -= 20
         except:
             # Si falla la carga de fuente, usamos el ajuste básico
             fuente_nro = ImageFont.load_default()
