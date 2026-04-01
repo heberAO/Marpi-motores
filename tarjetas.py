@@ -75,7 +75,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
             h_size = int((float(logo_original.size[1]) * float(w_percent)))
             logo_resurced = logo_original.resize((base_width, h_size), Image.Resampling.LANCZOS)
             etiqueta.paste(logo_resurced, (x_derecha, 45), logo_resurced)
-            y_pos_nro = 45 + h_size + 35 
+            y_pos_nro = 55 + h_size + 45 
         except:
             y_pos_nro = 225
 
