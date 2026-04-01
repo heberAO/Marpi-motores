@@ -81,7 +81,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
 
         # 4. LÓGICA DE AJUSTE DE TAMAÑO (VERSIÓN ROBUSTA)
         texto_nro = f"N°: {str(serie).upper()}"
-        tamanio_fuente = 150 # Tamaño inicial deseado
+        tamanio_fuente = 325 # Tamaño inicial deseado
         
         # Intentamos cargar la fuente, si falla usamos la de por defecto
         try:
