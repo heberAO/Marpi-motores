@@ -257,6 +257,7 @@ if modo == "Nuevo Registro":
     fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
     
     with st.form(key=f"alta_motor_{st.session_state.form_key}"):
+        st.markdown("### 📝 Datos de la Nueva Intervención")
         # --- CAMPOS DE ENTRADA ---
         c1, c2, c3 = st.columns([2, 2, 1])
         # Llenamos TAG y Serie
@@ -283,8 +284,8 @@ if modo == "Nuevo Registro":
         
         # 3. Combinamos ambos, eliminamos duplicados y ordenamos de menor a mayor
         # Usamos set() para que no se repitan y sorted() para el orden
-        rpms_lista = ["-"] + sorted(list(set(rpms_estandar + rpms_db)), key=lambda x: int(x) if x.isdigit() else 0)
-
+        rpms_limpias = [str(r).strip() for r in (rpms_estandar + rpms_db) if r and str(r).strip() != 'nan']
+        rpms_lista = ["-"] + sorted(list(set(rpms_limpias)), key=lambda x: int(x) if str(x).isdigit() else 0)
         # 4. Buscamos el valor que viene de datos_auto (del QR o Historial)
         val_rpm = str(datos_auto.get('rpm', '-'))
         
@@ -344,9 +345,9 @@ if modo == "Nuevo Registro":
                     "Tipo_Tarea": "Nuevo Registro"
                 }
 
-                # 2. Convertir a DataFrame la nueva fila
+                # Lógica para subir a Google Sheets
                 df_nueva = pd.DataFrame([nueva_fila])
-
+                df_actualizado = pd.concat([df_completo, df_nueva], ignore_index=True)
                 # 3. UNIR Y ACTUALIZAR (Lógica de Historial Conectado)
                 if not df_completo.empty and sn in df_completo['N_Serie'].astype(str).values:
                     st.info(f"Vínculo detectado: Agregando nueva intervención al historial del motor SN: {sn}")
