@@ -395,9 +395,19 @@ elif modo == "Historial y QR":
         df_completo['N_Serie'] = df_completo['N_Serie'].fillna('S/S').astype(str).str.strip()
         df_completo['Tag'] = df_completo['Tag'].fillna('S/T').astype(str).str.strip()
 
-        # 2. Crear lista de opciones (Sin nulos y única)
-        # Usamos set() y una lista de comprensión para asegurar que todo sea texto
-        opciones_base = list({f"{t} | SN: {s}" for t, s in zip(df_completo['Tag'], df_completo['N_Serie'])})
+        # 2. Crear lista de opciones ÚNICA POR SERIE (Muestra solo el último TAG)
+        df_temp = df_completo.copy()
+        
+        # Convertimos fecha para poder ordenar (Lo más nuevo al final)
+        df_temp['Fecha_DT'] = pd.to_datetime(df_temp['Fecha'], dayfirst=True, errors='coerce')
+        df_temp = df_temp.sort_values('Fecha_DT', ascending=True)
+
+        # MANTENEMOS SOLO EL ÚLTIMO REGISTRO DE CADA SERIE
+        # Esto hace que si el motor cambió de nombre, solo aparezca el actual
+        df_ultimos = df_temp.drop_duplicates(subset=['N_Serie'], keep='last')
+
+        # Creamos la lista de opciones desde el dataframe ya filtrado
+        opciones_base = [f"{row['Tag']} | SN: {row['N_Serie']}" for _, row in df_ultimos.iterrows()]
         opciones = [""] + sorted(opciones_base)
         
         # 3. LÓGICA DE RECONOCIMIENTO DE QR
