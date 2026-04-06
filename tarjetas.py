@@ -390,16 +390,18 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     
     if not df_completo.empty:
-        # 1. Limpieza rápida de datos
-        df_completo['N_Serie'] = df_completo['N_Serie'].astype(str).str.strip()
-        df_completo['Tag'] = df_completo['Tag'].astype(str).str.strip()
+        # 1. Limpieza y preparación de datos (Blindada)
+        df_completo['N_Serie'] = df_completo['N_Serie'].fillna('S/S').astype(str).str.strip()
+        df_completo['Tag'] = df_completo['Tag'].fillna('S/T').astype(str).str.strip()
 
-        # 2. Crear lista de opciones
-        opciones_base = (df_completo['Tag'] + " | SN: " + df_completo['N_Serie']).unique().tolist()
+        # 2. Crear lista de opciones (Sin nulos y única)
+        # Usamos set() y una lista de comprensión para asegurar que todo sea texto
+        opciones_base = list({f"{t} | SN: {s}" for t, s in zip(df_completo['Tag'], df_completo['N_Serie'])})
         opciones = [""] + sorted(opciones_base)
         
         # 3. LÓGICA DE RECONOCIMIENTO DE QR
         params = st.query_params
+        # Buscamos en todos los posibles nombres de parámetros
         qr_valor = params.get("serie") or params.get("tag") or params.get("Serie") or params.get("Tag")
         
         idx_buscador = 0
@@ -411,6 +413,10 @@ elif modo == "Historial y QR":
                     break
         
         # 4. EL SELECTOR ÚNICO
+        # Protección extra por si el índice se sale de rango
+        if idx_buscador >= len(opciones):
+            idx_buscador = 0
+
         seleccion = st.selectbox(
             "🔍 Seleccione o Busque el Motor:", 
             opciones, 
