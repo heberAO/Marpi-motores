@@ -424,13 +424,22 @@ elif modo == "Historial y QR":
             key="buscador_final_marpi"
         )
 
-        if seleccion:
-            # Extraemos la serie para filtrar el historial
+        if seleccion != "": 
+            # 1. Extraemos la serie (nuestro identificador único)
             serie_final = seleccion.split(" | SN: ")[1] if " | SN: " in seleccion else ""
-            historial_motor = df_completo[df_completo['N_Serie'] == serie_final].copy()
             
-            if not historial_motor.empty:
-                motor_info = historial_motor.iloc[-1]
+            # 2. Filtramos TODO el historial de esa serie (sin importar el Tag)
+            df_historial = df_completo[df_completo['N_Serie'] == serie_final].copy()
+            
+            if not df_historial.empty:
+                # 3. Convertir fecha para ordenar: lo más nuevo DEBE ir arriba
+                df_historial['Fecha_DT'] = pd.to_datetime(df_historial['Fecha'], dayfirst=True, errors='coerce')
+                df_historial = df_historial.sort_values('Fecha_DT', ascending=False)
+                
+                # 4. Obtener la info más actual (la primera fila después de ordenar)
+                motor_info = df_historial.iloc[0]
+                
+                # Usamos el Tag del último registro guardado (el más nuevo)
                 ultimo_tag = str(motor_info.get('Tag', 'S/D'))
 
                 # --- PANEL SUPERIOR ---
