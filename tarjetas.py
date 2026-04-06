@@ -395,19 +395,26 @@ elif modo == "Historial y QR":
         df_completo['N_Serie'] = df_completo['N_Serie'].fillna('S/S').astype(str).str.strip()
         df_completo['Tag'] = df_completo['Tag'].fillna('S/T').astype(str).str.strip()
 
-        # 2. Crear lista de opciones ÚNICA POR SERIE (Muestra solo el último TAG)
+        # 2. Crear lista de opciones ÚNICA POR SERIE (Muestra el TAG MÁS RECIENTE)
         df_temp = df_completo.copy()
         
-        # Convertimos fecha para poder ordenar (Lo más nuevo al final)
+        # Convertimos la columna Fecha a formato fecha real para poder ordenar
         df_temp['Fecha_DT'] = pd.to_datetime(df_temp['Fecha'], dayfirst=True, errors='coerce')
-        df_temp = df_temp.sort_values('Fecha_DT', ascending=True)
+        
+        # ORDENAMOS: Lo más nuevo PRIMERO (descendente)
+        df_temp = df_temp.sort_values('Fecha_DT', ascending=False)
 
-        # MANTENEMOS SOLO EL ÚLTIMO REGISTRO DE CADA SERIE
-        # Esto hace que si el motor cambió de nombre, solo aparezca el actual
-        df_ultimos = df_temp.drop_duplicates(subset=['N_Serie'], keep='last')
+        # MANTENEMOS EL PRIMERO (que ahora es el más nuevo gracias al sort anterior)
+        df_ultimos = df_temp.drop_duplicates(subset=['N_Serie'], keep='first')
 
-        # Creamos la lista de opciones desde el dataframe ya filtrado
-        opciones_base = [f"{row['Tag']} | SN: {row['N_Serie']}" for _, row in df_ultimos.iterrows()]
+        # Creamos la lista de opciones
+        opciones_base = [
+            f"{row['Tag']} | SN: {row['N_Serie']}" 
+            for _, row in df_ultimos.iterrows() 
+            if str(row['N_Serie']) != 'nan'
+        ]
+        
+        # Ordenamos la lista alfabéticamente para que sea fácil buscar
         opciones = [""] + sorted(opciones_base)
         
         # 3. LÓGICA DE RECONOCIMIENTO DE QR
