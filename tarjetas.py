@@ -497,7 +497,7 @@ elif modo == "Historial y QR":
                 st.divider()
                 st.subheader("📜 Historial de Intervenciones")
                 
-                hist_m = historial_motor.iloc[::-1] # Lo más nuevo arriba
+                hist_m = df_historial.iloc[:] # Lo más nuevo arriba
                 for idx, fila in hist_m.iterrows():
                     f_limpia = fila.fillna('-')
                     tarea = str(f_limpia.get('Tipo_Tarea', '-')).strip()
