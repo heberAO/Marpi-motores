@@ -84,14 +84,26 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
             # Si falla la fuente personalizada, este es el plan B pero con tamaño
             fuente_nro = ImageFont.load_default() 
 
-        # 4. DIBUJAR CONTENIDO
-        # Dibujamos "N° MOTOR" arriba en chico
+       texto_nro = str(serie).upper()
+        
         try:
-            fuente_chica = ImageFont.truetype(fuente_path, 25)
-            draw.text((x_derecha + 10, 40), "N° DE MOTOR / SERIE:", font=fuente_chica, fill=(0,0,0))
+            # Intentamos cargar una fuente estándar de Linux que SIEMPRE está
+            fuente_nro = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf", 90)
         except:
-            draw.text((x_derecha + 10, 40), "N° MOTOR:", fill=(0,0,0))
+            try:
+                # Segunda opción común en servidores
+                fuente_nro = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 90)
+            except:
+                # Si todo falla, usamos el default (pero aquí es donde se ve chico)
+                fuente_nro = ImageFont.load_default()
 
+        # DIBUJAMOS EL NÚMERO
+        # Usamos coordenadas fijas para que quede centrado en el bloque derecho
+        draw.text((320, 110), texto_nro, font=fuente_nro, fill=(0,0,0))
+        
+        # Agregamos una línea divisoria para que parezca una placa de identificación
+        draw.line([(310, 95), (580, 95)], fill=(0,0,0), width=3)
+        draw.text((320, 70), "N° IDENTIFICACIÓN:", fill=(0,0,0))
         # DIBUJAR EL NÚMERO (El protagonista)
         # Lo bajamos un poco para que no choque con el logo
         draw.text((x_derecha + 10, 80), str(serie).upper(), font=fuente_nro, fill=(0,0,0))
