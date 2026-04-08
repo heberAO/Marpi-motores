@@ -51,77 +51,63 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         import qrcode
         import io 
 
-        # 1. Lienzo (600x300 px)
+        # 1. Lienzo blanco (600x300)
         etiqueta = Image.new('RGB', (600, 300), (255, 255, 255))
         draw = ImageDraw.Draw(etiqueta)
 
-       # 2. QR (LADO IZQUIERDO) - Ahora vinculado a la SERIE
-        qr = qrcode.QRCode(version=1, box_size=12, border=1)
-        # EL CAMBIO CLAVE:
+        # 2. QR (LADO IZQUIERDO)
+        qr = qrcode.QRCode(version=1, box_size=10, border=1)
         qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie}&exact=1")
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
-        img_qr = img_qr.resize((260, 260))
-        etiqueta.paste(img_qr, (20, 20))
+        img_qr = img_qr.resize((250, 250))
+        etiqueta.paste(img_qr, (25, 25))
 
-        # 3. LADO DERECHO: LOGO + N° MOTOR
-        x_derecha = 310
-        ancho_maximo = 275 # Espacio disponible para que no se salga de la etiqueta
+        # 3. LADO DERECHO: TEXTO Y LOGO
+        x_derecha = 300
+        ancho_maximo = 280
         
+        # Intentar cargar fuente de sistema (Streamlit usa Linux)
+        fuente_path = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+        
+        try:
+            # Tamaño de fuente para el Número (BIEN GRANDE)
+            # Empezamos en 100 y bajamos solo si el texto es muy largo
+            tam_nro = 100
+            fuente_nro = ImageFont.truetype(fuente_path, tam_nro)
+            
+            # Ajuste automático si el N° de Serie es muy largo
+            while draw.textbbox((0, 0), str(serie), font=fuente_nro)[2] > ancho_maximo:
+                tam_nro -= 5
+                fuente_nro = ImageFont.truetype(fuente_path, tam_nro)
+        except:
+            # Si falla la fuente personalizada, este es el plan B pero con tamaño
+            fuente_nro = ImageFont.load_default() 
+
+        # 4. DIBUJAR CONTENIDO
+        # Dibujamos "N° MOTOR" arriba en chico
+        try:
+            fuente_chica = ImageFont.truetype(fuente_path, 25)
+            draw.text((x_derecha + 10, 40), "N° DE MOTOR / SERIE:", font=fuente_chica, fill=(0,0,0))
+        except:
+            draw.text((x_derecha + 10, 40), "N° MOTOR:", fill=(0,0,0))
+
+        # DIBUJAR EL NÚMERO (El protagonista)
+        # Lo bajamos un poco para que no choque con el logo
+        draw.text((x_derecha + 10, 80), str(serie).upper(), font=fuente_nro, fill=(0,0,0))
+
+        # 5. LOGO (Lo ponemos ABAJO para que no estorbe al número si es grande)
         try:
             logo_original = Image.open("logo.png").convert('RGBA')
-            base_width = 250 
+            base_width = 200
             w_percent = (base_width / float(logo_original.size[0]))
             h_size = int((float(logo_original.size[1]) * float(w_percent)))
-            logo_resurced = logo_original.resize((base_width, h_size), Image.Resampling.LANCZOS)
-            etiqueta.paste(logo_resurced, (x_derecha, 45), logo_resurced)
-            y_pos_nro = 40 + h_size + 20 
+            logo_res = logo_original.resize((base_width, h_size), Image.Resampling.LANCZOS)
+            etiqueta.paste(logo_res, (x_derecha + 10, 200), logo_res)
         except:
-            y_pos_nro = 100
+            pass
 
-        # 4. LÓGICA DE AJUSTE DE TAMAÑO (VERSIÓN ROBUSTA)
-        texto_nro = f"N°: {str(serie).upper()}"
-        tamanio_fuente = 80 # Tamaño inicial deseado
-        
-        try:
-            # Intentamos varias rutas comunes de fuentes según el sistema
-            fuentes_posibles = [
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-                "arial.ttf"
-            ]
-            
-            fuente_nro = None
-            for path in fuentes_posibles:
-                try:
-                    # Bucle para ajustar el tamaño al ancho disponible
-                    temp_tamanio = tamanio_fuente
-                    while temp_tamanio > 20:
-                        f = ImageFont.truetype(path, temp_tamanio)
-                        # Usamos textbbox para medir (es lo más moderno en Pillow)
-                        bbox = draw.textbbox((0, 0), texto_nro, font=f)
-                        ancho_texto = bbox[2] - bbox[0]
-                        if ancho_texto <= ancho_maximo:
-                            fuente_nro = f
-                            break
-                        temp_tamanio -= 5
-                    if fuente_nro: break
-                except:
-                    continue
-
-            if not fuente_nro:
-                fuente_nro = ImageFont.load_default()
-        except:
-            fuente_nro = ImageFont.load_default()
-
-        # Dibujamos un título pequeño arriba del número
-        fuente_label = ImageFont.load_default()
-        draw.text((x_derecha + 10, y_pos_nro), "N° SERIE / MOTOR:", fill=(0,0,0))
-        
-        # Dibujamos el número de serie bien grande
-        draw.text((x_derecha + 10, y_pos_nro + 20), texto_nro, font=fuente_nro, fill=(0,0,0))
-
-        # 5. CONVERSIÓN FINAL
+        # 6. CONVERSIÓN
         buf = io.BytesIO()
         etiqueta.save(buf, format='PNG') 
         return buf.getvalue()
