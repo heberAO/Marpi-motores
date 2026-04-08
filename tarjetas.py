@@ -50,67 +50,50 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         from PIL import Image, ImageDraw, ImageFont
         import qrcode
         import io 
+        import os
 
-        # 1. LIENZO (600x300) - Fondo blanco puro
+        # 1. LIENZO (600x300)
         etiqueta = Image.new('RGB', (600, 300), (255, 255, 255))
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. QR (LADO IZQUIERDO) - Sin cambios para que sigan funcionando tus etiquetas viejas
-        qr = qrcode.QRCode(version=1, box_size=10, border=1)
-        qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie}&exact=1")
-        qr.make(fit=True)
-        img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
-        img_qr = img_qr.resize((240, 240))
-        etiqueta.paste(img_qr, (20, 30))
+        # 2. QR (LADO IZQUIERDO) - 250x250 px
+        qr_url = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie}&exact=1"
+        qr = qrcode.make(qr_url)
+        img_qr = qr.convert('RGB').resize((250, 250))
+        etiqueta.paste(img_qr, (20, 25))
 
-        # 3. LADO DERECHO: EL NÚMERO DE SERIE
-        texto_nro = str(serie).upper()
+        # 3. LADO DERECHO (Número de Motor)
         x_derecha = 300
+        texto_nro = str(serie).upper()
         
-        # TRUCO FINAL PARA LA FUENTE:
-        # Si el servidor no tiene fuentes, usamos 'load_default' pero la ESCALAMOS nosotros
+        # --- CARGA DE FUENTE PROPIA ---
+        # Intentamos cargar el archivo que vas a subir al GitHub
+        nombre_fuente = "Arial-Bold.ttf" 
+        if os.path.exists(nombre_fuente):
+            fuente = ImageFont.truetype(nombre_fuente, 100) # Tamaño 100: Muy grande
+        else:
+            # Si aún no lo subes, usamos este truco para que al menos se vea algo
+            fuente = ImageFont.load_default()
+            st.warning("⚠️ Sube 'Arial-Bold.ttf' a GitHub para ver el número grande.")
+
+        # Dibujamos el número (Centrado verticalmente en el espacio derecho)
+        draw.text((x_derecha + 10, 100), texto_nro, font=fuente, fill=(0,0,0))
+
+        # 4. LOGO (Ubicación Superior)
         try:
-            # Intentamos la fuente de Linux que suele estar
-            fuente = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf", 85)
+            logo = Image.open("logo.png").convert('RGBA')
+            # Lo redimensionamos para que no tape al número
+            logo.thumbnail((250, 80), Image.Resampling.LANCZOS)
+            etiqueta.paste(logo, (x_derecha + 15, 20), logo)
         except:
-            # Si falla, usamos la de reserva de DejaVu
-            try:
-                fuente = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 85)
-            except:
-                # Si TODO falla, cargamos la básica de Pillow
-                fuente = ImageFont.load_default()
+            draw.text((x_derecha + 15, 20), "MARPI MOTORES", fill=(0,0,0))
 
-        # Dibujamos el número con un ligero "borde" para que sea más grueso (negrita forzada)
-        # Lo dibujamos 3 veces con 1 píxel de diferencia para engrosarlo
-        pos_x, pos_y = x_derecha + 10, 100
-        for offset in [(0,0), (1,0), (0,1), (1,1)]:
-            draw.text((pos_x + offset[0], pos_y + offset[1]), texto_nro, font=fuente, fill=(0,0,0))
-
-        # 4. EL LOGO (Ubicación superior derecha)
-        try:
-            # Abrimos el logo y lo convertimos a alta calidad
-            logo_original = Image.open("logo.png").convert('RGBA')
-            # Lo hacemos un poco más grande para que sea legible
-            base_width = 240 
-            w_percent = (base_width / float(logo_original.size[0]))
-            h_size = int((float(logo_original.size[1]) * float(w_percent)))
-            logo_res = logo_original.resize((base_width, h_size), Image.Resampling.LANCZOS)
-            
-            # Pegamos el logo arriba del número
-            etiqueta.paste(logo_res, (x_derecha + 15, 30), logo_res)
-        except:
-            draw.text((x_derecha + 10, 30), "MARPI MOTORES", fill=(0,0,0))
-
-        # 5. LINEA DE SEPARACIÓN (Ayuda a la impresora a encuadrar)
-        draw.line([(285, 20), (285, 280)], fill=(0,0,0), width=2)
-
-        # 6. PROCESAMIENTO PARA IMPRESORA TÉRMICA (CONTRANSTE MÁXIMO)
-        # Convertimos a escala de grises y luego a blanco/negro puro sin difuminado
-        etiqueta_final = etiqueta.convert('L').point(lambda x: 0 if x < 140 else 255, '1')
+        # 5. CONVERSIÓN PARA IMPRESORA HONEYWELL
+        # Convertimos a blanco y negro puro (Threshold) para que no salga borroso
+        etiqueta_final = etiqueta.convert('L').point(lambda x: 0 if x < 128 else 255, '1')
 
         buf = io.BytesIO()
-        # Guardamos como PNG pero forzando que no pierda calidad
-        etiqueta_final.save(buf, format='PNG', optimize=True) 
+        etiqueta_final.save(buf, format='PNG') 
         return buf.getvalue()
 
     except Exception as e:
