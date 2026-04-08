@@ -70,7 +70,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         # Intentamos cargar el archivo que vas a subir al GitHub
         nombre_fuente = "Arial-Bold.ttf" 
         if os.path.exists(nombre_fuente):
-            fuente = ImageFont.truetype(nombre_fuente, 100) # Tamaño 100: Muy grande
+            fuente = ImageFont.truetype(nombre_fuente, 50) # Tamaño 100: Muy grande
         else:
             # Si aún no lo subes, usamos este truco para que al menos se vea algo
             fuente = ImageFont.load_default()
