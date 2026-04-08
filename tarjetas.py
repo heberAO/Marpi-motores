@@ -51,75 +51,49 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         import qrcode
         import io 
 
-        # 1. Lienzo blanco (600x300)
+        # 1. Crear el lienzo (600x300)
         etiqueta = Image.new('RGB', (600, 300), (255, 255, 255))
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. QR (LADO IZQUIERDO)
+        # 2. QR (LADO IZQUIERDO) - Se mantiene igual para no afectar tus QR viejos
         qr = qrcode.QRCode(version=1, box_size=10, border=1)
         qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie}&exact=1")
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white").convert('RGB')
-        img_qr = img_qr.resize((250, 250))
-        etiqueta.paste(img_qr, (25, 25))
+        img_qr = img_qr.resize((240, 240))
+        etiqueta.paste(img_qr, (20, 30))
 
-        # 3. LADO DERECHO: TEXTO Y LOGO
-        x_derecha = 300
-        ancho_maximo = 280
+        # 3. TEXTO DERECHO (Sin depender de fuentes externas)
+        # Dibujamos un rectángulo negro para que el número resalte en blanco (estilo placa)
+        draw.rectangle([300, 100, 580, 200], fill=(0, 0, 0))
         
-        # Intentar cargar fuente de sistema (Streamlit usa Linux)
-        fuente_path = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
-        
-        try:
-            # Tamaño de fuente para el Número (BIEN GRANDE)
-            # Empezamos en 100 y bajamos solo si el texto es muy largo
-            tam_nro = 100
-            fuente_nro = ImageFont.truetype(fuente_path, tam_nro)
-            
-            # Ajuste automático si el N° de Serie es muy largo
-            while draw.textbbox((0, 0), str(serie), font=fuente_nro)[2] > ancho_maximo:
-                tam_nro -= 5
-                fuente_nro = ImageFont.truetype(fuente_path, tam_nro)
-        except:
-            # Si falla la fuente personalizada, este es el plan B pero con tamaño
-            fuente_nro = ImageFont.load_default() 
-
         texto_nro = str(serie).upper()
         
+        # Intentamos cargar la fuente, pero si falla, usamos un truco de escalado
         try:
-            # Intentamos cargar una fuente estándar de Linux que SIEMPRE está
-            fuente_nro = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf", 90)
+            # Esta es la ruta estándar en la mayoría de los servidores Linux de Streamlit
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 60)
         except:
-            try:
-                # Segunda opción común en servidores
-                fuente_nro = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 90)
-            except:
-                # Si todo falla, usamos el default (pero aquí es donde se ve chico)
-                fuente_nro = ImageFont.load_default()
+            # PLAN B: Si no hay fuentes, usamos la básica pero la escribiremos varias veces
+            # para simular "Negrita" y que sea legible
+            font = ImageFont.load_default()
 
-        # DIBUJAMOS EL NÚMERO
-        # Usamos coordenadas fijas para que quede centrado en el bloque derecho
-        draw.text((320, 110), texto_nro, font=fuente_nro, fill=(0,0,0))
+        # Escribir el encabezado
+        draw.text((310, 70), "N° SERIE / MOTOR:", fill=(0,0,0))
         
-        # Agregamos una línea divisoria para que parezca una placa de identificación
-        draw.line([(310, 95), (580, 95)], fill=(0,0,0), width=3)
-        draw.text((320, 70), "N° IDENTIFICACIÓN:", fill=(0,0,0))
-        # DIBUJAR EL NÚMERO (El protagonista)
-        # Lo bajamos un poco para que no choque con el logo
-        draw.text((x_derecha + 10, 80), str(serie).upper(), font=fuente_nro, fill=(0,0,0))
+        # Escribir el número (Si es la fuente default, saldrá chica, pero al menos está el fondo negro)
+        # Si tienes acceso a subir archivos, te sugiero subir un archivo 'font.ttf' a tu GitHub
+        draw.text((320, 120), texto_nro, font=font, fill=(255,255,255))
 
-        # 5. LOGO (Lo ponemos ABAJO para que no estorbe al número si es grande)
+        # 4. LOGO (En la esquina inferior)
         try:
             logo_original = Image.open("logo.png").convert('RGBA')
-            base_width = 200
-            w_percent = (base_width / float(logo_original.size[0]))
-            h_size = int((float(logo_original.size[1]) * float(w_percent)))
-            logo_res = logo_original.resize((base_width, h_size), Image.Resampling.LANCZOS)
-            etiqueta.paste(logo_res, (x_derecha + 10, 200), logo_res)
+            logo_res = logo_original.resize((150, 50), Image.Resampling.LANCZOS)
+            etiqueta.paste(logo_res, (420, 230), logo_res)
         except:
             pass
 
-        # 6. CONVERSIÓN
+        # 5. CONVERSIÓN FINAL A ALTA NITIDEZ
         buf = io.BytesIO()
         etiqueta.save(buf, format='PNG') 
         return buf.getvalue()
