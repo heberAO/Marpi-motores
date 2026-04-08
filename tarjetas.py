@@ -84,7 +84,7 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
             # Si falla la fuente personalizada, este es el plan B pero con tamaño
             fuente_nro = ImageFont.load_default() 
 
-       texto_nro = str(serie).upper()
+        texto_nro = str(serie).upper()
         
         try:
             # Intentamos cargar una fuente estándar de Linux que SIEMPRE está
