@@ -51,11 +51,11 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         import qrcode
         import io 
 
-        # 1. Crear el lienzo (600x300)
+        # 1. LIENZO (600x300) - Fondo blanco puro
         etiqueta = Image.new('RGB', (600, 300), (255, 255, 255))
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. QR (LADO IZQUIERDO) - Se mantiene igual para no afectar tus QR viejos
+        # 2. QR (LADO IZQUIERDO) - Sin cambios para que sigan funcionando tus etiquetas viejas
         qr = qrcode.QRCode(version=1, box_size=10, border=1)
         qr.add_data(f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie}&exact=1")
         qr.make(fit=True)
@@ -63,39 +63,54 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         img_qr = img_qr.resize((240, 240))
         etiqueta.paste(img_qr, (20, 30))
 
-        # 3. TEXTO DERECHO (Sin depender de fuentes externas)
-        # Dibujamos un rectángulo negro para que el número resalte en blanco (estilo placa)
-        draw.rectangle([300, 100, 580, 200], fill=(0, 0, 0))
-        
+        # 3. LADO DERECHO: EL NÚMERO DE SERIE
         texto_nro = str(serie).upper()
+        x_derecha = 300
         
-        # Intentamos cargar la fuente, pero si falla, usamos un truco de escalado
+        # TRUCO FINAL PARA LA FUENTE:
+        # Si el servidor no tiene fuentes, usamos 'load_default' pero la ESCALAMOS nosotros
         try:
-            # Esta es la ruta estándar en la mayoría de los servidores Linux de Streamlit
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 60)
+            # Intentamos la fuente de Linux que suele estar
+            fuente = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf", 85)
         except:
-            # PLAN B: Si no hay fuentes, usamos la básica pero la escribiremos varias veces
-            # para simular "Negrita" y que sea legible
-            font = ImageFont.load_default()
+            # Si falla, usamos la de reserva de DejaVu
+            try:
+                fuente = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 85)
+            except:
+                # Si TODO falla, cargamos la básica de Pillow
+                fuente = ImageFont.load_default()
 
-        # Escribir el encabezado
-        draw.text((310, 70), "N° SERIE / MOTOR:", fill=(0,0,0))
-        
-        # Escribir el número (Si es la fuente default, saldrá chica, pero al menos está el fondo negro)
-        # Si tienes acceso a subir archivos, te sugiero subir un archivo 'font.ttf' a tu GitHub
-        draw.text((320, 120), texto_nro, font=font, fill=(255,255,255))
+        # Dibujamos el número con un ligero "borde" para que sea más grueso (negrita forzada)
+        # Lo dibujamos 3 veces con 1 píxel de diferencia para engrosarlo
+        pos_x, pos_y = x_derecha + 10, 100
+        for offset in [(0,0), (1,0), (0,1), (1,1)]:
+            draw.text((pos_x + offset[0], pos_y + offset[1]), texto_nro, font=fuente, fill=(0,0,0))
 
-        # 4. LOGO (En la esquina inferior)
+        # 4. EL LOGO (Ubicación superior derecha)
         try:
+            # Abrimos el logo y lo convertimos a alta calidad
             logo_original = Image.open("logo.png").convert('RGBA')
-            logo_res = logo_original.resize((150, 50), Image.Resampling.LANCZOS)
-            etiqueta.paste(logo_res, (420, 230), logo_res)
+            # Lo hacemos un poco más grande para que sea legible
+            base_width = 240 
+            w_percent = (base_width / float(logo_original.size[0]))
+            h_size = int((float(logo_original.size[1]) * float(w_percent)))
+            logo_res = logo_original.resize((base_width, h_size), Image.Resampling.LANCZOS)
+            
+            # Pegamos el logo arriba del número
+            etiqueta.paste(logo_res, (x_derecha + 15, 30), logo_res)
         except:
-            pass
+            draw.text((x_derecha + 10, 30), "MARPI MOTORES", fill=(0,0,0))
 
-        # 5. CONVERSIÓN FINAL A ALTA NITIDEZ
+        # 5. LINEA DE SEPARACIÓN (Ayuda a la impresora a encuadrar)
+        draw.line([(285, 20), (285, 280)], fill=(0,0,0), width=2)
+
+        # 6. PROCESAMIENTO PARA IMPRESORA TÉRMICA (CONTRANSTE MÁXIMO)
+        # Convertimos a escala de grises y luego a blanco/negro puro sin difuminado
+        etiqueta_final = etiqueta.convert('L').point(lambda x: 0 if x < 140 else 255, '1')
+
         buf = io.BytesIO()
-        etiqueta.save(buf, format='PNG') 
+        # Guardamos como PNG pero forzando que no pierda calidad
+        etiqueta_final.save(buf, format='PNG', optimize=True) 
         return buf.getvalue()
 
     except Exception as e:
