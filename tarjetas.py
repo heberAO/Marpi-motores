@@ -70,48 +70,64 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         
         try:
             logo_original = Image.open("logo.png").convert('RGBA')
-            base_width = 270 
+            base_width = 250 
             w_percent = (base_width / float(logo_original.size[0]))
             h_size = int((float(logo_original.size[1]) * float(w_percent)))
             logo_resurced = logo_original.resize((base_width, h_size), Image.Resampling.LANCZOS)
             etiqueta.paste(logo_resurced, (x_derecha, 45), logo_resurced)
-            y_pos_nro = 55 + h_size + 45 
+            y_pos_nro = 40 + h_size + 20 
         except:
-            y_pos_nro = 150
+            y_pos_nro = 100
 
         # 4. LÓGICA DE AJUSTE DE TAMAÑO (VERSIÓN ROBUSTA)
         texto_nro = f"N°: {str(serie).upper()}"
-        tamanio_fuente = 325 # Tamaño inicial deseado
+        tamanio_fuente = 80 # Tamaño inicial deseado
         
-        # Intentamos cargar la fuente, si falla usamos la de por defecto
         try:
-            fuente_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-            # Bucle para reducir tamaño hasta que el ancho sea menor al máximo
-            while tamanio_fuente > 20:
-                fuente_nro = ImageFont.truetype(fuente_path, tamanio_fuente)
-                # Medimos el ancho usando getlength (más preciso para fuentes truetype)
-                ancho_texto = draw.textlength(texto_nro, font=fuente_nro)
-                
-                if ancho_texto <= ancho_maximo:
-                    break
-                tamanio_fuente -= 20
+            # Intentamos varias rutas comunes de fuentes según el sistema
+            fuentes_posibles = [
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+                "arial.ttf"
+            ]
+            
+            fuente_nro = None
+            for path in fuentes_posibles:
+                try:
+                    # Bucle para ajustar el tamaño al ancho disponible
+                    temp_tamanio = tamanio_fuente
+                    while temp_tamanio > 20:
+                        f = ImageFont.truetype(path, temp_tamanio)
+                        # Usamos textbbox para medir (es lo más moderno en Pillow)
+                        bbox = draw.textbbox((0, 0), texto_nro, font=f)
+                        ancho_texto = bbox[2] - bbox[0]
+                        if ancho_texto <= ancho_maximo:
+                            fuente_nro = f
+                            break
+                        temp_tamanio -= 5
+                    if fuente_nro: break
+                except:
+                    continue
+
+            if not fuente_nro:
+                fuente_nro = ImageFont.load_default()
         except:
-            # Si falla la carga de fuente, usamos el ajuste básico
             fuente_nro = ImageFont.load_default()
 
-        # Dibujamos el Número de Motor centrado en su columna o alineado a la izquierda
-        draw.text((x_derecha + 5, y_pos_nro), texto_nro, font=fuente_nro, fill=(0,0,0))
-
-        # 5. CONVERSIÓN PARA HONEYWELL
-        final_bw = etiqueta.convert('1', dither=Image.NONE)
+        # Dibujamos un título pequeño arriba del número
+        fuente_label = ImageFont.load_default()
+        draw.text((x_derecha + 10, y_pos_nro), "N° SERIE / MOTOR:", fill=(0,0,0))
         
+        # Dibujamos el número de serie bien grande
+        draw.text((x_derecha + 10, y_pos_nro + 20), texto_nro, font=fuente_nro, fill=(0,0,0))
+
+        # 5. CONVERSIÓN FINAL
         buf = io.BytesIO()
-        # CAMBIO AQUÍ: Usamos 'etiqueta' que es el nombre que definiste arriba
         etiqueta.save(buf, format='PNG') 
         return buf.getvalue()
 
     except Exception as e:
-        st.error(f"Error interno en la función de etiqueta: {e}")
+        st.error(f"Error en etiqueta: {e}")
         return None
         
 def calcular_grasa_marpi(rodamiento):
