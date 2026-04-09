@@ -621,7 +621,7 @@ elif modo == "Relubricacion":
     df_lista = df_completo.copy()
     df_lista['Busqueda_Combo'] = df_lista['Tag'].astype(str) + " | SN: " + df_lista['N_Serie'].astype(str)
    # Aseguramos que 'Busqueda_Combo' exista y esté limpia
-        if 'Busqueda_Combo' in df_lista.columns:
+     if 'Busqueda_Combo' in df_lista.columns:
             # 1. Convertimos todo a string, quitamos nulos y espacios
             lista_limpia = df_lista['Busqueda_Combo'].fillna("").astype(str).str.strip()
             
