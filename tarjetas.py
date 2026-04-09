@@ -621,17 +621,18 @@ elif modo == "Relubricacion":
     df_lista = df_completo.copy()
     df_lista['Busqueda_Combo'] = df_lista['Tag'].astype(str) + " | SN: " + df_lista['N_Serie'].astype(str)
    # Aseguramos que 'Busqueda_Combo' exista y esté limpia
-     if 'Busqueda_Combo' in df_lista.columns:
-            # 1. Convertimos todo a string, quitamos nulos y espacios
-            lista_limpia = df_lista['Busqueda_Combo'].fillna("").astype(str).str.strip()
-            
-            # 2. Filtramos para que no haya elementos vacíos en la lista
-            lista_final = [x for x in lista_limpia.unique().tolist() if x != ""]
-            
-            # 3. Ahora sí, el sorted no va a fallar porque todo es TEXTO
-            opciones_combo = [""] + sorted(lista_final)
-        else:
-            opciones_combo = [""]
+  # --- Asegúrate de que este bloque esté alineado con el resto del código ---
+    if 'Busqueda_Combo' in df_lista.columns:
+    # 1. Limpiamos y convertimos a texto para evitar el TypeError
+        lista_limpia = df_lista['Busqueda_Combo'].fillna("").astype(str).str.strip()
+    
+    # 2. Quitamos duplicados y vacíos
+        lista_final = [x for x in lista_limpia.unique().tolist() if x != ""]
+    
+    # 3. El sorted ahora sí funcionará
+        opciones_combo = [""] + sorted(lista_final)
+    else:
+        opciones_combo = [""]
     
     indice_predef = 0
     if tag_qr:
