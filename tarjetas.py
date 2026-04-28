@@ -296,7 +296,7 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
                 st.session_state.form_key_plan += 1
                 time.sleep(2) # Esperamos 2 segundos para que veas el mensaje de éxito
                 st.rerun() # Refrescamos la página
-
+        st.divider()
             except Exception as e:
                 st.error(f"❌ Error al guardar: {e}")
                 st.info("Asegúrate de que la pestaña se llame exactamente 'Planificación' y tenga los encabezados en la fila 1.")
