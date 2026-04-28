@@ -10,6 +10,8 @@ from fpdf import FPDF
 import qrcode
 from PIL import Image, ImageDraw, ImageFont
 import streamlit.components.v1 as components
+import requests
+import urllib.parse
 
 def boton_descarga_pro(tag, fecha, tarea, resp, serie, pot, rpm, carcasa, detalles, extra, obs):
     st_btn = 'width:100%;background:#007bff;color:white;padding:15px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-family:sans-serif;'
@@ -147,7 +149,13 @@ def cargar_datos_google():
 
 # --- USO DE LA FUNCIÓN ---
 df_completo = cargar_datos_google()
-
+# --- CONEXIÓN A LA HOJA DE PLANIFICACIÓN ---
+# Reemplaza "Planificacion" por el nombre exacto que le pusiste a la pestaña
+try:
+    df_plan = conn.read(worksheet="Planificacion")
+except Exception as e:
+    st.error(f"No se pudo leer la hoja de Planificación: {e}")
+    df_plan = pd.DataFrame()
 # --- 2. INICIALIZACIÓN DE VARIABLES Y QR ---
 if "motor_seleccionado" not in st.session_state:
     st.session_state.motor_seleccionado = None
@@ -229,8 +237,65 @@ if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
                 else:
                     st.error("⚠️ Clave incorrecta")
         st.stop() # <--- AQUÍ SE DETIENE SOLO SI NO ESTÁ LOGUEADO
+st.title("🛠️ Gestión de Reparaciones - Marpi")
 
-# --- 5. SECCIONES (CON AUTOCOMPLETADO) ---
+# --- 1. SECCIÓN DE PLANIFICACIÓN (SOLO PARA PERSONAL AUTORIZADO) ---
+with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
+    with st.form("nuevo_plan"):
+        c1, c2 = st.columns(2)
+        
+        with c1:
+            f_ot = st.text_input("N° Orden de Trabajo (OT)").upper()
+            opciones_motores = df_completo['Tag'].astype(str) + " | " + df_completo['N_Serie'].astype(str) if not df_completo.empty else ["Sin datos"]
+            f_motor = st.selectbox("Seleccionar Motor", opciones_motores)
+            f_planta = st.text_input("Planta / Cliente").upper()
+            f_inspector = st.text_input("Inspector / Solicitante").upper()
+
+        with c2:
+            f_tarea = st.selectbox("Tarea a realizar", ["Desarmar/Evaluar", "Material", "Reparacion", "Armado"])
+            f_encargado = st.selectbox("Asignar a Reparador", ["Toledano Ruben", "Accordinaro Diego", "Ortega Enzo"])
+            f_prioridad = st.select_slider("Prioridad", options=["Baja", "Normal", "Urgente"])
+            f_fecha = st.date_input("Fecha Programada", date.today())
+
+        btn_plan = st.form_submit_button("Guardar en Agenda")
+
+    if btn_plan:
+        if f_ot and f_motor:
+            nueva_fila_plan = pd.DataFrame([{
+                "Fecha": f_fecha.strftime("%d/%m/%Y"),
+                "OT": f_ot,
+                "Motor": f_motor,
+                "Planta": f_planta,
+                "Inspector": f_inspector,
+                "Encargado": f_encargado,
+                "Tarea": f_tarea,
+                "Prioridad": f_prioridad,
+                "Estado": "Pendiente"
+            }])
+            
+            try:
+                conn.update(worksheet="Planificacion", data=nueva_fila_plan)
+                st.success(f"✅ OT {f_ot} guardada en Agenda")
+
+                # DICCIONARIO DE TELÉFONOS (Corregí los números aquí)
+                telefonos = {
+                    "Toledano Ruben": "5492615914147", # Revisa si sobra un número aquí
+                    "Accordinaro Diego": "549261000000",
+                    "Ortega Enzo": "549261000000"
+                }
+
+                tel = telefonos.get(f_encargado, "")
+                if tel:
+                    mensaje_wa = f"Hola {f_encargado}, se te asignó la OT: {f_ot} para el motor {f_motor}. Tarea: {f_tarea}."
+                    texto_url = urllib.parse.quote(mensaje_wa)
+                    link_wa = f"https://wa.me/{tel}?text={texto_url}"
+                    st.link_button(f"📲 Enviar WhatsApp a {f_encargado}", link_wa)
+            
+            except Exception as e:
+                st.error(f"Error al guardar en Agenda: {e}")
+        else:
+            st.warning("Por favor, completa N° de OT y selecciona un Motor.")
+
 if modo == "Nuevo Registro":
     st.title("📝 Alta y Registro Inicial")
     
