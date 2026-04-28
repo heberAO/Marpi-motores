@@ -241,8 +241,8 @@ if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
 if "form_key_plan" not in st.session_state:
     st.session_state.form_key_plan = 0
     
-if modo == "Gestión de Reparaciones":
-    st.title("🛠️ Gestión de Reparaciones - Marpi")
+if modo == "Gestión de Reparaciónes":
+    st.title("🛠️ Gestión de Reparaciónes - Marpi")
     
     if "form_key_plan" not in st.session_state:
         st.session_state.form_key_plan = 0
