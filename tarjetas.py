@@ -284,6 +284,11 @@ if modo == "Gestión de Reparaciónes":
                 
                 try:
                     conn.update(worksheet="Planificación", data=nueva_fila_plan)
+                    df_plan_existente = conn.read(worksheet="Planificación", ttl=0)
+                    df_actualizado = pd.concat([df_plan_existente, nueva_fila_plan], ignore_index=True)
+                    
+                    # 3. ACTUALIZAR la hoja completa con la tabla nueva
+                    conn.update(worksheet="Planificación", data=df_actualizado)
                     st.success(f"✅ OT {f_ot} guardada en Agenda")
                     
                     # --- Lógica de WhatsApp ---
