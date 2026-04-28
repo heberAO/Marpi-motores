@@ -260,7 +260,7 @@ if modo == "Gestión de Reparaciónes":
                 f_inspector = st.selectbox("Inspector", ["-", "CONNAN ENZO", "VILLARTA EDGARDO", "CORREA MARCELO", "SALCEDO GASTON", "CORVALAN DARIO"])
     
             with c2:
-                f_tarea = st.selectbox("Tarea a realizar", ["Desarmar/Evaluar", "Armado"])
+                f_tarea = st.selectbox("Tarea a realizar", ["-", "Desarmar/Evaluar", "Armado"])
                 f_encargado = st.selectbox("Asignar a Reparador", ["-", "Toledano Ruben", "Accordinaro Diego", "Ortega Enzo"])
                 f_prioridad = st.select_slider("Prioridad", options=["Baja", "Normal", "Urgente"])
                 f_fecha = st.date_input("Fecha Programada", date.today())
