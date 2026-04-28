@@ -283,12 +283,15 @@ if modo == "Gestión de Reparaciónes":
                 }])
                 
                 try:
-                    conn.update(worksheet="Planificación", data=nueva_fila_plan)
-                    df_plan_existente = conn.read(worksheet="Planificación", ttl=0)
+                    # 1. LEER los datos actuales PRIMERO (Borré la línea de update que estaba acá arriba)
+                    df_plan_existente = conn.read(worksheet="Planificacion", ttl=0)
+                    
+                    # 2. CONCATENAR la fila nueva al final de lo que ya existe
                     df_actualizado = pd.concat([df_plan_existente, nueva_fila_plan], ignore_index=True)
                     
-                    # 3. ACTUALIZAR la hoja completa con la tabla nueva
-                    conn.update(worksheet="Planificación", data=df_actualizado)
+                    # 3. ACTUALIZAR una sola vez con la lista completa
+                    conn.update(worksheet="Planificacion", data=df_actualizado)
+                    
                     st.success(f"✅ OT {f_ot} guardada en Agenda")
                     
                     # --- Lógica de WhatsApp ---
