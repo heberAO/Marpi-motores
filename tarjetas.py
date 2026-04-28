@@ -239,11 +239,9 @@ if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
         st.stop() # <--- AQUÍ SE DETIENE SOLO SI NO ESTÁ LOGUEADO
 st.title("🛠️ Gestión de Reparaciones - Marpi")
 
-# --- 1. SECCIÓN DE PLANIFICACIÓN (SOLO PARA PERSONAL AUTORIZADO) ---
 with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
     with st.form("nuevo_plan"):
         c1, c2 = st.columns(2)
-        
         with c1:
             f_ot = st.text_input("N° Orden de Trabajo (OT)").upper()
             opciones_motores = df_completo['Tag'].astype(str) + " | " + df_completo['N_Serie'].astype(str) if not df_completo.empty else ["Sin datos"]
@@ -277,9 +275,8 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
                 conn.update(worksheet="Planificacion", data=nueva_fila_plan)
                 st.success(f"✅ OT {f_ot} guardada en Agenda")
 
-                # DICCIONARIO DE TELÉFONOS (Corregí los números aquí)
                 telefonos = {
-                    "Toledano Ruben": "5492615914147", # Revisa si sobra un número aquí
+                    "Toledano Ruben": "5492615914147",
                     "Accordinaro Diego": "549261000000",
                     "Ortega Enzo": "549261000000"
                 }
