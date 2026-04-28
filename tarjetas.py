@@ -241,7 +241,8 @@ if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
 if "form_key_plan" not in st.session_state:
     st.session_state.form_key_plan = 0
     
-st.title("🛠️ Gestión de Reparaciones - Marpi")
+if modo == "Gestión de Reparaciones":
+    st.title("🛠️ Gestión de Reparaciones - Marpi")
 
 with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
     with st.form(key=f"plan_{st.session_state.form_key_plan}"):
@@ -254,7 +255,7 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
             f_inspector = st.selectbox("Inspector", ["CONNAN ENZO", "VILLARTA EDGARDO", "CORREA MARCELO", "SALCEDO GASTON", "CORVALAN DARIO"])
 
         with c2:
-            f_tarea = st.selectbox("Tarea a realizar", ["Desarmar/Evaluar", "Cambio de Rodamientos", "Armado"])
+            f_tarea = st.selectbox("Tarea a realizar", ["Desarmar/Evaluar", "Armado"])
             f_encargado = st.selectbox("Asignar a Reparador", ["Toledano Ruben", "Accordinaro Diego", "Ortega Enzo"])
             f_prioridad = st.select_slider("Prioridad", options=["Baja", "Normal", "Urgente"])
             f_fecha = st.date_input("Fecha Programada", date.today())
