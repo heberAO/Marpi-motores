@@ -257,11 +257,11 @@ if modo == "Gestión de Reparaciónes":
                 opciones_motores = df_completo['Tag'].astype(str) + " | " + df_completo['N_Serie'].astype(str) if not df_completo.empty else ["Sin datos"]
                 f_motor = st.selectbox("Seleccionar Motor", opciones_motores)
                 f_planta = st.text_input("Planta").upper()
-                f_inspector = st.selectbox("Inspector", ["CONNAN ENZO", "VILLARTA EDGARDO", "CORREA MARCELO", "SALCEDO GASTON", "CORVALAN DARIO"])
+                f_inspector = st.selectbox("Inspector", ["-", "CONNAN ENZO", "VILLARTA EDGARDO", "CORREA MARCELO", "SALCEDO GASTON", "CORVALAN DARIO"])
     
             with c2:
                 f_tarea = st.selectbox("Tarea a realizar", ["Desarmar/Evaluar", "Armado"])
-                f_encargado = st.selectbox("Asignar a Reparador", ["Toledano Ruben", "Accordinaro Diego", "Ortega Enzo"])
+                f_encargado = st.selectbox("Asignar a Reparador", ["-", "Toledano Ruben", "Accordinaro Diego", "Ortega Enzo"])
                 f_prioridad = st.select_slider("Prioridad", options=["Baja", "Normal", "Urgente"])
                 f_fecha = st.date_input("Fecha Programada", date.today())
     
