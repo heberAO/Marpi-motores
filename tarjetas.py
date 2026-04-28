@@ -250,7 +250,7 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
             f_inspector = st.selectbox("Inspector", ["CONNAN ENZO", "VILLARTA EDGARDO", "CORREA MARCELO", "SALCEDO GASTON", "CORVALAN DARIO"])
 
         with c2:
-            f_tarea = st.selectbox("Tarea a realizar", ["Desarmar/Evaluar", "Material", "Reparacion", "Armado"])
+            f_tarea = st.selectbox("Tarea a realizar", ["Desarmar/Evaluar", "Cambio de Rodamientos", "Armado"])
             f_encargado = st.selectbox("Asignar a Reparador", ["Toledano Ruben", "Accordinaro Diego", "Ortega Enzo"])
             f_prioridad = st.select_slider("Prioridad", options=["Baja", "Normal", "Urgente"])
             f_fecha = st.date_input("Fecha Programada", date.today())
@@ -273,8 +273,6 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
             }])
             
             try:
-                # 2. Leemos lo que ya existe para CONCATENAR (esto es más seguro)
-                # Si la hoja no existe, esto fallará y el error será más claro
                 df_plan_actual = conn.read(worksheet="Planificación", ttl=0)
                 
                 # 3. Unimos lo nuevo con lo viejo
@@ -294,7 +292,7 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
 
                 tel = telefonos.get(f_encargado, "")
                 if tel:
-                    mensaje_wa = f"Hola {f_encargado}, se te asignó la OT: {f_ot} para el motor {f_motor}. Tarea: {f_tarea}."
+                    mensaje_wa = f"Hola {f_encargado}, se te asignó la OT: {f_ot} para el motor {f_motor}. Tarea: {f_tarea}. Planta: {f_planta}. Inspector: {f_inspector}. "
                     texto_url = urllib.parse.quote(mensaje_wa)
                     link_wa = f"https://wa.me/{tel}?text={texto_url}"
                     st.link_button(f"📲 Enviar WhatsApp a {f_encargado}", link_wa)
