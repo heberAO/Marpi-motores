@@ -273,8 +273,10 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
             
             try:
                 conn.update(worksheet="Planificacion", data=nueva_fila_plan)
+                
                 st.success(f"✅ OT {f_ot} guardada en Agenda")
 
+                # Luego sigue la lógica del WhatsApp que ya tenías...
                 telefonos = {
                     "Toledano Ruben": "5492615914147",
                     "Accordinaro Diego": "549261000000",
@@ -289,7 +291,8 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
                     st.link_button(f"📲 Enviar WhatsApp a {f_encargado}", link_wa)
             
             except Exception as e:
-                st.error(f"Error al guardar en Agenda: {e}")
+                # Si falla, te va a decir exactamente qué falta (si la hoja o una columna)
+                st.error(f"❌ Error al guardar: {e}")
         else:
             st.warning("Por favor, completa N° de OT y selecciona un Motor.")
 
