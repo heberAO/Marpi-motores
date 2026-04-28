@@ -183,7 +183,7 @@ if qr_valor:
         if not filtro.empty:
             st.session_state.motor_seleccionado = filtro.iloc[-1]
 # --- 5. MENÚ LATERAL (ROBUSTO) ---
-opciones_menu = ["Nuevo Registro", "Historial y QR", "Gestion de Reparacion", "Relubricacion", "Mediciones de Campo"]
+opciones_menu = ["Nuevo Registro", "Historial y QR", "Gestión de Reparaciónes", "Relubricacion", "Mediciones de Campo"]
 
 # Inicializar la memoria de navegación si no existe
 if "navegacion_actual" not in st.session_state:
