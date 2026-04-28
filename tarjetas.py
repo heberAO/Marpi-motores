@@ -247,65 +247,65 @@ if modo == "Gestión de Reparaciones":
     if "form_key_plan" not in st.session_state:
         st.session_state.form_key_plan = 0
         
-with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
-    with st.form(key=f"plan_{st.session_state.form_key_plan}"):
-        c1, c2 = st.columns(2)
-        with c1:
-            f_ot = st.text_input("N° Orden de Trabajo (OT)").upper()
-            opciones_motores = df_completo['Tag'].astype(str) + " | " + df_completo['N_Serie'].astype(str) if not df_completo.empty else ["Sin datos"]
-            f_motor = st.selectbox("Seleccionar Motor", opciones_motores)
-            f_planta = st.text_input("Planta").upper()
-            f_inspector = st.selectbox("Inspector", ["CONNAN ENZO", "VILLARTA EDGARDO", "CORREA MARCELO", "SALCEDO GASTON", "CORVALAN DARIO"])
-
-        with c2:
-            f_tarea = st.selectbox("Tarea a realizar", ["Desarmar/Evaluar", "Armado"])
-            f_encargado = st.selectbox("Asignar a Reparador", ["Toledano Ruben", "Accordinaro Diego", "Ortega Enzo"])
-            f_prioridad = st.select_slider("Prioridad", options=["Baja", "Normal", "Urgente"])
-            f_fecha = st.date_input("Fecha Programada", date.today())
-
-        btn_plan = st.form_submit_button("Guardar en Agenda")
-
-    if btn_plan:
-        if f_ot and f_motor:
-            # 1. Preparamos los datos
-            nueva_fila_plan = pd.DataFrame([{
-                "Fecha": f_fecha.strftime("%d/%m/%Y"),
-                "OT": f_ot,
-                "Motor": f_motor,
-                "Planta": f_planta,
-                "Inspector": f_inspector,
-                "Encargado": f_encargado,
-                "Tarea": f_tarea,
-                "Prioridad": f_prioridad,
-                "Estado": "Pendiente",
-            }])
-            
-            try:
-                conn.update(worksheet="Planificacion", data=nueva_fila_plan)
-                st.success(f"✅ OT {f_ot} guardada en Agenda")
+    with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
+        with st.form(key=f"plan_{st.session_state.form_key_plan}"):
+            c1, c2 = st.columns(2)
+            with c1:
+                f_ot = st.text_input("N° Orden de Trabajo (OT)").upper()
+                opciones_motores = df_completo['Tag'].astype(str) + " | " + df_completo['N_Serie'].astype(str) if not df_completo.empty else ["Sin datos"]
+                f_motor = st.selectbox("Seleccionar Motor", opciones_motores)
+                f_planta = st.text_input("Planta").upper()
+                f_inspector = st.selectbox("Inspector", ["CONNAN ENZO", "VILLARTA EDGARDO", "CORREA MARCELO", "SALCEDO GASTON", "CORVALAN DARIO"])
+    
+            with c2:
+                f_tarea = st.selectbox("Tarea a realizar", ["Desarmar/Evaluar", "Armado"])
+                f_encargado = st.selectbox("Asignar a Reparador", ["Toledano Ruben", "Accordinaro Diego", "Ortega Enzo"])
+                f_prioridad = st.select_slider("Prioridad", options=["Baja", "Normal", "Urgente"])
+                f_fecha = st.date_input("Fecha Programada", date.today())
+    
+            btn_plan = st.form_submit_button("Guardar en Agenda")
+    
+        if btn_plan:
+            if f_ot and f_motor:
+                # 1. Preparamos los datos
+                nueva_fila_plan = pd.DataFrame([{
+                    "Fecha": f_fecha.strftime("%d/%m/%Y"),
+                    "OT": f_ot,
+                    "Motor": f_motor,
+                    "Planta": f_planta,
+                    "Inspector": f_inspector,
+                    "Encargado": f_encargado,
+                    "Tarea": f_tarea,
+                    "Prioridad": f_prioridad,
+                    "Estado": "Pendiente",
+                }])
                 
-                # --- Lógica de WhatsApp ---
-                telefonos = {
-                    "Toledano Ruben": "5492615914147",
-                    "Accordinaro Diego": "549261000000",
-                    "Ortega Enzo": "549261000000"
-                }
-
-                tel = telefonos.get(f_encargado, "")
-                # --- DENTRO DEL TRY (CONTINUACIÓN) ---
-                if tel:
-                    mensaje_wa = f"Hola {f_encargado}, se te asignó la OT: {f_ot} para el motor {f_motor}. Tarea: {f_tarea}. Planta: {f_planta}. Inspector: {f_inspector}."
-                    texto_url = urllib.parse.quote(mensaje_wa)
-                    link_wa = f"https://wa.me/{tel}?text={texto_url}"
-                    st.link_button(f"📲 Enviar WhatsApp a {f_encargado}", link_wa)
-                
-                # Primero sumamos a la key para limpiar
-                st.session_state.form_key_plan += 1
-            except Exception as e:
-                st.error(f"❌ Error al guardar: {e}")
-                st.info("Asegúrate de que la pestaña se llame exactamente 'Planificacion' y tenga los encabezados en la fila 1.")
-        else:
-            st.warning("Por favor, completa N° de OT y selecciona un Motor.")
+                try:
+                    conn.update(worksheet="Planificacion", data=nueva_fila_plan)
+                    st.success(f"✅ OT {f_ot} guardada en Agenda")
+                    
+                    # --- Lógica de WhatsApp ---
+                    telefonos = {
+                        "Toledano Ruben": "5492615914147",
+                        "Accordinaro Diego": "549261000000",
+                        "Ortega Enzo": "549261000000"
+                    }
+    
+                    tel = telefonos.get(f_encargado, "")
+                    # --- DENTRO DEL TRY (CONTINUACIÓN) ---
+                    if tel:
+                        mensaje_wa = f"Hola {f_encargado}, se te asignó la OT: {f_ot} para el motor {f_motor}. Tarea: {f_tarea}. Planta: {f_planta}. Inspector: {f_inspector}."
+                        texto_url = urllib.parse.quote(mensaje_wa)
+                        link_wa = f"https://wa.me/{tel}?text={texto_url}"
+                        st.link_button(f"📲 Enviar WhatsApp a {f_encargado}", link_wa)
+                    
+                    # Primero sumamos a la key para limpiar
+                    st.session_state.form_key_plan += 1
+                except Exception as e:
+                    st.error(f"❌ Error al guardar: {e}")
+                    st.info("Asegúrate de que la pestaña se llame exactamente 'Planificacion' y tenga los encabezados en la fila 1.")
+            else:
+                st.warning("Por favor, completa N° de OT y selecciona un Motor.")
 
 # El divider va afuera de todo el bloque del botón, pegado al margen izquierdo
 st.divider()
