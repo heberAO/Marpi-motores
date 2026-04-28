@@ -237,10 +237,14 @@ if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
                 else:
                     st.error("⚠️ Clave incorrecta")
         st.stop() # <--- AQUÍ SE DETIENE SOLO SI NO ESTÁ LOGUEADO
+        
+if "form_key_plan" not in st.session_state:
+    st.session_state.form_key_plan = 0
+    
 st.title("🛠️ Gestión de Reparaciones - Marpi")
 
 with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
-    with st.form("nuevo_plan"):
+    with st.form(key=f"plan_{st.session_state.form_key_plan}"):
         c1, c2 = st.columns(2)
         with c1:
             f_ot = st.text_input("N° Orden de Trabajo (OT)").upper()
@@ -273,16 +277,9 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
             }])
             
             try:
-                df_plan_actual = conn.read(worksheet="Planificación", ttl=0)
-                
-                # 3. Unimos lo nuevo con lo viejo
-                df_final_plan = pd.concat([df_plan_actual, nueva_fila_plan], ignore_index=True)
-                
-                # 4. Actualizamos la hoja completa
-                conn.update(worksheet="Planificación", data=df_final_plan)
-                
+                conn.update(worksheet="Planificacion", data=nueva_fila_plan)
                 st.success(f"✅ OT {f_ot} guardada en Agenda")
-
+                
                 # --- Lógica de WhatsApp ---
                 telefonos = {
                     "Toledano Ruben": "5492615914147",
@@ -296,9 +293,12 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
                     texto_url = urllib.parse.quote(mensaje_wa)
                     link_wa = f"https://wa.me/{tel}?text={texto_url}"
                     st.link_button(f"📲 Enviar WhatsApp a {f_encargado}", link_wa)
-            
+                st.session_state.form_key_plan += 1
+                time.sleep(2) # Esperamos 2 segundos para que veas el mensaje de éxito
+                st.rerun() # Refrescamos la página
+
             except Exception as e:
-                st.error(f"❌ Error de Conexión: {e}")
+                st.error(f"❌ Error al guardar: {e}")
                 st.info("Asegúrate de que la pestaña se llame exactamente 'Planificación' y tenga los encabezados en la fila 1.")
         else:
             st.warning("Por favor, completa N° de OT y selecciona un Motor.")
