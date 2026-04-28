@@ -221,7 +221,7 @@ with st.sidebar:
 modo = st.session_state.navegacion_actual
 
 # --- 6. VALIDACIÓN DE CONTRASEÑA ---
-if modo in ["Nuevo Registro", "Relubricacion", "Mediciones de Campo"]:
+if modo in ["Nuevo Registro", "Gestión de Reparaciónes", "Relubricacion", "Mediciones de Campo"]:
     if "autorizado" not in st.session_state:
         st.session_state.autorizado = False
 
