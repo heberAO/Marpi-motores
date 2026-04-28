@@ -246,8 +246,8 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
             f_ot = st.text_input("N° Orden de Trabajo (OT)").upper()
             opciones_motores = df_completo['Tag'].astype(str) + " | " + df_completo['N_Serie'].astype(str) if not df_completo.empty else ["Sin datos"]
             f_motor = st.selectbox("Seleccionar Motor", opciones_motores)
-            f_planta = st.text_input("Planta / Cliente").upper()
-            f_inspector = st.text_input("Inspector / Solicitante").upper()
+            f_planta = st.text_input("Planta").upper()
+            f_inspector = st.selectbox("Inspector", ["CONNAN ENZO", "VILLARTA EDGARDO", "CORREA MARCELO", "SALCEDO GASTON", "CORVALAN DARIO"])
 
         with c2:
             f_tarea = st.selectbox("Tarea a realizar", ["Desarmar/Evaluar", "Material", "Reparacion", "Armado"])
@@ -259,6 +259,7 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
 
     if btn_plan:
         if f_ot and f_motor:
+            # 1. Preparamos los datos
             nueva_fila_plan = pd.DataFrame([{
                 "Fecha": f_fecha.strftime("%d/%m/%Y"),
                 "OT": f_ot,
@@ -268,15 +269,23 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
                 "Encargado": f_encargado,
                 "Tarea": f_tarea,
                 "Prioridad": f_prioridad,
-                "Estado": "Pendiente"
+                "Estado": f_pendiente",
             }])
             
             try:
-                conn.update(worksheet="Planificacion", data=nueva_fila_plan)
+                # 2. Leemos lo que ya existe para CONCATENAR (esto es más seguro)
+                # Si la hoja no existe, esto fallará y el error será más claro
+                df_plan_actual = conn.read(worksheet="Planificación", ttl=0)
+                
+                # 3. Unimos lo nuevo con lo viejo
+                df_final_plan = pd.concat([df_plan_actual, nueva_fila_plan], ignore_index=True)
+                
+                # 4. Actualizamos la hoja completa
+                conn.update(worksheet="Planificación", data=df_final_plan)
                 
                 st.success(f"✅ OT {f_ot} guardada en Agenda")
 
-                # Luego sigue la lógica del WhatsApp que ya tenías...
+                # --- Lógica de WhatsApp ---
                 telefonos = {
                     "Toledano Ruben": "5492615914147",
                     "Accordinaro Diego": "549261000000",
@@ -291,8 +300,8 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
                     st.link_button(f"📲 Enviar WhatsApp a {f_encargado}", link_wa)
             
             except Exception as e:
-                # Si falla, te va a decir exactamente qué falta (si la hoja o una columna)
-                st.error(f"❌ Error al guardar: {e}")
+                st.error(f"❌ Error de Conexión: {e}")
+                st.info("Asegúrate de que la pestaña se llame exactamente 'Planificación' y tenga los encabezados en la fila 1.")
         else:
             st.warning("Por favor, completa N° de OT y selecciona un Motor.")
 
