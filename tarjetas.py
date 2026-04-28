@@ -244,8 +244,10 @@ if "form_key_plan" not in st.session_state:
 if modo == "Gestión de Reparaciónes":
     st.title("🛠️ Gestión de Reparaciónes - Marpi")
     
-    if "form_key_plan" not in st.session_state:
-        st.session_state.form_key_plan = 0
+    # Este botón es un "auxilio" por si querés limpiar a mano
+    if st.button("🧹 Limpiar Formulario"):
+        st.session_state.form_key_plan += 1
+        st.rerun()
         
     with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
         with st.form(key=f"plan_{st.session_state.form_key_plan}"):
