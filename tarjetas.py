@@ -269,7 +269,7 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
                 "Encargado": f_encargado,
                 "Tarea": f_tarea,
                 "Prioridad": f_prioridad,
-                "Estado": f_pendiente",
+                "Estado": f_pendiente,
             }])
             
             try:
