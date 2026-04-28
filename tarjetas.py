@@ -281,7 +281,7 @@ if modo == "Gestión de Reparaciónes":
                 }])
                 
                 try:
-                    conn.update(worksheet="Planificacion", data=nueva_fila_plan)
+                    conn.update(worksheet="Planificación", data=nueva_fila_plan)
                     st.success(f"✅ OT {f_ot} guardada en Agenda")
                     
                     # --- Lógica de WhatsApp ---
@@ -303,7 +303,7 @@ if modo == "Gestión de Reparaciónes":
                     st.session_state.form_key_plan += 1
                 except Exception as e:
                     st.error(f"❌ Error al guardar: {e}")
-                    st.info("Asegúrate de que la pestaña se llame exactamente 'Planificacion' y tenga los encabezados en la fila 1.")
+                    st.info("Asegúrate de que la pestaña se llame exactamente 'Planificación' y tenga los encabezados en la fila 1.")
             else:
                 st.warning("Por favor, completa N° de OT y selecciona un Motor.")
 
