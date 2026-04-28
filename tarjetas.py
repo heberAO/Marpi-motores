@@ -152,7 +152,7 @@ df_completo = cargar_datos_google()
 # --- CONEXIÓN A LA HOJA DE PLANIFICACIÓN ---
 # Reemplaza "Planificacion" por el nombre exacto que le pusiste a la pestaña
 try:
-    df_plan = conn.read(worksheet="Planificacion")
+    df_plan = conn.read(worksheet="Planificación")
 except Exception as e:
     st.error(f"No se pudo leer la hoja de Planificación: {e}")
     df_plan = pd.DataFrame()
