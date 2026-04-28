@@ -288,20 +288,23 @@ with st.expander("📝 PROGRAMAR NUEVA REPARACIÓN"):
                 }
 
                 tel = telefonos.get(f_encargado, "")
+                # --- DENTRO DEL TRY (CONTINUACIÓN) ---
                 if tel:
-                    mensaje_wa = f"Hola {f_encargado}, se te asignó la OT: {f_ot} para el motor {f_motor}. Tarea: {f_tarea}. Planta: {f_planta}. Inspector: {f_inspector}. "
+                    mensaje_wa = f"Hola {f_encargado}, se te asignó la OT: {f_ot} para el motor {f_motor}. Tarea: {f_tarea}. Planta: {f_planta}. Inspector: {f_inspector}."
                     texto_url = urllib.parse.quote(mensaje_wa)
                     link_wa = f"https://wa.me/{tel}?text={texto_url}"
                     st.link_button(f"📲 Enviar WhatsApp a {f_encargado}", link_wa)
+                
+                # Primero sumamos a la key para limpiar
                 st.session_state.form_key_plan += 1
-                time.sleep(2) # Esperamos 2 segundos para que veas el mensaje de éxito
-                st.rerun() # Refrescamos la página
-        st.divider()
             except Exception as e:
                 st.error(f"❌ Error al guardar: {e}")
-                st.info("Asegúrate de que la pestaña se llame exactamente 'Planificación' y tenga los encabezados en la fila 1.")
+                st.info("Asegúrate de que la pestaña se llame exactamente 'Planificacion' y tenga los encabezados en la fila 1.")
         else:
             st.warning("Por favor, completa N° de OT y selecciona un Motor.")
+
+# El divider va afuera de todo el bloque del botón, pegado al margen izquierdo
+st.divider()
 
 if modo == "Nuevo Registro":
     st.title("📝 Alta y Registro Inicial")
