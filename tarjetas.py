@@ -498,17 +498,33 @@ elif modo == "Historial y QR":
                         st.write(f"🛠️ **{r['Motor']}** - {r['Encargado']}")
                 else: st.write("Sin trabajos activos.")
 
-        with c2:
-            # Para lubricados, intentamos leer la hoja
-            try:
-                df_lub = conn.read(worksheet="Relubricacion", ttl=0)
-                total_lub = len(df_lub)
-            except:
-                total_lub = 0
-            
-            with st.popover(f"💧 Lubricados: {total_lub}", use_container_width=True):
-                st.write("Registros de lubricación activos.")
-
+            with c2:
+                # 1. Intentamos obtener los datos de la columna 'tipo_tarea'
+                 try:
+                    # Leemos la hoja principal de motores (ajusta el nombre si es 'Motores' o 'Base_Datos')
+                     df_principal = conn.read(worksheet="Motores", ttl=0)
+                    
+                    # Limpiamos los nombres de columnas por si tienen espacios
+                     df_principal.columns = df_principal.columns.str.strip()
+                    
+                    # Filtramos la columna 'tipo_tarea' (o 'Tipo_Tarea') buscando la palabra 'Lubricacion'
+                    # Usamos case=False para que no importe si está en mayúscula o minúscula
+                     df_solo_lub = df_principal[df_principal['tipo_tarea'].str.contains('Lubricacion', case=False, na=False)]
+                     total_lub = len(df_solo_lub)
+                    
+                 except Exception as e:
+                    # Si la columna no existe o hay error, ponemos 0
+                     total_lub = 0
+                
+                # 2. Mostramos el botón con el número real de lubricaciones encontradas
+                 with st.popover(f"💧 Lubricados: {total_lub}", use_container_width=True):
+                     if total_lub > 0:
+                         st.write(f"Se encontraron {total_lub} equipos con tarea de Lubricación:")
+                        # Mostramos los Tags de esos equipos
+                         for _, fila in df_solo_lub.tail(10).iterrows():
+                             st.write(f"🔹 {fila['Tag']}")
+                     else:
+                         st.write("No se encontraron registros de 'Lubricacion' en la columna tipo_tarea.")
             with st.popover(f"✅ Listos: {len(lista_reparados)}", use_container_width=True):
                 if not lista_reparados.empty:
                     for _, r in lista_reparados.iterrows():
