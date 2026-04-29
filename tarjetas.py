@@ -529,8 +529,8 @@ elif modo == "Historial y QR":
         else:
             st.info("No hubo movimientos en los últimos 5 días.")
 
-except Exception as e:
-    st.warning("Inicia sesión para ver el tablero interactivo.")
+    except Exception as e:
+        st.warning("Inicia sesión para ver el tablero interactivo.")
     if not df_completo.empty:
         # 1. Limpieza y preparación de datos (Blindada)
         df_completo['N_Serie'] = df_completo['N_Serie'].fillna('S/S').astype(str).str.strip()
