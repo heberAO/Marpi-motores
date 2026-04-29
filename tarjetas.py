@@ -486,7 +486,9 @@ elif modo == "Historial y QR":
             st.metric("✅ Reparados", reparados)
         
         st.divider() # Separa las métricas del buscador
-    
+    except Exception as e:
+        # Si falla, te va a decir por qué aquí mismo
+        st.error(f"Error al cargar métricas: {e}")
     if not df_completo.empty:
         # 1. Limpieza y preparación de datos (Blindada)
         df_completo['N_Serie'] = df_completo['N_Serie'].fillna('S/S').astype(str).str.strip()
