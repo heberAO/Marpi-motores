@@ -240,35 +240,7 @@ if modo in ["Nuevo Registro", "Gestión de Reparaciónes", "Relubricacion", "Med
         
 if "form_key_plan" not in st.session_state:
     st.session_state.form_key_plan = 0
-# --- VISTA RESUMEN PARA CELULAR (SIN PRIORIDADES) ---
-st.markdown("### 📊 Resumen de Taller")
 
-try:
-    # 1. Lectura de datos
-    df_res_plan = conn.read(worksheet="Planificacion", ttl=0)
-    df_res_lub = conn.read(worksheet="Relubricacion", ttl=0) # Asumiendo que tenés esta hoja
-
-    # 2. Cálculos de conteo
-    agenda = len(df_res_plan)
-    intervenidos = len(df_res_plan[df_res_plan["Estado"] == "En Proceso"])
-    reparados = len(df_res_plan[df_res_plan["Estado"] == "Finalizado"])
-    lubricados = len(df_res_lub)
-
-    # 3. Diseño en 2 columnas (2 arriba y 2 abajo)
-    c1, c2 = st.columns(2)
-
-    with c1:
-        st.metric("📦 Agenda", agenda)
-        st.metric("⚙️ Intervenidos", intervenidos)
-
-    with c2:
-        st.metric("💧 Lubricados", lubricados)
-        st.metric("✅ Reparados", reparados)
-
-    st.divider()
-
-except Exception:
-    st.info("Inicia sesión para cargar el resumen de actividad.")    
 if modo == "Gestión de Reparaciónes":
     st.title("🛠️ Gestión de Reparaciónes - Marpi")
     
@@ -492,6 +464,28 @@ if modo == "Nuevo Registro":
   
 elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
+    # 1. EL RESUMEN (Métricas para celular)
+    try:
+        # Cargamos datos de las pestañas
+        df_res_plan = conn.read(worksheet="Planificacion", ttl=0)
+        df_res_lub = conn.read(worksheet="Relubricacion", ttl=0)
+
+        # Calculamos los números
+        agenda = len(df_res_plan)
+        intervenidos = len(df_res_plan[df_res_plan["Estado"] == "En Proceso"])
+        reparados = len(df_res_plan[df_res_plan["Estado"] == "Finalizado"])
+        lubricados = len(df_res_lub)
+
+        # Mostramos en 2 columnas para móvil
+        c1, c2 = st.columns(2)
+        with c1:
+            st.metric("📦 Agenda", agenda)
+            st.metric("⚙️ Intervenidos", intervenidos)
+        with c2:
+            st.metric("💧 Lubricados", lubricados)
+            st.metric("✅ Reparados", reparados)
+        
+        st.divider() # Separa las métricas del buscador
     
     if not df_completo.empty:
         # 1. Limpieza y preparación de datos (Blindada)
