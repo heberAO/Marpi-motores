@@ -466,15 +466,21 @@ elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
     # 1. EL RESUMEN (Métricas para celular)
     try:
-        # Cargamos datos de las pestañas
-        df_res_plan = conn.read(worksheet="Planificación", ttl=0)
-        df_res_lub = conn.read(worksheet="Relubricacion", ttl=0)
+        # Intentamos leer Planificación
+        try:
+            df_res_plan = conn.read(worksheet="Planificación", ttl=0)
+            agenda = len(df_res_plan)
+            intervenidos = len(df_res_plan[df_res_plan["Estado"] == "En Proceso"])
+            reparados = len(df_res_plan[df_res_plan["Estado"] == "Finalizado"])
+        except:
+            agenda = intervenidos = reparados = 0
 
-        # Calculamos los números
-        agenda = len(df_res_plan)
-        intervenidos = len(df_res_plan[df_res_plan["Estado"] == "En Proceso"])
-        reparados = len(df_res_plan[df_res_plan["Estado"] == "Finalizado"])
-        lubricados = len(df_res_lub)
+        # Intentamos leer Relubricación (si falla, ponemos 0)
+        try:
+            df_res_lub = conn.read(worksheet="Relubricacion", ttl=0)
+            lubricados = len(df_res_lub)
+        except:
+            lubricados = 0
 
         # Mostramos en 2 columnas para móvil
         c1, c2 = st.columns(2)
@@ -485,10 +491,11 @@ elif modo == "Historial y QR":
             st.metric("💧 Lubricados", lubricados)
             st.metric("✅ Reparados", reparados)
         
-        st.divider() # Separa las métricas del buscador
+        st.divider() 
+
     except Exception as e:
-        # Si falla, te va a decir por qué aquí mismo
-        st.error(f"Error al cargar métricas: {e}")
+        # Este mensaje solo saldrá si hay un error de conexión grave
+        st.warning("Panel de métricas en espera...")
     if not df_completo.empty:
         # 1. Limpieza y preparación de datos (Blindada)
         df_completo['N_Serie'] = df_completo['N_Serie'].fillna('S/S').astype(str).str.strip()
