@@ -464,38 +464,73 @@ if modo == "Nuevo Registro":
   
 elif modo == "Historial y QR":
     st.title("🔍 Consulta y Gestión de Motores")
-    # 1. EL RESUMEN (Métricas para celular)
+   
+    st.markdown("### 📊 Estado del Taller")
+    
     try:
-        # Intentamos leer Planificación
-        try:
-            df_res_plan = conn.read(worksheet="Planificación", ttl=0)
-            agenda = len(df_res_plan)
-            intervenidos = len(df_res_plan[df_res_plan["Estado"] == "En Proceso"])
-            reparados = len(df_res_plan[df_res_plan["Estado"] == "Finalizado"])
-        except:
-            agenda = intervenidos = reparados = 0
-
-        # Intentamos leer Relubricación (si falla, ponemos 0)
-        try:
-            df_res_lub = conn.read(worksheet="Relubricacion", ttl=0)
-            lubricados = len(df_res_lub)
-        except:
-            lubricados = 0
-
-        # Mostramos en 2 columnas para móvil
-        c1, c2 = st.columns(2)
-        with c1:
-            st.metric("📦 Agenda", agenda)
-            st.metric("⚙️ Intervenidos", intervenidos)
-        with c2:
-            st.metric("💧 Lubricados", lubricados)
-            st.metric("✅ Reparados", reparados)
+        # 1. Lectura de datos
+        df_res_plan = conn.read(worksheet="Planificacion", ttl=0)
+        df_res_lub = conn.read(worksheet="Relubricacion", ttl=0)
         
-        st.divider() 
+        # Convertimos la fecha a formato datetime para filtrar los últimos 5 días
+        df_res_plan['Fecha'] = pd.to_datetime(df_res_plan['Fecha'], dayfirst=True, errors='coerce')
+        hace_5_dias = pd.Timestamp.now() - pd.Timedelta(days=5)
+        
+        # 2. Cálculos y Listas
+        lista_agenda = df_res_plan[df_res_plan["Estado"] == "Pendiente"]
+        lista_intervenidos = df_res_plan[df_res_plan["Estado"] == "En Proceso"]
+        lista_reparados = df_res_plan[df_res_plan["Estado"] == "Finalizado"]
+        
+        # Intervenciones de los últimos 5 días
+        intervenciones_recientes = df_res_plan[df_res_plan['Fecha'] >= hace_5_dias]
+    
+        # 3. Diseño de Botones Interactivos (2x2)
+        c1, c2 = st.columns(2)
+    
+        with c1:
+            with st.popover(f"📦 Agenda: {len(lista_agenda)}", use_container_width=True):
+                st.write("**Equipos en espera:**")
+                if not lista_agenda.empty:
+                    for _, row in lista_agenda.iterrows():
+                        st.write(f"🔹 {row['Motor']} (OT: {row['OT']})")
+                else: st.write("No hay pendientes.")
+    
+            with st.popover(f"⚙️ Intervenidos: {len(lista_intervenidos)}", use_container_width=True):
+                st.write("**Equipos en reparación:**")
+                if not lista_intervenidos.empty:
+                    for _, row in lista_intervenidos.iterrows():
+                        st.write(f"🛠️ {row['Motor']} - {row['Encargado']}")
+                else: st.write("Nadie trabajando ahora.")
+    
+        with c2:
+            with st.popover(f"💧 Lubricados: {len(df_res_lub)}", use_container_width=True):
+                st.write("**Últimas lubricaciones:**")
+                if not df_res_lub.empty:
+                    st.dataframe(df_res_lub.tail(5), hide_index=True)
+                else: st.write("Sin registros.")
+    
+            with st.popover(f"✅ Reparados: {len(lista_reparados)}", use_container_width=True):
+                st.write("**Equipos listos:**")
+                if not lista_reparados.empty:
+                    for _, row in lista_reparados.iterrows():
+                        st.write(f"🏁 {row['Motor']} (OT: {row['OT']})")
+                else: st.write("Nada terminado aún.")
+    
+        st.divider()
+    
+        # 4. Sección de Intervenciones Recientes (Últimos 5 días)
+        st.subheader("🗓️ Movimientos (Últimos 5 días)")
+        if not intervenciones_recientes.empty:
+            for _, fila in intervenciones_recientes.sort_values(by='Fecha', ascending=False).iterrows():
+                with st.container(border=True):
+                    st.markdown(f"**{fila['Motor']}**")
+                    st.caption(f"📅 {fila['Fecha'].strftime('%d/%m/%Y')} | OT: {fila['OT']}")
+                    st.markdown(f"*{fila['Tarea']}* - `{fila['Estado']}`")
+        else:
+            st.info("No hubo movimientos en los últimos 5 días.")
 
-    except Exception as e:
-        # Este mensaje solo saldrá si hay un error de conexión grave
-        st.warning("Panel de métricas en espera...")
+except Exception as e:
+    st.warning("Inicia sesión para ver el tablero interactivo.")
     if not df_completo.empty:
         # 1. Limpieza y preparación de datos (Blindada)
         df_completo['N_Serie'] = df_completo['N_Serie'].fillna('S/S').astype(str).str.strip()
