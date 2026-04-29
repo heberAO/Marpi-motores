@@ -509,7 +509,7 @@ elif modo == "Historial y QR":
                     
                     # Filtramos la columna 'tipo_tarea' (o 'Tipo_Tarea') buscando la palabra 'Lubricacion'
                     # Usamos case=False para que no importe si está en mayúscula o minúscula
-                     df_solo_lub = df_principal[df_principal['tipo_tarea'].str.contains('Relubricacion', case=False, na=False)]
+                     df_solo_lub = df_principal[df_principal['Tipo_Tarea'].str.contains('Relubricacion', case=False, na=False)]
                      total_lub = len(df_solo_lub)
                     
                  except Exception as e:
@@ -524,7 +524,7 @@ elif modo == "Historial y QR":
                          for _, fila in df_solo_lub.tail(10).iterrows():
                              st.write(f"🔹 {fila['Tag']}")
                      else:
-                         st.write("No se encontraron registros de 'Relubricacion' en la columna tipo_tarea.")
+                         st.write("No se encontraron registros de 'Relubricacion' en la columna Tipo_Tarea.")
             with st.popover(f"✅ Listos: {len(lista_reparados)}", use_container_width=True):
                 if not lista_reparados.empty:
                     for _, r in lista_reparados.iterrows():
