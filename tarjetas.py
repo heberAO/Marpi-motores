@@ -509,7 +509,7 @@ elif modo == "Historial y QR":
                     
                     # Filtramos la columna 'tipo_tarea' (o 'Tipo_Tarea') buscando la palabra 'Lubricacion'
                     # Usamos case=False para que no importe si está en mayúscula o minúscula
-                     df_solo_lub = df_principal[df_principal['tipo_tarea'].str.contains('Lubricacion', case=False, na=False)]
+                     df_solo_lub = df_principal[df_principal['tipo_tarea'].str.contains('Relubricacion', case=False, na=False)]
                      total_lub = len(df_solo_lub)
                     
                  except Exception as e:
@@ -519,12 +519,12 @@ elif modo == "Historial y QR":
                 # 2. Mostramos el botón con el número real de lubricaciones encontradas
                  with st.popover(f"💧 Lubricados: {total_lub}", use_container_width=True):
                      if total_lub > 0:
-                         st.write(f"Se encontraron {total_lub} equipos con tarea de Lubricación:")
+                         st.write(f"Se encontraron {total_lub} equipos con tarea de Relubricacion:")
                         # Mostramos los Tags de esos equipos
                          for _, fila in df_solo_lub.tail(10).iterrows():
                              st.write(f"🔹 {fila['Tag']}")
                      else:
-                         st.write("No se encontraron registros de 'Lubricacion' en la columna tipo_tarea.")
+                         st.write("No se encontraron registros de 'Relubricacion' en la columna tipo_tarea.")
             with st.popover(f"✅ Listos: {len(lista_reparados)}", use_container_width=True):
                 if not lista_reparados.empty:
                     for _, r in lista_reparados.iterrows():
