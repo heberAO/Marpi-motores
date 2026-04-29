@@ -467,7 +467,7 @@ elif modo == "Historial y QR":
     # 1. EL RESUMEN (Métricas para celular)
     try:
         # Cargamos datos de las pestañas
-        df_res_plan = conn.read(worksheet="Planificacion", ttl=0)
+        df_res_plan = conn.read(worksheet="Planificación", ttl=0)
         df_res_lub = conn.read(worksheet="Relubricacion", ttl=0)
 
         # Calculamos los números
