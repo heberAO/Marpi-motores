@@ -470,7 +470,7 @@ elif modo == "Historial y QR":
     # --- TABLERO INTERACTIVO SIEMPRE VISIBLE ---
     try:
         # Intentamos leer las hojas (con TTL=0 para datos frescos)
-        df_res_plan = conn.read(worksheet="Planificacion", ttl=0)
+        df_res_plan = conn.read(worksheet="Planificación", ttl=0)
         
         # Procesamiento de fechas para los últimos 5 días
         df_res_plan['Fecha'] = pd.to_datetime(df_res_plan['Fecha'], dayfirst=True, errors='coerce')
