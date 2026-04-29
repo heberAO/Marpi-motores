@@ -502,7 +502,7 @@ elif modo == "Historial y QR":
                 # 1. Intentamos obtener los datos de la columna 'tipo_tarea'
                  try:
                     # Leemos la hoja principal de motores (ajusta el nombre si es 'Motores' o 'Base_Datos')
-                     df_principal = conn.read(worksheet="Motores", ttl=0)
+                     df_principal = conn.read(worksheet="Sheet1", ttl=0)
                     
                     # Limpiamos los nombres de columnas por si tienen espacios
                      df_principal.columns = df_principal.columns.str.strip()
@@ -517,7 +517,7 @@ elif modo == "Historial y QR":
                      total_lub = 0
                 
                 # 2. Mostramos el botón con el número real de lubricaciones encontradas
-                 with st.popover(f"💧 Lubricados: {total_lub}", use_container_width=True):
+                 with st.popover(f"💧 Relubricacion: {total_lub}", use_container_width=True):
                      if total_lub > 0:
                          st.write(f"Se encontraron {total_lub} equipos con tarea de Relubricacion:")
                         # Mostramos los Tags de esos equipos
