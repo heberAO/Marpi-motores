@@ -54,44 +54,40 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         import io 
         import os
 
-        # 1. LIENZO (600x300)
+
         etiqueta = Image.new('RGB', (600, 300), (255, 255, 255))
         draw = ImageDraw.Draw(etiqueta)
 
-        # 2. QR (LADO IZQUIERDO) - 250x250 px
+
         qr_url = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?serie={serie}&exact=1"
         qr = qrcode.make(qr_url)
         img_qr = qr.convert('RGB').resize((250, 250))
         etiqueta.paste(img_qr, (20, 25))
 
-        # 3. LADO DERECHO (Número de Motor)
+      
         x_derecha = 300
         texto_nro = str(serie).upper()
-        
-        # --- CARGA DE FUENTE PROPIA ---
-        # Intentamos cargar el archivo que vas a subir al GitHub
+
         nombre_fuente = "Arial-Bold.ttf" 
         if os.path.exists(nombre_fuente):
-            fuente = ImageFont.truetype(nombre_fuente, 35) # Tamaño 100: Muy grande
+            fuente = ImageFont.truetype(nombre_fuente, 35) 
         else:
-            # Si aún no lo subes, usamos este truco para que al menos se vea algo
+     
             fuente = ImageFont.load_default()
             st.warning("⚠️ Sube 'Arial-Bold.ttf' a GitHub para ver el número grande.")
 
-        # Dibujamos el número (Centrado verticalmente en el espacio derecho)
         draw.text((x_derecha + 10, 100), texto_nro, font=fuente, fill=(0,0,0))
 
-        # 4. LOGO (Ubicación Superior)
+
         try:
             logo = Image.open("logo.png").convert('RGBA')
-            # Lo redimensionamos para que no tape al número
+        
             logo.thumbnail((250, 80), Image.Resampling.LANCZOS)
             etiqueta.paste(logo, (x_derecha + 15, 20), logo)
         except:
             draw.text((x_derecha + 15, 20), "MARPI MOTORES", fill=(0,0,0))
 
-        # 5. CONVERSIÓN PARA IMPRESORA HONEYWELL
-        # Convertimos a blanco y negro puro (Threshold) para que no salga borroso
+
         etiqueta_final = etiqueta.convert('L').point(lambda x: 0 if x < 128 else 255, '1')
 
         buf = io.BytesIO()
@@ -106,86 +102,81 @@ def calcular_grasa_marpi(rodamiento):
     """Calcula gramos de grasa según el modelo del rodamiento."""
     if not rodamiento or rodamiento in ["-", "S/D", "nan"]:
         return 0
-    
-    # Extraemos solo los números del rodamiento (ej: de 6319 C3 saca 6319)
+
     import re
     match = re.search(r'\d{4,5}', str(rodamiento))
     if not match:
         return 0
     
     codigo = match.group()
-    # Lógica de cálculo basada en el diámetro exterior aproximado
-    # Fórmula: D * B * 0.005 (Simplificada para mantenimiento)
+
     try:
-        serie = int(codigo[1]) # 2 para 62xx, 3 para 63xx
-        tamanio = int(codigo[2:]) # Los últimos dos dígitos (19, 22, etc)
+        serie = int(codigo[1]) 
+        tamanio = int(codigo[2:]) 
         
-        # Estimación de gramos Marpi
+   
         if serie == 3:
             gramos = (tamanio * 2.5) - 5 
         else:
             gramos = (tamanio * 1.5)
-        return max(5, round(gramos, 1)) # Mínimo 5g para motores industriales
+        return max(5, round(gramos, 1))
     except:
         return 0
         
 if "archivo_nombre" not in st.session_state:
     st.session_state.archivo_nombre = "Reporte_Motor"        
-# Inicializamos variables de estado
+
 if "tag_fijo" not in st.session_state: st.session_state.tag_fijo = ""
 if "modo_manual" not in st.session_state: st.session_state.modo_manual = False
-# --- FUNCIÓN DE CARGA OPTIMIZADA ---
-# --- 1. CONEXIÓN GLOBAL (Afuera de las funciones) ---
+
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 @st.cache_data(ttl=10) 
 def cargar_datos_google():
     try:
-        # Ya no definimos conn aquí adentro, usamos la de afuera
+ 
         return conn.read(ttl=0) 
     except Exception as e:
         st.error(f"⚠️ Error conectando a Google Sheets: {e}")
         return pd.DataFrame()
 
-# --- USO DE LA FUNCIÓN ---
+
 df_completo = cargar_datos_google()
-# --- CONEXIÓN A LA HOJA DE PLANIFICACIÓN ---
-# Reemplaza "Planificacion" por el nombre exacto que le pusiste a la pestaña
+
 try:
     df_plan = conn.read(worksheet="Planificación")
 except Exception as e:
     st.error(f"No se pudo leer la hoja de Planificación: {e}")
     df_plan = pd.DataFrame()
-# --- 2. INICIALIZACIÓN DE VARIABLES Y QR ---
+
 if "motor_seleccionado" not in st.session_state:
     st.session_state.motor_seleccionado = None
 
-# --- SOLO DETECCIÓN (No dibujes nada aquí) ---
+
 params = st.query_params
 qr_valor = params.get("serie") or params.get("tag") or params.get("Serie") or params.get("Tag")
 
-# Decidimos a qué pestaña ir (1 es Historial)
+
 indice_inicio = 1 
 
-# --- 2. FILTRO DE MOTOR POR QR ---
-# Solo ejecutamos el filtro si realmente existe un qr_valor
+
 if qr_valor:
     v_qr = str(qr_valor).strip().upper()
     
-    # Verificamos que el DataFrame no esté vacío antes de filtrar
+   
     if not df_completo.empty:
         filtro = df_completo[
             (df_completo['N_Serie'].astype(str).str.upper() == v_qr) | 
             (df_completo['Tag'].astype(str).str.upper() == v_qr)
         ]
         
-        # Si encontró algo, lo guardamos en el session_state
+      
         if not filtro.empty:
             st.session_state.motor_seleccionado = filtro.iloc[-1]
-# --- 5. MENÚ LATERAL (ROBUSTO) ---
+
 opciones_menu = ["Nuevo Registro", "Historial y QR", "Gestión de Reparaciónes", "Relubricacion", "Mediciones de Campo"]
 
-# Inicializar la memoria de navegación si no existe
+
 if "navegacion_actual" not in st.session_state:
     st.session_state.navegacion_actual = "Historial y QR"
 
@@ -194,33 +185,32 @@ with st.sidebar:
         st.image("logo.png", width=150)
     st.title("⚡ MARPI MOTORES")
     
-    # Buscamos en qué posición (0, 1, 2, 3) está la página guardada en memoria
+
     try:
         idx_defecto = opciones_menu.index(st.session_state.navegacion_actual)
     except ValueError:
-        idx_defecto = 1 # Por defecto Historial
+        idx_defecto = 1 
 
-    # Creamos el menú usando ese índice
+   
     seleccion = st.radio(
         "Ir a:", 
         opciones_menu, 
         index=idx_defecto
     )
 
-    # Si el usuario hace CLIC manual en el menú, actualizamos la memoria
     if seleccion != st.session_state.navegacion_actual:
         st.session_state.navegacion_actual = seleccion
         st.rerun()
 
-    # Botón de Reset
+   
     if st.button("🧹 Inicio / Reset"):
         st.session_state.clear()
         st.rerun()
 
-# Asignamos la variable 'modo' para que el resto de tu código funcione igual
+
 modo = st.session_state.navegacion_actual
 
-# --- 6. VALIDACIÓN DE CONTRASEÑA ---
+
 if modo in ["Nuevo Registro", "Gestión de Reparaciónes", "Relubricacion", "Mediciones de Campo"]:
     if "autorizado" not in st.session_state:
         st.session_state.autorizado = False
@@ -236,7 +226,7 @@ if modo in ["Nuevo Registro", "Gestión de Reparaciónes", "Relubricacion", "Med
                     st.rerun()
                 else:
                     st.error("⚠️ Clave incorrecta")
-        st.stop() # <--- AQUÍ SE DETIENE SOLO SI NO ESTÁ LOGUEADO
+        st.stop() 
         
 if "form_key_plan" not in st.session_state:
     st.session_state.form_key_plan = 0
@@ -244,7 +234,7 @@ if "form_key_plan" not in st.session_state:
 if modo == "Gestión de Reparaciónes":
     st.title("🛠️ Gestión de Reparaciónes - Marpi")
     
-    # Este botón es un "auxilio" por si querés limpiar a mano
+
     if st.button("🧹 Limpiar Formulario"):
         st.session_state.form_key_plan += 1
         st.rerun()
@@ -269,7 +259,7 @@ if modo == "Gestión de Reparaciónes":
     
         if btn_plan:
             if f_ot and f_motor:
-                # 1. Preparamos los datos
+       
                 nueva_fila_plan = pd.DataFrame([{
                     "Fecha": f_fecha.strftime("%d/%m/%Y"),
                     "OT": f_ot,
@@ -283,18 +273,18 @@ if modo == "Gestión de Reparaciónes":
                 }])
                 
                 try:
-                    # 1. LEER los datos actuales PRIMERO (Borré la línea de update que estaba acá arriba)
+              
                     df_plan_existente = conn.read(worksheet="Planificación", ttl=0)
                     
-                    # 2. CONCATENAR la fila nueva al final de lo que ya existe
+     
                     df_actualizado = pd.concat([df_plan_existente, nueva_fila_plan], ignore_index=True)
                     
-                    # 3. ACTUALIZAR una sola vez con la lista completa
+                   
                     conn.update(worksheet="Planificación", data=df_actualizado)
                     
                     st.success(f"✅ OT {f_ot} guardada en Agenda")
                     
-                    # --- Lógica de WhatsApp ---
+                
                     telefonos = {
                         "Toledano Ruben": "5492615914147",
                         "Accordinaro Diego": "549261000000",
@@ -302,14 +292,14 @@ if modo == "Gestión de Reparaciónes":
                     }
     
                     tel = telefonos.get(f_encargado, "")
-                    # --- DENTRO DEL TRY (CONTINUACIÓN) ---
+       
                     if tel:
                         mensaje_wa = f"Hola {f_encargado}, se te asignó la OT: {f_ot} para el motor {f_motor}. Tarea: {f_tarea}. Planta: {f_planta}. Inspector: {f_inspector}."
                         texto_url = urllib.parse.quote(mensaje_wa)
                         link_wa = f"https://wa.me/{tel}?text={texto_url}"
                         st.link_button(f"📲 Enviar WhatsApp a {f_encargado}", link_wa)
                     
-                    # Primero sumamos a la key para limpiar
+                    
                     st.session_state.form_key_plan += 1
                 except Exception as e:
                     st.error(f"❌ Error al guardar: {e}")
@@ -317,7 +307,7 @@ if modo == "Gestión de Reparaciónes":
             else:
                 st.warning("Por favor, completa N° de OT y selecciona un Motor.")
 
-# El divider va afuera de todo el bloque del botón, pegado al margen izquierdo
+
 st.divider()
 
 if modo == "Nuevo Registro":
@@ -326,60 +316,59 @@ if modo == "Nuevo Registro":
     if "form_key" not in st.session_state:
         st.session_state.form_key = 0
     
-    # 1. Recuperamos los datos que enviamos desde el Historial
+
     datos_auto = st.session_state.get('datos_motor_auto', {})
     
     fecha_hoy = st.date_input("Fecha", date.today(), format="DD/MM/YYYY")
     
     with st.form(key=f"alta_motor_{st.session_state.form_key}"):
         st.markdown("### 📝 Datos de la Nueva Intervención")
-        # --- CAMPOS DE ENTRADA ---
+
         c1, c2, c3 = st.columns([2, 2, 1])
-        # Llenamos TAG y Serie
+   
         t = c1.text_input("TAG/ID MOTOR", value=datos_auto.get('tag', '')).upper()
         sn = c2.text_input("N° de Serie", value=datos_auto.get('serie', '')).upper()
         resp = c3.text_input("Responsable")
 
         c4, c5, c6, c7, c8 = st.columns(5)
-        # Llenamos Potencia, Tensión, Corriente y Carcasa automáticamente
+
         p = c4.text_input("Potencia", value=datos_auto.get('potencia', ''))
         v = c5.text_input("Tensión", value=datos_auto.get('tension', ''))
         cor = c6.text_input("Corriente", value=datos_auto.get('corriente', ''))
         
-        # 1. Extraemos valores únicos de la base de datos, quitamos vacíos y convertimos a texto
+
         if not df_completo.empty and 'RPM' in df_completo.columns:
-            # Obtenemos valores únicos, los pasamos a string y eliminamos 'nan'
+           
             rpms_db = df_completo['RPM'].astype(str).unique().tolist()
             rpms_db = [val for val in rpms_db if val not in ['nan', '-', 'None', '']]
         else:
             rpms_db = []
 
-        # 2. Definimos valores base (por si la base de datos está vacía)
+      
         rpms_estandar = ["750", "1000", "1500", "3000"]
         
-        # 3. Combinamos ambos, eliminamos duplicados y ordenamos de menor a mayor
-        # Usamos set() para que no se repitan y sorted() para el orden
+    
         rpms_limpias = [str(r).strip() for r in (rpms_estandar + rpms_db) if r and str(r).strip() != 'nan']
         rpms_lista = ["-"] + sorted(list(set(rpms_limpias)), key=lambda x: int(x) if str(x).isdigit() else 0)
-        # 4. Buscamos el valor que viene de datos_auto (del QR o Historial)
+      
         val_rpm = str(datos_auto.get('rpm', '-'))
         
-        # Si el valor no está en la lista (caso raro), lo agregamos para que no de error
+ 
         if val_rpm not in rpms_lista:
             rpms_lista.append(val_rpm)
             rpms_lista = sorted(rpms_lista, key=lambda x: int(x) if x.isdigit() else 0)
 
-        # 5. Calculamos el índice para el autocompletado
+
         idx_rpm = rpms_lista.index(val_rpm)
         
-        # 6. Mostramos el Selectbox final
+  
         r = c7.selectbox("RPM", rpms_lista, index=idx_rpm)
         
         carc = c8.text_input("Carcasa/Frame", value=datos_auto.get('carcasa', ''))
 
         st.subheader("⚙️ Rodamientos de Placa")
         r1, r2 = st.columns(2)
-        # Llenamos los rodamientos automáticamente
+        
         r_la = r1.text_input("Rodamiento LA", value=datos_auto.get('r_la', '')).upper()
         r_loa = r2.text_input("Rodamiento LOA", value=datos_auto.get('r_loa', '')).upper()
         
@@ -402,7 +391,7 @@ if modo == "Nuevo Registro":
 
         if btn_guardar:
             if t and resp:
-                # 1. Crear el diccionario con los datos exactos
+                
                 nueva_fila = {
                     "Fecha": fecha_hoy.strftime("%d/%m/%Y"),
                     "Tag": t,
@@ -416,31 +405,29 @@ if modo == "Nuevo Registro":
                     "RB_UV": v_rb_uv, "RB_VW": v_rb_vw, "RB_UW": v_rb_uw,
                     "RI_U": v_ri_u, "RI_V": v_ri_v, "RI_W": v_ri_w,
                     "Descripcion": desc,
-                    "Trabajos_Externos": ext,  # <--- CORREGIDO: Antes podía faltar o tener otro nombre
+                    "Trabajos_Externos": ext,  
                     "Tipo_Tarea": "Nuevo Registro"
                 }
 
-                # Lógica para subir a Google Sheets
+             
                 df_nueva = pd.DataFrame([nueva_fila])
                 df_actualizado = pd.concat([df_completo, df_nueva], ignore_index=True)
-                # 3. UNIR Y ACTUALIZAR (Lógica de Historial Conectado)
+                
                 if not df_completo.empty and sn in df_completo['N_Serie'].astype(str).values:
                     st.info(f"Vínculo detectado: Agregando nueva intervención al historial del motor SN: {sn}")
-                # Concatenamos la nueva fila al historial general
+                
                 df_actualizado = pd.concat([df_completo, df_nueva], ignore_index=True)
                 df_actualizado = df_actualizado.drop_duplicates()
                 
                 try:
-                    # Intentar subir a Google Sheets
+                    
                     conn.update(data=df_actualizado)
                     
-                    # 4. LIMPIAR CACHÉ (Muy importante para que aparezca en el historial)
                     st.cache_data.clear() 
                     
                     st.success(f"✅ Motor {t} guardado en la base de datos.")
                     st.balloons()
                     
-                    # Preparamos la etiqueta para descargar (AFUERA del formulario después)
                     st.session_state.etiqueta_lista = generar_etiqueta_honeywell(t, sn, p)
                     st.session_state.motor_registrado = t
                     
@@ -449,7 +436,6 @@ if modo == "Nuevo Registro":
             else:
                 st.error("⚠️ El TAG y el Responsable son obligatorios.")
 
-    # 2. EL BOTÓN DE DESCARGA VA AFUERA (Sin espacios al principio del 'if')
     if "etiqueta_lista" in st.session_state and st.session_state.etiqueta_lista:
         st.divider()
         st.info(f"📋 Etiqueta lista para motor: {st.session_state.motor_registrado}")
@@ -467,22 +453,17 @@ elif modo == "Historial y QR":
    
     st.markdown("### 📊 Estado del Taller")
     
-    # --- TABLERO INTERACTIVO SIEMPRE VISIBLE ---
     try:
-        # Intentamos leer las hojas (con TTL=0 para datos frescos)
         df_res_plan = conn.read(worksheet="Planificación", ttl=0)
         
-        # Procesamiento de fechas para los últimos 5 días
         df_res_plan['Fecha'] = pd.to_datetime(df_res_plan['Fecha'], dayfirst=True, errors='coerce')
         hace_5_dias = pd.Timestamp.now() - pd.Timedelta(days=5)
         
-        # Filtros de estado
         lista_agenda = df_res_plan[df_res_plan["Estado"] == "Pendiente"]
         lista_intervenidos = df_res_plan[df_res_plan["Estado"] == "En Proceso"]
         lista_reparados = df_res_plan[df_res_plan["Estado"] == "Finalizado"]
         movimientos_recientes = df_res_plan[df_res_plan['Fecha'] >= hace_5_dias].sort_values(by='Fecha', ascending=False)
-
-        # Diseño de botones para Celular (2 columnas)
+        
         c1, c2 = st.columns(2)
 
         with c1:
@@ -499,28 +480,20 @@ elif modo == "Historial y QR":
                 else: st.write("Sin trabajos activos.")
 
             with c2:
-                # 1. Intentamos obtener los datos de la columna 'tipo_tarea'
                  try:
-                    # Leemos la hoja principal de motores (ajusta el nombre si es 'Motores' o 'Base_Datos')
                      df_principal = conn.read(worksheet="Sheet1", ttl=0)
-                    
-                    # Limpiamos los nombres de columnas por si tienen espacios
+
                      df_principal.columns = df_principal.columns.str.strip()
-                    
-                    # Filtramos la columna 'tipo_tarea' (o 'Tipo_Tarea') buscando la palabra 'Lubricacion'
-                    # Usamos case=False para que no importe si está en mayúscula o minúscula
+
                      df_solo_lub = df_principal[df_principal['Tipo_Tarea'].str.contains('Relubricacion', case=False, na=False)]
                      total_lub = len(df_solo_lub)
                     
                  except Exception as e:
-                    # Si la columna no existe o hay error, ponemos 0
                      total_lub = 0
-                
-                # 2. Mostramos el botón con el número real de lubricaciones encontradas
+
                  with st.popover(f"💧 Relubricacion: {total_lub}", use_container_width=True):
                      if total_lub > 0:
                          st.write(f"Se encontraron {total_lub} equipos con tarea de Relubricacion:")
-                        # Mostramos los Tags de esos equipos
                          for _, fila in df_solo_lub.tail(10).iterrows():
                              st.write(f"🔹 {fila['Tag']}")
                      else:
@@ -531,47 +504,35 @@ elif modo == "Historial y QR":
                         st.write(f"🏁 **{r['Motor']}** - OT: {r['OT']}")
                 else: st.write("Nada para retirar.")
 
-        # Mostrar movimientos de los últimos 5 días (solo si existen)
         if not movimientos_recientes.empty:
             with st.expander("🗓️ Movimientos última semana", expanded=False):
                 for _, f in movimientos_recientes.iterrows():
                     st.markdown(f"**{f['Motor']}** - {f['Tarea']} (`{f['Estado']}`)")
     
     except Exception:
-        # Si algo falla (ej. Excel no conectado), mostramos un aviso sutil y seguimos
         st.caption("⚠️ Tablero temporalmente no disponible")
 
     st.divider()
     if not df_completo.empty:
-        # 1. Limpieza y preparación de datos (Blindada)
         df_completo['N_Serie'] = df_completo['N_Serie'].fillna('S/S').astype(str).str.strip()
         df_completo['Tag'] = df_completo['Tag'].fillna('S/T').astype(str).str.strip()
 
-        # 2. Crear lista de opciones ÚNICA POR SERIE (Muestra el TAG MÁS RECIENTE)
         df_temp = df_completo.copy()
-        
-        # Convertimos la columna Fecha a formato fecha real para poder ordenar
         df_temp['Fecha_DT'] = pd.to_datetime(df_temp['Fecha'], dayfirst=True, errors='coerce')
         
-        # ORDENAMOS: Lo más nuevo PRIMERO (descendente)
         df_temp = df_temp.sort_values('Fecha_DT', ascending=False)
 
-        # MANTENEMOS EL PRIMERO (que ahora es el más nuevo gracias al sort anterior)
         df_ultimos = df_temp.drop_duplicates(subset=['N_Serie'], keep='first')
 
-        # Creamos la lista de opciones
         opciones_base = [
             f"{row['Tag']} | SN: {row['N_Serie']}" 
             for _, row in df_ultimos.iterrows() 
             if str(row['N_Serie']) != 'nan'
         ]
         
-        # Ordenamos la lista alfabéticamente para que sea fácil buscar
         opciones = [""] + sorted(opciones_base)
         
-        # 3. LÓGICA DE RECONOCIMIENTO DE QR
         params = st.query_params
-        # Buscamos en todos los posibles nombres de parámetros
         qr_valor = params.get("serie") or params.get("tag") or params.get("Serie") or params.get("Tag")
         
         idx_buscador = 0
@@ -582,8 +543,7 @@ elif modo == "Historial y QR":
                     idx_buscador = i
                     break
         
-        # 4. EL SELECTOR ÚNICO
-        # Protección extra por si el índice se sale de rango
+
         if idx_buscador >= len(opciones):
             idx_buscador = 0
 
@@ -595,24 +555,19 @@ elif modo == "Historial y QR":
         )
 
         if seleccion != "": 
-            # 1. Extraemos la serie (nuestro identificador único)
+
             serie_final = seleccion.split(" | SN: ")[1] if " | SN: " in seleccion else ""
-            
-            # 2. Filtramos TODO el historial de esa serie (sin importar el Tag)
+
             df_historial = df_completo[df_completo['N_Serie'] == serie_final].copy()
             
             if not df_historial.empty:
-                # 3. Convertir fecha para ordenar: lo más nuevo DEBE ir arriba
                 df_historial['Fecha_DT'] = pd.to_datetime(df_historial['Fecha'], dayfirst=True, errors='coerce')
                 df_historial = df_historial.sort_values('Fecha_DT', ascending=False)
-                
-                # 4. Obtener la info más actual (la primera fila después de ordenar)
+
                 motor_info = df_historial.iloc[0]
-                
-                # Usamos el Tag del último registro guardado (el más nuevo)
+
                 ultimo_tag = str(motor_info.get('Tag', 'S/D'))
 
-                # --- PANEL SUPERIOR ---
                 with st.container(border=True):
                     col_qr, col_info = st.columns([1, 2])
                     url_app = f"https://marpi-motores-mciqbovz6wqnaj9mw7fytb.streamlit.app/?tag={serie_final}"
@@ -624,10 +579,10 @@ elif modo == "Historial y QR":
                         st.subheader(f"Ⓜ️ {ultimo_tag}")
                         st.info(f"Número de Serie: **{serie_final}**")
 
-                # Dentro de la sección Historial y QR...
+
 
                 def enviar_a_formulario_con_datos(tarea_tipo):
-                    # 1. Guardar TODOS los datos del motor en el diccionario
+
                     st.session_state['datos_motor_auto'] = {
                         'tag': str(motor_info.get('Tag', '')),
                         'serie': str(motor_info.get('N_Serie', '')),
@@ -635,12 +590,11 @@ elif modo == "Historial y QR":
                         'tension': str(motor_info.get('Tension', '')),
                         'corriente': str(motor_info.get('Corriente', '')),
                         'rpm': str(motor_info.get('RPM', '-')),
-                        'carcasa': str(motor_info.get('Carcasa', '')), # O 'Frame' según tu Excel
+                        'carcasa': str(motor_info.get('Carcasa', '')), 
                         'r_la': str(motor_info.get('Rodamiento_LA', '')),
                         'r_loa': str(motor_info.get('Rodamiento_LOA', ''))
                     }
-                    
-                    # 2. Cambiar la navegación
+
                     if tarea_tipo == "Lubricación":
                         st.session_state.navegacion_actual = "Relubricacion"
                     elif tarea_tipo == "Megado":
@@ -663,11 +617,11 @@ elif modo == "Historial y QR":
                 with col_C:
                     if st.button("📝 Reparación", use_container_width=True, key="btn_rep_hist"):
                         enviar_a_formulario_con_datos("Reparación General")
-                # --- 6. HISTORIAL DE INTERVENCIONES (MANTENIENDO TU FORMATO) ---
+
                 st.divider()
                 st.subheader("📜 Historial de Intervenciones")
                 
-                hist_m = df_historial.iloc[:] # Lo más nuevo arriba
+                hist_m = df_historial.iloc[:] 
                 for idx, fila in hist_m.iterrows():
                     f_limpia = fila.fillna('-')
                     tarea = str(f_limpia.get('Tipo_Tarea', '-')).strip()
@@ -677,7 +631,7 @@ elif modo == "Historial y QR":
                     
                     titulo_card = f"🗓️ {tarea}" if tarea not in ["-", "nan"] else "📝 Registro / Mantenimiento"
 
-                    # --- INICIO DEL CONTENEDOR PARA CAPTURA (Fondo oscuro preservado) ---
+             
                     st.markdown(f'<div id="ficha_{idx}" style="background-color: #0e1117; padding: 10px;">', unsafe_allow_html=True)
                     with st.container(border=True):
                         st.markdown(f"### {titulo_card} - {fecha}")
@@ -723,7 +677,6 @@ elif modo == "Historial y QR":
                             st.caption(f"**📌 Notas:** {f_limpia.get('Notas')}")
                     st.markdown('</div>', unsafe_allow_html=True) 
 
-                    # --- LÓGICA DE DETALLES PARA FOTO Y BOTONES ---
                     campos_electricos = ['RT_TU1', 'RT_TV1', 'RT_TW1', 'RB_WV1', 'RB_VU1', 'RB_UW1', 'RI_U1U2', 'RI_V1V2', 'RI_W1W2', 'RI_U1V1', 'RI_V1W1', 'RI_W1U1']
                     detalles_foto = ""
                     if "Mediciones" in tarea or "Megado" in tarea:
@@ -737,11 +690,9 @@ elif modo == "Historial y QR":
                     else:
                         detalles_foto = f"Rod. LA: {f_limpia.get('Rodamiento_LA', '-')} | Rod. LOA: {f_limpia.get('Rodamiento_LOA', '-')}"
 
-                    # Botón de Descarga
                     html_boton = boton_descarga_pro(tag_h, fecha, tarea, resp_h, f_limpia.get('N_Serie', '-'), f_limpia.get('Potencia', '-'), f_limpia.get('RPM', '-'), f_limpia.get('Carcasa', '-'), detalles_foto, "", f_limpia.get('Descripcion', '-'))
                     components.html(html_boton, height=80)
-                    
-                    # Botón Honeywell
+
                     try:
                         s_local = str(f_limpia.get('N_Serie', '-'))
                         p_local = str(f_limpia.get('Potencia', '-'))
@@ -767,8 +718,7 @@ elif modo == "Historial y QR":
                     st.divider()
 elif modo == "Relubricacion":
     st.title("🛢️ Lubricación Inteligente MARPI")
-    
-    # --- 1. INICIALIZACIÓN ABSOLUTA (Para evitar NameError) ---
+
     v_la = ""
     v_loa = ""
     v_serie = ""
@@ -779,23 +729,17 @@ elif modo == "Relubricacion":
     if "form_id" not in st.session_state:
         st.session_state.form_id = 0
 
-    # 2. Recuperar datos del QR/Historial
     datos_auto = st.session_state.get('datos_motor_auto', {})
     tag_qr = datos_auto.get('tag', '')
 
-    # 3. Preparar el Buscador
     df_lista = df_completo.copy()
     df_lista['Busqueda_Combo'] = df_lista['Tag'].astype(str) + " | SN: " + df_lista['N_Serie'].astype(str)
-   # Aseguramos que 'Busqueda_Combo' exista y esté limpia
-  # --- Asegúrate de que este bloque esté alineado con el resto del código ---
+
     if 'Busqueda_Combo' in df_lista.columns:
-    # 1. Limpiamos y convertimos a texto para evitar el TypeError
         lista_limpia = df_lista['Busqueda_Combo'].fillna("").astype(str).str.strip()
     
-    # 2. Quitamos duplicados y vacíos
         lista_final = [x for x in lista_limpia.unique().tolist() if x != ""]
-    
-    # 3. El sorted ahora sí funcionará
+
         opciones_combo = [""] + sorted(lista_final)
     else:
         opciones_combo = [""]
@@ -816,17 +760,14 @@ elif modo == "Relubricacion":
 
     tag_seleccionado = seleccion_full.split(" | ")[0].strip() if seleccion_full else ""
 
-    # --- 4. CARGA DE DATOS SI HAY SELECCIÓN ---
     if tag_seleccionado:
         fila_motor = df_lista[df_lista['Tag'] == tag_seleccionado]
         if not fila_motor.empty:
             info_motor = fila_motor.iloc[-1]
-            # Llenamos las variables con lo que hay en el Excel
             v_la = str(info_motor.get('Rodamiento_LA', '')).replace('nan', '').upper()
             v_loa = str(info_motor.get('Rodamiento_LOA', '')).replace('nan', '').upper()
             v_serie = str(info_motor.get('N_Serie', '')).replace('nan', '')
 
-            # Mostramos alertas de seguridad
             st.markdown("---")
             es_sellado = any(x in v_la or x in v_loa for x in ["2RS", "ZZ"])
             if es_sellado:
@@ -836,21 +777,17 @@ elif modo == "Relubricacion":
 
     st.divider()
 
-    # --- 5. INPUTS DE RODAMIENTOS (v_la ya existe siempre aquí) ---
     col1, col2 = st.columns(2)
-    
-    # Usamos text_input para que el técnico pueda corregir el rodamiento si es distinto al de placa
+
     rod_la_final = col1.text_input("Rodamiento LA", value=v_la, key=f"la_input_{st.session_state.form_id}").upper()
     rod_loa_final = col2.text_input("Rodamiento LOA", value=v_loa, key=f"loa_input_{st.session_state.form_id}").upper()
-    
-    # Calculamos gramos basados en lo que dice el input (por si se cambió el rodamiento)
+
     gr_la_sug = calcular_grasa_marpi(rod_la_final)
     gr_loa_sug = calcular_grasa_marpi(rod_loa_final)
     
     col1.caption(f"Sugerido: {gr_la_sug} g")
     col2.caption(f"Sugerido: {gr_loa_sug} g")
 
-    # --- 6. FORMULARIO FINAL ---
     with st.form(key=f"form_lub_{st.session_state.form_id}"):
         tecnico = st.text_input("Técnico Responsable")
         
@@ -878,8 +815,7 @@ elif modo == "Relubricacion":
                     "Notas": notas,
                     "Descripcion": f"LUBRICACIÓN REALIZADA: {grasa_t}"
                 }
-                
-                # Guardado usando la conexión GLOBAL
+   
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva])], ignore_index=True)
                 conn.update(data=df_final)
 
@@ -894,8 +830,7 @@ elif modo == "Relubricacion":
                 st.error("⚠️ Falta seleccionar el Motor o ingresar el Técnico.")
        
     st.divider()
-    
-    # 6. LOS BOTONES DE DESCARGA Y LIMPIEZA VAN AQUÍ AFUERA
+
     col_descarga, col_limpiar = st.columns(2)
     
     with col_descarga:
@@ -912,7 +847,6 @@ elif modo == "Relubricacion":
             st.info("ℹ️ El reporte se habilitará después de guardar.")
 
     with col_limpiar:
-        # AHORA ESTE BOTÓN YA NO DARÁ ERROR
         if st.button("🔄 Limpiar y nuevo registro", use_container_width=True):
             st.session_state.pdf_buffer = None
             st.session_state.tag_buffer = None
@@ -921,31 +855,25 @@ elif modo == "Relubricacion":
 elif modo == "Mediciones de Campo":
     st.title("⚡ Mediciones de Campo (Megado y Continuidad)")
     fecha_hoy = date.today()
-    
-    # 1. Inicialización de Memoria
+
     if 'pdf_buffer' not in st.session_state: st.session_state.pdf_buffer = None
     if "cnt_meg" not in st.session_state: st.session_state.cnt_meg = 0
-        
-    # 2. RECUPERACIÓN PREVIA (Fuera del form para evitar NameError)
+
     datos_auto = st.session_state.get('datos_motor_auto', {})
     tag_inicial = datos_auto.get('tag', '')
     serie_inicial = datos_auto.get('serie', '')
     
     n_serie_sug = serie_inicial
-    # Si tenemos un TAG pero no serie, buscamos en el DF antes de entrar al form
     if tag_inicial and not n_serie_sug:
         if not df_completo.empty:
             busq = df_completo[df_completo['Tag'] == tag_inicial].tail(1)
             if not busq.empty: 
                 n_serie_sug = str(busq['N_Serie'].values[0])
-    
-    # --- 3. FORMULARIO ---
+
     with st.form(f"form_megado_{st.session_state.cnt_meg}"):
         col1, col2, col3 = st.columns(3)
-        
-        # Agregamos las keys únicas y usamos n_serie_sug ya calculada
+
         t = col1.text_input("TAG del Motor:", value=tag_inicial, key="tag_med_field").upper()
-        # Eliminamos la duplicidad: un solo input para N° de Serie
         n_serie = col2.text_input("N° de Serie:", value=n_serie_sug, key="serie_med_field")
         resp = col3.text_input("Responsable:", key="resp_med_field")
 
@@ -954,8 +882,7 @@ elif modo == "Mediciones de Campo":
         tension_prueba = col_eq2.selectbox("Tensión:", ["500V", "1000V", "2500V", "5000V"])
 
         st.divider()
-        
-        # --- SECCIÓN 2: TODAS LAS MEDICIONES (Mantenidas exactamente igual) ---
+
         st.subheader("📊 Megado a Tierra (Aislamiento GΩ)")
         c1, c2, c3 = st.columns(3)
         tv1 = c1.text_input("T - V1")
@@ -987,12 +914,10 @@ elif modo == "Mediciones de Campo":
 
         obs = st.text_area("Observaciones")
 
-        # EL BOTÓN DE GUARDADO (Cierra el bloque with st.form)
         submitted = st.form_submit_button("💾 GUARDAR MEDICIONES")
         
         if submitted:
             if t and resp:
-                # Buscar datos de placa para el PDF
                 busqueda = df_completo[df_completo['Tag'] == t].tail(1)
                 info = busqueda.iloc[0].to_dict() if not busqueda.empty else {}
                 
@@ -1011,24 +936,19 @@ elif modo == "Mediciones de Campo":
                     "ML_L1L2": l1l2, "ML_L1L3": l1l3, "ML_L2L3": l2l3
                 }
 
-                # 3. Guardado usando la conexión global 'conn'
                 df_final = pd.concat([df_completo, pd.DataFrame([nueva_fila])], ignore_index=True)
                 conn.update(data=df_final) 
-                
-                # 4. Limpieza y éxito
+
                 st.cache_data.clear()
                 st.success(f"✅ ¡Todo guardado! Reporte listo para {t}")
                 st.balloons()
-                
-                # Opcional: un pequeño sleep y rerun para refrescar la tabla
+
                 import time
                 time.sleep(1.5)
                 st.rerun()
             else:
                 st.error("⚠️ Falta TAG o Responsable.")
 
-    # 3. BOTÓN DE DESCARGA (Fuera del formulario)
-    # Importante: Asegúrate de que 't' esté disponible aquí o usa st.session_state
     if st.session_state.get("pdf_buffer") is not None:
         st.download_button(
             label=f"📥 Descargar Reporte",
