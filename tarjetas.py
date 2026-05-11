@@ -100,10 +100,11 @@ def generar_etiqueta_honeywell(tag, serie, potencia):
         
 def calcular_grasa_marpi(rodamiento):
     """Calcula gramos de grasa según el modelo del rodamiento."""
-    if not rodamiento or rodamiento in ["-", "S/D", "nan"]:
+    if not rodamiento or str(rodamiento).lower() in ["-", "s/d", "nan", "none"]:
         return 0
 
     import re
+    # Buscamos los 4 o 5 dígitos del rodamiento (ej: 6315 o 22220)
     match = re.search(r'\d{4,5}', str(rodamiento))
     if not match:
         return 0
@@ -111,16 +112,28 @@ def calcular_grasa_marpi(rodamiento):
     codigo = match.group()
 
     try:
-        serie = int(codigo[1]) 
-        tamanio = int(codigo[2:]) 
+        # Ejemplo para un 6315:
+        # serie = 3 (el segundo dígito suele indicar el ancho/serie)
+        # tamanio = 15 (los últimos dos dígitos indican el diámetro interior)
         
-   
+        serie = int(codigo[-3]) # Tomamos el tercer dígito de atrás hacia adelante
+        tamanio = int(codigo[-2:]) # Los últimos dos siempre son el tamaño
+        
+        # Ajuste de fórmula según serie
         if serie == 3:
-            gramos = (tamanio * 2.5) - 5 
-        else:
+            # Serie pesada: requiere más volumen
+            gramos = (tamanio * 2.8) - 2 
+        elif serie == 2:
+            # Serie media
             gramos = (tamanio * 1.5)
+        else:
+            # Series ligeras (0 o 1)
+            gramos = (tamanio * 1.2)
+
+        # Límite inferior de 5g para que no quede seco, y redondeo
         return max(5, round(gramos, 1))
-    except:
+        
+    except Exception:
         return 0
         
 if "archivo_nombre" not in st.session_state:
