@@ -424,10 +424,9 @@ if modo == "Nuevo Registro":
 
              
                 df_nueva = pd.DataFrame([nueva_fila])
-                df_actualizado = pd.concat([df_completo, df_nueva], ignore_index=True)
                 
-                if not df_completo.empty and str(sn) in df_completo['N_Serie'].astype(str).values:
-                    st.info(f"✨ Nueva intervención registrada para el motor SN: {sn}. El historial se mantiene.")
+                if not df_completo.empty:
+                    existe_motor = df_completo['N_Serie'].astype(str).eq(str(sn)).any()
                 
                     if existe:
                             st.info(f"Vínculo detectado: Actualizando historial del motor SN: {sn}")
