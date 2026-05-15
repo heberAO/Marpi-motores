@@ -424,21 +424,25 @@ if modo == "Nuevo Registro":
 
              
                 df_nueva = pd.DataFrame([nueva_fila])
-                
+
                 if not df_completo.empty:
-                    existe_motor = df_completo['N_Serie'].astype(str).eq(str(sn)).any()
+                    # Definimos la variable que te estaba faltando directamente aquí
+                    # Esto busca si el número de serie (sn) ya está en el Excel
+                    motor_ya_existe = str(sn) in df_completo['N_Serie'].astype(str).values
+                    
+                    if motor_ya_existe:
+                        st.info(f"🔄 Motor reconocido (SN: {sn}). Actualizando datos técnicos...")
+                        # Borramos la fila vieja del motor para que la nueva ocupe su lugar
+                        df_completo = df_completo[df_completo['N_Serie'].astype(str) != str(sn)]
                 
-                    if existe:
-                            st.info(f"Vínculo detectado: Actualizando historial del motor SN: {sn}")
-                            df_completo = df_completo[df_completo['N_Serie'].astype(str) != str(sn)]
+                # Ahora unimos la base limpia con la fila nueva
                 df_actualizado = pd.concat([df_completo, df_nueva], ignore_index=True)
+                
                 try:
-                    
+                    # Guardamos en el Excel
                     conn.update(data=df_actualizado)
-                    
                     st.cache_data.clear() 
-                    
-                    st.success(f"✅ Motor {t} guardado en la base de datos.")
+                    st.success(f"✅ Motor {t} guardado correctamente sin duplicados.")
                     st.balloons()
                     
                     st.session_state.etiqueta_lista = generar_etiqueta_honeywell(t, sn, p)
