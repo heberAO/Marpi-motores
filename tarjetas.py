@@ -436,13 +436,28 @@ if modo == "Nuevo Registro":
                         df_completo = df_completo[df_completo['N_Serie'].astype(str) != str(sn)]
                 
                 # Ahora unimos la base limpia con la fila nueva
+                df_nueva = pd.DataFrame([nueva_fila])
+
+                if not df_completo.empty:
+                    # --- CAMBIO CLAVE: BUSCAMOS POR TAG ---
+                    # t es la variable que usas para el Tag. 
+                    # Buscamos si ese Tag ya existe en la columna 'Tag' (o 'Motor') de tu Excel
+                    tag_ya_existe = str(t) in df_completo['Tag'].astype(str).values
+                    
+                    if tag_ya_existe:
+                        st.info(f"🔄 Tag {t} detectado. Actualizando con el nuevo número de motor y manteniendo un solo registro.")
+                        # Borramos el registro viejo que tenga ese mismo TAG
+                        # Así, aunque el N° de Serie sea distinto, el Tag viejo se borra
+                        df_completo = df_completo[df_completo['Tag'].astype(str) != str(t)]
+                
+                # 2. Unimos la base limpia (sin el tag repetido) con la nueva info
                 df_actualizado = pd.concat([df_completo, df_nueva], ignore_index=True)
                 
                 try:
-                    # Guardamos en el Excel
+                    # 3. Guardamos en el Excel
                     conn.update(data=df_actualizado)
                     st.cache_data.clear() 
-                    st.success(f"✅ Motor {t} guardado correctamente sin duplicados.")
+                    st.success(f"✅ Registro de {t} actualizado. Ahora solo hay un motor con ese Tag.")
                     st.balloons()
                     
                     st.session_state.etiqueta_lista = generar_etiqueta_honeywell(t, sn, p)
